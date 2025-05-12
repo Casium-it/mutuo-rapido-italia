@@ -9,14 +9,14 @@ const Index = () => {
   const isMobile = useIsMobile();
 
   const simpleKeyPoints = [
-    { icon: Clock, text: isMobile ? "3 min" : "3 minuti per completare" },
+    { icon: Clock, text: "3 minuti per completare" },
     { icon: Percent, text: "68% di precisione" },
     { icon: Building2, text: "Confronto tra 48 banche" },
     { icon: Calculator, text: "Semplice calcolatore di possibilità di mutuo" },
   ];
 
   const advancedKeyPoints = [
-    { icon: Clock, text: isMobile ? "11 min" : "11 minuti per completare" },
+    { icon: Clock, text: "11 minuti per completare" },
     { icon: Percent, text: "98% di precisione" },
     { icon: Building2, text: "Confronto tra 122 banche" },
     { icon: Check, text: "Ottieni il tuo mutuo 100% online" },
@@ -46,7 +46,7 @@ const Index = () => {
           <div className="absolute bottom-1/4 left-1/3 w-64 h-64 bg-gradient-to-r from-vibe-green to-vibe-green-vivid rounded-full blur-3xl opacity-10 animate-float-rotate"></div>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-4 justify-center items-center md:items-stretch max-w-3xl mx-auto">
+        <div className="flex flex-col md:flex-row gap-6 justify-center items-center md:items-stretch max-w-3xl mx-auto">
           {/* Simulazione Veloce */}
           <PathOption 
             title="Simulazione Veloce"

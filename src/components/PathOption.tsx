@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Zap, Check, File, Clock, Percent, Building2, Sparkles, Calculator } from "lucide-react";
+import { Clock, Percent, Building2, Sparkles, Calculator, Check, File } from "lucide-react";
 
 interface KeyPoint {
   icon: React.ElementType;
@@ -26,18 +26,18 @@ export function PathOption({
   variant 
 }: PathOptionProps) {
   return (
-    <Card className={`shadow-md hover-grow ${
+    <Card className={`shadow-sm hover-grow ${
       variant === "primary" 
-        ? "border border-gray-200 bg-green-50/50" 
-        : "border-2 border-vibe-green/50 ring-2 ring-vibe-green/10"
+        ? "border border-vibe-green/30 bg-white" 
+        : "border border-vibe-green bg-vibe-green-light/50"
     } w-full max-w-sm`}>
       <CardHeader className={`${
         variant === "primary" 
-          ? "bg-green-50" 
-          : "bg-gradient-to-r from-vibe-green/20 to-vibe-green-vivid/10"
-      } rounded-t-lg pb-4`}>
+          ? "bg-white border-b border-vibe-green/10" 
+          : "bg-gradient-to-r from-vibe-green-light to-vibe-green/10 border-b border-vibe-green/20"
+      } rounded-t-lg pb-3`}>
         <div className="flex justify-between items-center">
-          <CardTitle className={`text-xl font-bold ${variant === "secondary" ? "text-vibe-green" : ""}`}>
+          <CardTitle className={`text-xl font-bold ${variant === "secondary" ? "text-vibe-green" : "text-gray-700"}`}>
             {title}
           </CardTitle>
           <Badge variant={variant === "primary" ? "outline" : "default"} className={
@@ -48,7 +48,9 @@ export function PathOption({
             {variant === "primary" ? "Base" : "Consigliato"}
           </Badge>
         </div>
-        <CardDescription className="text-sm pt-1">{description}</CardDescription>
+        <CardDescription className={`text-sm pt-1 ${variant === "secondary" ? "text-gray-700" : "text-gray-500"}`}>
+          {description}
+        </CardDescription>
       </CardHeader>
       <CardContent className="pt-4">
         <ul className="space-y-3">
@@ -57,11 +59,11 @@ export function PathOption({
               <div className={`rounded-full p-1 flex-shrink-0 mt-0.5 ${
                 variant === "primary" 
                   ? "text-vibe-green bg-vibe-green/10" 
-                  : "text-vibe-green-vivid bg-vibe-green/20"
+                  : "text-vibe-green bg-vibe-green/20"
               }`}>
-                <point.icon className="h-3 w-3" />
+                <point.icon className="h-3.5 w-3.5" />
               </div>
-              <span className="text-xs">{point.text}</span>
+              <span className="text-xs text-gray-700">{point.text}</span>
             </li>
           ))}
         </ul>
@@ -70,8 +72,8 @@ export function PathOption({
         <Button 
           className={`w-full font-medium ${
             variant === "primary" 
-              ? "bg-vibe-green hover:bg-vibe-green/90 text-white" 
-              : "bg-gradient-to-r from-vibe-green-vivid to-vibe-green text-white hover:opacity-90"
+              ? "border border-vibe-green bg-white text-vibe-green hover:bg-vibe-green/5" 
+              : "bg-vibe-green text-white hover:bg-vibe-green-dark"
           }`}
           size="sm"
         >
