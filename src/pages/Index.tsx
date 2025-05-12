@@ -3,8 +3,24 @@ import React from "react";
 import { Logo } from "@/components/Logo";
 import { PathOption } from "@/components/PathOption";
 import { Zap, Check, File, Clock, Percent, Shield, Building2, Sparkles } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Index = () => {
+  const isMobile = useIsMobile();
+
+  // Selezioniamo solo i punti chiave comuni o più importanti
+  const sharedKeyPoints = [
+    { icon: Clock, text: isMobile ? "3 min" : "3 minuti per completare" },
+    { icon: Percent, text: "68% di precisione" },
+    { icon: Building2, text: "Confronto tra 48 banche" },
+  ];
+
+  const advancedKeyPoints = [
+    { icon: Clock, text: isMobile ? "11 min" : "11 minuti per completare" },
+    { icon: Percent, text: "98% di precisione" },
+    { icon: Building2, text: "Confronto tra 122 banche" },
+  ];
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
@@ -13,19 +29,14 @@ const Index = () => {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 container mx-auto px-4 py-10 md:py-16">
-        <div className="max-w-3xl mx-auto text-center mb-12 md:mb-16">
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
+      <main className="flex-1 container mx-auto px-4 py-8 md:py-12">
+        <div className="max-w-3xl mx-auto text-center mb-8 md:mb-10">
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-3">
             <span className="gradient-text">Trova il Mutuo Perfetto</span> Per Te
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground">
-            Confrontiamo i migliori mutui disponibili sul mercato per aiutarti a trovare l'offerta più conveniente
+          <p className="text-base md:text-lg text-muted-foreground">
+            Scegli il percorso più adatto alle tue esigenze
           </p>
-        </div>
-
-        <div className="text-center mb-12">
-          <h2 className="text-2xl font-semibold mb-4">Scegli il Percorso Giusto Per Te</h2>
-          <p className="text-muted-foreground">Abbiamo due opzioni per soddisfare le tue esigenze</p>
         </div>
 
         {/* Background elements */}
@@ -34,35 +45,22 @@ const Index = () => {
           <div className="absolute bottom-1/4 left-1/3 w-64 h-64 bg-gradient-to-r from-vibe-green to-vibe-purple rounded-full blur-3xl opacity-10 animate-float-rotate"></div>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-8 justify-center items-center md:items-stretch">
+        <div className="flex flex-col md:flex-row gap-4 justify-center items-center md:items-stretch max-w-3xl mx-auto">
           {/* Simulazione Veloce */}
           <PathOption 
             title="Simulazione Veloce"
-            description="Ottieni rapidamente un'analisi delle offerte di mutuo disponibili"
-            keyPoints={[
-              { icon: Clock, text: "Solo 3 minuti per completare" },
-              { icon: Zap, text: "Processo semplice e veloce" },
-              { icon: Percent, text: "68% di precisione nelle stime" },
-              { icon: Building2, text: "Confronto tra 48 banche" },
-              { icon: File, text: "Solo simulazione del mutuo" },
-            ]}
-            ctaLabel="Inizia Simulazione Veloce"
+            description="Analisi rapida delle offerte disponibili"
+            keyPoints={sharedKeyPoints}
+            ctaLabel="Inizia Veloce"
             variant="primary"
           />
 
           {/* Simulazione Avanzata */}
           <PathOption 
             title="Simulazione Avanzata"
-            description="Un'analisi completa per ottenere il miglior mutuo possibile"
-            keyPoints={[
-              { icon: Clock, text: "11 minuti per un'analisi dettagliata" },
-              { icon: Shield, text: "98% di precisione nelle stime" },
-              { icon: Sparkles, text: "Analisi potenziata da intelligenza artificiale" },
-              { icon: Building2, text: "Confronto tra 122 banche" },
-              { icon: Check, text: "Percorso completo, dalla simulazione all'assistenza" },
-              { icon: File, text: "Attivazione mutuo 100% online" },
-            ]}
-            ctaLabel="Inizia Simulazione Avanzata"
+            description="Analisi completa e assistenza personalizzata"
+            keyPoints={advancedKeyPoints}
+            ctaLabel="Inizia Avanzata"
             variant="secondary"
           />
         </div>
