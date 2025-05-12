@@ -8,6 +8,7 @@ import { Clock, Percent, Building2, Sparkles, Calculator, Check, File } from "lu
 interface KeyPoint {
   icon: React.ElementType;
   text: string;
+  highlight?: string;
 }
 
 interface PathOptionProps {
@@ -55,15 +56,23 @@ export function PathOption({
       <CardContent className="pt-4">
         <ul className="space-y-3">
           {keyPoints.map((point, index) => (
-            <li key={index} className="flex items-start gap-2">
-              <div className={`rounded-full p-1 flex-shrink-0 mt-0.5 ${
+            <li key={index} className="flex items-start gap-2.5">
+              <div className={`rounded-full p-1 flex-shrink-0 ${
                 variant === "primary" 
                   ? "text-vibe-green bg-vibe-green/10" 
                   : "text-vibe-green bg-vibe-green/20"
               }`}>
                 <point.icon className="h-3.5 w-3.5" />
               </div>
-              <span className="text-xs text-gray-700">{point.text}</span>
+              <div className="text-xs text-gray-700">
+                {point.highlight ? (
+                  <span>
+                    <span className="font-semibold">{point.highlight}</span> {point.text}
+                  </span>
+                ) : (
+                  point.text
+                )}
+              </div>
             </li>
           ))}
         </ul>

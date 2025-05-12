@@ -9,16 +9,16 @@ const Index = () => {
   const isMobile = useIsMobile();
 
   const simpleKeyPoints = [
-    { icon: Clock, text: "3 minuti per completare" },
-    { icon: Percent, text: "68% di precisione" },
-    { icon: Building2, text: "Confronto tra 48 banche" },
+    { icon: Clock, text: "minuti per completare", highlight: "3" },
+    { icon: Building2, text: "banche confrontate", highlight: "48" },
+    { icon: Percent, text: "di precisione", highlight: "68%" },
     { icon: Calculator, text: "Semplice calcolatore di possibilità di mutuo" },
   ];
 
   const advancedKeyPoints = [
-    { icon: Clock, text: "11 minuti per completare" },
-    { icon: Percent, text: "98% di precisione" },
-    { icon: Building2, text: "Confronto tra 122 banche" },
+    { icon: Clock, text: "minuti per completare", highlight: "11" },
+    { icon: Building2, text: "banche confrontate", highlight: "122" },
+    { icon: Percent, text: "di precisione (best in Italia!)", highlight: "98%" },
     { icon: Check, text: "Ottieni il tuo mutuo 100% online" },
   ];
 
