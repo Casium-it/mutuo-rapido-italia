@@ -30,7 +30,7 @@ export function PathOption({
     <Card className={`shadow-sm hover-grow ${
       variant === "primary" 
         ? "border border-vibe-green/30 bg-white" 
-        : "border border-vibe-green bg-vibe-green-light/50"
+        : "border border-vibe-green bg-vibe-green-light/50 animated-border"
     } w-full max-w-sm`}>
       <CardHeader className={`${
         variant === "primary" 
@@ -56,7 +56,7 @@ export function PathOption({
       <CardContent className="pt-4">
         <ul className="space-y-3">
           {keyPoints.map((point, index) => (
-            <li key={index} className="flex items-start gap-2.5">
+            <li key={index} className="flex items-center gap-2.5">
               <div className={`rounded-full p-1 flex-shrink-0 ${
                 variant === "primary" 
                   ? "text-vibe-green bg-vibe-green/10" 

@@ -10,15 +10,15 @@ const Index = () => {
 
   const simpleKeyPoints = [
     { icon: Clock, text: "minuti per completare", highlight: "3" },
-    { icon: Building2, text: "banche confrontate", highlight: "48" },
+    { icon: Building2, text: "banche, offerte e condizioni confrontate", highlight: "48" },
     { icon: Percent, text: "di precisione", highlight: "68%" },
     { icon: Calculator, text: "Semplice calcolatore di possibilità di mutuo" },
   ];
 
   const advancedKeyPoints = [
     { icon: Clock, text: "minuti per completare", highlight: "11" },
-    { icon: Building2, text: "banche confrontate", highlight: "122" },
-    { icon: Percent, text: "di precisione (best in Italia!)", highlight: "98%" },
+    { icon: Building2, text: "banche, offerte e condizioni confrontate", highlight: "122" },
+    { icon: Percent, text: "di precisione (il migliore in Italia!)", highlight: "98%" },
     { icon: Check, text: "Ottieni il tuo mutuo 100% online" },
   ];
 
