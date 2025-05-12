@@ -12,7 +12,7 @@ const Index = () => {
     { icon: Clock, text: "minuti per completare", highlight: "3" },
     { icon: Building2, text: "banche, offerte e condizioni confrontate", highlight: "48" },
     { icon: Percent, text: "di precisione", highlight: "68%" },
-    { icon: Calculator, text: "Semplice calcolatore di possibilità di mutuo" },
+    { icon: Calculator, text: "Solo calcolatore fattibilità mutuo" },
   ];
 
   const advancedKeyPoints = [
@@ -50,7 +50,7 @@ const Index = () => {
           {/* Simulazione Veloce */}
           <PathOption 
             title="Simulazione Veloce"
-            description="Analisi rapida delle offerte disponibili"
+            description="Analisi rapida prefattibilità mutuo"
             keyPoints={simpleKeyPoints}
             ctaLabel="Inizia Veloce"
             variant="primary"

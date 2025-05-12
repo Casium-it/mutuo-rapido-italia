@@ -30,7 +30,7 @@ export function PathOption({
     <Card className={`shadow-sm hover-grow ${
       variant === "primary" 
         ? "border border-vibe-green/30 bg-white" 
-        : "border border-vibe-green bg-vibe-green-light/50 animated-border"
+        : "bg-vibe-green-light/50 animated-border"
     } w-full max-w-sm`}>
       <CardHeader className={`${
         variant === "primary" 
