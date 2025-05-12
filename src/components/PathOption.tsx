@@ -56,12 +56,12 @@ export function PathOption({
       <CardContent className="pt-4">
         <ul className="space-y-3">
           {keyPoints.map((point, index) => (
-            <li key={index} className="flex items-center gap-2.5">
+            <li key={index} className="flex items-start gap-2.5">
               <div className={`rounded-full p-1 flex-shrink-0 ${
                 variant === "primary" 
                   ? "text-vibe-green bg-vibe-green/10" 
                   : "text-vibe-green bg-vibe-green/20"
-              }`}>
+              } mt-0.5`}>
                 <point.icon className="h-3.5 w-3.5" />
               </div>
               <div className="text-xs text-gray-700">
@@ -85,6 +85,7 @@ export function PathOption({
               : "bg-vibe-green text-white hover:bg-vibe-green-dark"
           }`}
           size="sm"
+          onClick={() => variant === "secondary" ? window.location.href = "/simulazione-avanzata" : null}
         >
           {ctaLabel}
         </Button>
