@@ -2,7 +2,7 @@
 import React from "react";
 import { Logo } from "@/components/Logo";
 import { PathOption } from "@/components/PathOption";
-import { Zap, Check, File, Bank, Clock, Percent, Shield, Ai } from "lucide-react";
+import { Zap, Check, File, Clock, Percent, Shield, Building2, Sparkles } from "lucide-react";
 
 const Index = () => {
   return (
@@ -43,7 +43,7 @@ const Index = () => {
               { icon: Clock, text: "Solo 3 minuti per completare" },
               { icon: Zap, text: "Processo semplice e veloce" },
               { icon: Percent, text: "68% di precisione nelle stime" },
-              { icon: Bank, text: "Confronto tra 48 banche" },
+              { icon: Building2, text: "Confronto tra 48 banche" },
               { icon: File, text: "Solo simulazione del mutuo" },
             ]}
             ctaLabel="Inizia Simulazione Veloce"
@@ -57,8 +57,8 @@ const Index = () => {
             keyPoints={[
               { icon: Clock, text: "11 minuti per un'analisi dettagliata" },
               { icon: Shield, text: "98% di precisione nelle stime" },
-              { icon: Ai, text: "Analisi potenziata da intelligenza artificiale" },
-              { icon: Bank, text: "Confronto tra 122 banche" },
+              { icon: Sparkles, text: "Analisi potenziata da intelligenza artificiale" },
+              { icon: Building2, text: "Confronto tra 122 banche" },
               { icon: Check, text: "Percorso completo, dalla simulazione all'assistenza" },
               { icon: File, text: "Attivazione mutuo 100% online" },
             ]}

@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Zap, Check, File, Bank, Clock, Percent } from "lucide-react";
+import { Zap, Check, File, Clock, Percent, Building2, Sparkles } from "lucide-react";
 
 interface KeyPoint {
   icon: React.ElementType;
