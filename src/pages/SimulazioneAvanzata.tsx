@@ -21,10 +21,10 @@ const SimulazioneAvanzata = () => {
 
       {/* Main content */}
       <main className="flex-1 px-4 md:px-6 py-8 md:py-12 max-w-3xl mx-auto w-full">
-        <h1 className="text-3xl md:text-4xl font-bold mb-2">
+        <h1 className="text-3xl md:text-4xl font-bold mb-2 text-center">
           Benvenuto in <span className="gradient-text">GoMutuo</span>
         </h1>
-        <p className="text-base text-gray-600 mb-10">Da dove partiamo?</p>
+        <p className="text-base text-gray-600 mb-10 text-center font-semibold">Da dove partiamo?</p>
         
         <div className="space-y-4">
           <OptionCard
@@ -44,12 +44,14 @@ const SimulazioneAvanzata = () => {
           <OptionCard
             icon={Home}
             title="Ho fatto un'offerta"
+            description="Ho trovato l'immobile ideale"
             href="/simulazione/offerta"
           />
           
           <OptionCard
             icon={Check}
             title="Ho un'offerta accettata"
+            description="Sono sicuro dell'immobile"
             href="/simulazione/accettata"
           />
           
