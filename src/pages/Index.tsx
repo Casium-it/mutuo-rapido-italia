@@ -2,23 +2,24 @@
 import React from "react";
 import { Logo } from "@/components/Logo";
 import { PathOption } from "@/components/PathOption";
-import { Zap, Check, File, Clock, Percent, Shield, Building2, Sparkles } from "lucide-react";
+import { Clock, Percent, Building2, Sparkles, Calculator, Check, File } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const Index = () => {
   const isMobile = useIsMobile();
 
-  // Selezioniamo solo i punti chiave comuni o più importanti
-  const sharedKeyPoints = [
+  const simpleKeyPoints = [
     { icon: Clock, text: isMobile ? "3 min" : "3 minuti per completare" },
     { icon: Percent, text: "68% di precisione" },
     { icon: Building2, text: "Confronto tra 48 banche" },
+    { icon: Calculator, text: "Semplice calcolatore di possibilità di mutuo" },
   ];
 
   const advancedKeyPoints = [
     { icon: Clock, text: isMobile ? "11 min" : "11 minuti per completare" },
     { icon: Percent, text: "98% di precisione" },
     { icon: Building2, text: "Confronto tra 122 banche" },
+    { icon: Check, text: "Ottieni il tuo mutuo 100% online" },
   ];
 
   return (
@@ -42,7 +43,7 @@ const Index = () => {
         {/* Background elements */}
         <div className="fixed inset-0 -z-10 overflow-hidden">
           <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-r from-vibe-yellow-fluo to-vibe-green rounded-full blur-3xl opacity-10 animate-float"></div>
-          <div className="absolute bottom-1/4 left-1/3 w-64 h-64 bg-gradient-to-r from-vibe-green to-vibe-purple rounded-full blur-3xl opacity-10 animate-float-rotate"></div>
+          <div className="absolute bottom-1/4 left-1/3 w-64 h-64 bg-gradient-to-r from-vibe-green to-vibe-green-vivid rounded-full blur-3xl opacity-10 animate-float-rotate"></div>
         </div>
 
         <div className="flex flex-col md:flex-row gap-4 justify-center items-center md:items-stretch max-w-3xl mx-auto">
@@ -50,7 +51,7 @@ const Index = () => {
           <PathOption 
             title="Simulazione Veloce"
             description="Analisi rapida delle offerte disponibili"
-            keyPoints={sharedKeyPoints}
+            keyPoints={simpleKeyPoints}
             ctaLabel="Inizia Veloce"
             variant="primary"
           />

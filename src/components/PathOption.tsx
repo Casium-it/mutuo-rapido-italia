@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Zap, Check, File, Clock, Percent, Building2, Sparkles } from "lucide-react";
+import { Zap, Check, File, Clock, Percent, Building2, Sparkles, Calculator } from "lucide-react";
 
 interface KeyPoint {
   icon: React.ElementType;
@@ -28,22 +28,22 @@ export function PathOption({
   return (
     <Card className={`shadow-md hover-grow ${
       variant === "primary" 
-        ? "border border-gray-200" 
-        : "border-2 border-vibe-purple/50 ring-2 ring-vibe-purple/10"
+        ? "border border-gray-200 bg-green-50/50" 
+        : "border-2 border-vibe-green/50 ring-2 ring-vibe-green/10"
     } w-full max-w-sm`}>
       <CardHeader className={`${
         variant === "primary" 
-          ? "bg-gray-50" 
-          : "bg-gradient-to-r from-vibe-purple/10 to-vibe-purple/5"
+          ? "bg-green-50" 
+          : "bg-gradient-to-r from-vibe-green/20 to-vibe-green-vivid/10"
       } rounded-t-lg pb-4`}>
         <div className="flex justify-between items-center">
-          <CardTitle className={`text-xl font-bold ${variant === "secondary" ? "text-vibe-purple" : ""}`}>
+          <CardTitle className={`text-xl font-bold ${variant === "secondary" ? "text-vibe-green" : ""}`}>
             {title}
           </CardTitle>
           <Badge variant={variant === "primary" ? "outline" : "default"} className={
             variant === "primary" 
               ? "border-gray-400 text-gray-600 hover:bg-gray-100" 
-              : "bg-vibe-purple text-white hover:bg-vibe-purple/90"
+              : "bg-vibe-green text-white hover:bg-vibe-green/90"
           }>
             {variant === "primary" ? "Base" : "Consigliato"}
           </Badge>
@@ -54,10 +54,10 @@ export function PathOption({
         <ul className="space-y-3">
           {keyPoints.map((point, index) => (
             <li key={index} className="flex items-start gap-2">
-              <div className={`rounded-full p-1 mt-0.5 ${
+              <div className={`rounded-full p-1 flex-shrink-0 mt-0.5 ${
                 variant === "primary" 
                   ? "text-vibe-green bg-vibe-green/10" 
-                  : "text-vibe-purple bg-vibe-purple/10"
+                  : "text-vibe-green-vivid bg-vibe-green/20"
               }`}>
                 <point.icon className="h-3 w-3" />
               </div>
@@ -71,7 +71,7 @@ export function PathOption({
           className={`w-full font-medium ${
             variant === "primary" 
               ? "bg-vibe-green hover:bg-vibe-green/90 text-white" 
-              : "bg-gradient-to-r from-vibe-purple to-vibe-purple/80 text-white hover:opacity-90"
+              : "bg-gradient-to-r from-vibe-green-vivid to-vibe-green text-white hover:opacity-90"
           }`}
           size="sm"
         >
