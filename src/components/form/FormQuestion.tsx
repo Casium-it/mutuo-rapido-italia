@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { useParams } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
 export function FormQuestion({ question }: { question: Question }) {
   const { getResponse, setResponse, navigateToNextQuestion, addActiveBlock } = useForm();
