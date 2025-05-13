@@ -60,22 +60,17 @@ export function FormQuestion({ question }: { question: Question }) {
           </div>
         );
       } else {
-        // Handle single select (radio buttons)
+        // Handle single select (cards with buttons)
         return (
-          <div className="flex flex-wrap gap-2 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
             {placeholder.options.map((option) => (
-              <Button
+              <div
                 key={option.id}
-                variant={
-                  (responses[key] === option.id || existingResponse === option.id)
-                    ? "default"
-                    : "outline"
-                }
-                className={
-                  (responses[key] === option.id || existingResponse === option.id)
-                    ? "bg-vibe-green text-white border-vibe-green"
-                    : "border-gray-300"
-                }
+                className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                  responses[key] === option.id || existingResponse === option.id
+                    ? "border-vibe-green bg-vibe-green/5"
+                    : "border-gray-200 hover:border-gray-300"
+                }`}
                 onClick={() => {
                   setResponses({
                     ...responses,
@@ -83,8 +78,8 @@ export function FormQuestion({ question }: { question: Question }) {
                   });
                 }}
               >
-                {option.label}
-              </Button>
+                <div className="font-medium text-gray-900">{option.label}</div>
+              </div>
             ))}
           </div>
         );
@@ -137,7 +132,7 @@ export function FormQuestion({ question }: { question: Question }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-xl mx-auto">
+    <form onSubmit={handleSubmit} className="max-w-xl">
       <div className="text-xl font-medium text-gray-900 mb-6">
         {Object.keys(question.placeholders).map((key) => {
           const parts = question.question_text.split(new RegExp(`{{${key}}}`, "g"));

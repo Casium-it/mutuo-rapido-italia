@@ -15,40 +15,41 @@ export default function Form() {
   const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
+    <div className="min-h-screen flex flex-col bg-[#F9F9F6]">
       {/* Header */}
-      <header className="py-4 px-4 md:px-6 flex justify-between items-center bg-white border-b border-gray-200 shadow-sm">
+      <header className="py-4 px-4 md:px-6 flex justify-between items-center bg-white border-b border-gray-200">
         <div className="flex items-center">
           <Link to="/">
             <Logo />
           </Link>
         </div>
-        <Button variant="ghost" className="text-gray-700">
-          Salva ed esci
-        </Button>
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="sm" className="text-gray-700">
+            Salva ed esci
+          </Button>
+        </div>
       </header>
 
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <div className="hidden md:block w-64 bg-white border-r border-gray-200 shadow-sm">
-          <BlockSidebar />
+        <div className="w-[320px] bg-[#F9F9F6] border-r border-gray-200 overflow-y-auto">
+          <div className="p-6">
+            <Link to="/" className="flex items-center text-gray-600 mb-8">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              <span>Indietro</span>
+            </Link>
+            
+            <BlockSidebar />
+          </div>
         </div>
 
         {/* Content area */}
-        <div className="flex-1 overflow-y-auto bg-white md:bg-[#f8f5f1] p-6 md:p-8">
-          {/* Back button for mobile */}
-          <div className="md:hidden mb-4">
-            <Button variant="outline" size="sm" className="flex items-center">
-              <ArrowLeft className="h-4 w-4 mr-1" /> Indietro
-            </Button>
-          </div>
-
-          {/* Main content container */}
-          <div className="md:max-w-3xl mx-auto bg-white rounded-lg p-6 md:p-8 shadow-sm">
+        <div className="flex-1 overflow-y-auto p-8 md:p-12">
+          <div className="max-w-3xl mx-auto">
             {/* Block title */}
             <div className="mb-8">
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{activeBlock?.title}</h1>
+              <h1 className="text-3xl font-bold text-gray-900">{activeBlock?.title}</h1>
             </div>
 
             {/* Question */}
