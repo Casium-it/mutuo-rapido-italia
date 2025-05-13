@@ -194,29 +194,40 @@ export function FormQuestion({ question }: { question: Question }) {
     }
   };
 
+  // Funzione migliorata per renderizzare il testo della domanda con i placeholders
+  const renderQuestionText = () => {
+    let result = question.question_text;
+    
+    // Sostituisci tutti i placeholder nel testo
+    Object.keys(question.placeholders).forEach(key => {
+      const placeholder = `{{${key}}}`;
+      const replacementComponent = renderPlaceholder(key, question.placeholders[key]);
+      if (replacementComponent) {
+        result = result.replace(placeholder, `___PLACEHOLDER_${key}___`);
+      }
+    });
+    
+    // Dividi il testo in base ai placeholder
+    const parts = result.split(/___PLACEHOLDER_([^_]+)___/);
+    
+    // Costruisci l'array di elementi React
+    return parts.map((part, index) => {
+      // Se è un indice dispari, è un riferimento a un placeholder
+      if (index % 2 === 1) {
+        const placeholderKey = part;
+        return renderPlaceholder(placeholderKey, question.placeholders[placeholderKey]);
+      }
+      // Altrimenti è testo normale
+      return part;
+    });
+  };
+
   // Renderizza la domanda principale in stile Pretto
   return (
     <form onSubmit={handleSubmit} className="max-w-xl animate-fade-in">
       {/* Domanda principale in stile Pretto */}
       <div className="text-2xl font-medium text-black mb-6">
-        {Object.keys(question.placeholders).map((key) => {
-          const parts = question.question_text.split(new RegExp(`{{${key}}}`, "g"));
-          
-          if (parts.length === 1) {
-            return <span key={key}>{question.question_text}</span>;
-          }
-          
-          return (
-            <React.Fragment key={key}>
-              {parts.map((part, i) => (
-                <React.Fragment key={i}>
-                  {part}
-                  {i < parts.length - 1 && renderPlaceholder(key, question.placeholders[key])}
-                </React.Fragment>
-              ))}
-            </React.Fragment>
-          );
-        })}
+        {renderQuestionText()}
       </div>
       
       {/* Pulsante continua - stile Pretto */}

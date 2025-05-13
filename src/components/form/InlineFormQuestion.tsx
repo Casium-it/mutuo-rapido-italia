@@ -129,33 +129,37 @@ export function InlineFormQuestion({
     }
   };
 
-  const renderInlineQuestion = () => {
-    const selectedOptionLabel = findSelectedOptionLabel();
+  // Funzione migliorata per renderizzare il testo della domanda inline con i placeholders
+  const renderInlineQuestionText = () => {
+    let result = question.question_text;
     
-    let text = question.question_text;
-    for (const [key, placeholder] of Object.entries(question.placeholders)) {
-      const parts = text.split(new RegExp(`{{${key}}}`, "g"));
-      
-      if (parts.length === 1) {
-        return <span>{text}</span>;
+    // Sostituisci tutti i placeholder nel testo
+    Object.keys(question.placeholders).forEach(key => {
+      const placeholder = `{{${key}}}`;
+      const replacementComponent = renderPlaceholder(key, question.placeholders[key]);
+      if (replacementComponent) {
+        result = result.replace(placeholder, `___PLACEHOLDER_${key}___`);
       }
-      
-      return (
-        <React.Fragment>
-          {parts.map((part, i) => (
-            <React.Fragment key={i}>
-              {part}
-              {i < parts.length - 1 && renderPlaceholder(key, question.placeholders[key])}
-            </React.Fragment>
-          ))}
-        </React.Fragment>
-      );
-    }
+    });
+    
+    // Dividi il testo in base ai placeholder
+    const parts = result.split(/___PLACEHOLDER_([^_]+)___/);
+    
+    // Costruisci l'array di elementi React
+    return parts.map((part, index) => {
+      // Se è un indice dispari, è un riferimento a un placeholder
+      if (index % 2 === 1) {
+        const placeholderKey = part;
+        return renderPlaceholder(placeholderKey, question.placeholders[placeholderKey]);
+      }
+      // Altrimenti è testo normale
+      return part;
+    });
   };
 
   return (
     <form onSubmit={handleSubmit} className="inline">
-      <span className="text-lg font-medium">{renderInlineQuestion()}</span>
+      <span className="text-lg font-medium">{renderInlineQuestionText()}</span>
       <Button
         type="submit"
         variant="ghost"
