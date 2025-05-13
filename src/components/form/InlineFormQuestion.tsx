@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { Question } from "@/types/form";
@@ -183,7 +182,7 @@ export function InlineFormQuestion({
     }, 50);
   };
 
-  // Funzione migliorata per renderizzare il testo della domanda inline con i placeholders
+  // Migliorato renderInlineQuestionText per utilizzare lo stesso approccio di FormQuestion
   const renderInlineQuestionText = () => {
     if (!question.question_text.includes('{{')) {
       return <span>{question.question_text}</span>;
@@ -199,75 +198,82 @@ export function InlineFormQuestion({
       placeholders.push({
         key: match[1],
         position: match.index,
-        length: match[0].length,
-        isAtEnd: match.index + match[0].length >= questionText.length - 1
+        length: match[0].length
       });
     }
 
-    // Se ci sono placeholder ma non sono alla fine, mostra il testo e i select sotto
-    if (placeholders.length > 0 && !placeholders[placeholders.length - 1].isAtEnd) {
-      // Replace placeholders with "Seleziona" buttons in the text
-      let parts = [];
-      let lastIndex = 0;
-      
-      placeholders.forEach((placeholder, index) => {
-        // Add text before the placeholder
-        if (placeholder.position > lastIndex) {
-          parts.push({
-            type: 'text',
-            content: questionText.substring(lastIndex, placeholder.position)
-          });
-        }
-        
-        // Add the placeholder as a button
-        if (question.placeholders[placeholder.key]) {
-          parts.push({
-            type: 'placeholder',
-            key: placeholder.key,
-            isInline: true
-          });
-        } else {
-          parts.push({
-            type: 'text',
-            content: questionText.substring(placeholder.position, 
-                                           placeholder.position + placeholder.length)
-          });
-        }
-        
-        lastIndex = placeholder.position + placeholder.length;
-      });
-      
-      // Add remaining text
-      if (lastIndex < questionText.length) {
+    // Sostituisci tutti i placeholder con bottoni "Seleziona" nel testo
+    let parts = [];
+    let lastIndex = 0;
+    
+    placeholders.forEach((placeholder, index) => {
+      // Aggiungi testo prima del placeholder
+      if (placeholder.position > lastIndex) {
         parts.push({
           type: 'text',
-          content: questionText.substring(lastIndex)
+          content: questionText.substring(lastIndex, placeholder.position)
         });
       }
       
+      // Aggiungi il placeholder come bottone o input
+      if (question.placeholders[placeholder.key]) {
+        parts.push({
+          type: 'placeholder',
+          key: placeholder.key,
+          isInline: true
+        });
+      } else {
+        parts.push({
+          type: 'text',
+          content: questionText.substring(placeholder.position, 
+                                         placeholder.position + placeholder.length)
+        });
+      }
+      
+      lastIndex = placeholder.position + placeholder.length;
+    });
+    
+    // Aggiungi il testo rimanente
+    if (lastIndex < questionText.length) {
+      parts.push({
+        type: 'text',
+        content: questionText.substring(lastIndex)
+      });
+    }
+    
+    // Prima il testo con i placeholder come "Seleziona"
+    const textWithPlaceholders = (
+      <div className="flex flex-wrap items-center">
+        {parts.map((part, index) => {
+          if (part.type === 'text') {
+            return <span key={`text-${index}`}>{part.content}</span>;
+          } else {
+            return (
+              <span key={`placeholder-${index}`}>
+                {renderPlaceholder(part.key, question.placeholders[part.key], true)}
+              </span>
+            );
+          }
+        })}
+      </div>
+    );
+    
+    // Se ci sono select, aggiungiamo le opzioni sotto
+    const selectPlaceholders = placeholders.filter(
+      placeholder => question.placeholders[placeholder.key] && 
+                    question.placeholders[placeholder.key].type === "select"
+    );
+    
+    if (selectPlaceholders.length > 0) {
       return (
         <div className="space-y-2">
-          <div className="flex flex-wrap items-center">
-            {parts.map((part, index) => {
-              if (part.type === 'text') {
-                return <span key={`text-${index}`}>{part.content}</span>;
-              } else {
-                // Render placeholder as a button
-                return (
-                  <span key={`placeholder-${index}`}>
-                    {renderPlaceholder(part.key, question.placeholders[part.key], true)}
-                  </span>
-                );
-              }
-            })}
-          </div>
+          {textWithPlaceholders}
           
-          {/* Render select options below for each placeholder */}
+          {/* Aggiungi le opzioni di selezione sotto per ogni placeholder di tipo select */}
           <div className="mt-1 ml-4">
-            {placeholders.map(placeholder => (
+            {selectPlaceholders.map(placeholder => (
               <div key={`select-options-${placeholder.key}`} className="mt-2">
-                {question.placeholders[placeholder.key] && 
-                  renderPlaceholder(placeholder.key, question.placeholders[placeholder.key], false)}
+                {renderPlaceholder(placeholder.key, question.placeholders[placeholder.key], false)}
               </div>
             ))}
           </div>
@@ -275,60 +281,7 @@ export function InlineFormQuestion({
       );
     }
     
-    // Split the question text by placeholder patterns
-    const parts = [];
-    let lastIndex = 0;
-    const placeholderRegexForRender = /\{\{([^}]+)\}\}/g;
-    let placeholderMatch;
-    
-    // Trova tutti i placeholder nel testo
-    while ((placeholderMatch = placeholderRegexForRender.exec(question.question_text)) !== null) {
-      const matchStart = placeholderMatch.index;
-      const matchEnd = placeholderMatch.index + placeholderMatch[0].length;
-      const placeholderKey = placeholderMatch[1];
-      
-      // Aggiungi il testo prima del placeholder
-      if (matchStart > lastIndex) {
-        parts.push({
-          type: 'text',
-          content: question.question_text.substring(lastIndex, matchStart)
-        });
-      }
-      
-      // Aggiungi il placeholder
-      if (question.placeholders[placeholderKey]) {
-        parts.push({
-          type: 'placeholder',
-          key: placeholderKey
-        });
-      } else {
-        // Se il placeholder non esiste, mantieni il testo originale
-        parts.push({
-          type: 'text',
-          content: placeholderMatch[0]
-        });
-      }
-      
-      lastIndex = matchEnd;
-    }
-    
-    // Aggiungi il resto del testo dopo l'ultimo placeholder
-    if (lastIndex < question.question_text.length) {
-      parts.push({
-        type: 'text',
-        content: question.question_text.substring(lastIndex)
-      });
-    }
-    
-    // Rendering delle parti
-    return parts.map((part, index) => {
-      if (part.type === 'text') {
-        return <span key={`text-${index}`}>{part.content}</span>;
-      } else {
-        // Renderizza l'input o il select per questo placeholder
-        return <span key={`placeholder-${index}`}>{renderPlaceholder(part.key, question.placeholders[part.key])}</span>;
-      }
-    });
+    return textWithPlaceholders;
   };
 
   return (
