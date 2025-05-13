@@ -1,11 +1,11 @@
 
 import React, { useEffect } from "react";
-import { useForm } from "@/contexts/FormContext";
+import { useFormExtended } from "@/hooks/useFormExtended";
 import { FormQuestion } from "./FormQuestion";
 import { useLocation, useParams } from "react-router-dom";
 
 export function QuestionView() {
-  const { state, blocks, goToQuestion } = useForm();
+  const { state, blocks, goToQuestion } = useFormExtended();
   const location = useLocation();
   const params = useParams<{ blockId?: string, questionId?: string }>();
   

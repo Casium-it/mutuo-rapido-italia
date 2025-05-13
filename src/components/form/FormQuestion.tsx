@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from "react";
-import { useForm } from "@/contexts/FormContext";
+import { useFormExtended } from "@/hooks/useFormExtended";
 import { Question } from "@/types/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -15,7 +14,7 @@ interface FormQuestionProps {
 }
 
 export function FormQuestion({ question }: FormQuestionProps) {
-  const { getResponse, setResponse, navigateToNextQuestion } = useForm();
+  const { getResponse, setResponse, navigateToNextQuestion, getPreviousQuestionText, state, addActiveBlock } = useFormExtended();
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});
   const [isNavigating, setIsNavigating] = useState(false);
   // Stato per tenere traccia di quali placeholder hanno opzioni visibili
@@ -111,10 +110,23 @@ export function FormQuestion({ question }: FormQuestionProps) {
     }, 50);
   };
 
+  // Funzione per ottenere il testo completo della domanda, includendo la domanda precedente se questa è inline
+  const getQuestionText = () => {
+    if (question.inline === true) {
+      const previousText = getPreviousQuestionText(state.activeQuestion.block_id, state.activeQuestion.question_id);
+      if (previousText) {
+        return `${previousText} ${question.question_text}`;
+      }
+    }
+    return question.question_text;
+  };
+
   // Funzione per renderizzare il testo della domanda con placeholders
   const renderQuestionText = () => {
-    if (!question.question_text.includes('{{')) {
-      return <span>{question.question_text}</span>;
+    const fullText = getQuestionText();
+    
+    if (!fullText.includes('{{')) {
+      return <span>{fullText}</span>;
     }
 
     const parts = [];
@@ -122,10 +134,10 @@ export function FormQuestion({ question }: FormQuestionProps) {
     const regex = /\{\{([^}]+)\}\}/g;
     let match;
 
-    while ((match = regex.exec(question.question_text)) !== null) {
+    while ((match = regex.exec(fullText)) !== null) {
       // Aggiungi testo prima del placeholder
       if (match.index > lastIndex) {
-        parts.push(<span key={`text-${lastIndex}`}>{question.question_text.slice(lastIndex, match.index)}</span>);
+        parts.push(<span key={`text-${lastIndex}`}>{fullText.slice(lastIndex, match.index)}</span>);
       }
 
       const placeholderKey = match[1];
@@ -189,8 +201,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
     }
 
     // Aggiungi il testo rimanente
-    if (lastIndex < question.question_text.length) {
-      parts.push(<span key={`text-${lastIndex}`}>{question.question_text.slice(lastIndex)}</span>);
+    if (lastIndex < fullText.length) {
+      parts.push(<span key={`text-${lastIndex}`}>{fullText.slice(lastIndex)}</span>);
     }
 
     return <>{parts}</>;
@@ -253,9 +265,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
   const hasValidResponses = Object.keys(question.placeholders).some(key => 
     responses[key] !== undefined || getResponse(question.question_id, key) !== undefined
   ) && allInputsHaveContent();
-
-  // Funzione di aiuto per aggiungere blocchi attivi (precedentemente era fornita da useForm)
-  const { addActiveBlock } = useForm();
 
   return (
     <div className="max-w-xl animate-fade-in">
