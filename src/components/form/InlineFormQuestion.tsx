@@ -19,6 +19,38 @@ export function InlineFormQuestion({
   const { getResponse, setResponse, navigateToNextQuestion, addActiveBlock } = useForm();
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});
 
+  // Funzione per gestire il salvataggio delle risposte e la navigazione
+  const handleResponseAndNavigation = (key: string, value: string | string[]) => {
+    // Salva immediatamente la risposta nel contesto globale
+    setResponse(question.question_id, key, value);
+    
+    // Gestisci la navigazione per le risposte di tipo select
+    if (question.placeholders[key].type === "select" && !Array.isArray(value)) {
+      const selectedOption = (question.placeholders[key] as any).options.find(
+        (opt: any) => opt.id === value
+      );
+      
+      if (selectedOption?.add_block) {
+        addActiveBlock(selectedOption.add_block);
+      }
+      
+      // Naviga alla prossima domanda
+      if (selectedOption?.leads_to) {
+        setTimeout(() => {
+          navigateToNextQuestion(question.question_id, selectedOption.leads_to);
+        }, 50);
+        return true;
+      }
+    } else if (question.placeholders[key].type === "input" && (question.placeholders[key] as any).leads_to) {
+      setTimeout(() => {
+        navigateToNextQuestion(question.question_id, (question.placeholders[key] as any).leads_to);
+      }, 50);
+      return true;
+    }
+    
+    return false;
+  };
+
   // Find the option that was selected in the previous question
   const findSelectedOptionLabel = () => {
     if (!previousResponse) return "";
@@ -70,10 +102,15 @@ export function InlineFormQuestion({
                   : "border-gray-300"
               }
               onClick={() => {
+                // Aggiorna lo stato locale
+                const newValue = option.id;
                 setResponses({
                   ...responses,
-                  [key]: option.id
+                  [key]: newValue
                 });
+                
+                // Gestisci salvataggio e navigazione automatici
+                handleResponseAndNavigation(key, newValue);
               }}
             >
               {option.label}
@@ -88,30 +125,10 @@ export function InlineFormQuestion({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Save all responses
+    // Salva tutte le risposte
     for (const [key, value] of Object.entries(responses)) {
       if (value) {
-        setResponse(question.question_id, key, value);
-        
-        // Check if we need to add a block
-        if (question.placeholders[key].type === "select" && !Array.isArray(value)) {
-          const selectedOption = (question.placeholders[key] as any).options.find(
-            (opt: any) => opt.id === value
-          );
-          
-          if (selectedOption?.add_block) {
-            addActiveBlock(selectedOption.add_block);
-          }
-          
-          // Navigate to next question
-          if (selectedOption?.leads_to) {
-            navigateToNextQuestion(question.question_id, selectedOption.leads_to);
-            return;
-          }
-        } else if (question.placeholders[key].type === "input" && (question.placeholders[key] as any).leads_to) {
-          navigateToNextQuestion(question.question_id, (question.placeholders[key] as any).leads_to);
-          return;
-        }
+        handleResponseAndNavigation(key, value);
       }
     }
   };

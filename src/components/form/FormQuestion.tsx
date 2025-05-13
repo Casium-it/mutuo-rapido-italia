@@ -27,6 +27,39 @@ export function FormQuestion({ question }: { question: Question }) {
     }
   }, [question.question_id, getResponse]);
 
+  // Funzione per gestire il salvataggio delle risposte e la navigazione
+  const handleResponseAndNavigation = (key: string, value: string | string[]) => {
+    // Salva immediatamente la risposta nel contesto globale
+    setResponse(question.question_id, key, value);
+    
+    // Gestisci la navigazione per le risposte di tipo select
+    if (question.placeholders[key].type === "select" && !Array.isArray(value)) {
+      const selectedOption = (question.placeholders[key] as any).options.find(
+        (opt: any) => opt.id === value
+      );
+      
+      if (selectedOption?.add_block) {
+        addActiveBlock(selectedOption.add_block);
+      }
+      
+      // Naviga alla prossima domanda
+      if (selectedOption?.leads_to) {
+        // Piccolo timeout per assicurarsi che lo stato sia aggiornato prima della navigazione
+        setTimeout(() => {
+          navigateToNextQuestion(question.question_id, selectedOption.leads_to);
+        }, 50);
+        return true;
+      }
+    } else if (question.placeholders[key].type === "input" && (question.placeholders[key] as any).leads_to) {
+      setTimeout(() => {
+        navigateToNextQuestion(question.question_id, (question.placeholders[key] as any).leads_to);
+      }, 50);
+      return true;
+    }
+    
+    return false;
+  };
+
   const renderPlaceholder = (key: string, placeholder: any) => {
     const existingResponse = getResponse(question.question_id, key);
     
@@ -77,7 +110,7 @@ export function FormQuestion({ question }: { question: Question }) {
           </div>
         );
       } else {
-        // Handle single select (cards with buttons)
+        // Handle single select (cards with buttons) con auto-submit
         return (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
             {placeholder.options.map((option) => (
@@ -89,10 +122,15 @@ export function FormQuestion({ question }: { question: Question }) {
                     : "border-gray-200 hover:border-gray-300"
                 }`}
                 onClick={() => {
+                  // Aggiorna lo stato locale
+                  const newValue = option.id;
                   setResponses({
                     ...responses,
-                    [key]: option.id
+                    [key]: newValue
                   });
+                  
+                  // Gestisci salvataggio e navigazione automatici per singola selezione
+                  handleResponseAndNavigation(key, newValue);
                 }}
               >
                 <div className="font-medium text-gray-900">{option.label}</div>
@@ -110,37 +148,21 @@ export function FormQuestion({ question }: { question: Question }) {
     
     // Salva tutte le risposte
     let hasResponsesToSave = false;
+    let hasNavigated = false;
     
     for (const [key, value] of Object.entries(responses)) {
       if (value) {
         hasResponsesToSave = true;
-        setResponse(question.question_id, key, value);
-        
-        // Controllo se dobbiamo aggiungere un blocco
-        if (question.placeholders[key].type === "select" && !Array.isArray(value)) {
-          const selectedOption = (question.placeholders[key] as any).options.find(
-            (opt: any) => opt.id === value
-          );
-          
-          if (selectedOption?.add_block) {
-            addActiveBlock(selectedOption.add_block);
-          }
-          
-          // Naviga alla prossima domanda
-          if (selectedOption?.leads_to) {
-            navigateToNextQuestion(question.question_id, selectedOption.leads_to);
-            return;
-          }
-        } else if (question.placeholders[key].type === "input" && (question.placeholders[key] as any).leads_to) {
-          navigateToNextQuestion(question.question_id, (question.placeholders[key] as any).leads_to);
-          return;
+        // Usa la funzione di navigazione e controlla se ha navigato
+        if (handleResponseAndNavigation(key, value)) {
+          hasNavigated = true;
+          break;
         }
       }
     }
     
-    // Se non ci sono risposte da salvare o non è stata impostata una navigazione specifica,
-    // controlla se ci sono risposte esistenti e naviga comunque
-    if (!hasResponsesToSave) {
+    // Se non ha già navigato, controlla se ci sono risposte esistenti e naviga comunque
+    if (!hasNavigated && !hasResponsesToSave) {
       let canProceed = false;
       
       for (const [key] of Object.entries(question.placeholders)) {
