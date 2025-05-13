@@ -10,7 +10,12 @@ import { cn } from "@/lib/utils";
 import { SelectPlaceholderBox } from "./SelectPlaceholderBox";
 import { Separator } from "@/components/ui/separator";
 
-export function FormQuestion({ question }: { question: Question }) {
+interface FormQuestionProps {
+  question: Question;
+  hideNextButton?: boolean;
+}
+
+export function FormQuestion({ question, hideNextButton = false }: FormQuestionProps) {
   const { getResponse, setResponse, navigateToNextQuestion, addActiveBlock } = useForm();
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});
   const [isNavigating, setIsNavigating] = useState(false);
@@ -291,8 +296,8 @@ export function FormQuestion({ question }: { question: Question }) {
         {Object.keys(question.placeholders).map(key => renderPlaceholder(key, question.placeholders[key]))}
       </div>
       
-      {/* Pulsante Avanti - con lo stile aggiornato - mostrato solo se ci sono risposte valide */}
-      {hasValidResponses && (
+      {/* Pulsante Avanti - con lo stile aggiornato - mostrato solo se ci sono risposte valide e hideNextButton è false */}
+      {!hideNextButton && hasValidResponses && (
         <div className="mt-8">
           <Button
             type="button"
