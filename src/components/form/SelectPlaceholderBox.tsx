@@ -29,10 +29,10 @@ export function SelectPlaceholderBox({
   return (
     <span 
       className={cn(
-        "inline-flex items-center justify-center px-2 py-0.5 mx-1 rounded-md transition-all duration-200",
+        "inline-flex items-center justify-center mx-1 rounded-md transition-all duration-200",
         isSelected 
-          ? "bg-[#00853E] text-white font-medium" 
-          : "bg-gray-100 text-gray-400 border border-gray-200 opacity-40",
+          ? "bg-[#00853E] text-white font-medium px-2 py-0.5" 
+          : "bg-[#F8F4EF] text-[#C4BFB8] px-[10px] py-[4px] rounded-[6px] font-medium text-[15px]",
         className
       )}
       aria-live="polite"

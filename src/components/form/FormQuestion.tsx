@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { Question } from "@/types/form";
@@ -168,7 +167,14 @@ export function FormQuestion({ question }: { question: Question }) {
             </label>
             <div className="space-y-2">
               {placeholder.options.map((option) => (
-                <label key={option.id} className="flex items-center space-x-2 p-3 border rounded-md hover:bg-gray-50 cursor-pointer">
+                <label 
+                  key={option.id} 
+                  className={cn(
+                    "flex items-center space-x-2 p-3 border rounded-md hover:bg-gray-50 cursor-pointer",
+                    "font-['Inter'] border-[#BEB8AE] rounded-[10px] shadow-[0_3px_0_0_#AFA89F] mb-4",
+                    "hover:shadow-[0_4px_6px_rgba(175,168,159,0.3)]"
+                  )}
+                >
                   <input
                     type="checkbox"
                     checked={
@@ -192,7 +198,7 @@ export function FormQuestion({ question }: { question: Question }) {
           </div>
         );
       } else {
-        // UI unificata per single-select
+        // UI unificata per single-select con nuovo stile
         return (
           <div key={`select-${key}`} className="mt-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -203,14 +209,17 @@ export function FormQuestion({ question }: { question: Question }) {
                 <button
                   key={option.id}
                   type="button"
-                  className={`w-full max-w-md text-left px-5 py-4 border rounded-lg transition-all ${
+                  className={cn(
+                    "text-left px-[18px] py-[12px] border-[1.5px] rounded-[10px] transition-all font-['Inter'] text-base font-normal",
+                    "shadow-[0_3px_0_0_#AFA89F] mb-4 cursor-pointer w-fit",
+                    "hover:shadow-[0_4px_6px_rgba(175,168,159,0.3)]",
                     responses[key] === option.id || existingResponse === option.id
                       ? "border-black bg-gray-50"
-                      : "border-gray-200 hover:border-gray-400"
-                  }`}
+                      : "border-[#BEB8AE]"
+                  )}
                   onClick={() => handleResponseChange(key, option.id)}
                 >
-                  <div className="font-medium text-gray-900">{option.label}</div>
+                  <div className="font-medium text-black">{option.label}</div>
                 </button>
               ))}
             </div>
