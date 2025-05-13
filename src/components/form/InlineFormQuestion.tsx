@@ -18,9 +18,16 @@ export function InlineFormQuestion({
 }: InlineFormQuestionProps) {
   const { getResponse, setResponse, navigateToNextQuestion, addActiveBlock } = useForm();
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});
+  const [isNavigating, setIsNavigating] = useState(false);
 
   // Funzione per gestire il salvataggio delle risposte e la navigazione
   const handleResponseAndNavigation = (key: string, value: string | string[]) => {
+    // Previeni la navigazione se è già in corso
+    if (isNavigating) return false;
+    
+    // Imposta lo stato di navigazione
+    setIsNavigating(true);
+    
     // Salva immediatamente la risposta nel contesto globale
     setResponse(question.question_id, key, value);
     
@@ -36,14 +43,21 @@ export function InlineFormQuestion({
       
       // Naviga alla prossima domanda
       if (selectedOption?.leads_to) {
-        navigateToNextQuestion(question.question_id, selectedOption.leads_to);
+        setTimeout(() => {
+          navigateToNextQuestion(question.question_id, selectedOption.leads_to);
+          setIsNavigating(false);
+        }, 50);
         return true;
       }
     } else if (question.placeholders[key].type === "input" && (question.placeholders[key] as any).leads_to) {
-      navigateToNextQuestion(question.question_id, (question.placeholders[key] as any).leads_to);
+      setTimeout(() => {
+        navigateToNextQuestion(question.question_id, (question.placeholders[key] as any).leads_to);
+        setIsNavigating(false);
+      }, 50);
       return true;
     }
     
+    setIsNavigating(false);
     return false;
   };
 
@@ -67,6 +81,7 @@ export function InlineFormQuestion({
     if (placeholder.type === "input") {
       return (
         <Input
+          key={`input-${key}`}
           type={placeholder.input_type}
           placeholder={placeholder.placeholder_label}
           value={(responses[key] as string) || (existingResponse as string) || ""}
@@ -81,7 +96,7 @@ export function InlineFormQuestion({
       );
     } else if (placeholder.type === "select") {
       return (
-        <div className="inline-flex gap-2 mx-1">
+        <div key={`select-${key}`} className="inline-flex gap-2 mx-1">
           {placeholder.options.map((option) => (
             <Button
               key={option.id}
@@ -98,6 +113,8 @@ export function InlineFormQuestion({
                   : "border-gray-300"
               }
               onClick={() => {
+                if (isNavigating) return;
+                
                 // Aggiorna lo stato locale
                 const newValue = option.id;
                 setResponses({
@@ -108,6 +125,7 @@ export function InlineFormQuestion({
                 // Gestisci salvataggio e navigazione automatici
                 handleResponseAndNavigation(key, newValue);
               }}
+              disabled={isNavigating}
             >
               {option.label}
             </Button>
@@ -121,39 +139,61 @@ export function InlineFormQuestion({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Previeni l'invio se è già in corso una navigazione
+    if (isNavigating) return;
+    
+    // Imposta lo stato di navigazione
+    setIsNavigating(true);
+    
     // Salva tutte le risposte
-    for (const [key, value] of Object.entries(responses)) {
-      if (value) {
-        handleResponseAndNavigation(key, value);
+    let hasNavigated = false;
+    
+    setTimeout(() => {
+      for (const [key, value] of Object.entries(responses)) {
+        if (value) {
+          setResponse(question.question_id, key, value);
+          
+          // Controlla se è necessario navigare
+          if (handleResponseAndNavigation(key, value)) {
+            hasNavigated = true;
+            break;
+          }
+        }
       }
-    }
+      
+      if (!hasNavigated) {
+        setIsNavigating(false);
+      }
+    }, 50);
   };
 
   // Funzione migliorata per renderizzare il testo della domanda inline con i placeholders
   const renderInlineQuestionText = () => {
-    let result = question.question_text;
+    // Create a copy of the question text to work with
+    let text = question.question_text;
+    const placeholders = {};
     
-    // Sostituisci tutti i placeholder nel testo
-    Object.keys(question.placeholders).forEach(key => {
+    // First, replace all placeholders with unique markers
+    Object.keys(question.placeholders).forEach((key, index) => {
       const placeholder = `{{${key}}}`;
-      const replacementComponent = renderPlaceholder(key, question.placeholders[key]);
-      if (replacementComponent) {
-        result = result.replace(placeholder, `___PLACEHOLDER_${key}___`);
-      }
+      const marker = `__PLACEHOLDER_${index}_${key}__`;
+      placeholders[marker] = key;
+      text = text.replace(new RegExp(placeholder, 'g'), marker);
     });
     
-    // Dividi il testo in base ai placeholder
-    const parts = result.split(/___PLACEHOLDER_([^_]+)___/);
+    // Split by all markers at once using regex
+    const allMarkers = Object.keys(placeholders).join('|').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const parts = allMarkers ? text.split(new RegExp(`(${allMarkers})`, 'g')) : [text];
     
-    // Costruisci l'array di elementi React
+    // Map the parts to React nodes
     return parts.map((part, index) => {
-      // Se è un indice dispari, è un riferimento a un placeholder
-      if (index % 2 === 1) {
-        const placeholderKey = part;
-        return renderPlaceholder(placeholderKey, question.placeholders[placeholderKey]);
+      if (placeholders[part]) {
+        // This part is a placeholder marker
+        const key = placeholders[part];
+        return renderPlaceholder(key, question.placeholders[key]);
       }
-      // Altrimenti è testo normale
-      return part;
+      // This part is regular text
+      return <React.Fragment key={`text-${index}`}>{part}</React.Fragment>;
     });
   };
 
@@ -165,7 +205,7 @@ export function InlineFormQuestion({
         variant="ghost"
         size="sm"
         className="ml-2 text-black hover:text-gray-700"
-        disabled={Object.keys(responses).length === 0}
+        disabled={Object.keys(responses).length === 0 || isNavigating}
       >
         OK
       </Button>

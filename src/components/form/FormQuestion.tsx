@@ -10,6 +10,7 @@ import { useParams } from "react-router-dom";
 export function FormQuestion({ question }: { question: Question }) {
   const { getResponse, setResponse, navigateToNextQuestion, addActiveBlock } = useForm();
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});
+  const [isNavigating, setIsNavigating] = useState(false);
   const params = useParams();
 
   // Ripristina le risposte se esistono quando la domanda cambia
@@ -27,10 +28,19 @@ export function FormQuestion({ question }: { question: Question }) {
     } else {
       setResponses({});
     }
+    
+    // Resetta lo stato di navigazione quando la domanda cambia
+    setIsNavigating(false);
   }, [question.question_id, getResponse]);
 
   // Funzione per gestire il salvataggio delle risposte e la navigazione
-  const handleResponseAndNavigation = (key: string, value: string | string[]) => {
+  const handleResponseAndNavigation = async (key: string, value: string | string[]) => {
+    // Previeni la navigazione se è già in corso
+    if (isNavigating) return false;
+    
+    // Imposta lo stato di navigazione
+    setIsNavigating(true);
+    
     // Salva immediatamente la risposta nel contesto globale
     setResponse(question.question_id, key, value);
     
@@ -46,15 +56,21 @@ export function FormQuestion({ question }: { question: Question }) {
       
       // Naviga alla prossima domanda
       if (selectedOption?.leads_to) {
-        // Naviga immediatamente senza timeout
-        navigateToNextQuestion(question.question_id, selectedOption.leads_to);
+        setTimeout(() => {
+          navigateToNextQuestion(question.question_id, selectedOption.leads_to);
+          setIsNavigating(false);
+        }, 50);
         return true;
       }
     } else if (question.placeholders[key].type === "input" && (question.placeholders[key] as any).leads_to) {
-      navigateToNextQuestion(question.question_id, (question.placeholders[key] as any).leads_to);
+      setTimeout(() => {
+        navigateToNextQuestion(question.question_id, (question.placeholders[key] as any).leads_to);
+        setIsNavigating(false);
+      }, 50);
       return true;
     }
     
+    setIsNavigating(false);
     return false;
   };
 
@@ -64,6 +80,7 @@ export function FormQuestion({ question }: { question: Question }) {
     if (placeholder.type === "input") {
       return (
         <Input
+          key={`input-${key}`}
           type={placeholder.input_type}
           placeholder={placeholder.placeholder_label}
           value={(responses[key] as string) || (existingResponse as string) || ""}
@@ -80,7 +97,7 @@ export function FormQuestion({ question }: { question: Question }) {
       if (placeholder.multiple) {
         // Handle multi-select (checkboxes)
         return (
-          <div className="flex flex-col space-y-2 mt-4">
+          <div key={`multiselect-${key}`} className="flex flex-col space-y-2 mt-4">
             {placeholder.options.map((option) => (
               <label key={option.id} className="flex items-center space-x-2">
                 <input
@@ -110,7 +127,7 @@ export function FormQuestion({ question }: { question: Question }) {
       } else {
         // Handle single select (cards with buttons) basato sul design di Pretto
         return (
-          <div className="grid grid-cols-1 gap-2 mt-6">
+          <div key={`select-${key}`} className="grid grid-cols-1 gap-2 mt-6">
             {placeholder.options.map((option) => (
               <button
                 key={option.id}
@@ -121,6 +138,8 @@ export function FormQuestion({ question }: { question: Question }) {
                     : "border-gray-200 hover:border-gray-300"
                 }`}
                 onClick={() => {
+                  if (isNavigating) return;
+                  
                   // Aggiorna lo stato locale
                   const newValue = option.id;
                   setResponses({
@@ -131,6 +150,7 @@ export function FormQuestion({ question }: { question: Question }) {
                   // Gestisci salvataggio e navigazione automatici per singola selezione
                   handleResponseAndNavigation(key, newValue);
                 }}
+                disabled={isNavigating}
               >
                 <div className="font-medium text-black">{option.label}</div>
               </button>
@@ -145,80 +165,113 @@ export function FormQuestion({ question }: { question: Question }) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Previeni l'invio se è già in corso una navigazione
+    if (isNavigating) return;
+    
+    // Imposta lo stato di navigazione
+    setIsNavigating(true);
+    
     // Salva tutte le risposte
     let hasResponsesToSave = false;
-    let hasNavigated = false;
     
     for (const [key, value] of Object.entries(responses)) {
       if (value) {
         hasResponsesToSave = true;
-        // Usa la funzione di navigazione e controlla se ha navigato
-        if (handleResponseAndNavigation(key, value)) {
-          hasNavigated = true;
-          break;
-        }
+        setResponse(question.question_id, key, value);
       }
     }
     
-    // Se non ha già navigato, controlla se ci sono risposte esistenti e naviga comunque
-    if (!hasNavigated && !hasResponsesToSave) {
-      let canProceed = false;
-      
-      for (const [key] of Object.entries(question.placeholders)) {
-        const existingResponse = getResponse(question.question_id, key);
-        if (existingResponse) {
-          canProceed = true;
-          
-          // Usa la risposta esistente per determinare la navigazione
-          if (question.placeholders[key].type === "select" && !Array.isArray(existingResponse)) {
-            const selectedOption = (question.placeholders[key] as any).options.find(
-              (opt: any) => opt.id === existingResponse
-            );
+    setTimeout(() => {
+      // Se non ci sono risposte nuove da salvare, controlla se ci sono risposte esistenti
+      if (!hasResponsesToSave) {
+        let canProceed = false;
+        
+        for (const [key] of Object.entries(question.placeholders)) {
+          const existingResponse = getResponse(question.question_id, key);
+          if (existingResponse) {
+            canProceed = true;
             
-            if (selectedOption?.leads_to) {
-              navigateToNextQuestion(question.question_id, selectedOption.leads_to);
+            // Usa la risposta esistente per determinare la navigazione
+            if (question.placeholders[key].type === "select" && !Array.isArray(existingResponse)) {
+              const selectedOption = (question.placeholders[key] as any).options.find(
+                (opt: any) => opt.id === existingResponse
+              );
+              
+              if (selectedOption?.leads_to) {
+                navigateToNextQuestion(question.question_id, selectedOption.leads_to);
+                setIsNavigating(false);
+                return;
+              }
+            } else if (question.placeholders[key].type === "input" && (question.placeholders[key] as any).leads_to) {
+              navigateToNextQuestion(question.question_id, (question.placeholders[key] as any).leads_to);
+              setIsNavigating(false);
               return;
             }
-          } else if (question.placeholders[key].type === "input" && (question.placeholders[key] as any).leads_to) {
-            navigateToNextQuestion(question.question_id, (question.placeholders[key] as any).leads_to);
-            return;
           }
         }
-      }
-      
-      // Se c'è almeno una risposta esistente ma nessuna navigazione specifica,
-      // naviga alla prossima domanda generica
-      if (canProceed) {
+        
+        // Se c'è almeno una risposta esistente ma nessuna navigazione specifica,
+        // naviga alla prossima domanda generica
+        if (canProceed) {
+          navigateToNextQuestion(question.question_id, "next_block");
+        }
+      } else {
+        for (const [key, value] of Object.entries(responses)) {
+          if (value) {
+            // Verifica se c'è una navigazione specificata per questa risposta
+            if (question.placeholders[key].type === "select" && !Array.isArray(value)) {
+              const selectedOption = (question.placeholders[key] as any).options.find(
+                (opt: any) => opt.id === value
+              );
+              
+              if (selectedOption?.leads_to) {
+                navigateToNextQuestion(question.question_id, selectedOption.leads_to);
+                setIsNavigating(false);
+                return;
+              }
+            } else if (question.placeholders[key].type === "input" && (question.placeholders[key] as any).leads_to) {
+              navigateToNextQuestion(question.question_id, (question.placeholders[key] as any).leads_to);
+              setIsNavigating(false);
+              return;
+            }
+          }
+        }
+        
+        // Se nessuna opzione ha un leads_to specifico, naviga alla prossima domanda generica
         navigateToNextQuestion(question.question_id, "next_block");
       }
-    }
+      
+      setIsNavigating(false);
+    }, 50);
   };
 
   // Funzione migliorata per renderizzare il testo della domanda con i placeholders
   const renderQuestionText = () => {
-    let result = question.question_text;
+    // Create a copy of the question text to work with
+    let text = question.question_text;
+    const placeholders = {};
     
-    // Sostituisci tutti i placeholder nel testo
-    Object.keys(question.placeholders).forEach(key => {
+    // First, replace all placeholders with unique markers
+    Object.keys(question.placeholders).forEach((key, index) => {
       const placeholder = `{{${key}}}`;
-      const replacementComponent = renderPlaceholder(key, question.placeholders[key]);
-      if (replacementComponent) {
-        result = result.replace(placeholder, `___PLACEHOLDER_${key}___`);
-      }
+      const marker = `__PLACEHOLDER_${index}_${key}__`;
+      placeholders[marker] = key;
+      text = text.replace(new RegExp(placeholder, 'g'), marker);
     });
     
-    // Dividi il testo in base ai placeholder
-    const parts = result.split(/___PLACEHOLDER_([^_]+)___/);
+    // Split by all markers at once using regex
+    const allMarkers = Object.keys(placeholders).join('|').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const parts = allMarkers ? text.split(new RegExp(`(${allMarkers})`, 'g')) : [text];
     
-    // Costruisci l'array di elementi React
+    // Map the parts to React nodes
     return parts.map((part, index) => {
-      // Se è un indice dispari, è un riferimento a un placeholder
-      if (index % 2 === 1) {
-        const placeholderKey = part;
-        return renderPlaceholder(placeholderKey, question.placeholders[placeholderKey]);
+      if (placeholders[part]) {
+        // This part is a placeholder marker
+        const key = placeholders[part];
+        return renderPlaceholder(key, question.placeholders[key]);
       }
-      // Altrimenti è testo normale
-      return part;
+      // This part is regular text
+      return <React.Fragment key={`text-${index}`}>{part}</React.Fragment>;
     });
   };
 
@@ -239,8 +292,8 @@ export function FormQuestion({ question }: { question: Question }) {
           <Button
             type="submit"
             className="bg-black hover:bg-gray-800 text-white transition-all rounded-md px-4 py-2"
-            disabled={Object.keys(responses).length === 0 && 
-                     !Object.keys(question.placeholders).some(key => getResponse(question.question_id, key))}
+            disabled={(Object.keys(responses).length === 0 && 
+                     !Object.keys(question.placeholders).some(key => getResponse(question.question_id, key))) || isNavigating}
           >
             Continua <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
