@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { Question } from "@/types/form";
@@ -8,6 +7,7 @@ import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLocation } from "react-router-dom";
 import { SelectPlaceholderBox } from "./SelectPlaceholderBox";
+import { Separator } from "@/components/ui/separator";
 
 interface InlineFormQuestionProps {
   question: Question;
@@ -130,12 +130,12 @@ export function InlineFormQuestion({
             questionId={question.question_id}
             placeholderKey={placeholderKey}
             options={(placeholder as any).options}
-            className="text-sm py-0"
+            className="text-[16px] py-0"
           />
         );
       } else {
         // Fallback per altri tipi di placeholder o se la chiave non esiste
-        parts.push(<span key={`placeholder-${placeholderKey}`} className="mx-1 px-1 py-0 bg-gray-100 rounded text-sm">_____</span>);
+        parts.push(<span key={`placeholder-${placeholderKey}`} className="mx-1 px-1 py-0 bg-gray-100 rounded text-[16px]">_____</span>);
       }
 
       lastIndex = match.index + match[0].length;
@@ -170,8 +170,8 @@ export function InlineFormQuestion({
       );
     } else if (placeholder.type === "select") {
       return (
-        <div key={`inline-select-${key}`} className="mt-3">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+        <div key={`inline-select-${key}`} className="mt-4">
+          <label className="block text-[16px] font-medium text-gray-700 mb-2">
             {placeholder.placeholder_label || "Seleziona un'opzione"}
           </label>
           <div className="flex flex-wrap gap-2">
@@ -186,10 +186,10 @@ export function InlineFormQuestion({
                 }
                 size="sm"
                 className={cn(
-                  "text-[16px]",
+                  "text-[16px] font-normal",
                   (responses[key] === option.id || existingResponse === option.id)
                     ? "bg-black text-white border-black"
-                    : "border-gray-300 text-gray-700"
+                    : "border-[#BEB8AE] text-gray-700 hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)] hover:bg-white"
                 )}
                 onClick={() => handleResponseChange(key, option.id)}
               >
@@ -206,12 +206,15 @@ export function InlineFormQuestion({
   return (
     <div className="p-4 border border-gray-200 rounded-lg bg-gray-50 mt-4">
       {/* Domanda - aggiornata per utilizzare renderQuestionText */}
-      <div className="text-[15px] font-medium text-gray-900 mb-3">
+      <div className="text-[16px] font-medium text-gray-900 mb-4">
         {renderQuestionText()}
       </div>
       
+      {/* Linea separatrice beige */}
+      <Separator className="h-[1px] bg-[#F0EAE0] my-4" />
+      
       {/* Contenitore per tutti i placeholder */}
-      <div className="space-y-4">
+      <div className="space-y-4 mt-4">
         {Object.keys(question.placeholders).map(key => renderPlaceholder(key, question.placeholders[key]))}
       </div>
       

@@ -36,6 +36,13 @@
     --ring: 222.2 84% 4.9%;
 
     --radius: 1rem;
+    
+    /* Colori personalizzati per il form */
+    --form-beige: 39 28% 91%;        /* #F0EAE0 */
+    --form-green: 167 45% 25%;       /* #245C4F */
+    --form-placeholder: 37 31% 89%;  /* #F8F4EF */
+    --form-border: 36 15% 74%;       /* #BEB8AE */
+    --form-shadow: 36 9% 65%;        /* #AFA89F */
   }
 
   .dark {
@@ -124,9 +131,39 @@
     pointer-events: none;
   }
 
+  /* Nuovi stili per i componenti del form */
+  .form-option-button {
+    @apply text-left px-[18px] py-[12px] border-[1.5px] rounded-[10px] transition-all;
+    @apply font-['Inter'] text-[16px] font-normal;
+    @apply shadow-[0_3px_0_0_#AFA89F] mb-[10px] cursor-pointer w-fit;
+    @apply hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)];
+  }
+  
+  .form-option-button-selected {
+    @apply border-black bg-gray-50;
+  }
+  
+  .form-option-button-unselected {
+    @apply border-[#BEB8AE];
+  }
+  
+  .form-selection-tag {
+    @apply bg-[#F8F4EF] text-[#245C4F] font-semibold px-[10px] py-[4px] rounded-[6px] text-[16px];
+    @apply inline-flex items-center justify-center mx-1;
+  }
+  
+  .form-selection-tag-unselected {
+    @apply bg-[#F8F4EF] text-[#C4BFB8] px-[10px] py-[4px] rounded-[6px] font-medium text-[16px];
+  }
+  
+  .form-next-button {
+    @apply bg-[#245C4F] hover:bg-[#1e4f44] text-white px-[32px] py-[16px] rounded-[12px] text-[17px] font-medium;
+    @apply transition-all shadow-[0_6px_12px_rgba(36,92,79,0.2)] hover:shadow-[0_8px_16px_rgba(36,92,79,0.25)];
+    @apply inline-flex items-center gap-[12px];
+  }
+
   @keyframes shine {
     0% { background-position: 0% center; }
     100% { background-position: 200% center; }
   }
 }
-

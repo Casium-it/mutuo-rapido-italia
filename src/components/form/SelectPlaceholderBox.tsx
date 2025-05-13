@@ -31,8 +31,8 @@ export function SelectPlaceholderBox({
       className={cn(
         "inline-flex items-center justify-center mx-1 rounded-md transition-all duration-200",
         isSelected 
-          ? "bg-[#F8F4EF] text-[#245C4F] font-semibold px-[10px] py-[4px] rounded-[6px] text-[17px]" 
-          : "bg-[#F8F4EF] text-[#C4BFB8] px-[10px] py-[4px] rounded-[6px] font-medium text-[15px]",
+          ? "bg-[#F8F4EF] text-[#245C4F] font-semibold px-[10px] py-[4px] rounded-[6px] text-[16px]" 
+          : "bg-[#F8F4EF] text-[#C4BFB8] px-[10px] py-[4px] rounded-[6px] font-medium text-[16px]",
         className
       )}
       aria-live="polite"
