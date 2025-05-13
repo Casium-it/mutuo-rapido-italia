@@ -1,18 +1,30 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { BlockSidebar } from "@/components/form/BlockSidebar";
 import { QuestionView } from "@/components/form/QuestionView";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import { Progress } from "@/components/ui/progress";
 
 export default function Form() {
-  const { state, blocks } = useForm();
+  const { state, blocks, getProgress } = useForm();
+  const params = useParams();
+  const navigate = useNavigate();
   
   // Find the current active block
   const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
+
+  // Calcola il progresso del form
+  const progress = getProgress();
+
+  // Gestisci il salvataggio e l'uscita
+  const handleSaveAndExit = () => {
+    // Lo stato è già salvato in localStorage grazie al FormContext
+    navigate("/");
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F9F9F6]">
@@ -24,11 +36,19 @@ export default function Form() {
           </Link>
         </div>
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="sm" className="text-gray-700">
+          <Button variant="outline" size="sm" className="text-gray-700" onClick={handleSaveAndExit}>
             Salva ed esci
           </Button>
         </div>
       </header>
+
+      {/* Progress bar */}
+      <div className="bg-white px-4 py-2 border-b border-gray-200">
+        <div className="max-w-3xl mx-auto flex items-center gap-3">
+          <Progress value={progress} className="h-2" />
+          <span className="text-sm font-medium text-gray-600">{progress}%</span>
+        </div>
+      </div>
 
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden">

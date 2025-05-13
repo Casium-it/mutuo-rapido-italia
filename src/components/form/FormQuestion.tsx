@@ -1,14 +1,31 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { Question } from "@/types/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { useParams } from "react-router-dom";
 
 export function FormQuestion({ question }: { question: Question }) {
   const { getResponse, setResponse, navigateToNextQuestion, addActiveBlock } = useForm();
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});
+  const params = useParams();
+
+  // Ripristina le risposte se esistono quando la domanda cambia
+  useEffect(() => {
+    const existingResponses: { [key: string]: string | string[] } = {};
+    Object.keys(question.placeholders).forEach(key => {
+      const existingResponse = getResponse(question.question_id, key);
+      if (existingResponse) {
+        existingResponses[key] = existingResponse;
+      }
+    });
+    
+    if (Object.keys(existingResponses).length > 0) {
+      setResponses(existingResponses);
+    }
+  }, [question.question_id, getResponse]);
 
   const renderPlaceholder = (key: string, placeholder: any) => {
     const existingResponse = getResponse(question.question_id, key);
@@ -91,12 +108,15 @@ export function FormQuestion({ question }: { question: Question }) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Save all responses
+    // Salva tutte le risposte
+    let hasResponsesToSave = false;
+    
     for (const [key, value] of Object.entries(responses)) {
       if (value) {
+        hasResponsesToSave = true;
         setResponse(question.question_id, key, value);
         
-        // Check if we need to add a block
+        // Controllo se dobbiamo aggiungere un blocco
         if (question.placeholders[key].type === "select" && !Array.isArray(value)) {
           const selectedOption = (question.placeholders[key] as any).options.find(
             (opt: any) => opt.id === value
@@ -106,7 +126,7 @@ export function FormQuestion({ question }: { question: Question }) {
             addActiveBlock(selectedOption.add_block);
           }
           
-          // Navigate to next question
+          // Naviga alla prossima domanda
           if (selectedOption?.leads_to) {
             navigateToNextQuestion(question.question_id, selectedOption.leads_to);
             return;
@@ -117,22 +137,44 @@ export function FormQuestion({ question }: { question: Question }) {
         }
       }
     }
-  };
-
-  // Replace placeholders with actual form elements
-  const renderQuestionText = () => {
-    let text = question.question_text;
     
-    for (const [key, placeholder] of Object.entries(question.placeholders)) {
-      const pattern = new RegExp(`{{${key}}}`, "g");
-      text = text.replace(pattern, `<span class="placeholder" data-key="${key}"></span>`);
+    // Se non ci sono risposte da salvare o non è stata impostata una navigazione specifica,
+    // controlla se ci sono risposte esistenti e naviga comunque
+    if (!hasResponsesToSave) {
+      let canProceed = false;
+      
+      for (const [key] of Object.entries(question.placeholders)) {
+        const existingResponse = getResponse(question.question_id, key);
+        if (existingResponse) {
+          canProceed = true;
+          
+          // Usa la risposta esistente per determinare la navigazione
+          if (question.placeholders[key].type === "select" && !Array.isArray(existingResponse)) {
+            const selectedOption = (question.placeholders[key] as any).options.find(
+              (opt: any) => opt.id === existingResponse
+            );
+            
+            if (selectedOption?.leads_to) {
+              navigateToNextQuestion(question.question_id, selectedOption.leads_to);
+              return;
+            }
+          } else if (question.placeholders[key].type === "input" && (question.placeholders[key] as any).leads_to) {
+            navigateToNextQuestion(question.question_id, (question.placeholders[key] as any).leads_to);
+            return;
+          }
+        }
+      }
+      
+      // Se c'è almeno una risposta esistente ma nessuna navigazione specifica,
+      // naviga alla prossima domanda generica
+      if (canProceed) {
+        navigateToNextQuestion(question.question_id, "next_block");
+      }
     }
-    
-    return text;
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-xl">
+    <form onSubmit={handleSubmit} className="max-w-xl animate-fade-in">
       <div className="text-xl font-medium text-gray-900 mb-6">
         {Object.keys(question.placeholders).map((key) => {
           const parts = question.question_text.split(new RegExp(`{{${key}}}`, "g"));
@@ -157,7 +199,7 @@ export function FormQuestion({ question }: { question: Question }) {
       <div className="mt-8">
         <Button
           type="submit"
-          className="bg-vibe-green hover:bg-vibe-green-dark text-white"
+          className="bg-vibe-green hover:bg-vibe-green-dark text-white transition-all"
           disabled={Object.keys(responses).length === 0 && 
                    !Object.keys(question.placeholders).some(key => getResponse(question.question_id, key))}
         >

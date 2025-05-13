@@ -1,23 +1,26 @@
 
-import React, { createContext, useContext, useReducer, ReactNode } from "react";
+import React, { createContext, useContext, useReducer, ReactNode, useEffect } from "react";
 import { Block, FormState, FormResponse } from "@/types/form";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 
 type FormContextType = {
   state: FormState;
   blocks: Block[];
-  goToQuestion: (block_id: string, question_id: string) => void;
+  goToQuestion: (block_id: string, question_id: string, replace?: boolean) => void;
   setResponse: (question_id: string, placeholder_key: string, value: string | string[]) => void;
   getResponse: (question_id: string, placeholder_key: string) => string | string[] | undefined;
   addActiveBlock: (block_id: string) => void;
   isQuestionAnswered: (question_id: string) => boolean;
   navigateToNextQuestion: (currentQuestionId: string, leadsTo: string) => void;
+  getProgress: () => number;
 };
 
 type Action =
   | { type: "GO_TO_QUESTION"; block_id: string; question_id: string }
   | { type: "SET_RESPONSE"; question_id: string; placeholder_key: string; value: string | string[] }
   | { type: "ADD_ACTIVE_BLOCK"; block_id: string }
-  | { type: "MARK_QUESTION_ANSWERED"; question_id: string };
+  | { type: "MARK_QUESTION_ANSWERED"; question_id: string }
+  | { type: "SET_FORM_STATE"; state: Partial<FormState> };
 
 const initialState: FormState = {
   activeBlocks: [],
@@ -69,19 +72,110 @@ function formReducer(state: FormState, action: Action): FormState {
         answeredQuestions
       };
     }
+    case "SET_FORM_STATE": {
+      return {
+        ...state,
+        ...action.state
+      };
+    }
     default:
       return state;
   }
 }
 
 export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = ({ children, blocks }) => {
+  const navigate = useNavigate();
+  const params = useParams<{ blockType?: string; blockId?: string; questionId?: string }>();
+  const location = useLocation();
+  
   const [state, dispatch] = useReducer(formReducer, {
     ...initialState,
     activeBlocks: blocks.filter(b => b.default_active).map(b => b.block_id)
   });
 
-  const goToQuestion = (block_id: string, question_id: string) => {
+  // Sincronizza lo stato del form con i parametri URL quando l'URL cambia
+  useEffect(() => {
+    const { blockId, questionId } = params;
+    
+    if (blockId && questionId) {
+      // Se entrambi sono specificati nell'URL, aggiorna lo stato del form
+      dispatch({ 
+        type: "GO_TO_QUESTION", 
+        block_id: blockId, 
+        question_id: questionId 
+      });
+      
+      if (!state.activeBlocks.includes(blockId)) {
+        dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
+      }
+    } else if (blockId) {
+      // Se solo blockId è specificato, trova la prima domanda nel blocco
+      const block = blocks.find(b => b.block_id === blockId);
+      if (block && block.questions.length > 0) {
+        const firstQuestionId = block.questions[0].question_id;
+        dispatch({ 
+          type: "GO_TO_QUESTION", 
+          block_id: blockId, 
+          question_id: firstQuestionId 
+        });
+        
+        if (!state.activeBlocks.includes(blockId)) {
+          dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
+        }
+        
+        // Aggiorna l'URL per includere anche l'ID della domanda
+        navigate(`/simulazione/${params.blockType}/${blockId}/${firstQuestionId}`, { replace: true });
+      }
+    } else if (params.blockType) {
+      // Se solo il tipo è specificato (pensando, cercando, ecc.), trova il blocco iniziale
+      const entryBlock = blocks.find(b => b.block_id === "funnel");
+      if (entryBlock && entryBlock.questions.length > 0) {
+        dispatch({ 
+          type: "GO_TO_QUESTION", 
+          block_id: "funnel", 
+          question_id: "fase_mutuo" 
+        });
+      }
+    }
+    
+    // Carica lo stato salvato dal localStorage, se disponibile
+    const savedState = localStorage.getItem(`form-state-${params.blockType}`);
+    if (savedState) {
+      try {
+        const parsedState = JSON.parse(savedState);
+        // Converti answeredQuestions da array a Set
+        parsedState.answeredQuestions = new Set(parsedState.answeredQuestions);
+        dispatch({ type: "SET_FORM_STATE", state: parsedState });
+      } catch (e) {
+        console.error("Errore nel caricamento dello stato salvato:", e);
+      }
+    }
+  }, [params.blockId, params.questionId, params.blockType, blocks, navigate]);
+
+  // Salva lo stato in localStorage quando cambia
+  useEffect(() => {
+    if (params.blockType) {
+      // Converti Set a array per JSON serialization
+      const stateToSave = {
+        ...state,
+        answeredQuestions: Array.from(state.answeredQuestions)
+      };
+      localStorage.setItem(`form-state-${params.blockType}`, JSON.stringify(stateToSave));
+    }
+  }, [state, params.blockType]);
+
+  const goToQuestion = (block_id: string, question_id: string, replace = false) => {
     dispatch({ type: "GO_TO_QUESTION", block_id, question_id });
+    
+    // Aggiorna l'URL per riflettere la nuova domanda
+    const blockType = params.blockType || "funnel";
+    const newPath = `/simulazione/${blockType}/${block_id}/${question_id}`;
+    
+    if (replace) {
+      navigate(newPath, { replace: true });
+    } else {
+      navigate(newPath);
+    }
   };
 
   const setResponse = (question_id: string, placeholder_key: string, value: string | string[]) => {
@@ -115,7 +209,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
 
   const navigateToNextQuestion = (currentQuestionId: string, leadsTo: string) => {
     if (leadsTo === "next_block") {
-      // Find current block and navigate to the first question of the next active block
+      // Trova il blocco corrente e naviga alla prima domanda del prossimo blocco attivo
       let currentBlockIndex = -1;
       for (let i = 0; i < blocks.length; i++) {
         const block = blocks[i];
@@ -127,7 +221,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       }
 
       if (currentBlockIndex !== -1) {
-        // Find the next active block
+        // Trova il prossimo blocco attivo
         for (let i = currentBlockIndex + 1; i < blocks.length; i++) {
           const nextBlock = blocks[i];
           if (state.activeBlocks.includes(nextBlock.block_id) && nextBlock.questions.length > 0) {
@@ -137,12 +231,35 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         }
       }
     } else {
-      // Navigate to a specific question
+      // Naviga a una domanda specifica
       const found = findQuestionById(leadsTo);
       if (found) {
         goToQuestion(found.block.block_id, found.question.question_id);
       }
     }
+  };
+
+  // Calcola il progresso complessivo del form
+  const getProgress = () => {
+    // Conta tutte le domande nei blocchi attivi
+    let totalQuestions = 0;
+    let answeredCount = 0;
+    
+    for (const blockId of state.activeBlocks) {
+      const block = blocks.find(b => b.block_id === blockId);
+      if (block) {
+        totalQuestions += block.questions.length;
+        
+        // Conta le domande già risposte in questo blocco
+        block.questions.forEach(q => {
+          if (state.answeredQuestions.has(q.question_id)) {
+            answeredCount++;
+          }
+        });
+      }
+    }
+    
+    return totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
   };
 
   return (
@@ -155,7 +272,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         getResponse,
         addActiveBlock,
         isQuestionAnswered,
-        navigateToNextQuestion
+        navigateToNextQuestion,
+        getProgress
       }}
     >
       {children}

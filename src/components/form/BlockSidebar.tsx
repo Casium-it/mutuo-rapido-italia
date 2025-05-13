@@ -2,9 +2,11 @@
 import { useForm } from "@/contexts/FormContext";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useParams } from "react-router-dom";
 
 export function BlockSidebar() {
   const { blocks, state, goToQuestion } = useForm();
+  const params = useParams<{ blockType?: string }>();
   
   // Filter blocks that are active
   const activeBlocks = blocks.filter(block => state.activeBlocks.includes(block.block_id));
@@ -27,30 +29,48 @@ export function BlockSidebar() {
     return block.questions.every(question => state.answeredQuestions.has(question.question_id));
   };
 
+  const getBlockStatus = (blockId: string) => {
+    if (isBlockCompleted(blockId)) return "completato";
+    if (isBlockActive(blockId)) return "attivo";
+    
+    // Se c'è almeno una domanda risposta ma non tutte
+    const block = blocks.find(b => b.block_id === blockId);
+    if (block) {
+      const hasAnyAnswer = block.questions.some(q => state.answeredQuestions.has(q.question_id));
+      if (hasAnyAnswer) return "parziale";
+    }
+    
+    return "non iniziato";
+  };
+
   return (
-    <div className="w-full bg-gray-100 border-r border-gray-200 h-full py-6 overflow-y-auto">
-      <div className="px-4">
+    <div className="w-full bg-[#F9F9F6] h-full py-2 overflow-y-auto">
+      <div className="px-0">
         <h2 className="text-lg font-semibold text-gray-700 mb-6">Il tuo percorso</h2>
         <div className="space-y-0.5">
-          {activeBlocks.map((block) => (
-            <button
-              key={block.block_id}
-              onClick={() => navigateToBlock(block.block_id)}
-              className={cn(
-                "w-full text-left flex items-center py-2 px-3 rounded-md text-gray-700",
-                isBlockActive(block.block_id)
-                  ? "bg-vibe-green text-white font-medium"
-                  : isBlockCompleted(block.block_id)
-                  ? "bg-vibe-green/10 text-gray-700 font-medium"
-                  : "hover:bg-gray-200"
-              )}
-            >
-              <div className="mr-2 shrink-0">
-                {isBlockCompleted(block.block_id) && <Check className="w-4 h-4 text-vibe-green" />}
-              </div>
-              <div className="truncate">{block.title}</div>
-            </button>
-          ))}
+          {activeBlocks.map((block) => {
+            const status = getBlockStatus(block.block_id);
+            return (
+              <button
+                key={block.block_id}
+                onClick={() => navigateToBlock(block.block_id)}
+                className={cn(
+                  "w-full text-left flex items-center py-2 px-3 rounded-md transition-all",
+                  {
+                    "bg-vibe-green text-white font-medium": status === "attivo",
+                    "bg-vibe-green/10 text-gray-700 font-medium": status === "completato",
+                    "bg-vibe-green/5 text-gray-700": status === "parziale",
+                    "text-gray-700 hover:bg-gray-200": status === "non iniziato"
+                  }
+                )}
+              >
+                <div className="mr-2 shrink-0">
+                  {status === "completato" && <Check className="w-4 h-4 text-vibe-green" />}
+                </div>
+                <div className="truncate">{block.title}</div>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
