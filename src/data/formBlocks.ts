@@ -9,7 +9,6 @@ export { allBlocks };
 
 // Re-esportiamo anche i singoli blocchi per mantenere la retrocompatibilità
 export {
-  block0,
   block1,
   block2,
   block3,
@@ -21,7 +20,7 @@ export {
   block23,
   block24,
   block25,
-  block26, 
+  block26,
   block27,
   blockStop
 } from "./blocks";

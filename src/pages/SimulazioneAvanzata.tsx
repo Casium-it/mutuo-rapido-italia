@@ -11,6 +11,19 @@ const SimulazioneAvanzata = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   
+  // Funzione per gestire l'avvio di un nuovo form
+  const startNewForm = (path: string, addHouseBlock: boolean = false) => {
+    // Rimuoviamo qualsiasi dato salvato in localStorage per i vari tipi di form
+    const pathSegments = path.split('/');
+    const formType = pathSegments[pathSegments.length - 1]; // Estrai l'ultimo segmento
+    
+    // Rimuovi tutti i dati salvati dal localStorage per questo tipo di form
+    localStorage.removeItem(`form-state-${formType}`);
+    
+    // Naviga al percorso specificato
+    navigate(path);
+  };
+  
   return (
     <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
       {/* Header */}
@@ -33,28 +46,32 @@ const SimulazioneAvanzata = () => {
             icon={LightbulbIcon}
             title="Sto pensando di acquistare"
             description="Non ho ancora iniziato le visite"
-            href="/simulazione/pensando"
+            href="/simulazione/pensando/funnel/fase_mutuo"
+            onClick={() => startNewForm("/simulazione/pensando/funnel/fase_mutuo")}
           />
           
           <OptionCard
             icon={Search}
             title="Sto cercando attivamente"
             description="Ho già iniziato o pianificato le visite"
-            href="/simulazione/cercando"
+            href="/simulazione/cercando/funnel/fase_mutuo"
+            onClick={() => startNewForm("/simulazione/cercando/funnel/fase_mutuo")}
           />
           
           <OptionCard
             icon={Home}
             title="Ho fatto un'offerta"
             description="Ho trovato l'immobile ideale"
-            href="/simulazione/offerta"
+            href="/simulazione/offerta/funnel/fase_mutuo"
+            onClick={() => startNewForm("/simulazione/offerta/funnel/fase_mutuo")}
           />
           
           <OptionCard
             icon={Check}
             title="Ho un'offerta accettata"
             description="Sono sicuro dell'immobile"
-            href="/simulazione/accettata"
+            href="/simulazione/accettata/funnel/fase_mutuo"
+            onClick={() => startNewForm("/simulazione/accettata/funnel/fase_mutuo")}
           />
           
           <OptionCard
@@ -79,15 +96,15 @@ interface OptionCardProps {
   href: string;
   disabled?: boolean;
   badge?: string;
+  onClick?: () => void;
 }
 
-const OptionCard = ({ icon: Icon, title, description, href, disabled = false, badge }: OptionCardProps) => {
+const OptionCard = ({ icon: Icon, title, description, href, disabled = false, badge, onClick }: OptionCardProps) => {
   const isMobile = useIsMobile();
-  const navigate = useNavigate();
-
+  
   const handleClick = () => {
-    if (!disabled) {
-      navigate(href);
+    if (!disabled && onClick) {
+      onClick();
     }
   };
 
