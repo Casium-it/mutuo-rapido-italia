@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { Question } from "@/types/form";
@@ -171,7 +172,7 @@ export function FormQuestion({ question }: { question: Question }) {
                   key={option.id} 
                   className={cn(
                     "flex items-center space-x-2 p-3 border rounded-md hover:bg-gray-50 cursor-pointer",
-                    "font-['Inter'] border-[#BEB8AE] rounded-[10px] shadow-[0_3px_0_0_#AFA89F] mb-4",
+                    "font-['Inter'] border-[#BEB8AE] rounded-[10px] shadow-[0_3px_0_0_#AFA89F] mb-[13px]",
                     "hover:shadow-[0_4px_6px_rgba(175,168,159,0.3)]"
                   )}
                 >
@@ -191,7 +192,7 @@ export function FormQuestion({ question }: { question: Question }) {
                     }}
                     className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
                   />
-                  <span className="text-gray-700">{option.label}</span>
+                  <span className="text-gray-700 text-[16px]">{option.label}</span>
                 </label>
               ))}
             </div>
@@ -210,8 +211,8 @@ export function FormQuestion({ question }: { question: Question }) {
                   key={option.id}
                   type="button"
                   className={cn(
-                    "text-left px-[18px] py-[12px] border-[1.5px] rounded-[10px] transition-all font-['Inter'] text-base font-normal",
-                    "shadow-[0_3px_0_0_#AFA89F] mb-4 cursor-pointer w-fit",
+                    "text-left px-[18px] py-[12px] border-[1.5px] rounded-[10px] transition-all font-['Inter'] text-[16px] font-normal",
+                    "shadow-[0_3px_0_0_#AFA89F] mb-[13px] cursor-pointer w-fit",
                     "hover:shadow-[0_4px_6px_rgba(175,168,159,0.3)]",
                     responses[key] === option.id || existingResponse === option.id
                       ? "border-black bg-gray-50"
@@ -234,7 +235,7 @@ export function FormQuestion({ question }: { question: Question }) {
   return (
     <div className="max-w-xl animate-fade-in">
       {/* Domanda principale - aggiornato per utilizzare renderQuestionText */}
-      <div className="text-xl md:text-2xl font-normal text-gray-900 mb-6 leading-relaxed">
+      <div className="text-[15px] font-normal text-gray-900 mb-6 leading-relaxed">
         {renderQuestionText()}
       </div>
       
@@ -243,11 +244,15 @@ export function FormQuestion({ question }: { question: Question }) {
         {Object.keys(question.placeholders).map(key => renderPlaceholder(key, question.placeholders[key]))}
       </div>
       
-      {/* Pulsante Avanti - sempre visibile */}
+      {/* Pulsante Avanti - con lo stile aggiornato */}
       <div className="mt-8">
         <Button
           type="button"
-          className="bg-black hover:bg-gray-900 text-white transition-all rounded-lg px-5 py-2 text-sm"
+          className={cn(
+            "bg-[#245C4F] hover:bg-[#1e4f44] text-white px-[32px] py-[16px] rounded-[12px] text-[17px] font-medium",
+            "transition-all shadow-[0_6px_12px_rgba(36,92,79,0.2)] hover:shadow-[0_8px_16px_rgba(36,92,79,0.25)]",
+            "inline-flex items-center gap-[12px]"
+          )}
           onClick={handleNextQuestion}
           disabled={isNavigating || Object.keys(question.placeholders).length === 0 || 
                   !Object.keys(question.placeholders).some(key => 

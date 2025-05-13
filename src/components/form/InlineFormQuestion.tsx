@@ -185,11 +185,12 @@ export function InlineFormQuestion({
                     : "outline"
                 }
                 size="sm"
-                className={
+                className={cn(
+                  "text-[16px]",
                   (responses[key] === option.id || existingResponse === option.id)
                     ? "bg-black text-white border-black"
                     : "border-gray-300 text-gray-700"
-                }
+                )}
                 onClick={() => handleResponseChange(key, option.id)}
               >
                 {option.label}
@@ -205,7 +206,7 @@ export function InlineFormQuestion({
   return (
     <div className="p-4 border border-gray-200 rounded-lg bg-gray-50 mt-4">
       {/* Domanda - aggiornata per utilizzare renderQuestionText */}
-      <div className="text-base font-medium text-gray-900 mb-3">
+      <div className="text-[15px] font-medium text-gray-900 mb-3">
         {renderQuestionText()}
       </div>
       
@@ -214,12 +215,16 @@ export function InlineFormQuestion({
         {Object.keys(question.placeholders).map(key => renderPlaceholder(key, question.placeholders[key]))}
       </div>
       
-      {/* Pulsante Avanti - sempre visibile */}
+      {/* Pulsante Avanti - con lo stile aggiornato */}
       <div className="mt-4">
         <Button
           type="button"
           size="sm"
-          className="bg-black hover:bg-gray-900 text-white transition-all rounded-lg px-4 py-1 text-sm"
+          className={cn(
+            "bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-[12px] transition-all",
+            "shadow-[0_6px_12px_rgba(36,92,79,0.2)] hover:shadow-[0_8px_16px_rgba(36,92,79,0.25)]",
+            "text-[17px] font-medium px-[32px] py-[12px] inline-flex items-center gap-[12px]"
+          )}
           onClick={handleNextQuestion}
           disabled={isNavigating || Object.keys(question.placeholders).length === 0 || 
                   !Object.keys(question.placeholders).some(key => 
