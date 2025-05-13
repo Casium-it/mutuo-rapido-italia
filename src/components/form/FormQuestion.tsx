@@ -5,7 +5,7 @@ import { Question } from "@/types/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import { useParams, useLocation } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { SelectPlaceholderBox } from "./SelectPlaceholderBox";
 import { Separator } from "@/components/ui/separator";
@@ -14,29 +14,20 @@ import { allBlocks } from "@/data/blocks";
 interface FormQuestionProps {
   question: Question;
   hideNextButton?: boolean;
-  isInlineQuestion?: boolean;
-  previousQuestionId?: string;
-  previousPlaceholderKey?: string;
-  previousResponse?: string | string[];
 }
 
 export function FormQuestion({ 
   question, 
   hideNextButton = false,
-  isInlineQuestion = false,
-  previousQuestionId,
-  previousPlaceholderKey,
-  previousResponse
 }: FormQuestionProps) {
-  const { getResponse, setResponse, navigateToNextQuestion, addActiveBlock, goToQuestion } = useForm();
+  const { getResponse, setResponse, navigateToNextQuestion, addActiveBlock, goToQuestion, state } = useForm();
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});
   const [isNavigating, setIsNavigating] = useState(false);
   // Stato per tenere traccia di quali placeholder hanno opzioni visibili
   const [visibleOptions, setVisibleOptions] = useState<{ [key: string]: boolean }>({});
   const params = useParams();
-  const location = useLocation();
 
-  // Ripristina le risposte se esistono quando la domanda cambia o l'URL cambia
+  // Effetto per caricare le risposte esistenti e impostare visibilità iniziale delle opzioni
   useEffect(() => {
     const existingResponses: { [key: string]: string | string[] } = {};
     const initialVisibleOptions: { [key: string]: boolean } = {};
@@ -45,43 +36,32 @@ export function FormQuestion({
       const existingResponse = getResponse(question.question_id, key);
       if (existingResponse) {
         existingResponses[key] = existingResponse;
-        // Se esiste già una risposta, inizialmente nascondi le opzioni
         initialVisibleOptions[key] = false;
       } else {
-        // Se non esiste una risposta, mostra le opzioni
         initialVisibleOptions[key] = true;
       }
     });
     
-    if (Object.keys(existingResponses).length > 0) {
-      setResponses(existingResponses);
-    } else {
-      setResponses({});
-    }
-    
+    setResponses(existingResponses);
     setVisibleOptions(initialVisibleOptions);
-    
-    // Resetta lo stato di navigazione quando la domanda cambia o l'URL cambia
     setIsNavigating(false);
-  }, [question.question_id, getResponse, location.pathname]);
+  }, [question.question_id, getResponse]);
 
-  // Funzione per gestire il cambio di risposta e nascondere le opzioni dopo la selezione
+  // Funzione per gestire il cambio di risposta
   const handleResponseChange = (key: string, value: string | string[]) => {
     setResponses({
       ...responses,
       [key]: value
     });
     
-    // Salviamo subito la risposta nel contesto globale
     setResponse(question.question_id, key, value);
     
-    // Nascondi le opzioni dopo la selezione
     setVisibleOptions(prev => ({
       ...prev,
       [key]: false
     }));
     
-    // Gestiamo l'attivazione di blocchi aggiuntivi
+    // Gestione dell'attivazione di blocchi aggiuntivi
     if (question.placeholders[key].type === "select" && !Array.isArray(value)) {
       const selectedOption = (question.placeholders[key] as any).options.find(
         (opt: any) => opt.id === value
@@ -93,27 +73,33 @@ export function FormQuestion({
     }
   };
 
-  // Funzione per gestire il click sul placeholder e mostrare di nuovo le opzioni
-  const handlePlaceholderClick = (key: string) => {
-    // Se è un placeholder che rappresenta una selezione precedente, torniamo a quella domanda
-    if (isInlineQuestion && key === "previous_selection" && previousQuestionId) {
-      // Naviga indietro alla domanda precedente
-      goToQuestion(params.blockId || "", previousQuestionId, false);
+  // Funzione per gestire il click sul placeholder
+  const handlePlaceholderClick = (key: string, previousQuestionId?: string) => {
+    // Se è fornito un ID di domanda precedente, torna a quella domanda
+    if (previousQuestionId) {
+      // Trova il blocco della domanda precedente
+      const previousBlock = allBlocks.find(block => 
+        block.questions.some(q => q.question_id === previousQuestionId)
+      );
+      
+      if (previousBlock && params.blockId) {
+        goToQuestion(params.blockId, previousQuestionId, false);
+      }
       return;
     }
     
+    // Altrimenti gestisci la visibilità delle opzioni
     setVisibleOptions(prev => ({
       ...prev,
       [key]: !prev[key]
     }));
   };
 
-  // Funzione per avanzare manualmente alla prossima domanda
+  // Funzione per avanzare alla prossima domanda
   const handleNextQuestion = () => {
     if (isNavigating) return;
     setIsNavigating(true);
     
-    // Cerca se c'è un leads_to specifico per le risposte date
     for (const key of Object.keys(question.placeholders)) {
       const response = responses[key] || getResponse(question.question_id, key);
       
@@ -138,123 +124,120 @@ export function FormQuestion({
       }
     }
     
-    // Se non c'è un leads_to specifico, vai al prossimo blocco
     setTimeout(() => {
       navigateToNextQuestion(question.question_id, "next_block");
       setIsNavigating(false);
     }, 50);
   };
 
-  // Funzione per ottenere il testo completo della domanda precedente
-  const getPreviousQuestionText = (): string => {
-    if (!isInlineQuestion || !previousQuestionId) return "";
+  // Funzione per trovare la domanda precedente per una domanda inline
+  const findPreviousQuestion = () => {
+    if (!question.inline) return null;
     
-    // Trova la domanda precedente nel blocco corrente
-    const previousBlock = allBlocks.find(block => 
-      block.questions.some(q => q.question_id === previousQuestionId)
+    // Cerca il blocco corrente
+    const currentBlock = allBlocks.find(block => 
+      block.questions.some(q => q.question_id === question.question_id)
     );
+    if (!currentBlock) return null;
     
-    if (!previousBlock) return "";
-    
-    const previousQuestion = previousBlock.questions.find(q => q.question_id === previousQuestionId);
-    if (!previousQuestion) return "";
-    
-    return previousQuestion.question_text;
-  };
-
-  // Funzione per ottenere il testo della selezione precedente
-  const getPreviousSelectionText = (): string => {
-    if (!isInlineQuestion || !previousQuestionId || !previousPlaceholderKey || previousResponse === undefined) {
-      return "";
-    }
-    
-    // Se il tipo della risposta precedente è "select", otteni il testo dell'opzione selezionata
-    if (!Array.isArray(previousResponse)) {
-      const previousQuestionBlock = allBlocks.find(block => 
-        block.questions.some(q => q.question_id === previousQuestionId)
-      );
-      
-      if (previousQuestionBlock) {
-        const prevQuestion = previousQuestionBlock.questions.find(q => q.question_id === previousQuestionId);
+    // Controlla tutte le domande nel blocco per trovare quella che porta a questa domanda
+    for (const q of currentBlock.questions) {
+      for (const key of Object.keys(q.placeholders)) {
+        const placeholder = q.placeholders[key];
         
-        if (prevQuestion && prevQuestion.placeholders[previousPlaceholderKey].type === "select") {
-          const options = (prevQuestion.placeholders[previousPlaceholderKey] as any).options;
-          const selectedOption = options.find((opt: any) => opt.id === previousResponse);
-          
-          if (selectedOption) {
-            return selectedOption.label;
+        if (placeholder.type === "select") {
+          const options = (placeholder as any).options;
+          for (const opt of options) {
+            if (opt.leads_to === question.question_id) {
+              return {
+                question: q,
+                placeholderKey: key,
+                optionId: opt.id
+              };
+            }
+          }
+        } else if (placeholder.type === "input") {
+          if ((placeholder as any).leads_to === question.question_id) {
+            return {
+              question: q,
+              placeholderKey: key,
+              inputValue: getResponse(q.question_id, key)
+            };
           }
         }
       }
-      
-      return String(previousResponse);
     }
     
-    return Array.isArray(previousResponse) ? previousResponse.join(", ") : String(previousResponse);
+    return null;
   };
 
-  // Funzione per comporre il testo completo della domanda, incorporando la domanda precedente per le domande inline
-  const getCompleteQuestionText = (): string => {
-    if (!isInlineQuestion || !previousQuestionId) {
-      return question.question_text;
+  // Ottiene il testo della selezione precedente
+  const getPreviousSelectionText = (previousInfo: any) => {
+    if (!previousInfo) return "";
+    
+    const { question, placeholderKey, optionId, inputValue } = previousInfo;
+    
+    if (optionId) {
+      const options = (question.placeholders[placeholderKey] as any).options;
+      const selectedOption = options.find((opt: any) => opt.id === optionId);
+      return selectedOption?.label || "";
+    } else if (inputValue) {
+      return Array.isArray(inputValue) ? inputValue.join(", ") : String(inputValue);
+    }
+    
+    return "";
+  };
+
+  // Funzione per renderizzare il testo della domanda con la gestione corretta delle domande inline
+  const renderQuestionText = () => {
+    // Se è una domanda inline, trova la domanda precedente
+    const previousInfo = question.inline ? findPreviousQuestion() : null;
+    
+    // Se non ci sono informazioni precedenti o non è una domanda inline, renderizza normalmente
+    if (!previousInfo || !question.inline) {
+      return renderNormalQuestionText(question.question_text);
     }
     
     // Ottieni il testo della domanda precedente
-    const previousText = getPreviousQuestionText();
+    const previousQuestionText = previousInfo.question.question_text;
+    const previousSelectionText = getPreviousSelectionText(previousInfo);
+    const previousQuestionId = previousInfo.question.question_id;
     
-    if (!previousText) return question.question_text;
+    // Costruisci un array di parti per il rendering
+    const parts = [];
     
-    // Per le domande inline, sostituiamo i placeholder nel testo della domanda precedente
-    // con la selezione effettuata dall'utente
-    let completedPreviousText = previousText;
+    // Sostituisci il placeholder nella domanda precedente con la selezione cliccabile
+    const placeholderPattern = new RegExp(`\\{\\{${previousInfo.placeholderKey}\\}\\}`, 'g');
+    const textBeforePlaceholder = previousQuestionText.split(placeholderPattern)[0];
+    const textAfterPlaceholder = previousQuestionText.split(placeholderPattern)[1] || '';
     
-    if (previousPlaceholderKey && previousResponse !== undefined) {
-      const placeholderPattern = new RegExp(`\\{\\{${previousPlaceholderKey}\\}\\}`, 'g');
-      const selectionText = getPreviousSelectionText();
-      completedPreviousText = completedPreviousText.replace(placeholderPattern, selectionText);
-    }
+    // Aggiungi il testo prima del placeholder
+    parts.push(<span key="text-previous-before">{textBeforePlaceholder}</span>);
     
-    // Rimuoviamo qualsiasi altro placeholder rimanente con un valore vuoto
-    completedPreviousText = completedPreviousText.replace(/\{\{[^}]+\}\}/g, '____');
+    // Aggiungi la selezione precedente come elemento cliccabile
+    parts.push(
+      <span 
+        key="placeholder-previous"
+        onClick={() => handlePlaceholderClick("", previousQuestionId)}
+        className="inline-flex items-center justify-center mx-1 bg-[#F8F4EF] text-[#245C4F] font-semibold px-[10px] py-[4px] rounded-[6px] text-[16px] cursor-pointer hover:bg-[#E7E1D9]"
+      >
+        {previousSelectionText}
+      </span>
+    );
     
-    return completedPreviousText;
+    // Aggiungi il testo dopo il placeholder
+    parts.push(<span key="text-previous-after">{textAfterPlaceholder} </span>);
+    
+    // Aggiungi il testo della domanda corrente
+    const currentParts = renderNormalQuestionText(question.question_text);
+    parts.push(<span key="current-question">{currentParts}</span>);
+    
+    return <>{parts}</>;
   };
 
-  // Metodo per renderizzare il testo con i placeholder come input o select box
-  const renderQuestionText = () => {
-    // Se è una domanda inline, costruisci il testo completo che include la domanda precedente
-    let questionText = getCompleteQuestionText();
-
+  // Funzione per renderizzare una domanda normale (testo con placeholders)
+  const renderNormalQuestionText = (questionText: string) => {
     if (!questionText.includes('{{')) {
-      if (isInlineQuestion && previousQuestionId) {
-        // Se è una domanda inline, ma non ha placeholder nel testo,
-        // mostra comunque il testo precedente con la selezione precedente cliccabile
-        const previousText = getPreviousQuestionText();
-        const selectionText = getPreviousSelectionText();
-        
-        // Sostituisci il placeholder nel testo precedente con un elemento cliccabile
-        if (previousPlaceholderKey && selectionText) {
-          const placeholderPattern = new RegExp(`\\{\\{${previousPlaceholderKey}\\}\\}`, 'g');
-          const textBeforePlaceholder = previousText.split(placeholderPattern)[0];
-          const textAfterPlaceholder = previousText.split(placeholderPattern)[1] || '';
-          
-          return (
-            <span>
-              {textBeforePlaceholder}
-              <span 
-                onClick={() => previousQuestionId && handlePlaceholderClick("previous_selection")}
-                className="inline-flex items-center justify-center mx-1 bg-[#F8F4EF] text-[#245C4F] font-semibold px-[10px] py-[4px] rounded-[6px] text-[16px] cursor-pointer hover:bg-[#E7E1D9]"
-              >
-                {selectionText}
-              </span>
-              {textAfterPlaceholder}
-              {' '}
-              {question.question_text}
-            </span>
-          );
-        }
-      }
-      
       return <span>{questionText}</span>;
     }
 
@@ -263,34 +246,10 @@ export function FormQuestion({
     const regex = /\{\{([^}]+)\}\}/g;
     let match;
 
-    // Aggiungi la parte della domanda precedente per domande inline
-    if (isInlineQuestion && previousQuestionId) {
-      const previousText = getPreviousQuestionText();
-      const selectionText = getPreviousSelectionText();
-      
-      if (previousPlaceholderKey && selectionText) {
-        const placeholderPattern = new RegExp(`\\{\\{${previousPlaceholderKey}\\}\\}`, 'g');
-        const textBeforePlaceholder = previousText.split(placeholderPattern)[0];
-        const textAfterPlaceholder = previousText.split(placeholderPattern)[1] || '';
-        
-        parts.push(<span key="text-previous-before">{textBeforePlaceholder}</span>);
-        parts.push(
-          <span 
-            key="placeholder-previous"
-            onClick={() => previousQuestionId && handlePlaceholderClick("previous_selection")}
-            className="inline-flex items-center justify-center mx-1 bg-[#F8F4EF] text-[#245C4F] font-semibold px-[10px] py-[4px] rounded-[6px] text-[16px] cursor-pointer hover:bg-[#E7E1D9]"
-          >
-            {selectionText}
-          </span>
-        );
-        parts.push(<span key="text-previous-after">{textAfterPlaceholder} </span>);
-      }
-    }
-
-    while ((match = regex.exec(question.question_text)) !== null) {
+    while ((match = regex.exec(questionText)) !== null) {
       // Aggiungi testo prima del placeholder
       if (match.index > lastIndex) {
-        parts.push(<span key={`text-${lastIndex}`}>{question.question_text.slice(lastIndex, match.index)}</span>);
+        parts.push(<span key={`text-${lastIndex}`}>{questionText.slice(lastIndex, match.index)}</span>);
       }
 
       const placeholderKey = match[1];
@@ -344,26 +303,24 @@ export function FormQuestion({
             </span>
           );
         } else {
-          // Fallback per altri tipi di placeholder o se la chiave non esiste
           parts.push(<span key={`placeholder-${placeholderKey}`} className="mx-1 px-2 py-0.5 bg-gray-100 rounded-md text-[16px]">_____</span>);
         }
       } else {
-        // Fallback se la chiave non esiste nei placeholders
         parts.push(<span key={`placeholder-${placeholderKey}`} className="mx-1 px-2 py-0.5 bg-gray-100 rounded-md text-[16px]">_____</span>);
       }
 
       lastIndex = match.index + match[0].length;
     }
 
-    // Aggiungi il testo rimanente dopo l'ultimo placeholder
-    if (lastIndex < question.question_text.length) {
-      parts.push(<span key={`text-${lastIndex}`}>{question.question_text.slice(lastIndex)}</span>);
+    // Aggiungi il testo rimanente
+    if (lastIndex < questionText.length) {
+      parts.push(<span key={`text-${lastIndex}`}>{questionText.slice(lastIndex)}</span>);
     }
 
     return <>{parts}</>;
   };
 
-  // Ora renderizziamo solo i placeholder select con opzioni visibili sotto la domanda
+  // Renderizza i select options visibili
   const renderVisibleSelectOptions = (key: string, placeholder: any) => {
     const existingResponse = getResponse(question.question_id, key);
     
@@ -398,15 +355,45 @@ export function FormQuestion({
     return null;
   };
 
-  // Determina se ci sono risposte valide per mostrare il pulsante Avanti
+  // Determina se ci sono risposte valide
   const hasValidResponses = Object.keys(question.placeholders).some(key => 
     responses[key] !== undefined || getResponse(question.question_id, key) !== undefined
   );
 
-  // Renderizza la domanda principale con UI unificata
+  // Verifica se questa domanda ha domande inline di follow-up
+  const hasInlineFollowUp = () => {
+    const mainKey = Object.keys(question.placeholders)[0];
+    if (!mainKey) return false;
+    
+    const response = state.responses[question.question_id]?.[mainKey];
+    if (!response) return false;
+    
+    let nextQuestionId;
+    
+    if (question.placeholders[mainKey].type === "select" && !Array.isArray(response)) {
+      const options = (question.placeholders[mainKey] as any).options;
+      const selectedOption = options.find((opt: any) => opt.id === response);
+      nextQuestionId = selectedOption?.leads_to;
+    } else if (question.placeholders[mainKey].type === "input") {
+      nextQuestionId = (question.placeholders[mainKey] as any).leads_to;
+    }
+    
+    if (!nextQuestionId || nextQuestionId === "next_block") return false;
+    
+    // Cerca se la prossima domanda è inline
+    const currentBlock = allBlocks.find(block => 
+      block.questions.some(q => q.question_id === question.question_id)
+    );
+    
+    if (!currentBlock) return false;
+    
+    const nextQuestion = currentBlock.questions.find(q => q.question_id === nextQuestionId);
+    return nextQuestion?.inline === true;
+  };
+
   return (
     <div className="max-w-xl animate-fade-in">
-      {/* Domanda - aggiornato per utilizzare renderQuestionText */}
+      {/* Domanda con gestione avanzata delle inline */}
       <div className="text-[16px] font-normal text-gray-900 mb-5 leading-relaxed">
         {renderQuestionText()}
       </div>
@@ -419,8 +406,8 @@ export function FormQuestion({
         {Object.keys(question.placeholders).map(key => renderVisibleSelectOptions(key, question.placeholders[key]))}
       </div>
       
-      {/* Pulsante Avanti - con lo stile aggiornato - mostrato solo se ci sono risposte valide e hideNextButton è false */}
-      {!hideNextButton && hasValidResponses && (
+      {/* Pulsante Avanti - mostrato solo se ci sono risposte valide, hideNextButton è false, e non ci sono domande inline di follow-up */}
+      {!hideNextButton && hasValidResponses && !hasInlineFollowUp() && (
         <div className="mt-8">
           <Button
             type="button"

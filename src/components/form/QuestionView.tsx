@@ -39,192 +39,82 @@ export function QuestionView() {
     );
   }
 
-  // Funzione migliorata per trovare domande di follow-up inline con le relative informazioni
-  const findInlineFollowUpQuestions = (): { 
-    question: Question; 
-    previousQuestion: Question; 
-    previousPlaceholderKey: string; 
-    previousResponse: string | string[] | undefined 
-  }[] => {
-    const inlineFollowUpQuestions: { 
-      question: Question; 
-      previousQuestion: Question;
-      previousPlaceholderKey: string;
-      previousResponse: string | string[] | undefined 
-    }[] = [];
-    
+  // Funzione migliorata per verificare se ci sono delle domande inline che dovrebbero seguire questa
+  const hasInlineFollowUpQuestions = (): boolean => {
     // Trova l'indice della domanda corrente
     const currentQuestionIndex = activeBlock.questions.findIndex(q => q.question_id === activeQuestion.question_id);
-    if (currentQuestionIndex === -1) return [];
+    if (currentQuestionIndex === -1) return false;
     
-    // Inizializzazione per seguire la catena delle domande inline
-    let previousQuestion = activeQuestion;
-    let previousQuestionId = activeQuestion.question_id;
-    let previousPlaceholderKey = Object.keys(previousQuestion.placeholders)[0];
-    let previousResponse = state.responses[previousQuestionId]?.[previousPlaceholderKey];
-    let nextQuestionId = getLeadsToFromResponse(previousQuestion, previousPlaceholderKey, previousResponse);
-
-    // Se la risposta corrente non porta ad una domanda specifica o porta a next_block, non mostrare domande inline
-    if (!nextQuestionId || nextQuestionId === "next_block") {
-      return [];
-    }
+    // Controlla se ci sono domande inline che seguono questa in base al valore leads_to
+    const mainPlaceholderKey = Object.keys(activeQuestion.placeholders)[0];
+    if (!mainPlaceholderKey) return false;
     
-    // Cerca domande inline basate sul valore leads_to della risposta
-    for (let i = 0; i < activeBlock.questions.length; i++) {
-      // Salta la domanda corrente
-      if (activeBlock.questions[i].question_id === activeQuestion.question_id) continue;
-      
-      const potentialInlineQuestion = activeBlock.questions[i];
-      
-      // Controlla se questa domanda è inline e corrisponde al leads_to della risposta precedente
-      if (potentialInlineQuestion.inline && potentialInlineQuestion.question_id === nextQuestionId) {
-        // Aggiungi questa domanda inline alla catena
-        inlineFollowUpQuestions.push({
-          question: potentialInlineQuestion,
-          previousQuestion,
-          previousPlaceholderKey,
-          previousResponse
-        });
-        
-        // Aggiorna per la prossima iterazione
-        previousQuestion = potentialInlineQuestion;
-        previousQuestionId = potentialInlineQuestion.question_id;
-        previousPlaceholderKey = Object.keys(previousQuestion.placeholders)[0];
-        previousResponse = state.responses[previousQuestionId]?.[previousPlaceholderKey];
-        nextQuestionId = getLeadsToFromResponse(previousQuestion, previousPlaceholderKey, previousResponse);
-        
-        // Se non c'è una risposta o il leads_to è next_block, interrompi la catena
-        if (!previousResponse || !nextQuestionId || nextQuestionId === "next_block") {
-          break;
-        }
-      }
-    }
+    const response = state.responses[activeQuestion.question_id]?.[mainPlaceholderKey];
+    if (!response) return false;
     
-    return inlineFollowUpQuestions;
-  };
-  
-  // Funzione per ottenere il leads_to da una risposta
-  const getLeadsToFromResponse = (
-    question: Question, 
-    placeholderKey: string, 
-    response: string | string[] | undefined
-  ): string | undefined => {
-    if (!response) return undefined;
+    let nextQuestionId;
     
-    if (question.placeholders[placeholderKey].type === "select" && !Array.isArray(response)) {
-      const options = (question.placeholders[placeholderKey] as any).options;
+    if (activeQuestion.placeholders[mainPlaceholderKey].type === "select" && !Array.isArray(response)) {
+      const options = (activeQuestion.placeholders[mainPlaceholderKey] as any).options;
       const selectedOption = options.find((opt: any) => opt.id === response);
-      return selectedOption?.leads_to;
-    } else if (question.placeholders[placeholderKey].type === "input") {
-      return (question.placeholders[placeholderKey] as any).leads_to;
+      nextQuestionId = selectedOption?.leads_to;
+    } else if (activeQuestion.placeholders[mainPlaceholderKey].type === "input") {
+      nextQuestionId = (activeQuestion.placeholders[mainPlaceholderKey] as any).leads_to;
     }
     
-    return undefined;
+    if (!nextQuestionId || nextQuestionId === "next_block") return false;
+    
+    // Cerca se esiste una domanda inline con questo ID
+    const nextQuestion = activeBlock.questions.find(q => q.question_id === nextQuestionId);
+    return nextQuestion?.inline === true;
   };
-
-  const inlineFollowUpQuestions = findInlineFollowUpQuestions();
   
   // Verifica se tutte le domande hanno risposte valide
-  const checkAllQuestionsAnswered = () => {
+  const checkAllQuestionsAnswered = (): boolean => {
     // Verifica la domanda principale
-    const mainQuestionAnswered = Object.keys(activeQuestion.placeholders).every(key => 
+    return Object.keys(activeQuestion.placeholders).every(key => 
       state.responses[activeQuestion.question_id]?.[key] !== undefined
     );
-    
-    if (!mainQuestionAnswered || inlineFollowUpQuestions.length === 0) {
-      return mainQuestionAnswered;
-    }
-    
-    // Verifica tutte le domande inline
-    return inlineFollowUpQuestions.every(follow => {
-      const questionId = follow.question.question_id;
-      return Object.keys(follow.question.placeholders).every(key => 
-        state.responses[questionId]?.[key] !== undefined
-      );
-    });
   };
   
   // Gestisce la navigazione alla prossima domanda
   const handleNextQuestion = () => {
-    // Se ci sono domande inline, verifica l'ultima per la navigazione
-    if (inlineFollowUpQuestions.length > 0) {
-      const lastInlineQuestion = inlineFollowUpQuestions[inlineFollowUpQuestions.length - 1].question;
-      const lastKey = Object.keys(lastInlineQuestion.placeholders)[0];
+    const mainKey = Object.keys(activeQuestion.placeholders)[0];
+    const response = state.responses[activeQuestion.question_id]?.[mainKey];
+    
+    if (response && activeQuestion.placeholders[mainKey].type === "select" && !Array.isArray(response)) {
+      const options = (activeQuestion.placeholders[mainKey] as any).options;
+      const selectedOption = options.find((opt: any) => opt.id === response);
       
-      if (lastInlineQuestion.placeholders[lastKey].type === "select") {
-        const response = state.responses[lastInlineQuestion.question_id]?.[lastKey];
-        
-        if (response && !Array.isArray(response)) {
-          const options = (lastInlineQuestion.placeholders[lastKey] as any).options;
-          const selectedOption = options.find((opt: any) => opt.id === response);
-          
-          if (selectedOption?.leads_to) {
-            navigateToNextQuestion(lastInlineQuestion.question_id, selectedOption.leads_to);
-            return;
-          }
-        }
-      } else if (lastInlineQuestion.placeholders[lastKey].type === "input") {
-        const leadsTo = (lastInlineQuestion.placeholders[lastKey] as any).leads_to;
-        if (leadsTo) {
-          navigateToNextQuestion(lastInlineQuestion.question_id, leadsTo);
-          return;
-        }
+      if (selectedOption?.leads_to) {
+        navigateToNextQuestion(activeQuestion.question_id, selectedOption.leads_to);
+        return;
       }
-      
-      // Se non c'è un leads_to specifico, vai al prossimo blocco
-      navigateToNextQuestion(lastInlineQuestion.question_id, "next_block");
-    } else {
-      // Naviga usando la domanda principale
-      const mainKey = Object.keys(activeQuestion.placeholders)[0];
-      const response = state.responses[activeQuestion.question_id]?.[mainKey];
-      
-      if (response && activeQuestion.placeholders[mainKey].type === "select" && !Array.isArray(response)) {
-        const options = (activeQuestion.placeholders[mainKey] as any).options;
-        const selectedOption = options.find((opt: any) => opt.id === response);
-        
-        if (selectedOption?.leads_to) {
-          navigateToNextQuestion(activeQuestion.question_id, selectedOption.leads_to);
-          return;
-        }
-      } else if (response && activeQuestion.placeholders[mainKey].type === "input") {
-        const leadsTo = (activeQuestion.placeholders[mainKey] as any).leads_to;
-        if (leadsTo) {
-          navigateToNextQuestion(activeQuestion.question_id, leadsTo);
-          return;
-        }
+    } else if (response && activeQuestion.placeholders[mainKey].type === "input") {
+      const leadsTo = (activeQuestion.placeholders[mainKey] as any).leads_to;
+      if (leadsTo) {
+        navigateToNextQuestion(activeQuestion.question_id, leadsTo);
+        return;
       }
-      
-      // Se non c'è un leads_to specifico, vai al prossimo blocco
-      navigateToNextQuestion(activeQuestion.question_id, "next_block");
     }
+    
+    // Se non c'è un leads_to specifico, vai al prossimo blocco
+    navigateToNextQuestion(activeQuestion.question_id, "next_block");
   };
   
   // Determina se mostrare il pulsante Avanti in base alle risposte
-  const shouldShowNextButton = checkAllQuestionsAnswered();
+  const shouldShowNextButton = checkAllQuestionsAnswered() && !hasInlineFollowUpQuestions();
 
   return (
     <div className="max-w-2xl">
       <div className="space-y-4">
-        {/* Main question - ALWAYS hide the button since we'll control it from here */}
+        {/* Renderizziamo solo la domanda principale, che ora include la logica per gestire eventuali domande inline */}
         <FormQuestion 
           question={activeQuestion} 
-          hideNextButton={true} 
+          hideNextButton={hasInlineFollowUpQuestions()}
         />
         
-        {/* Inline follow-up questions - ora renderizzate come domande normali con info sulla domanda precedente */}
-        {inlineFollowUpQuestions.map((followUp, index) => (
-          <FormQuestion
-            key={followUp.question.question_id}
-            question={followUp.question}
-            hideNextButton={true}
-            isInlineQuestion={true}
-            previousQuestionId={followUp.previousQuestion.question_id}
-            previousPlaceholderKey={followUp.previousPlaceholderKey}
-            previousResponse={followUp.previousResponse}
-          />
-        ))}
-        
-        {/* Pulsante Avanti universale (mostrato solo se tutte le domande hanno risposte) */}
+        {/* Pulsante Avanti universale (mostrato solo se tutte le domande hanno risposte e non ci sono domande inline) */}
         {shouldShowNextButton && (
           <div className="mt-4">
             <Button
