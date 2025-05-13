@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { Question } from "@/types/form";
@@ -6,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { useParams, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { SelectPlaceholderBox } from "./SelectPlaceholderBox";
 
 export function FormQuestion({ question }: { question: Question }) {
   const { getResponse, setResponse, navigateToNextQuestion, addActiveBlock } = useForm();
@@ -93,6 +95,50 @@ export function FormQuestion({ question }: { question: Question }) {
     }, 50);
   };
 
+  // Nuovo metodo per renderizzare il testo con i placeholder come box
+  const renderQuestionText = () => {
+    if (!question.question_text.includes('{{')) {
+      return <span>{question.question_text}</span>;
+    }
+
+    const parts = [];
+    let lastIndex = 0;
+    const regex = /\{\{([^}]+)\}\}/g;
+    let match;
+
+    while ((match = regex.exec(question.question_text)) !== null) {
+      // Aggiungi testo prima del placeholder
+      if (match.index > lastIndex) {
+        parts.push(<span key={`text-${lastIndex}`}>{question.question_text.slice(lastIndex, match.index)}</span>);
+      }
+
+      const placeholderKey = match[1];
+      if (question.placeholders[placeholderKey] && question.placeholders[placeholderKey].type === "select") {
+        const placeholder = question.placeholders[placeholderKey];
+        parts.push(
+          <SelectPlaceholderBox
+            key={`placeholder-${placeholderKey}`}
+            questionId={question.question_id}
+            placeholderKey={placeholderKey}
+            options={(placeholder as any).options}
+          />
+        );
+      } else {
+        // Fallback per altri tipi di placeholder o se la chiave non esiste
+        parts.push(<span key={`placeholder-${placeholderKey}`} className="mx-1 px-2 py-0.5 bg-gray-100 rounded-md">_____</span>);
+      }
+
+      lastIndex = match.index + match[0].length;
+    }
+
+    // Aggiungi il testo rimanente dopo l'ultimo placeholder
+    if (lastIndex < question.question_text.length) {
+      parts.push(<span key={`text-${lastIndex}`}>{question.question_text.slice(lastIndex)}</span>);
+    }
+
+    return <>{parts}</>;
+  };
+
   const renderPlaceholder = (key: string, placeholder: any, inline: boolean = false) => {
     const existingResponse = getResponse(question.question_id, key);
     
@@ -178,9 +224,9 @@ export function FormQuestion({ question }: { question: Question }) {
   // Renderizza la domanda principale con UI unificata
   return (
     <div className="max-w-xl animate-fade-in">
-      {/* Domanda principale */}
+      {/* Domanda principale - aggiornato per utilizzare renderQuestionText */}
       <div className="text-xl md:text-2xl font-normal text-gray-900 mb-6 leading-relaxed">
-        {question.question_text.replace(/\{\{([^}]+)\}\}/g, '_____')}
+        {renderQuestionText()}
       </div>
       
       {/* Contenitore per tutti i placeholder */}
