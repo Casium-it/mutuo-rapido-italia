@@ -9,7 +9,7 @@ import { useParams, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { SelectPlaceholderBox } from "./SelectPlaceholderBox";
 import { Separator } from "@/components/ui/separator";
-import { allBlocks } from "@/data/blocks"; // Importare i blocchi direttamente
+import { allBlocks } from "@/data/blocks";
 
 interface FormQuestionProps {
   question: Question;
@@ -145,6 +145,23 @@ export function FormQuestion({
     }, 50);
   };
 
+  // Funzione per ottenere il testo completo della domanda precedente
+  const getPreviousQuestionText = (): string => {
+    if (!isInlineQuestion || !previousQuestionId) return "";
+    
+    // Trova la domanda precedente nel blocco corrente
+    const previousBlock = allBlocks.find(block => 
+      block.questions.some(q => q.question_id === previousQuestionId)
+    );
+    
+    if (!previousBlock) return "";
+    
+    const previousQuestion = previousBlock.questions.find(q => q.question_id === previousQuestionId);
+    if (!previousQuestion) return "";
+    
+    return previousQuestion.question_text;
+  };
+
   // Funzione per ottenere il testo della selezione precedente
   const getPreviousSelectionText = (): string => {
     if (!isInlineQuestion || !previousQuestionId || !previousPlaceholderKey || previousResponse === undefined) {
@@ -153,7 +170,6 @@ export function FormQuestion({
     
     // Se il tipo della risposta precedente è "select", otteni il testo dell'opzione selezionata
     if (!Array.isArray(previousResponse)) {
-      // Utilizziamo direttamente allBlocks importato anziché window.formBlocks
       const previousQuestionBlock = allBlocks.find(block => 
         block.questions.some(q => q.question_id === previousQuestionId)
       );
@@ -171,42 +187,75 @@ export function FormQuestion({
         }
       }
       
-      // Se non è un'opzione select o se non troviamo una label corrispondente, convertiamo in stringa in modo sicuro
       return String(previousResponse);
     }
     
-    // Se è un array (multiple select), unisci i valori con virgole
     return Array.isArray(previousResponse) ? previousResponse.join(", ") : String(previousResponse);
+  };
+
+  // Funzione per comporre il testo completo della domanda, incorporando la domanda precedente per le domande inline
+  const getCompleteQuestionText = (): string => {
+    if (!isInlineQuestion || !previousQuestionId) {
+      return question.question_text;
+    }
+    
+    // Ottieni il testo della domanda precedente
+    const previousText = getPreviousQuestionText();
+    
+    if (!previousText) return question.question_text;
+    
+    // Per le domande inline, sostituiamo i placeholder nel testo della domanda precedente
+    // con la selezione effettuata dall'utente
+    let completedPreviousText = previousText;
+    
+    if (previousPlaceholderKey && previousResponse !== undefined) {
+      const placeholderPattern = new RegExp(`\\{\\{${previousPlaceholderKey}\\}\\}`, 'g');
+      const selectionText = getPreviousSelectionText();
+      completedPreviousText = completedPreviousText.replace(placeholderPattern, selectionText);
+    }
+    
+    // Rimuoviamo qualsiasi altro placeholder rimanente con un valore vuoto
+    completedPreviousText = completedPreviousText.replace(/\{\{[^}]+\}\}/g, '____');
+    
+    return completedPreviousText;
   };
 
   // Metodo per renderizzare il testo con i placeholder come input o select box
   const renderQuestionText = () => {
-    // Se è una domanda inline, aggiungi la selezione precedente prima del testo della domanda
-    let questionText = question.question_text;
-    const previousSelectionText = getPreviousSelectionText();
-    
-    if (isInlineQuestion && previousSelectionText) {
-      // Aggiungi la selezione precedente come elemento cliccabile
-      return (
-        <>
-          <span 
-            onClick={() => previousQuestionId && handlePlaceholderClick("previous_selection")}
-            className="inline-flex items-center justify-center mr-1 bg-[#F8F4EF] text-[#245C4F] font-semibold px-[10px] py-[4px] rounded-[6px] text-[16px] cursor-pointer hover:bg-[#E7E1D9]"
-          >
-            {previousSelectionText}
-          </span>
-          {renderQuestionTextWithPlaceholders(questionText)}
-        </>
-      );
-    }
-    
-    return renderQuestionTextWithPlaceholders(questionText);
-  };
-  
-  // Helper per renderizzare il testo con i placeholder
-  const renderQuestionTextWithPlaceholders = (text: string) => {
-    if (!text.includes('{{')) {
-      return <span>{text}</span>;
+    // Se è una domanda inline, costruisci il testo completo che include la domanda precedente
+    let questionText = getCompleteQuestionText();
+
+    if (!questionText.includes('{{')) {
+      if (isInlineQuestion && previousQuestionId) {
+        // Se è una domanda inline, ma non ha placeholder nel testo,
+        // mostra comunque il testo precedente con la selezione precedente cliccabile
+        const previousText = getPreviousQuestionText();
+        const selectionText = getPreviousSelectionText();
+        
+        // Sostituisci il placeholder nel testo precedente con un elemento cliccabile
+        if (previousPlaceholderKey && selectionText) {
+          const placeholderPattern = new RegExp(`\\{\\{${previousPlaceholderKey}\\}\\}`, 'g');
+          const textBeforePlaceholder = previousText.split(placeholderPattern)[0];
+          const textAfterPlaceholder = previousText.split(placeholderPattern)[1] || '';
+          
+          return (
+            <span>
+              {textBeforePlaceholder}
+              <span 
+                onClick={() => previousQuestionId && handlePlaceholderClick("previous_selection")}
+                className="inline-flex items-center justify-center mx-1 bg-[#F8F4EF] text-[#245C4F] font-semibold px-[10px] py-[4px] rounded-[6px] text-[16px] cursor-pointer hover:bg-[#E7E1D9]"
+              >
+                {selectionText}
+              </span>
+              {textAfterPlaceholder}
+              {' '}
+              {question.question_text}
+            </span>
+          );
+        }
+      }
+      
+      return <span>{questionText}</span>;
     }
 
     const parts = [];
@@ -214,10 +263,34 @@ export function FormQuestion({
     const regex = /\{\{([^}]+)\}\}/g;
     let match;
 
-    while ((match = regex.exec(text)) !== null) {
+    // Aggiungi la parte della domanda precedente per domande inline
+    if (isInlineQuestion && previousQuestionId) {
+      const previousText = getPreviousQuestionText();
+      const selectionText = getPreviousSelectionText();
+      
+      if (previousPlaceholderKey && selectionText) {
+        const placeholderPattern = new RegExp(`\\{\\{${previousPlaceholderKey}\\}\\}`, 'g');
+        const textBeforePlaceholder = previousText.split(placeholderPattern)[0];
+        const textAfterPlaceholder = previousText.split(placeholderPattern)[1] || '';
+        
+        parts.push(<span key="text-previous-before">{textBeforePlaceholder}</span>);
+        parts.push(
+          <span 
+            key="placeholder-previous"
+            onClick={() => previousQuestionId && handlePlaceholderClick("previous_selection")}
+            className="inline-flex items-center justify-center mx-1 bg-[#F8F4EF] text-[#245C4F] font-semibold px-[10px] py-[4px] rounded-[6px] text-[16px] cursor-pointer hover:bg-[#E7E1D9]"
+          >
+            {selectionText}
+          </span>
+        );
+        parts.push(<span key="text-previous-after">{textAfterPlaceholder} </span>);
+      }
+    }
+
+    while ((match = regex.exec(question.question_text)) !== null) {
       // Aggiungi testo prima del placeholder
       if (match.index > lastIndex) {
-        parts.push(<span key={`text-${lastIndex}`}>{text.slice(lastIndex, match.index)}</span>);
+        parts.push(<span key={`text-${lastIndex}`}>{question.question_text.slice(lastIndex, match.index)}</span>);
       }
 
       const placeholderKey = match[1];
@@ -283,8 +356,8 @@ export function FormQuestion({
     }
 
     // Aggiungi il testo rimanente dopo l'ultimo placeholder
-    if (lastIndex < text.length) {
-      parts.push(<span key={`text-${lastIndex}`}>{text.slice(lastIndex)}</span>);
+    if (lastIndex < question.question_text.length) {
+      parts.push(<span key={`text-${lastIndex}`}>{question.question_text.slice(lastIndex)}</span>);
     }
 
     return <>{parts}</>;
