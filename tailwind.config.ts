@@ -53,6 +53,15 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				pretto: {
+					background: '#f8f8f5',
+					foreground: '#000000',
+					border: '#d4d4d4',
+					primary: '#000000',
+					highlight: '#f8c200',
+					muted: '#f1f1f1',
+					accent: '#329dcc'
+				},
 				vibe: {
 					green: '#00853E',
 					'green-vivid': '#00E676',
@@ -102,6 +111,16 @@ export default {
 						height: '0'
 					}
 				},
+				'fade-in': {
+					"0%": {
+					  opacity: "0",
+					  transform: "translateY(10px)"
+					},
+					"100%": {
+					  opacity: "1",
+					  transform: "translateY(0)"
+					}
+				},
 				'float': {
 					'0%, 100%': { transform: 'translateY(0)' },
 					'50%': { transform: 'translateY(-10px)' },
@@ -122,6 +141,7 @@ export default {
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fade-in 0.3s ease-out',
 				'float': 'float 6s ease-in-out infinite',
 				'pulse-light': 'pulse-light 2s ease-in-out infinite',
 				'float-rotate': 'float-rotate 8s ease-in-out infinite',

@@ -27,35 +27,35 @@ export default function Form() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F9F9F6]">
-      {/* Header */}
-      <header className="py-4 px-4 md:px-6 flex justify-between items-center bg-white border-b border-gray-200">
+    <div className="min-h-screen flex flex-col bg-[#f8f8f5]">
+      {/* Header in stile Pretto */}
+      <header className="py-4 px-4 md:px-6 flex justify-between items-center bg-white border-b border-gray-100 shadow-sm">
         <div className="flex items-center">
           <Link to="/">
             <Logo />
           </Link>
         </div>
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="sm" className="text-gray-700" onClick={handleSaveAndExit}>
+          <Button variant="outline" size="sm" className="text-black border-gray-200 hover:bg-gray-50">
             Salva ed esci
           </Button>
         </div>
       </header>
 
-      {/* Progress bar */}
-      <div className="bg-white px-4 py-2 border-b border-gray-200">
-        <div className="max-w-3xl mx-auto flex items-center gap-3">
-          <Progress value={progress} className="h-2" />
+      {/* Progress bar in stile Pretto */}
+      <div className="bg-white px-4 py-2 border-b border-gray-100">
+        <div className="max-w-4xl mx-auto flex items-center gap-3">
+          <Progress value={progress} className="h-1 bg-gray-100" indicatorClassName="bg-black" />
           <span className="text-sm font-medium text-gray-600">{progress}%</span>
         </div>
       </div>
 
-      {/* Main content */}
+      {/* Main content - layout in stile Pretto */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <div className="w-[320px] bg-[#F9F9F6] border-r border-gray-200 overflow-y-auto">
+        {/* Sidebar in stile Pretto */}
+        <div className="w-[280px] bg-[#f8f8f5] border-r border-gray-100 overflow-y-auto">
           <div className="p-6">
-            <Link to="/" className="flex items-center text-gray-600 mb-8">
+            <Link to="/" className="flex items-center text-black mb-8">
               <ArrowLeft className="h-4 w-4 mr-2" />
               <span>Indietro</span>
             </Link>
@@ -64,12 +64,12 @@ export default function Form() {
           </div>
         </div>
 
-        {/* Content area */}
+        {/* Content area in stile Pretto */}
         <div className="flex-1 overflow-y-auto p-8 md:p-12">
           <div className="max-w-3xl mx-auto">
             {/* Block title */}
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900">{activeBlock?.title}</h1>
+              <h1 className="text-3xl font-bold text-black">{activeBlock?.title}</h1>
             </div>
 
             {/* Question */}

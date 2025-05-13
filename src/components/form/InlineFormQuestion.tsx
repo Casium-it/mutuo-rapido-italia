@@ -36,22 +36,18 @@ export function InlineFormQuestion({
       
       // Naviga alla prossima domanda
       if (selectedOption?.leads_to) {
-        setTimeout(() => {
-          navigateToNextQuestion(question.question_id, selectedOption.leads_to);
-        }, 50);
+        navigateToNextQuestion(question.question_id, selectedOption.leads_to);
         return true;
       }
     } else if (question.placeholders[key].type === "input" && (question.placeholders[key] as any).leads_to) {
-      setTimeout(() => {
-        navigateToNextQuestion(question.question_id, (question.placeholders[key] as any).leads_to);
-      }, 50);
+      navigateToNextQuestion(question.question_id, (question.placeholders[key] as any).leads_to);
       return true;
     }
     
     return false;
   };
 
-  // Find the option that was selected in the previous question
+  // Trova l'etichetta dell'opzione selezionata nella domanda precedente
   const findSelectedOptionLabel = () => {
     if (!previousResponse) return "";
     
@@ -80,7 +76,7 @@ export function InlineFormQuestion({
               [key]: e.target.value
             });
           }}
-          className="inline-block mx-1 w-auto min-w-[80px]"
+          className="inline-block mx-1 w-auto min-w-[80px] border-black"
         />
       );
     } else if (placeholder.type === "select") {
@@ -98,7 +94,7 @@ export function InlineFormQuestion({
               size="sm"
               className={
                 (responses[key] === option.id || existingResponse === option.id)
-                  ? "bg-vibe-green text-white border-vibe-green"
+                  ? "bg-black text-white border-black"
                   : "border-gray-300"
               }
               onClick={() => {
@@ -159,12 +155,12 @@ export function InlineFormQuestion({
 
   return (
     <form onSubmit={handleSubmit} className="inline">
-      <span className="font-medium">{renderInlineQuestion()}</span>
+      <span className="text-lg font-medium">{renderInlineQuestion()}</span>
       <Button
         type="submit"
         variant="ghost"
         size="sm"
-        className="ml-2 text-vibe-green hover:text-vibe-green-dark"
+        className="ml-2 text-black hover:text-gray-700"
         disabled={Object.keys(responses).length === 0}
       >
         OK

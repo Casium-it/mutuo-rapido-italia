@@ -24,6 +24,8 @@ export function FormQuestion({ question }: { question: Question }) {
     
     if (Object.keys(existingResponses).length > 0) {
       setResponses(existingResponses);
+    } else {
+      setResponses({});
     }
   }, [question.question_id, getResponse]);
 
@@ -44,16 +46,12 @@ export function FormQuestion({ question }: { question: Question }) {
       
       // Naviga alla prossima domanda
       if (selectedOption?.leads_to) {
-        // Piccolo timeout per assicurarsi che lo stato sia aggiornato prima della navigazione
-        setTimeout(() => {
-          navigateToNextQuestion(question.question_id, selectedOption.leads_to);
-        }, 50);
+        // Naviga immediatamente senza timeout
+        navigateToNextQuestion(question.question_id, selectedOption.leads_to);
         return true;
       }
     } else if (question.placeholders[key].type === "input" && (question.placeholders[key] as any).leads_to) {
-      setTimeout(() => {
-        navigateToNextQuestion(question.question_id, (question.placeholders[key] as any).leads_to);
-      }, 50);
+      navigateToNextQuestion(question.question_id, (question.placeholders[key] as any).leads_to);
       return true;
     }
     
@@ -75,7 +73,7 @@ export function FormQuestion({ question }: { question: Question }) {
               [key]: e.target.value
             });
           }}
-          className="inline-block mx-1 w-auto min-w-[80px]"
+          className="inline-block mx-1 w-auto min-w-[120px]"
         />
       );
     } else if (placeholder.type === "select") {
@@ -102,7 +100,7 @@ export function FormQuestion({ question }: { question: Question }) {
                       [key]: newValue
                     });
                   }}
-                  className="h-4 w-4 rounded border-gray-300 text-vibe-green focus:ring-vibe-green"
+                  className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
                 />
                 <span>{option.label}</span>
               </label>
@@ -110,15 +108,16 @@ export function FormQuestion({ question }: { question: Question }) {
           </div>
         );
       } else {
-        // Handle single select (cards with buttons) con auto-submit
+        // Handle single select (cards with buttons) basato sul design di Pretto
         return (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
+          <div className="grid grid-cols-1 gap-2 mt-6">
             {placeholder.options.map((option) => (
-              <div
+              <button
                 key={option.id}
-                className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                type="button"
+                className={`w-full text-left px-4 py-3 border rounded-md transition-all ${
                   responses[key] === option.id || existingResponse === option.id
-                    ? "border-vibe-green bg-vibe-green/5"
+                    ? "border-black bg-gray-100"
                     : "border-gray-200 hover:border-gray-300"
                 }`}
                 onClick={() => {
@@ -133,8 +132,8 @@ export function FormQuestion({ question }: { question: Question }) {
                   handleResponseAndNavigation(key, newValue);
                 }}
               >
-                <div className="font-medium text-gray-900">{option.label}</div>
-              </div>
+                <div className="font-medium text-black">{option.label}</div>
+              </button>
             ))}
           </div>
         );
@@ -195,9 +194,11 @@ export function FormQuestion({ question }: { question: Question }) {
     }
   };
 
+  // Renderizza la domanda principale in stile Pretto
   return (
     <form onSubmit={handleSubmit} className="max-w-xl animate-fade-in">
-      <div className="text-xl font-medium text-gray-900 mb-6">
+      {/* Domanda principale in stile Pretto */}
+      <div className="text-2xl font-medium text-black mb-6">
         {Object.keys(question.placeholders).map((key) => {
           const parts = question.question_text.split(new RegExp(`{{${key}}}`, "g"));
           
@@ -218,16 +219,22 @@ export function FormQuestion({ question }: { question: Question }) {
         })}
       </div>
       
-      <div className="mt-8">
-        <Button
-          type="submit"
-          className="bg-vibe-green hover:bg-vibe-green-dark text-white transition-all"
-          disabled={Object.keys(responses).length === 0 && 
-                   !Object.keys(question.placeholders).some(key => getResponse(question.question_id, key))}
-        >
-          Continua <ArrowRight className="ml-2 h-4 w-4" />
-        </Button>
-      </div>
+      {/* Pulsante continua - stile Pretto */}
+      {Object.keys(question.placeholders).some(key => 
+        question.placeholders[key].type !== "select" || // Solo per input o select multipli
+        (question.placeholders[key].type === "select" && (question.placeholders[key] as any).multiple)
+      ) && (
+        <div className="mt-8">
+          <Button
+            type="submit"
+            className="bg-black hover:bg-gray-800 text-white transition-all rounded-md px-4 py-2"
+            disabled={Object.keys(responses).length === 0 && 
+                     !Object.keys(question.placeholders).some(key => getResponse(question.question_id, key))}
+          >
+            Continua <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+      )}
     </form>
   );
 }

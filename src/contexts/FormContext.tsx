@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useReducer, ReactNode, useEffect } from "react";
+import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback } from "react";
 import { Block, FormState, FormResponse } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 
@@ -13,6 +13,7 @@ type FormContextType = {
   isQuestionAnswered: (question_id: string) => boolean;
   navigateToNextQuestion: (currentQuestionId: string, leadsTo: string) => void;
   getProgress: () => number;
+  resetForm: () => void;
 };
 
 type Action =
@@ -20,7 +21,8 @@ type Action =
   | { type: "SET_RESPONSE"; question_id: string; placeholder_key: string; value: string | string[] }
   | { type: "ADD_ACTIVE_BLOCK"; block_id: string }
   | { type: "MARK_QUESTION_ANSWERED"; question_id: string }
-  | { type: "SET_FORM_STATE"; state: Partial<FormState> };
+  | { type: "SET_FORM_STATE"; state: Partial<FormState> }
+  | { type: "RESET_FORM" };
 
 const initialState: FormState = {
   activeBlocks: [],
@@ -78,6 +80,14 @@ function formReducer(state: FormState, action: Action): FormState {
         ...action.state
       };
     }
+    case "RESET_FORM": {
+      return {
+        ...initialState,
+        // Mantieni solo i blocchi default_active
+        activeBlocks: state.activeBlocks.filter(blockId => 
+          initialState.activeBlocks.includes(blockId))
+      };
+    }
     default:
       return state;
   }
@@ -92,6 +102,35 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     ...initialState,
     activeBlocks: blocks.filter(b => b.default_active).map(b => b.block_id)
   });
+
+  // Inizializza o aggiorna i blocchi attivi dal JSON
+  useEffect(() => {
+    // Prima attiva tutti i blocchi che dovrebbero essere attivi per default
+    const defaultActiveBlockIds = blocks
+      .filter(b => b.default_active)
+      .map(b => b.block_id);
+    
+    // Aggiungi tutti i blocchi default_active che non sono già attivi
+    defaultActiveBlockIds.forEach(blockId => {
+      if (!state.activeBlocks.includes(blockId)) {
+        dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
+      }
+    });
+  }, [blocks]);
+
+  // Funzione per reimpostare il form
+  const resetForm = useCallback(() => {
+    // Rimuovi i dati salvati dal localStorage
+    if (params.blockType) {
+      localStorage.removeItem(`form-state-${params.blockType}`);
+    }
+    
+    // Reimposta lo stato del form
+    dispatch({ type: "RESET_FORM" });
+    
+    // Torna alla prima domanda
+    navigate("/simulazione/pensando/funnel/fase_mutuo", { replace: true });
+  }, [params.blockType, navigate]);
 
   // Sincronizza lo stato del form con i parametri URL quando l'URL cambia
   useEffect(() => {
@@ -143,9 +182,21 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     if (savedState) {
       try {
         const parsedState = JSON.parse(savedState);
+        
         // Converti answeredQuestions da array a Set
-        parsedState.answeredQuestions = new Set(parsedState.answeredQuestions);
+        if (Array.isArray(parsedState.answeredQuestions)) {
+          parsedState.answeredQuestions = new Set(parsedState.answeredQuestions);
+        } else {
+          parsedState.answeredQuestions = new Set();
+        }
+        
+        // Applica lo stato salvato
         dispatch({ type: "SET_FORM_STATE", state: parsedState });
+        
+        // Assicurati che tutti i blocchi necessari siano attivati in base alle risposte
+        if (parsedState.responses) {
+          activateRequiredBlocksBasedOnResponses(parsedState.responses);
+        }
       } catch (e) {
         console.error("Errore nel caricamento dello stato salvato:", e);
       }
@@ -164,7 +215,37 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     }
   }, [state, params.blockType]);
 
-  const goToQuestion = (block_id: string, question_id: string, replace = false) => {
+  // Attiva i blocchi necessari in base alle risposte salvate
+  const activateRequiredBlocksBasedOnResponses = (responses: FormResponse) => {
+    // Itera su tutte le domande per trovare opzioni che richiedono l'attivazione di blocchi
+    for (const questionId of Object.keys(responses)) {
+      for (const blockObj of blocks) {
+        const question = blockObj.questions.find(q => q.question_id === questionId);
+        if (!question) continue;
+
+        for (const [placeholderKey, value] of Object.entries(responses[questionId])) {
+          if (question.placeholders[placeholderKey].type === "select") {
+            const options = (question.placeholders[placeholderKey] as any).options;
+            if (!Array.isArray(value)) { // Per selezione singola
+              const selectedOption = options.find((opt: any) => opt.id === value);
+              if (selectedOption?.add_block && !state.activeBlocks.includes(selectedOption.add_block)) {
+                dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: selectedOption.add_block });
+              }
+            } else { // Per selezione multipla
+              for (const optionId of value) {
+                const selectedOption = options.find((opt: any) => opt.id === optionId);
+                if (selectedOption?.add_block && !state.activeBlocks.includes(selectedOption.add_block)) {
+                  dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: selectedOption.add_block });
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  };
+
+  const goToQuestion = useCallback((block_id: string, question_id: string, replace = false) => {
     dispatch({ type: "GO_TO_QUESTION", block_id, question_id });
     
     // Aggiorna l'URL per riflettere la nuova domanda
@@ -176,27 +257,27 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     } else {
       navigate(newPath);
     }
-  };
+  }, [params.blockType, navigate]);
 
-  const setResponse = (question_id: string, placeholder_key: string, value: string | string[]) => {
+  const setResponse = useCallback((question_id: string, placeholder_key: string, value: string | string[]) => {
     dispatch({ type: "SET_RESPONSE", question_id, placeholder_key, value });
     dispatch({ type: "MARK_QUESTION_ANSWERED", question_id });
-  };
+  }, []);
 
-  const getResponse = (question_id: string, placeholder_key: string) => {
+  const getResponse = useCallback((question_id: string, placeholder_key: string) => {
     if (!state.responses[question_id]) return undefined;
     return state.responses[question_id][placeholder_key];
-  };
+  }, [state.responses]);
 
-  const addActiveBlock = (block_id: string) => {
+  const addActiveBlock = useCallback((block_id: string) => {
     dispatch({ type: "ADD_ACTIVE_BLOCK", block_id });
-  };
+  }, []);
 
-  const isQuestionAnswered = (question_id: string) => {
+  const isQuestionAnswered = useCallback((question_id: string) => {
     return state.answeredQuestions.has(question_id);
-  };
+  }, [state.answeredQuestions]);
 
-  const findQuestionById = (questionId: string): { block: Block; question: any } | null => {
+  const findQuestionById = useCallback((questionId: string): { block: Block; question: any } | null => {
     for (const block of blocks) {
       for (const question of block.questions) {
         if (question.question_id === questionId) {
@@ -205,9 +286,9 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       }
     }
     return null;
-  };
+  }, [blocks]);
 
-  const navigateToNextQuestion = (currentQuestionId: string, leadsTo: string) => {
+  const navigateToNextQuestion = useCallback((currentQuestionId: string, leadsTo: string) => {
     if (leadsTo === "next_block") {
       // Trova il blocco corrente e naviga alla prima domanda del prossimo blocco attivo
       let currentBlockIndex = -1;
@@ -237,10 +318,10 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         goToQuestion(found.block.block_id, found.question.question_id);
       }
     }
-  };
+  }, [blocks, state.activeBlocks, goToQuestion, findQuestionById]);
 
   // Calcola il progresso complessivo del form
-  const getProgress = () => {
+  const getProgress = useCallback(() => {
     // Conta tutte le domande nei blocchi attivi
     let totalQuestions = 0;
     let answeredCount = 0;
@@ -248,10 +329,12 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     for (const blockId of state.activeBlocks) {
       const block = blocks.find(b => b.block_id === blockId);
       if (block) {
-        totalQuestions += block.questions.length;
+        // Conta solo le domande normali (non inline) per il totale
+        const normalQuestions = block.questions.filter(q => !q.inline);
+        totalQuestions += normalQuestions.length;
         
         // Conta le domande già risposte in questo blocco
-        block.questions.forEach(q => {
+        normalQuestions.forEach(q => {
           if (state.answeredQuestions.has(q.question_id)) {
             answeredCount++;
           }
@@ -260,7 +343,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     }
     
     return totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
-  };
+  }, [state.activeBlocks, state.answeredQuestions, blocks]);
 
   return (
     <FormContext.Provider
@@ -273,7 +356,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         addActiveBlock,
         isQuestionAnswered,
         navigateToNextQuestion,
-        getProgress
+        getProgress,
+        resetForm
       }}
     >
       {children}
