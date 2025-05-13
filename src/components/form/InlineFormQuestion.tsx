@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { Question } from "@/types/form";
@@ -7,18 +8,21 @@ import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLocation } from "react-router-dom";
 import { SelectPlaceholderBox } from "./SelectPlaceholderBox";
-import { Separator } from "@/components/ui/separator";
 
 interface InlineFormQuestionProps {
   question: Question;
   previousQuestion: Question;
   previousResponse: string | string[] | undefined;
+  isLastInline?: boolean;
+  hideNextButton?: boolean;
 }
 
 export function InlineFormQuestion({ 
   question, 
   previousQuestion, 
-  previousResponse 
+  previousResponse,
+  isLastInline = false,
+  hideNextButton = false
 }: InlineFormQuestionProps) {
   const { getResponse, setResponse, navigateToNextQuestion, addActiveBlock } = useForm();
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});
@@ -247,22 +251,19 @@ export function InlineFormQuestion({
   );
 
   return (
-    <div className="p-4 border border-gray-200 rounded-lg bg-gray-50 mt-4">
-      {/* Domanda - aggiornata per utilizzare renderQuestionText */}
-      <div className="text-[16px] font-medium text-gray-900 mb-4">
+    <div className="ml-1">
+      {/* Domanda inline - renderizzata come continuazione del testo */}
+      <div className="text-[16px] font-medium text-gray-900">
         {renderQuestionText()}
       </div>
       
-      {/* Linea separatrice beige */}
-      <Separator className="h-[1px] bg-[#F0EAE0] my-4" />
-      
       {/* Contenitore per tutti i placeholder */}
-      <div className="space-y-4 mt-4">
+      <div className="space-y-4 mt-2">
         {Object.keys(question.placeholders).map(key => renderPlaceholder(key, question.placeholders[key]))}
       </div>
       
-      {/* Pulsante Avanti - mostrato solo se ci sono risposte valide */}
-      {hasValidResponses && (
+      {/* Pulsante Avanti - mostrato solo se ci sono risposte valide e se è l'ultima domanda inline e hideNextButton è false */}
+      {!hideNextButton && isLastInline && hasValidResponses && (
         <div className="mt-4">
           <Button
             type="button"
