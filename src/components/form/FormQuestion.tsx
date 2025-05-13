@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { Question } from "@/types/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, ChevronDown } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -145,12 +146,11 @@ export function FormQuestion({ question }: { question: Question }) {
             <button
               key={`select-inline-${key}`}
               type="button"
-              className="inline-flex items-center justify-between mx-1 px-3 py-1.5 border border-gray-300 
+              className="inline-flex items-center justify-center mx-1 px-3 py-1.5 border border-gray-300 
                         rounded bg-white text-gray-700 hover:border-gray-400 text-sm transition-all min-w-[100px]"
               onClick={() => {}}
             >
               <span>{selectedOption ? selectedOption.label : "Seleziona"}</span>
-              <ChevronDown className="ml-1 h-3.5 w-3.5 opacity-70" />
             </button>
           );
         }
@@ -450,3 +450,4 @@ export function FormQuestion({ question }: { question: Question }) {
     </form>
   );
 }
+

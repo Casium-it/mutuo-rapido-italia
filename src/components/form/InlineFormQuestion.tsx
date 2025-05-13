@@ -1,10 +1,10 @@
+
 import React, { useState } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { Question } from "@/types/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ChevronDown } from "lucide-react";
 
 interface InlineFormQuestionProps {
   question: Question;
@@ -101,12 +101,11 @@ export function InlineFormQuestion({
           <button
             key={`select-inline-${key}`}
             type="button"
-            className="inline-flex items-center justify-between mx-1 px-3 py-1.5 border border-gray-300 
+            className="inline-flex items-center justify-center mx-1 px-3 py-1.5 border border-gray-300 
                       rounded bg-white text-gray-700 hover:border-gray-400 text-xs transition-all min-w-[90px]"
             onClick={() => {}}
           >
             <span>{selectedOption ? selectedOption.label : "Seleziona"}</span>
-            <ChevronDown className="ml-1 h-3 w-3 opacity-70" />
           </button>
         );
       }
