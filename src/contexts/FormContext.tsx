@@ -21,7 +21,8 @@ type Action =
   | { type: "ADD_ACTIVE_BLOCK"; block_id: string }
   | { type: "MARK_QUESTION_ANSWERED"; question_id: string }
   | { type: "SET_FORM_STATE"; state: Partial<FormState> }
-  | { type: "RESET_FORM" };
+  | { type: "RESET_FORM" }
+  | { type: "SET_NAVIGATING"; isNavigating: boolean };
 
 const initialState: FormState = {
   activeBlocks: [],
@@ -30,7 +31,8 @@ const initialState: FormState = {
     question_id: "soggetto_acquisto"
   },
   responses: {},
-  answeredQuestions: new Set()
+  answeredQuestions: new Set(),
+  isNavigating: false
 };
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
@@ -84,6 +86,12 @@ function formReducer(state: FormState, action: Action): FormState {
         ...initialState,
         activeBlocks: state.activeBlocks.filter(blockId => 
           initialState.activeBlocks.includes(blockId))
+      };
+    }
+    case "SET_NAVIGATING": {
+      return {
+        ...state,
+        isNavigating: action.isNavigating
       };
     }
     default:
@@ -256,6 +264,9 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   const goToQuestion = useCallback((block_id: string, question_id: string, replace = false) => {
     dispatch({ type: "GO_TO_QUESTION", block_id, question_id });
     
+    // Set navigating state when navigating
+    dispatch({ type: "SET_NAVIGATING", isNavigating: true });
+    
     // Aggiorna l'URL per riflettere la nuova domanda
     const blockType = params.blockType || "funnel";
     const newPath = `/simulazione/${blockType}/${block_id}/${question_id}`;
@@ -265,6 +276,11 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     } else {
       navigate(newPath);
     }
+    
+    // Reset navigating state after a short delay
+    setTimeout(() => {
+      dispatch({ type: "SET_NAVIGATING", isNavigating: false });
+    }, 300);
   }, [params.blockType, navigate]);
 
   const setResponse = useCallback((question_id: string, placeholder_key: string, value: string | string[]) => {
@@ -297,6 +313,9 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   }, [blocks]);
 
   const navigateToNextQuestion = useCallback((currentQuestionId: string, leadsTo: string) => {
+    // Set navigating state when navigating
+    dispatch({ type: "SET_NAVIGATING", isNavigating: true });
+    
     if (leadsTo === "next_block") {
       // Trova il blocco corrente
       let currentBlockIndex = -1;
@@ -366,6 +385,11 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         console.log(`Question ID ${leadsTo} not found`);
       }
     }
+    
+    // Reset navigating state in case navigation fails
+    setTimeout(() => {
+      dispatch({ type: "SET_NAVIGATING", isNavigating: false });
+    }, 300);
   }, [blocks, state.activeBlocks, goToQuestion, findQuestionById]);
 
   // Calcola il progresso complessivo del form

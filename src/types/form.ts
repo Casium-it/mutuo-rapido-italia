@@ -51,4 +51,5 @@ export type FormState = {
   };
   responses: FormResponse;
   answeredQuestions: Set<string>;
+  isNavigating?: boolean; // Added isNavigating property
 };
