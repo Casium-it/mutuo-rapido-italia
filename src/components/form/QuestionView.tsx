@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { FormQuestion } from "./FormQuestion";
@@ -198,13 +197,13 @@ export function QuestionView() {
     <div className="max-w-2xl">
       {/* Contenitore per la domanda principale e le domande inline */}
       <div className="space-y-4">
-        {/* Main question senza pulsante Avanti se ci sono domande inline */}
+        {/* Main question - ALWAYS hide the button since we'll control it from here */}
         <FormQuestion 
           question={activeQuestion} 
-          hideNextButton={inlineFollowUpQuestions.length > 0} 
+          hideNextButton={true} 
         />
         
-        {/* Inline follow-up questions */}
+        {/* Inline follow-up questions - ALWAYS hide the buttons */}
         {inlineFollowUpQuestions.map((followUp, index) => (
           <div key={followUp.question.question_id} className="mt-1">
             <InlineFormQuestion
@@ -226,15 +225,14 @@ export function QuestionView() {
           <div className="mt-4">
             <Button
               type="button"
-              size="sm"
               className={cn(
-                "bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-[12px] transition-all",
-                "shadow-[0_6px_12px_rgba(36,92,79,0.2)] hover:shadow-[0_8px_16px_rgba(36,92,79,0.25)]",
-                "text-[17px] font-medium px-[32px] py-[12px] inline-flex items-center gap-[12px]"
+                "bg-[#245C4F] hover:bg-[#1e4f44] text-white px-[32px] py-[16px] rounded-[12px] text-[17px] font-medium",
+                "transition-all shadow-[0_6px_12px_rgba(36,92,79,0.2)] hover:shadow-[0_8px_16px_rgba(36,92,79,0.25)]",
+                "inline-flex items-center gap-[12px]"
               )}
               onClick={handleNextQuestion}
             >
-              Avanti <ArrowRight className="ml-1 h-3 w-3" />
+              Avanti <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
           </div>
         )}

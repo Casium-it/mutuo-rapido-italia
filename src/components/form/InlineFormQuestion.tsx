@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { Question } from "@/types/form";
@@ -262,21 +261,20 @@ export function InlineFormQuestion({
         {Object.keys(question.placeholders).map(key => renderPlaceholder(key, question.placeholders[key]))}
       </div>
       
-      {/* Pulsante Avanti - mostrato solo se ci sono risposte valide e se è l'ultima domanda inline e hideNextButton è false */}
+      {/* Pulsante Avanti - mostrato solo se ci sono risposte valide, se è l'ultima domanda inline, e hideNextButton è false */}
       {!hideNextButton && isLastInline && hasValidResponses && (
         <div className="mt-4">
           <Button
             type="button"
-            size="sm"
             className={cn(
-              "bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-[12px] transition-all",
-              "shadow-[0_6px_12px_rgba(36,92,79,0.2)] hover:shadow-[0_8px_16px_rgba(36,92,79,0.25)]",
-              "text-[17px] font-medium px-[32px] py-[12px] inline-flex items-center gap-[12px]"
+              "bg-[#245C4F] hover:bg-[#1e4f44] text-white px-[32px] py-[16px] rounded-[12px] text-[17px] font-medium",
+              "transition-all shadow-[0_6px_12px_rgba(36,92,79,0.2)] hover:shadow-[0_8px_16px_rgba(36,92,79,0.25)]",
+              "inline-flex items-center gap-[12px]"
             )}
             onClick={handleNextQuestion}
             disabled={isNavigating || Object.keys(question.placeholders).length === 0}
           >
-            Avanti <ArrowRight className="ml-1 h-3 w-3" />
+            Avanti <ArrowRight className="ml-1 h-4 w-4" />
           </Button>
         </div>
       )}
