@@ -353,26 +353,22 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         }
         
         // Se non è stato trovato un blocco attivo successivo, cerca se c'è qualche domanda successiva nello stesso blocco
-        // che NON sia marcata come inline (poiché le domande inline dovrebbero essere accessibili solo attraverso leads_to specifici)
         if (!foundNextActiveBlock) {
           console.log(`No next active block found after ${currentBlock.block_id}`);
           
           // Trova la posizione della domanda corrente nel blocco
           const currentQuestionIndex = currentBlock.questions.findIndex(q => q.question_id === currentQuestionId);
           
-          // Cerca la prossima domanda non-inline nel blocco corrente
-          for (let i = currentQuestionIndex + 1; i < currentBlock.questions.length; i++) {
-            const nextQuestion = currentBlock.questions[i];
-            if (!nextQuestion.inline) {
-              console.log(`No next active block, but found next non-inline question in current block: ${nextQuestion.question_id}`);
-              goToQuestion(currentBlock.block_id, nextQuestion.question_id);
-              return;
-            }
+          // Cerca la prossima domanda nel blocco corrente (senza distinguere inline o non)
+          if (currentQuestionIndex < currentBlock.questions.length - 1) {
+            const nextQuestion = currentBlock.questions[currentQuestionIndex + 1];
+            console.log(`No next active block, but found next question in current block: ${nextQuestion.question_id}`);
+            goToQuestion(currentBlock.block_id, nextQuestion.question_id);
+            return;
           }
           
           // Se arriviamo qui, siamo all'ultima domanda dell'ultimo blocco attivo
           console.log("Reached end of active blocks");
-          // Potremmo implementare una redirect a una pagina di riepilogo o di completamento qui
         }
       }
     } else {
@@ -394,19 +390,18 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
 
   // Calcola il progresso complessivo del form
   const getProgress = useCallback(() => {
-    // Conta tutte le domande nei blocchi attivi
+    // Conta tutte le domande nei blocchi attivi (senza distinzione per inline)
     let totalQuestions = 0;
     let answeredCount = 0;
     
     for (const blockId of state.activeBlocks) {
       const block = blocks.find(b => b.block_id === blockId);
       if (block) {
-        // Conta solo le domande normali (non inline) per il totale
-        const normalQuestions = block.questions.filter(q => !q.inline);
-        totalQuestions += normalQuestions.length;
+        // Conta tutte le domande per il totale
+        totalQuestions += block.questions.length;
         
         // Conta le domande già risposte in questo blocco
-        normalQuestions.forEach(q => {
+        block.questions.forEach(q => {
           if (state.answeredQuestions.has(q.question_id)) {
             answeredCount++;
           }

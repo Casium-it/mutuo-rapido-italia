@@ -2,7 +2,6 @@
 import React, { useEffect } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { FormQuestion } from "./FormQuestion";
-import { Question } from "@/types/form";
 import { useLocation, useParams } from "react-router-dom";
 
 export function QuestionView() {
@@ -39,7 +38,6 @@ export function QuestionView() {
   return (
     <div className="max-w-2xl">
       <div className="space-y-4">
-        {/* Renderizziamo solo la domanda corrente, senza logica speciale per inline */}
         <FormQuestion question={activeQuestion} />
       </div>
     </div>
