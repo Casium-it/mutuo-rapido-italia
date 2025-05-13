@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { FormProvider } from "./contexts/FormContext";
-import { allBlocks } from "./data/formBlocks";
+import { allBlocks } from "./data/blocks"; // Aggiornato per usare la nuova struttura
 import Index from "./pages/Index";
 import SimulazioneAvanzata from "./pages/SimulazioneAvanzata";
 import Form from "./pages/Form";
