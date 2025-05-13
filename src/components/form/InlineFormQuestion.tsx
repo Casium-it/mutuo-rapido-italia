@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { Question } from "@/types/form";
@@ -233,7 +232,7 @@ export function InlineFormQuestion({
                 onClick={() => handleResponseChange(key, option.id)}
               >
                 {option.label}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
