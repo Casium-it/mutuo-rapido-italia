@@ -73,7 +73,13 @@ export function FormQuestion({ question }: { question: Question }) {
     return false;
   };
 
-  const renderPlaceholder = (key: string, placeholder: any) => {
+  // Funzione per determinare se un placeholder è alla fine della domanda
+  const isPlaceholderAtEnd = (questionText: string, placeholderKey: string): boolean => {
+    const placeholder = `{{${placeholderKey}}}`;
+    return questionText.trim().endsWith(placeholder);
+  };
+
+  const renderPlaceholder = (key: string, placeholder: any, inline: boolean = false) => {
     const existingResponse = getResponse(question.question_id, key);
     
     if (placeholder.type === "input") {
@@ -89,7 +95,10 @@ export function FormQuestion({ question }: { question: Question }) {
               [key]: e.target.value
             });
           }}
-          className="inline-block mx-1 w-32 min-w-[120px] border-gray-300 focus:border-black focus:ring-0"
+          className={cn(
+            "border-gray-300 focus:border-black focus:ring-0",
+            inline ? "inline-block mx-1 w-32 min-w-[120px]" : "w-full max-w-md mt-2"
+          )}
         />
       );
     } else if (placeholder.type === "select") {
@@ -125,13 +134,31 @@ export function FormQuestion({ question }: { question: Question }) {
         );
       } else {
         // Handle single select (buttons) basato sul design di Pretto
+        if (inline) {
+          // Versione inline per placeholder alla fine della frase
+          return (
+            <div key={`select-${key}`} className="inline-flex gap-1 mx-1">
+              <Button
+                variant="outline"
+                size="sm"
+                type="button"
+                className="border-gray-300 bg-white text-gray-500 text-xs font-normal"
+                onClick={() => {}}
+              >
+                Seleziona
+              </Button>
+            </div>
+          );
+        }
+        
+        // Versione normale con opzioni sotto
         return (
-          <div key={`select-${key}`} className="grid grid-cols-1 gap-2 mt-6">
+          <div key={`select-${key}`} className="grid grid-cols-1 gap-2 mt-4">
             {placeholder.options.map((option) => (
               <button
                 key={option.id}
                 type="button"
-                className={`w-full text-left px-5 py-4 border rounded-lg transition-all ${
+                className={`w-full max-w-md text-left px-5 py-4 border rounded-lg transition-all ${
                   responses[key] === option.id || existingResponse === option.id
                     ? "border-black bg-gray-50"
                     : "border-gray-200 hover:border-gray-400"
@@ -251,18 +278,98 @@ export function FormQuestion({ question }: { question: Question }) {
       return <div>{question.question_text}</div>;
     }
 
-    // Split the question text by placeholder patterns
-    const parts = [];
-    let currentText = question.question_text;
-    let placeholderMatch;
-    let lastIndex = 0;
+    // Trova tutti i placeholder e la loro posizione
+    const placeholders = [];
     const placeholderRegex = /\{\{([^}]+)\}\}/g;
+    let match;
+    let questionText = question.question_text;
     
-    // Trova tutti i placeholder nel testo
-    while ((placeholderMatch = placeholderRegex.exec(question.question_text)) !== null) {
-      const matchStart = placeholderMatch.index;
-      const matchEnd = placeholderMatch.index + placeholderMatch[0].length;
-      const placeholderKey = placeholderMatch[1];
+    while ((match = placeholderRegex.exec(questionText)) !== null) {
+      placeholders.push({
+        key: match[1],
+        position: match.index,
+        length: match[0].length,
+        isAtEnd: match.index + match[0].length >= questionText.length - 1
+      });
+    }
+
+    // Se ci sono placeholder ma non sono alla fine, mostra il testo e i select sotto
+    if (placeholders.length > 0 && !placeholders[placeholders.length - 1].isAtEnd) {
+      // Replace placeholders with "Seleziona" buttons in the text
+      let parts = [];
+      let lastIndex = 0;
+      
+      placeholders.forEach((placeholder, index) => {
+        // Add text before the placeholder
+        if (placeholder.position > lastIndex) {
+          parts.push({
+            type: 'text',
+            content: questionText.substring(lastIndex, placeholder.position)
+          });
+        }
+        
+        // Add the placeholder as a button
+        if (question.placeholders[placeholder.key]) {
+          parts.push({
+            type: 'placeholder',
+            key: placeholder.key,
+            isInline: true
+          });
+        } else {
+          parts.push({
+            type: 'text',
+            content: questionText.substring(placeholder.position, 
+                                            placeholder.position + placeholder.length)
+          });
+        }
+        
+        lastIndex = placeholder.position + placeholder.length;
+      });
+      
+      // Add remaining text
+      if (lastIndex < questionText.length) {
+        parts.push({
+          type: 'text',
+          content: questionText.substring(lastIndex)
+        });
+      }
+      
+      return (
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center">
+            {parts.map((part, index) => {
+              if (part.type === 'text') {
+                return <span key={`text-${index}`}>{part.content}</span>;
+              } else {
+                // Render placeholder as a "Seleziona" button
+                return (
+                  <span key={`placeholder-${index}`}>
+                    {renderPlaceholder(part.key, question.placeholders[part.key], true)}
+                  </span>
+                );
+              }
+            })}
+          </div>
+          
+          {/* Render actual select options below for each placeholder */}
+          {placeholders.map(placeholder => (
+            <div key={`select-options-${placeholder.key}`} className="mt-4">
+              {question.placeholders[placeholder.key] && 
+                renderPlaceholder(placeholder.key, question.placeholders[placeholder.key], false)}
+            </div>
+          ))}
+        </div>
+      );
+    }
+    
+    // Altrimenti usa il rendering normale
+    const parts = [];
+    let lastIndex = 0;
+    
+    while ((match = placeholderRegex.exec(question.question_text)) !== null) {
+      const matchStart = match.index;
+      const matchEnd = match.index + match[0].length;
+      const placeholderKey = match[1];
       
       // Aggiungi il testo prima del placeholder
       if (matchStart > lastIndex) {
@@ -282,7 +389,7 @@ export function FormQuestion({ question }: { question: Question }) {
         // Se il placeholder non esiste, mantieni il testo originale
         parts.push({
           type: 'text',
-          content: placeholderMatch[0]
+          content: match[0]
         });
       }
       

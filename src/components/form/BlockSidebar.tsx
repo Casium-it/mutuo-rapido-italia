@@ -44,10 +44,10 @@ export function BlockSidebar() {
   };
 
   return (
-    <div className="w-full bg-[#F9F9F6] h-full py-2 overflow-y-auto">
-      <div className="px-0">
-        <h2 className="text-lg font-semibold text-gray-700 mb-6">Il tuo percorso</h2>
-        <div className="space-y-0.5">
+    <div className="w-full bg-[#FAF9F6] h-full py-6 overflow-y-auto border-r border-gray-200">
+      <div className="px-4">
+        <h2 className="text-base font-semibold text-gray-800 mb-6">Il tuo percorso</h2>
+        <div className="space-y-1">
           {activeBlocks.map((block) => {
             const status = getBlockStatus(block.block_id);
             return (
@@ -57,17 +57,17 @@ export function BlockSidebar() {
                 className={cn(
                   "w-full text-left flex items-center py-2 px-3 rounded-md transition-all",
                   {
-                    "bg-vibe-green text-white font-medium": status === "attivo",
-                    "bg-vibe-green/10 text-gray-700 font-medium": status === "completato",
-                    "bg-vibe-green/5 text-gray-700": status === "parziale",
-                    "text-gray-700 hover:bg-gray-200": status === "non iniziato"
+                    "bg-black text-white font-medium": status === "attivo",
+                    "bg-gray-100 text-gray-800 font-medium": status === "completato",
+                    "bg-gray-50 text-gray-700": status === "parziale",
+                    "text-gray-700 hover:bg-gray-100": status === "non iniziato"
                   }
                 )}
               >
                 <div className="mr-2 shrink-0">
-                  {status === "completato" && <Check className="w-4 h-4 text-vibe-green" />}
+                  {status === "completato" && <Check className="w-4 h-4 text-black" />}
                 </div>
-                <div className="truncate">{block.title}</div>
+                <div className="truncate text-sm">{block.title}</div>
               </button>
             );
           })}
