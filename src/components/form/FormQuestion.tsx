@@ -231,10 +231,28 @@ export function FormQuestion({ question }: FormQuestionProps) {
     return null;
   };
 
-  // Determina se ci sono risposte valide
+  // Funzione migliorata per determinare se tutte le input hanno contenuto
+  const allInputsHaveContent = () => {
+    const inputPlaceholders = Object.keys(question.placeholders).filter(
+      key => question.placeholders[key].type === "input"
+    );
+    
+    // Se non ci sono input, consideriamo valido (per gestire select e altri tipi)
+    if (inputPlaceholders.length === 0) {
+      return true;
+    }
+    
+    // Verifica se tutti gli input hanno un valore
+    return inputPlaceholders.every(key => {
+      const value = responses[key] || getResponse(question.question_id, key);
+      return value !== undefined && value !== "";
+    });
+  };
+  
+  // Determina se ci sono risposte valide (modifica per input)
   const hasValidResponses = Object.keys(question.placeholders).some(key => 
     responses[key] !== undefined || getResponse(question.question_id, key) !== undefined
-  );
+  ) && allInputsHaveContent();
 
   // Funzione di aiuto per aggiungere blocchi attivi (precedentemente era fornita da useForm)
   const { addActiveBlock } = useForm();
@@ -254,7 +272,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
         {Object.keys(question.placeholders).map(key => renderVisibleSelectOptions(key, question.placeholders[key]))}
       </div>
       
-      {/* Pulsante Avanti - mostrato solo se ci sono risposte valide */}
+      {/* Pulsante Avanti - mostrato solo se ci sono risposte valide e tutti gli input hanno contenuto */}
       {hasValidResponses && (
         <div className="mt-8">
           <Button
