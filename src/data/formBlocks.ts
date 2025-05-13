@@ -1,3 +1,4 @@
+
 import { Block } from "@/types/form";
 
 // Block 0 - Funnel iniziale
@@ -52,7 +53,7 @@ export const block1: Block = {
     {
       "question_number": "1.2",
       "question_id": "finalita_acquisto",
-      "question_text": "L’acquisto è per {{placeholder1}}",
+      "question_text": "L'acquisto è per {{placeholder1}}",
       "placeholders": {
         "placeholder1": {
           "type": "select",
@@ -80,7 +81,7 @@ export const block1: Block = {
           "type": "input",
           "input_type": "text",
           "placeholder_label": "CAP",
-          leads_to: "tipologia_acquisto"
+          "leads_to": "tipologia_acquisto"
         }
       }
     },
@@ -144,7 +145,7 @@ export const block2: Block = {
           "type": "input",
           "input_type": "text",
           "placeholder_label": "CAP",
-          leads_to: "figli_a_carico"
+          "leads_to": "figli_a_carico"
         }
       }
     },
@@ -191,7 +192,7 @@ export const block2: Block = {
           "type": "input",
           "input_type": "number",
           "placeholder_label": "Importo mensile",
-          leads_to: "next_block"
+          "leads_to": "next_block"
         }
       }
     },
@@ -327,7 +328,7 @@ export const block3: Block = {
           "type": "select",
           "options": [
             {"id": "partita_iva", "label": "Partita IVA", "leads_to": "anno_autonomo"},
-            {"id": "azienda", "label": "Proprietario d’azienda", "leads_to": "anno_autonomo"},
+            {"id": "azienda", "label": "Proprietario d'azienda", "leads_to": "anno_autonomo"},
             {"id": "investitore", "label": "Investitore", "leads_to": "anno_autonomo"},
             {"id": "occasionale", "label": "Lavoratore occasionale", "leads_to": "next_block"},
             {"id": "altro_autonomo", "label": "Altro", "leads_to": "input_altro_autonomo"}
@@ -395,7 +396,7 @@ export const block3: Block = {
       "question_number": "3.12",
       "question_id": "ricerca_lavoro",
       "question_text": "e attualmente {{placeholder1}} lavoro",
-      inline: true,
+      "inline": true,
       "placeholders": {
         "placeholder1": {
           "type": "select",
@@ -917,8 +918,8 @@ export const block23: Block = {
       placeholders: {
         placeholder1: {
           type: "input",
-          input_type": "text",
-          placeholder_label: "Professione",
+          input_type: "text",
+          placeholder_label": "Professione",
           leads_to: "anno_autonomo_coint"
         }
       }
@@ -930,7 +931,7 @@ export const block23: Block = {
       placeholders: {
         placeholder1: {
           type: "input",
-          input_type": "number",
+          input_type: "number",
           placeholder_label: "Anno",
           leads_to: "next_block"
         }
@@ -943,7 +944,7 @@ export const block23: Block = {
       placeholders: {
         placeholder1: {
           type: "input",
-          input_type": "number",
+          input_type: "number",
           placeholder_label: "Anno",
           leads_to: "next_block"
         }
@@ -1164,7 +1165,7 @@ export const block25: Block = {
       placeholders: {
         placeholder1: {
           type: "input",
-          input_type": "number",
+          input_type: "number",
           placeholder_label: "Importo bonus",
           leads_to: "bonus_stabilita_coint"
         }
@@ -1269,7 +1270,7 @@ export const block26: Block = {
       placeholders: {
         placeholder1: {
           type: "input",
-          input_type": "text",
+          input_type: "text",
           placeholder_label: "Descrizione",
           leads_to: "media_reddito_secondario_coint"
         }
@@ -1342,13 +1343,13 @@ export const block26: Block = {
       placeholders: {
         placeholder1: {
           type: "input",
-          input_type": "text",
+          input_type: "text",
           placeholder_label: "Mese",
           leads_to: "data_fine_reddito_coint"
         },
         placeholder2: {
           type: "input",
-          input_type": "number",
+          input_type: "number",
           placeholder_label: "Anno",
           leads_to: "data_fine_reddito_coint"
         }
@@ -1361,7 +1362,7 @@ export const block26: Block = {
       placeholders: {
         placeholder1: {
           type: "input",
-          input_type": "text",
+          input_type: "text",
           placeholder_label: "Anno o 'non lo sa'",
           leads_to: "tipo_reddito_secondario_coint"
         }
@@ -1427,7 +1428,7 @@ export const block27: Block = {
       placeholders: {
         placeholder1: {
           type: "input",
-          input_type": "text",
+          input_type: "text",
           placeholder_label: "Descrizione",
           leads_to: "importo_finanziamento_coint"
         }
@@ -1441,7 +1442,7 @@ export const block27: Block = {
       placeholders: {
         placeholder1: {
           type: "input",
-          input_type": "number",
+          input_type: "number",
           placeholder_label: "Importo",
           leads_to: "frequenza_rata_coint"
         }
@@ -1473,14 +1474,14 @@ export const block27: Block = {
       placeholders: {
         placeholder1: {
           type: "input",
-          input_type": "text",
+          input_type: "text",
           placeholder_label: "Mese",
           leads_to: "storico_pagamento_coint"
         },
         placeholder2: {
           type: "input",
           input_type": "number",
-          placeholder_label": "Anno",
+          placeholder_label: "Anno",
           leads_to: "storico_pagamento_coint"
         }
       }
@@ -1503,7 +1504,7 @@ export const block27: Block = {
   ]
 };
 
-// Stop Flow Block - 99
+// Block 99 - Stop Flow
 export const blockStop: Block = {
   block_number: "99",
   block_id: "stop_flow",
