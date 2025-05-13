@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { Question } from "@/types/form";
@@ -33,18 +34,17 @@ export function FormQuestion({ question }: { question: Question }) {
     setIsNavigating(false);
   }, [question.question_id, getResponse]);
 
-  // Funzione per gestire il salvataggio delle risposte e la navigazione
-  const handleResponseAndNavigation = async (key: string, value: string | string[]) => {
-    // Previeni la navigazione se è già in corso
-    if (isNavigating) return false;
+  // Funzione per gestire il cambio di risposta senza navigazione automatica
+  const handleResponseChange = (key: string, value: string | string[]) => {
+    setResponses({
+      ...responses,
+      [key]: value
+    });
     
-    // Imposta lo stato di navigazione
-    setIsNavigating(true);
-    
-    // Salva immediatamente la risposta nel contesto globale
+    // Salviamo subito la risposta nel contesto globale
     setResponse(question.question_id, key, value);
     
-    // Gestisci la navigazione per le risposte di tipo select
+    // Gestiamo l'attivazione di blocchi aggiuntivi
     if (question.placeholders[key].type === "select" && !Array.isArray(value)) {
       const selectedOption = (question.placeholders[key] as any).options.find(
         (opt: any) => opt.id === value
@@ -53,31 +53,44 @@ export function FormQuestion({ question }: { question: Question }) {
       if (selectedOption?.add_block) {
         addActiveBlock(selectedOption.add_block);
       }
-      
-      // Naviga alla prossima domanda
-      if (selectedOption?.leads_to) {
-        setTimeout(() => {
-          navigateToNextQuestion(question.question_id, selectedOption.leads_to);
-          setIsNavigating(false);
-        }, 50);
-        return true;
-      }
-    } else if (question.placeholders[key].type === "input" && (question.placeholders[key] as any).leads_to) {
-      setTimeout(() => {
-        navigateToNextQuestion(question.question_id, (question.placeholders[key] as any).leads_to);
-        setIsNavigating(false);
-      }, 50);
-      return true;
     }
-    
-    setIsNavigating(false);
-    return false;
   };
 
-  // Funzione per determinare se un placeholder è alla fine della domanda
-  const isPlaceholderAtEnd = (questionText: string, placeholderKey: string): boolean => {
-    const placeholder = `{{${placeholderKey}}}`;
-    return questionText.trim().endsWith(placeholder);
+  // Funzione per avanzare manualmente alla prossima domanda
+  const handleNextQuestion = () => {
+    if (isNavigating) return;
+    setIsNavigating(true);
+    
+    // Cerca se c'è un leads_to specifico per le risposte date
+    for (const key of Object.keys(question.placeholders)) {
+      const response = responses[key] || getResponse(question.question_id, key);
+      
+      if (response && question.placeholders[key].type === "select" && !Array.isArray(response)) {
+        const selectedOption = (question.placeholders[key] as any).options.find(
+          (opt: any) => opt.id === response
+        );
+        
+        if (selectedOption?.leads_to) {
+          setTimeout(() => {
+            navigateToNextQuestion(question.question_id, selectedOption.leads_to);
+            setIsNavigating(false);
+          }, 50);
+          return;
+        }
+      } else if (response && question.placeholders[key].type === "input" && (question.placeholders[key] as any).leads_to) {
+        setTimeout(() => {
+          navigateToNextQuestion(question.question_id, (question.placeholders[key] as any).leads_to);
+          setIsNavigating(false);
+        }, 50);
+        return;
+      }
+    }
+    
+    // Se non c'è un leads_to specifico, vai al prossimo blocco
+    setTimeout(() => {
+      navigateToNextQuestion(question.question_id, "next_block");
+      setIsNavigating(false);
+    }, 50);
   };
 
   const renderPlaceholder = (key: string, placeholder: any, inline: boolean = false) => {
@@ -85,104 +98,76 @@ export function FormQuestion({ question }: { question: Question }) {
     
     if (placeholder.type === "input") {
       return (
-        <Input
-          key={`input-${key}`}
-          type={placeholder.input_type}
-          placeholder={placeholder.placeholder_label}
-          value={(responses[key] as string) || (existingResponse as string) || ""}
-          onChange={(e) => {
-            setResponses({
-              ...responses,
-              [key]: e.target.value
-            });
-          }}
-          className={cn(
-            "border-gray-300 focus:border-black focus:ring-0",
-            inline ? "inline-block mx-1 w-32 min-w-[120px]" : "w-full max-w-md mt-2"
-          )}
-        />
+        <div className="mt-4">
+          <label htmlFor={`input-${key}`} className="block text-sm font-medium text-gray-700 mb-1">
+            {placeholder.placeholder_label}
+          </label>
+          <Input
+            id={`input-${key}`}
+            type={placeholder.input_type}
+            placeholder={placeholder.placeholder_label}
+            value={(responses[key] as string) || (existingResponse as string) || ""}
+            onChange={(e) => handleResponseChange(key, e.target.value)}
+            className="border-gray-300 focus:border-black focus:ring-0 w-full max-w-md"
+          />
+        </div>
       );
     } else if (placeholder.type === "select") {
       if (placeholder.multiple) {
-        // Handle multi-select (checkboxes)
+        // Handle multi-select (checkboxes) con UI unificata
         return (
           <div key={`multiselect-${key}`} className="flex flex-col space-y-3 mt-4">
-            {placeholder.options.map((option) => (
-              <label key={option.id} className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={
-                    (responses[key] as string[] || existingResponse as string[] || []).includes(
-                      option.id
-                    )
-                  }
-                  onChange={(e) => {
-                    const current = (responses[key] as string[]) || (existingResponse as string[]) || [];
-                    const newValue = e.target.checked
-                      ? [...current, option.id]
-                      : current.filter((id) => id !== option.id);
-                    setResponses({
-                      ...responses,
-                      [key]: newValue
-                    });
-                  }}
-                  className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
-                />
-                <span className="text-gray-700">{option.label}</span>
-              </label>
-            ))}
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {placeholder.placeholder_label || "Seleziona le opzioni"}
+            </label>
+            <div className="space-y-2">
+              {placeholder.options.map((option) => (
+                <label key={option.id} className="flex items-center space-x-2 p-3 border rounded-md hover:bg-gray-50 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={
+                      (responses[key] as string[] || existingResponse as string[] || []).includes(
+                        option.id
+                      )
+                    }
+                    onChange={(e) => {
+                      const current = (responses[key] as string[]) || (existingResponse as string[]) || [];
+                      const newValue = e.target.checked
+                        ? [...current, option.id]
+                        : current.filter((id) => id !== option.id);
+                      handleResponseChange(key, newValue);
+                    }}
+                    className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+                  />
+                  <span className="text-gray-700">{option.label}</span>
+                </label>
+              ))}
+            </div>
           </div>
         );
       } else {
-        // Sempre versione "Seleziona" per tutti i placeholder inline
-        if (inline) {
-          const selectedOption = placeholder.options.find(
-            (opt: any) => opt.id === (responses[key] || existingResponse)
-          );
-
-          return (
-            <button
-              key={`select-inline-${key}`}
-              type="button"
-              className="inline-flex items-center justify-center mx-1 px-3 py-1.5 border border-gray-300 
-                        rounded bg-white text-gray-700 hover:border-gray-400 text-sm transition-all min-w-[100px]"
-              onClick={() => {}}
-            >
-              <span>{selectedOption ? selectedOption.label : "Seleziona"}</span>
-            </button>
-          );
-        }
-        
-        // Versione normale con opzioni sotto
+        // UI unificata per single-select
         return (
-          <div key={`select-${key}`} className="grid grid-cols-1 gap-2 mt-4">
-            {placeholder.options.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                className={`w-full max-w-md text-left px-5 py-4 border rounded-lg transition-all ${
-                  responses[key] === option.id || existingResponse === option.id
-                    ? "border-black bg-gray-50"
-                    : "border-gray-200 hover:border-gray-400"
-                }`}
-                onClick={() => {
-                  if (isNavigating) return;
-                  
-                  // Aggiorna lo stato locale
-                  const newValue = option.id;
-                  setResponses({
-                    ...responses,
-                    [key]: newValue
-                  });
-                  
-                  // Gestisci salvataggio e navigazione automatici per singola selezione
-                  handleResponseAndNavigation(key, newValue);
-                }}
-                disabled={isNavigating}
-              >
-                <div className="font-medium text-gray-900">{option.label}</div>
-              </button>
-            ))}
+          <div key={`select-${key}`} className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {placeholder.placeholder_label || "Seleziona un'opzione"}
+            </label>
+            <div className="grid grid-cols-1 gap-2">
+              {placeholder.options.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={`w-full max-w-md text-left px-5 py-4 border rounded-lg transition-all ${
+                    responses[key] === option.id || existingResponse === option.id
+                      ? "border-black bg-gray-50"
+                      : "border-gray-200 hover:border-gray-400"
+                  }`}
+                  onClick={() => handleResponseChange(key, option.id)}
+                >
+                  <div className="font-medium text-gray-900">{option.label}</div>
+                </button>
+              ))}
+            </div>
           </div>
         );
       }
@@ -190,206 +175,32 @@ export function FormQuestion({ question }: { question: Question }) {
     return null;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Previeni l'invio se è già in corso una navigazione
-    if (isNavigating) return;
-    
-    // Imposta lo stato di navigazione
-    setIsNavigating(true);
-    
-    // Salva tutte le risposte
-    let hasResponsesToSave = false;
-    
-    for (const [key, value] of Object.entries(responses)) {
-      if (value) {
-        hasResponsesToSave = true;
-        setResponse(question.question_id, key, value);
-      }
-    }
-    
-    setTimeout(() => {
-      // Se non ci sono risposte nuove da salvare, controlla se ci sono risposte esistenti
-      if (!hasResponsesToSave) {
-        let canProceed = false;
-        
-        for (const [key] of Object.entries(question.placeholders)) {
-          const existingResponse = getResponse(question.question_id, key);
-          if (existingResponse) {
-            canProceed = true;
-            
-            // Usa la risposta esistente per determinare la navigazione
-            if (question.placeholders[key].type === "select" && !Array.isArray(existingResponse)) {
-              const selectedOption = (question.placeholders[key] as any).options.find(
-                (opt: any) => opt.id === existingResponse
-              );
-              
-              if (selectedOption?.leads_to) {
-                navigateToNextQuestion(question.question_id, selectedOption.leads_to);
-                setIsNavigating(false);
-                return;
-              }
-            } else if (question.placeholders[key].type === "input" && (question.placeholders[key] as any).leads_to) {
-              navigateToNextQuestion(question.question_id, (question.placeholders[key] as any).leads_to);
-              setIsNavigating(false);
-              return;
-            }
-          }
-        }
-        
-        // Se c'è almeno una risposta esistente ma nessuna navigazione specifica,
-        // naviga alla prossima domanda generica
-        if (canProceed) {
-          navigateToNextQuestion(question.question_id, "next_block");
-        }
-      } else {
-        for (const [key, value] of Object.entries(responses)) {
-          if (value) {
-            // Verifica se c'è una navigazione specificata per questa risposta
-            if (question.placeholders[key].type === "select" && !Array.isArray(value)) {
-              const selectedOption = (question.placeholders[key] as any).options.find(
-                (opt: any) => opt.id === value
-              );
-              
-              if (selectedOption?.leads_to) {
-                navigateToNextQuestion(question.question_id, selectedOption.leads_to);
-                setIsNavigating(false);
-                return;
-              }
-            } else if (question.placeholders[key].type === "input" && (question.placeholders[key] as any).leads_to) {
-              navigateToNextQuestion(question.question_id, (question.placeholders[key] as any).leads_to);
-              setIsNavigating(false);
-              return;
-            }
-          }
-        }
-        
-        // Se nessuna opzione ha un leads_to specifico, naviga alla prossima domanda generica
-        navigateToNextQuestion(question.question_id, "next_block");
-      }
-      
-      setIsNavigating(false);
-    }, 50);
-  };
-
-  // Questa è la funzione chiave che deve essere migliorata per gestire correttamente i placeholder
-  const renderQuestionText = () => {
-    if (!question.question_text.includes('{{')) {
-      // Se non ci sono placeholder, restituisce semplicemente il testo della domanda
-      return <div>{question.question_text}</div>;
-    }
-
-    // Trova tutti i placeholder e la loro posizione
-    const placeholders = [];
-    const placeholderRegex = /\{\{([^}]+)\}\}/g;
-    let match;
-    let questionText = question.question_text;
-    
-    while ((match = placeholderRegex.exec(questionText)) !== null) {
-      placeholders.push({
-        key: match[1],
-        position: match.index,
-        length: match[0].length
-      });
-    }
-
-    // Ora trattiamo tutti i placeholder nello stesso modo, indipendentemente dalla posizione
-    // Replace placeholders with "Seleziona" buttons in the text
-    let parts = [];
-    let lastIndex = 0;
-    
-    placeholders.forEach((placeholder, index) => {
-      // Add text before the placeholder
-      if (placeholder.position > lastIndex) {
-        parts.push({
-          type: 'text',
-          content: questionText.substring(lastIndex, placeholder.position)
-        });
-      }
-      
-      // Add the placeholder as a button or input
-      if (question.placeholders[placeholder.key]) {
-        parts.push({
-          type: 'placeholder',
-          key: placeholder.key,
-          isInline: true
-        });
-      } else {
-        parts.push({
-          type: 'text',
-          content: questionText.substring(placeholder.position, 
-                                        placeholder.position + placeholder.length)
-        });
-      }
-      
-      lastIndex = placeholder.position + placeholder.length;
-    });
-    
-    // Add remaining text
-    if (lastIndex < questionText.length) {
-      parts.push({
-        type: 'text',
-        content: questionText.substring(lastIndex)
-      });
-    }
-    
-    return (
-      <div className="space-y-4">
-        <div className="flex flex-wrap items-center">
-          {parts.map((part, index) => {
-            if (part.type === 'text') {
-              return <span key={`text-${index}`}>{part.content}</span>;
-            } else {
-              // Render placeholder as a "Seleziona" button or input
-              return (
-                <span key={`placeholder-${index}`}>
-                  {renderPlaceholder(part.key, question.placeholders[part.key], true)}
-                </span>
-              );
-            }
-          })}
-        </div>
-        
-        {/* Render actual select options below for each placeholder */}
-        {placeholders
-          .filter(placeholder => 
-            question.placeholders[placeholder.key] && 
-            question.placeholders[placeholder.key].type === "select"
-          )
-          .map(placeholder => (
-            <div key={`select-options-${placeholder.key}`} className="mt-4">
-              {renderPlaceholder(placeholder.key, question.placeholders[placeholder.key], false)}
-            </div>
-          ))}
-      </div>
-    );
-  };
-
-  // Renderizza la domanda principale in stile Pretto
+  // Renderizza la domanda principale con UI unificata
   return (
-    <form onSubmit={handleSubmit} className="max-w-xl animate-fade-in">
-      {/* Domanda principale in stile Pretto */}
+    <div className="max-w-xl animate-fade-in">
+      {/* Domanda principale */}
       <div className="text-xl md:text-2xl font-normal text-gray-900 mb-6 leading-relaxed">
-        {renderQuestionText()}
+        {question.question_text.replace(/\{\{([^}]+)\}\}/g, '_____')}
       </div>
       
-      {/* Pulsante continua - stile Pretto */}
-      {Object.keys(question.placeholders).some(key => 
-        question.placeholders[key].type !== "select" || // Solo per input o select multipli
-        (question.placeholders[key].type === "select" && (question.placeholders[key] as any).multiple)
-      ) && (
-        <div className="mt-8">
-          <Button
-            type="submit"
-            className="bg-black hover:bg-gray-900 text-white transition-all rounded-lg px-5 py-2 text-sm"
-            disabled={(Object.keys(responses).length === 0 && 
-                     !Object.keys(question.placeholders).some(key => getResponse(question.question_id, key))) || isNavigating}
-          >
-            Continua <ArrowRight className="ml-1 h-4 w-4" />
-          </Button>
-        </div>
-      )}
-    </form>
+      {/* Contenitore per tutti i placeholder */}
+      <div className="space-y-6">
+        {Object.keys(question.placeholders).map(key => renderPlaceholder(key, question.placeholders[key]))}
+      </div>
+      
+      {/* Pulsante Avanti - sempre visibile */}
+      <div className="mt-8">
+        <Button
+          type="button"
+          className="bg-black hover:bg-gray-900 text-white transition-all rounded-lg px-5 py-2 text-sm"
+          onClick={handleNextQuestion}
+          disabled={isNavigating || Object.keys(question.placeholders).length === 0 || 
+                  !Object.keys(question.placeholders).some(key => 
+                    responses[key] || getResponse(question.question_id, key))}
+        >
+          Avanti <ArrowRight className="ml-1 h-4 w-4" />
+        </Button>
+      </div>
+    </div>
   );
 }

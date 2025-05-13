@@ -1,11 +1,11 @@
 
-import React, { useEffect } from "react";
+import React from "react";
 import { useForm } from "@/contexts/FormContext";
 import { BlockSidebar } from "@/components/form/BlockSidebar";
 import { QuestionView } from "@/components/form/QuestionView";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, RefreshCcw } from "lucide-react";
+import { RefreshCcw } from "lucide-react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 
@@ -14,7 +14,7 @@ export default function Form() {
   const params = useParams();
   const navigate = useNavigate();
   
-  // Find the current active block
+  // Trova il blocco attivo corrente
   const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
 
   // Calcola il progresso del form
@@ -28,7 +28,7 @@ export default function Form() {
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      {/* Header ridisegnato in stile Pretto */}
+      {/* Header */}
       <header className="py-3 px-4 md:px-6 flex justify-between items-center bg-white border-b border-gray-200">
         <div className="flex items-center">
           <Link to="/">
@@ -47,7 +47,7 @@ export default function Form() {
         </div>
       </header>
 
-      {/* Progress bar ridisegnata in stile Pretto */}
+      {/* Progress bar */}
       <div className="bg-white px-4 py-1">
         <div className="max-w-4xl mx-auto flex items-center gap-3">
           <Progress 
@@ -59,21 +59,16 @@ export default function Form() {
         </div>
       </div>
 
-      {/* Main content - layout ridisegnato in stile Pretto */}
+      {/* Main content */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar in stile Pretto, ridotta per mobile */}
+        {/* Sidebar (ora non cliccabile) */}
         <div className="hidden md:block w-[240px] bg-white border-r border-gray-200 overflow-y-auto">
           <div className="p-4 h-full">
-            <Link to="/" className="flex items-center text-gray-700 mb-6">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              <span className="text-sm">Indietro</span>
-            </Link>
-            
             <BlockSidebar />
           </div>
         </div>
 
-        {/* Content area ridisegnata in stile Pretto */}
+        {/* Content area */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12">
           <div className="max-w-2xl mx-auto">
             {/* Block title */}

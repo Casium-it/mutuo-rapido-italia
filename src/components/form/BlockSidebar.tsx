@@ -5,18 +5,11 @@ import { cn } from "@/lib/utils";
 import { useParams } from "react-router-dom";
 
 export function BlockSidebar() {
-  const { blocks, state, goToQuestion } = useForm();
+  const { blocks, state } = useForm();
   const params = useParams<{ blockType?: string }>();
   
   // Filter blocks that are active
   const activeBlocks = blocks.filter(block => state.activeBlocks.includes(block.block_id));
-
-  const navigateToBlock = (blockId: string) => {
-    const block = blocks.find(b => b.block_id === blockId);
-    if (block && block.questions.length > 0) {
-      goToQuestion(blockId, block.questions[0].question_id);
-    }
-  };
 
   const isBlockActive = (blockId: string) => {
     return state.activeQuestion.block_id === blockId;
@@ -51,16 +44,15 @@ export function BlockSidebar() {
           {activeBlocks.map((block) => {
             const status = getBlockStatus(block.block_id);
             return (
-              <button
+              <div
                 key={block.block_id}
-                onClick={() => navigateToBlock(block.block_id)}
                 className={cn(
-                  "w-full text-left flex items-center py-2 px-3 rounded-md transition-all",
+                  "w-full text-left flex items-center py-2 px-3 rounded-md transition-all cursor-default",
                   {
                     "bg-black text-white font-medium": status === "attivo",
                     "bg-gray-100 text-gray-800 font-medium": status === "completato",
                     "bg-gray-50 text-gray-700": status === "parziale",
-                    "text-gray-700 hover:bg-gray-100": status === "non iniziato"
+                    "text-gray-700": status === "non iniziato"
                   }
                 )}
               >
@@ -68,7 +60,7 @@ export function BlockSidebar() {
                   {status === "completato" && <Check className="w-4 h-4 text-black" />}
                 </div>
                 <div className="truncate text-sm">{block.title}</div>
-              </button>
+              </div>
             );
           })}
         </div>

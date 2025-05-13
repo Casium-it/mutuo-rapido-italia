@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { Question } from "@/types/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface InlineFormQuestionProps {
@@ -20,18 +22,37 @@ export function InlineFormQuestion({
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});
   const [isNavigating, setIsNavigating] = useState(false);
 
-  // Funzione per gestire il salvataggio delle risposte e la navigazione
-  const handleResponseAndNavigation = (key: string, value: string | string[]) => {
-    // Previeni la navigazione se è già in corso
-    if (isNavigating) return false;
+  // Ripristina le risposte esistenti
+  useEffect(() => {
+    const existingResponses: { [key: string]: string | string[] } = {};
+    Object.keys(question.placeholders).forEach(key => {
+      const existingResponse = getResponse(question.question_id, key);
+      if (existingResponse) {
+        existingResponses[key] = existingResponse;
+      }
+    });
     
-    // Imposta lo stato di navigazione
-    setIsNavigating(true);
+    if (Object.keys(existingResponses).length > 0) {
+      setResponses(existingResponses);
+    } else {
+      setResponses({});
+    }
     
-    // Salva immediatamente la risposta nel contesto globale
+    // Resetta lo stato di navigazione quando la domanda cambia
+    setIsNavigating(false);
+  }, [question.question_id, getResponse]);
+
+  // Funzione per gestire il cambio di risposta senza navigazione automatica
+  const handleResponseChange = (key: string, value: string | string[]) => {
+    setResponses({
+      ...responses,
+      [key]: value
+    });
+    
+    // Salviamo subito la risposta nel contesto globale
     setResponse(question.question_id, key, value);
     
-    // Gestisci la navigazione per le risposte di tipo select
+    // Gestiamo l'attivazione di blocchi aggiuntivi
     if (question.placeholders[key].type === "select" && !Array.isArray(value)) {
       const selectedOption = (question.placeholders[key] as any).options.find(
         (opt: any) => opt.id === value
@@ -40,262 +61,122 @@ export function InlineFormQuestion({
       if (selectedOption?.add_block) {
         addActiveBlock(selectedOption.add_block);
       }
+    }
+  };
+
+  // Funzione per avanzare manualmente alla prossima domanda
+  const handleNextQuestion = () => {
+    if (isNavigating) return;
+    setIsNavigating(true);
+    
+    // Cerca se c'è un leads_to specifico per le risposte date
+    for (const key of Object.keys(question.placeholders)) {
+      const response = responses[key] || getResponse(question.question_id, key);
       
-      // Naviga alla prossima domanda
-      if (selectedOption?.leads_to) {
+      if (response && question.placeholders[key].type === "select" && !Array.isArray(response)) {
+        const selectedOption = (question.placeholders[key] as any).options.find(
+          (opt: any) => opt.id === response
+        );
+        
+        if (selectedOption?.leads_to) {
+          setTimeout(() => {
+            navigateToNextQuestion(question.question_id, selectedOption.leads_to);
+            setIsNavigating(false);
+          }, 50);
+          return;
+        }
+      } else if (response && question.placeholders[key].type === "input" && (question.placeholders[key] as any).leads_to) {
         setTimeout(() => {
-          navigateToNextQuestion(question.question_id, selectedOption.leads_to);
+          navigateToNextQuestion(question.question_id, (question.placeholders[key] as any).leads_to);
           setIsNavigating(false);
         }, 50);
-        return true;
+        return;
       }
-    } else if (question.placeholders[key].type === "input" && (question.placeholders[key] as any).leads_to) {
-      setTimeout(() => {
-        navigateToNextQuestion(question.question_id, (question.placeholders[key] as any).leads_to);
-        setIsNavigating(false);
-      }, 50);
-      return true;
     }
     
-    setIsNavigating(false);
-    return false;
+    // Se non c'è un leads_to specifico, vai al prossimo blocco
+    setTimeout(() => {
+      navigateToNextQuestion(question.question_id, "next_block");
+      setIsNavigating(false);
+    }, 50);
   };
 
-  // Funzione per determinare se un placeholder è alla fine della domanda
-  const isPlaceholderAtEnd = (questionText: string, placeholderKey: string): boolean => {
-    const placeholder = `{{${placeholderKey}}}`;
-    return questionText.trim().endsWith(placeholder);
-  };
-
-  const renderPlaceholder = (key: string, placeholder: any, inline: boolean = true) => {
+  const renderPlaceholder = (key: string, placeholder: any) => {
     const existingResponse = getResponse(question.question_id, key);
     
     if (placeholder.type === "input") {
       return (
-        <Input
-          key={`input-${key}`}
-          type={placeholder.input_type}
-          placeholder={placeholder.placeholder_label}
-          value={(responses[key] as string) || (existingResponse as string) || ""}
-          onChange={(e) => {
-            setResponses({
-              ...responses,
-              [key]: e.target.value
-            });
-          }}
-          className={cn(
-            "border-gray-300 focus:border-black focus:ring-0",
-            inline ? "inline-block mx-1 w-28 min-w-[80px]" : "w-full max-w-md mt-2"
-          )}
-        />
+        <div className="mt-3">
+          <label htmlFor={`inline-input-${key}`} className="block text-sm font-medium text-gray-700 mb-1">
+            {placeholder.placeholder_label}
+          </label>
+          <Input
+            id={`inline-input-${key}`}
+            type={placeholder.input_type}
+            placeholder={placeholder.placeholder_label}
+            value={(responses[key] as string) || (existingResponse as string) || ""}
+            onChange={(e) => handleResponseChange(key, e.target.value)}
+            className="border-gray-300 focus:border-black focus:ring-0 w-full"
+          />
+        </div>
       );
     } else if (placeholder.type === "select") {
-      if (inline) {
-        // Versione inline per placeholder - sempre con il design "Seleziona"
-        const selectedOption = placeholder.options.find(
-          (opt: any) => opt.id === (responses[key] || existingResponse)
-        );
-
-        return (
-          <button
-            key={`select-inline-${key}`}
-            type="button"
-            className="inline-flex items-center justify-center mx-1 px-3 py-1.5 border border-gray-300 
-                      rounded bg-white text-gray-700 hover:border-gray-400 text-xs transition-all min-w-[90px]"
-            onClick={() => {}}
-          >
-            <span>{selectedOption ? selectedOption.label : "Seleziona"}</span>
-          </button>
-        );
-      }
-      
-      // Versione non inline con opzioni
       return (
-        <div key={`select-${key}`} className="inline-flex flex-wrap gap-1 mx-1">
-          {placeholder.options.map((option) => (
-            <Button
-              key={option.id}
-              type="button"
-              variant={
-                (responses[key] === option.id || existingResponse === option.id)
-                  ? "default"
-                  : "outline"
-              }
-              size="sm"
-              className={
-                (responses[key] === option.id || existingResponse === option.id)
-                  ? "bg-black text-white border-black text-xs"
-                  : "border-gray-300 text-gray-700 text-xs"
-              }
-              onClick={() => {
-                if (isNavigating) return;
-                
-                // Aggiorna lo stato locale
-                const newValue = option.id;
-                setResponses({
-                  ...responses,
-                  [key]: newValue
-                });
-                
-                // Gestisci salvataggio e navigazione automatici
-                handleResponseAndNavigation(key, newValue);
-              }}
-              disabled={isNavigating}
-            >
-              {option.label}
-            </Button>
-          ))}
+        <div key={`inline-select-${key}`} className="mt-3">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {placeholder.placeholder_label || "Seleziona un'opzione"}
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {placeholder.options.map((option) => (
+              <Button
+                key={option.id}
+                type="button"
+                variant={
+                  (responses[key] === option.id || existingResponse === option.id)
+                    ? "default"
+                    : "outline"
+                }
+                size="sm"
+                className={
+                  (responses[key] === option.id || existingResponse === option.id)
+                    ? "bg-black text-white border-black"
+                    : "border-gray-300 text-gray-700"
+                }
+                onClick={() => handleResponseChange(key, option.id)}
+              >
+                {option.label}
+              </Button>
+            ))}
+          </div>
         </div>
       );
     }
     return null;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Previeni l'invio se è già in corso una navigazione
-    if (isNavigating) return;
-    
-    // Imposta lo stato di navigazione
-    setIsNavigating(true);
-    
-    // Salva tutte le risposte
-    let hasNavigated = false;
-    
-    setTimeout(() => {
-      for (const [key, value] of Object.entries(responses)) {
-        if (value) {
-          setResponse(question.question_id, key, value);
-          
-          // Controlla se è necessario navigare
-          if (handleResponseAndNavigation(key, value)) {
-            hasNavigated = true;
-            break;
-          }
-        }
-      }
-      
-      if (!hasNavigated) {
-        setIsNavigating(false);
-      }
-    }, 50);
-  };
-
-  // Migliorato renderInlineQuestionText per utilizzare lo stesso approccio di FormQuestion
-  const renderInlineQuestionText = () => {
-    if (!question.question_text.includes('{{')) {
-      return <span>{question.question_text}</span>;
-    }
-    
-    // Trova tutti i placeholder e la loro posizione
-    const placeholders = [];
-    const placeholderRegex = /\{\{([^}]+)\}\}/g;
-    let match;
-    let questionText = question.question_text;
-    
-    while ((match = placeholderRegex.exec(questionText)) !== null) {
-      placeholders.push({
-        key: match[1],
-        position: match.index,
-        length: match[0].length
-      });
-    }
-
-    // Sostituisci tutti i placeholder con bottoni "Seleziona" nel testo
-    let parts = [];
-    let lastIndex = 0;
-    
-    placeholders.forEach((placeholder, index) => {
-      // Aggiungi testo prima del placeholder
-      if (placeholder.position > lastIndex) {
-        parts.push({
-          type: 'text',
-          content: questionText.substring(lastIndex, placeholder.position)
-        });
-      }
-      
-      // Aggiungi il placeholder come bottone o input
-      if (question.placeholders[placeholder.key]) {
-        parts.push({
-          type: 'placeholder',
-          key: placeholder.key,
-          isInline: true
-        });
-      } else {
-        parts.push({
-          type: 'text',
-          content: questionText.substring(placeholder.position, 
-                                         placeholder.position + placeholder.length)
-        });
-      }
-      
-      lastIndex = placeholder.position + placeholder.length;
-    });
-    
-    // Aggiungi il testo rimanente
-    if (lastIndex < questionText.length) {
-      parts.push({
-        type: 'text',
-        content: questionText.substring(lastIndex)
-      });
-    }
-    
-    // Prima il testo con i placeholder come "Seleziona"
-    const textWithPlaceholders = (
-      <div className="flex flex-wrap items-center">
-        {parts.map((part, index) => {
-          if (part.type === 'text') {
-            return <span key={`text-${index}`}>{part.content}</span>;
-          } else {
-            return (
-              <span key={`placeholder-${index}`}>
-                {renderPlaceholder(part.key, question.placeholders[part.key], true)}
-              </span>
-            );
-          }
-        })}
-      </div>
-    );
-    
-    // Se ci sono select, aggiungiamo le opzioni sotto
-    const selectPlaceholders = placeholders.filter(
-      placeholder => question.placeholders[placeholder.key] && 
-                    question.placeholders[placeholder.key].type === "select"
-    );
-    
-    if (selectPlaceholders.length > 0) {
-      return (
-        <div className="space-y-2">
-          {textWithPlaceholders}
-          
-          {/* Aggiungi le opzioni di selezione sotto per ogni placeholder di tipo select */}
-          <div className="mt-1 ml-4">
-            {selectPlaceholders.map(placeholder => (
-              <div key={`select-options-${placeholder.key}`} className="mt-2">
-                {renderPlaceholder(placeholder.key, question.placeholders[placeholder.key], false)}
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    }
-    
-    return textWithPlaceholders;
-  };
-
   return (
-    <form onSubmit={handleSubmit} className="inline">
-      <span className="text-base font-normal text-gray-900">{renderInlineQuestionText()}</span>
-      <Button
-        type="submit"
-        variant="ghost"
-        size="sm"
-        className="ml-1 text-gray-700 hover:text-gray-900 p-1 h-auto"
-        disabled={Object.keys(responses).length === 0 || isNavigating}
-      >
-        OK
-      </Button>
-    </form>
+    <div className="p-4 border border-gray-200 rounded-lg bg-gray-50 mt-4">
+      <div className="text-base font-medium text-gray-900 mb-3">{question.question_text.replace(/\{\{([^}]+)\}\}/g, '_____')}</div>
+      
+      {/* Contenitore per tutti i placeholder */}
+      <div className="space-y-4">
+        {Object.keys(question.placeholders).map(key => renderPlaceholder(key, question.placeholders[key]))}
+      </div>
+      
+      {/* Pulsante Avanti - sempre visibile */}
+      <div className="mt-4">
+        <Button
+          type="button"
+          size="sm"
+          className="bg-black hover:bg-gray-900 text-white transition-all rounded-lg px-4 py-1 text-sm"
+          onClick={handleNextQuestion}
+          disabled={isNavigating || Object.keys(question.placeholders).length === 0 || 
+                  !Object.keys(question.placeholders).some(key => 
+                    responses[key] || getResponse(question.question_id, key))}
+        >
+          Avanti <ArrowRight className="ml-1 h-3 w-3" />
+        </Button>
+      </div>
+    </div>
   );
 }
