@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { Question } from "@/types/form";
@@ -23,15 +24,24 @@ export function InlineFormQuestion({
   const { getResponse, setResponse, navigateToNextQuestion, addActiveBlock } = useForm();
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});
   const [isNavigating, setIsNavigating] = useState(false);
+  // Nuovo stato per tenere traccia di quali placeholder hanno opzioni visibili
+  const [visibleOptions, setVisibleOptions] = useState<{ [key: string]: boolean }>({});
   const location = useLocation();
 
   // Ripristina le risposte esistenti e resetta lo stato quando cambia l'URL
   useEffect(() => {
     const existingResponses: { [key: string]: string | string[] } = {};
+    const initialVisibleOptions: { [key: string]: boolean } = {};
+    
     Object.keys(question.placeholders).forEach(key => {
       const existingResponse = getResponse(question.question_id, key);
       if (existingResponse) {
         existingResponses[key] = existingResponse;
+        // Se esiste già una risposta, inizialmente nascondi le opzioni
+        initialVisibleOptions[key] = false;
+      } else {
+        // Se non esiste una risposta, mostra le opzioni
+        initialVisibleOptions[key] = true;
       }
     });
     
@@ -41,11 +51,13 @@ export function InlineFormQuestion({
       setResponses({});
     }
     
+    setVisibleOptions(initialVisibleOptions);
+    
     // Resetta lo stato di navigazione quando la domanda cambia o l'URL cambia
     setIsNavigating(false);
   }, [question.question_id, getResponse, location.pathname]);
 
-  // Funzione per gestire il cambio di risposta senza navigazione automatica
+  // Funzione per gestire il cambio di risposta e nascondere le opzioni dopo la selezione
   const handleResponseChange = (key: string, value: string | string[]) => {
     setResponses({
       ...responses,
@@ -54,6 +66,12 @@ export function InlineFormQuestion({
     
     // Salviamo subito la risposta nel contesto globale
     setResponse(question.question_id, key, value);
+    
+    // Nascondi le opzioni dopo la selezione
+    setVisibleOptions(prev => ({
+      ...prev,
+      [key]: false
+    }));
     
     // Gestiamo l'attivazione di blocchi aggiuntivi
     if (question.placeholders[key].type === "select" && !Array.isArray(value)) {
@@ -65,6 +83,14 @@ export function InlineFormQuestion({
         addActiveBlock(selectedOption.add_block);
       }
     }
+  };
+
+  // Funzione per gestire il click sul placeholder e mostrare di nuovo le opzioni
+  const handlePlaceholderClick = (key: string) => {
+    setVisibleOptions(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
   };
 
   // Funzione per avanzare manualmente alla prossima domanda
@@ -104,7 +130,7 @@ export function InlineFormQuestion({
     }, 50);
   };
 
-  // Nuovo metodo per renderizzare il testo con i placeholder come box
+  // Metodo per renderizzare il testo con i placeholder come box cliccabili
   const renderQuestionText = () => {
     if (!question.question_text.includes('{{')) {
       return <span>{question.question_text}</span>;
@@ -125,13 +151,18 @@ export function InlineFormQuestion({
       if (question.placeholders[placeholderKey] && question.placeholders[placeholderKey].type === "select") {
         const placeholder = question.placeholders[placeholderKey];
         parts.push(
-          <SelectPlaceholderBox
+          <span 
             key={`placeholder-${placeholderKey}`}
-            questionId={question.question_id}
-            placeholderKey={placeholderKey}
-            options={(placeholder as any).options}
-            className="text-[16px] py-0"
-          />
+            onClick={() => handlePlaceholderClick(placeholderKey)}
+            className="cursor-pointer"
+          >
+            <SelectPlaceholderBox
+              questionId={question.question_id}
+              placeholderKey={placeholderKey}
+              options={(placeholder as any).options}
+              className="text-[16px] py-0"
+            />
+          </span>
         );
       } else {
         // Fallback per altri tipi di placeholder o se la chiave non esiste
@@ -169,6 +200,14 @@ export function InlineFormQuestion({
         </div>
       );
     } else if (placeholder.type === "select") {
+      // Determina se le opzioni dovrebbero essere visibili
+      const hasResponse = (responses[key] !== undefined) || (existingResponse !== undefined);
+      const shouldShowOptions = visibleOptions[key] || !hasResponse;
+      
+      if (!shouldShowOptions) {
+        return null; // Non mostrare nulla se le opzioni sono nascoste
+      }
+      
       return (
         <div key={`inline-select-${key}`} className="mt-4">
           <label className="block text-[16px] font-medium text-gray-700 mb-2">
@@ -194,7 +233,7 @@ export function InlineFormQuestion({
                 onClick={() => handleResponseChange(key, option.id)}
               >
                 {option.label}
-              </Button>
+              </button>
             ))}
           </div>
         </div>
@@ -202,6 +241,11 @@ export function InlineFormQuestion({
     }
     return null;
   };
+
+  // Determina se ci sono risposte valide per mostrare il pulsante Avanti
+  const hasValidResponses = Object.keys(question.placeholders).some(key => 
+    responses[key] !== undefined || getResponse(question.question_id, key) !== undefined
+  );
 
   return (
     <div className="p-4 border border-gray-200 rounded-lg bg-gray-50 mt-4">
@@ -218,24 +262,24 @@ export function InlineFormQuestion({
         {Object.keys(question.placeholders).map(key => renderPlaceholder(key, question.placeholders[key]))}
       </div>
       
-      {/* Pulsante Avanti - con lo stile aggiornato */}
-      <div className="mt-4">
-        <Button
-          type="button"
-          size="sm"
-          className={cn(
-            "bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-[12px] transition-all",
-            "shadow-[0_6px_12px_rgba(36,92,79,0.2)] hover:shadow-[0_8px_16px_rgba(36,92,79,0.25)]",
-            "text-[17px] font-medium px-[32px] py-[12px] inline-flex items-center gap-[12px]"
-          )}
-          onClick={handleNextQuestion}
-          disabled={isNavigating || Object.keys(question.placeholders).length === 0 || 
-                  !Object.keys(question.placeholders).some(key => 
-                    responses[key] || getResponse(question.question_id, key))}
-        >
-          Avanti <ArrowRight className="ml-1 h-3 w-3" />
-        </Button>
-      </div>
+      {/* Pulsante Avanti - mostrato solo se ci sono risposte valide */}
+      {hasValidResponses && (
+        <div className="mt-4">
+          <Button
+            type="button"
+            size="sm"
+            className={cn(
+              "bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-[12px] transition-all",
+              "shadow-[0_6px_12px_rgba(36,92,79,0.2)] hover:shadow-[0_8px_16px_rgba(36,92,79,0.25)]",
+              "text-[17px] font-medium px-[32px] py-[12px] inline-flex items-center gap-[12px]"
+            )}
+            onClick={handleNextQuestion}
+            disabled={isNavigating || Object.keys(question.placeholders).length === 0}
+          >
+            Avanti <ArrowRight className="ml-1 h-3 w-3" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
