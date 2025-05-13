@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, LightbulbIcon, Search, Home, Check, Badge } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge as UIBadge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
 
 const SimulazioneAvanzata = () => {
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   
   return (
     <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
@@ -81,16 +83,22 @@ interface OptionCardProps {
 
 const OptionCard = ({ icon: Icon, title, description, href, disabled = false, badge }: OptionCardProps) => {
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    if (!disabled) {
+      navigate(href);
+    }
+  };
 
   return (
-    <a 
-      href={disabled ? "#" : href}
+    <div 
       className={`flex items-center justify-between p-5 bg-white rounded-md shadow-sm ${
         disabled 
           ? "opacity-80 cursor-not-allowed" 
-          : "hover:shadow-md transition-all group"
+          : "hover:shadow-md transition-all group cursor-pointer"
       }`}
-      onClick={(e) => disabled && e.preventDefault()}
+      onClick={handleClick}
     >
       <div className="flex items-center gap-4">
         {!isMobile && (
@@ -111,7 +119,7 @@ const OptionCard = ({ icon: Icon, title, description, href, disabled = false, ba
       <div className={`${disabled ? "bg-gray-300" : "bg-vibe-green group-hover:bg-vibe-green-dark"} p-3 rounded-md transition-colors flex items-center justify-center ml-2 flex-shrink-0`}>
         <ArrowRight className={`w-5 h-5 ${disabled ? "text-gray-100" : "text-white"}`} />
       </div>
-    </a>
+    </div>
   );
 };
 

@@ -4,8 +4,11 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { FormProvider } from "./contexts/FormContext";
+import { allBlocks } from "./data/formBlocks";
 import Index from "./pages/Index";
 import SimulazioneAvanzata from "./pages/SimulazioneAvanzata";
+import Form from "./pages/Form";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -19,6 +22,14 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/simulazione-avanzata" element={<SimulazioneAvanzata />} />
+          <Route 
+            path="/simulazione/*" 
+            element={
+              <FormProvider blocks={allBlocks}>
+                <Form />
+              </FormProvider>
+            } 
+          />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
