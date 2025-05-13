@@ -90,14 +90,14 @@ export function FormQuestion({ question }: { question: Question }) {
               [key]: e.target.value
             });
           }}
-          className="inline-block mx-1 w-auto min-w-[120px]"
+          className="inline-block mx-1 w-auto min-w-[120px] border-gray-300 focus:border-black focus:ring-0"
         />
       );
     } else if (placeholder.type === "select") {
       if (placeholder.multiple) {
         // Handle multi-select (checkboxes)
         return (
-          <div key={`multiselect-${key}`} className="flex flex-col space-y-2 mt-4">
+          <div key={`multiselect-${key}`} className="flex flex-col space-y-3 mt-4">
             {placeholder.options.map((option) => (
               <label key={option.id} className="flex items-center space-x-2">
                 <input
@@ -119,23 +119,23 @@ export function FormQuestion({ question }: { question: Question }) {
                   }}
                   className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
                 />
-                <span>{option.label}</span>
+                <span className="text-gray-700">{option.label}</span>
               </label>
             ))}
           </div>
         );
       } else {
-        // Handle single select (cards with buttons) basato sul design di Pretto
+        // Handle single select (buttons) basato sul design di Pretto
         return (
           <div key={`select-${key}`} className="grid grid-cols-1 gap-2 mt-6">
             {placeholder.options.map((option) => (
               <button
                 key={option.id}
                 type="button"
-                className={`w-full text-left px-4 py-3 border rounded-md transition-all ${
+                className={`w-full text-left px-5 py-4 border rounded-lg transition-all ${
                   responses[key] === option.id || existingResponse === option.id
-                    ? "border-black bg-gray-100"
-                    : "border-gray-200 hover:border-gray-300"
+                    ? "border-black bg-gray-50"
+                    : "border-gray-200 hover:border-gray-400"
                 }`}
                 onClick={() => {
                   if (isNavigating) return;
@@ -152,7 +152,7 @@ export function FormQuestion({ question }: { question: Question }) {
                 }}
                 disabled={isNavigating}
               >
-                <div className="font-medium text-black">{option.label}</div>
+                <div className="font-medium text-gray-900">{option.label}</div>
               </button>
             ))}
           </div>
@@ -271,7 +271,7 @@ export function FormQuestion({ question }: { question: Question }) {
         return renderPlaceholder(key, question.placeholders[key]);
       }
       // This part is regular text
-      return <React.Fragment key={`text-${index}`}>{part}</React.Fragment>;
+      return <span key={`text-${index}`}>{part}</span>;
     });
   };
 
@@ -279,7 +279,7 @@ export function FormQuestion({ question }: { question: Question }) {
   return (
     <form onSubmit={handleSubmit} className="max-w-xl animate-fade-in">
       {/* Domanda principale in stile Pretto */}
-      <div className="text-2xl font-medium text-black mb-6">
+      <div className="text-xl md:text-2xl font-normal text-gray-900 mb-6 leading-relaxed">
         {renderQuestionText()}
       </div>
       
@@ -291,11 +291,11 @@ export function FormQuestion({ question }: { question: Question }) {
         <div className="mt-8">
           <Button
             type="submit"
-            className="bg-black hover:bg-gray-800 text-white transition-all rounded-md px-4 py-2"
+            className="bg-black hover:bg-gray-900 text-white transition-all rounded-lg px-5 py-2 text-sm"
             disabled={(Object.keys(responses).length === 0 && 
                      !Object.keys(question.placeholders).some(key => getResponse(question.question_id, key))) || isNavigating}
           >
-            Continua <ArrowRight className="ml-2 h-4 w-4" />
+            Continua <ArrowRight className="ml-1 h-4 w-4" />
           </Button>
         </div>
       )}

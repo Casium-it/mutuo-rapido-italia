@@ -91,12 +91,12 @@ export function InlineFormQuestion({
               [key]: e.target.value
             });
           }}
-          className="inline-block mx-1 w-auto min-w-[80px] border-black"
+          className="inline-block mx-1 w-auto min-w-[80px] border-gray-300 focus:border-black focus:ring-0"
         />
       );
     } else if (placeholder.type === "select") {
       return (
-        <div key={`select-${key}`} className="inline-flex gap-2 mx-1">
+        <div key={`select-${key}`} className="inline-flex gap-1 mx-1">
           {placeholder.options.map((option) => (
             <Button
               key={option.id}
@@ -109,8 +109,8 @@ export function InlineFormQuestion({
               size="sm"
               className={
                 (responses[key] === option.id || existingResponse === option.id)
-                  ? "bg-black text-white border-black"
-                  : "border-gray-300"
+                  ? "bg-black text-white border-black text-xs"
+                  : "border-gray-300 text-gray-700 text-xs"
               }
               onClick={() => {
                 if (isNavigating) return;
@@ -193,18 +193,18 @@ export function InlineFormQuestion({
         return renderPlaceholder(key, question.placeholders[key]);
       }
       // This part is regular text
-      return <React.Fragment key={`text-${index}`}>{part}</React.Fragment>;
+      return <span key={`text-${index}`}>{part}</span>;
     });
   };
 
   return (
     <form onSubmit={handleSubmit} className="inline">
-      <span className="text-lg font-medium">{renderInlineQuestionText()}</span>
+      <span className="text-base font-normal text-gray-900">{renderInlineQuestionText()}</span>
       <Button
         type="submit"
         variant="ghost"
         size="sm"
-        className="ml-2 text-black hover:text-gray-700"
+        className="ml-1 text-gray-700 hover:text-gray-900 p-1 h-auto"
         disabled={Object.keys(responses).length === 0 || isNavigating}
       >
         OK
