@@ -4,6 +4,7 @@ import { Question } from "@/types/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ChevronDown } from "lucide-react";
 
 interface InlineFormQuestionProps {
   question: Question;
@@ -91,18 +92,22 @@ export function InlineFormQuestion({
       );
     } else if (placeholder.type === "select") {
       if (inline) {
-        // Versione inline per placeholder
+        // Versione inline per placeholder - sempre con il design "Seleziona"
+        const selectedOption = placeholder.options.find(
+          (opt: any) => opt.id === (responses[key] || existingResponse)
+        );
+
         return (
-          <span key={`select-inline-${key}`} className="inline-flex gap-1 mx-1">
-            <Button
-              variant="outline"
-              size="sm"
-              type="button"
-              className="border-gray-300 bg-white text-gray-500 text-xs font-normal"
-            >
-              Seleziona
-            </Button>
-          </span>
+          <button
+            key={`select-inline-${key}`}
+            type="button"
+            className="inline-flex items-center justify-between mx-1 px-3 py-1.5 border border-gray-300 
+                      rounded bg-white text-gray-700 hover:border-gray-400 text-xs transition-all min-w-[90px]"
+            onClick={() => {}}
+          >
+            <span>{selectedOption ? selectedOption.label : "Seleziona"}</span>
+            <ChevronDown className="ml-1 h-3 w-3 opacity-70" />
+          </button>
         );
       }
       

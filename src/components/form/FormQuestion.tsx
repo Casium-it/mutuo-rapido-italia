@@ -3,7 +3,7 @@ import { useForm } from "@/contexts/FormContext";
 import { Question } from "@/types/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronDown } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -134,21 +134,24 @@ export function FormQuestion({ question }: { question: Question }) {
           </div>
         );
       } else {
-        // Handle single select (buttons) basato sul design di Pretto
+        // Handle single select (buttons) con il design "Seleziona"
         if (inline) {
-          // Versione inline per placeholder alla fine della frase
+          // Versione inline per placeholder in qualsiasi posizione della frase
+          const selectedOption = placeholder.options.find(
+            (opt: any) => opt.id === (responses[key] || existingResponse)
+          );
+
           return (
-            <div key={`select-${key}`} className="inline-flex gap-1 mx-1">
-              <Button
-                variant="outline"
-                size="sm"
-                type="button"
-                className="border-gray-300 bg-white text-gray-500 text-xs font-normal"
-                onClick={() => {}}
-              >
-                Seleziona
-              </Button>
-            </div>
+            <button
+              key={`select-inline-${key}`}
+              type="button"
+              className="inline-flex items-center justify-between mx-1 px-3 py-1.5 border border-gray-300 
+                        rounded bg-white text-gray-700 hover:border-gray-400 text-sm transition-all min-w-[100px]"
+              onClick={() => {}}
+            >
+              <span>{selectedOption ? selectedOption.label : "Seleziona"}</span>
+              <ChevronDown className="ml-1 h-3.5 w-3.5 opacity-70" />
+            </button>
           );
         }
         
