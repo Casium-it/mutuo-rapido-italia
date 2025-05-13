@@ -122,7 +122,7 @@ export const block3: Block = {
         placeholder1: {
           type: "input",
           input_type: "text",
-          placeholder_label": "Professione",
+          placeholder_label: "Professione",
           leads_to: "anno_autonomo"
         }
       }
