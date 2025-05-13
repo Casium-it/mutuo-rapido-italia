@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { Question } from "@/types/form";
@@ -132,7 +133,7 @@ export function InlineFormQuestion({
     }, 50);
   };
 
-  // Metodo per renderizzare il testo con i placeholder come box cliccabili
+  // Metodo per renderizzare il testo con i placeholder come box cliccabili o input
   const renderQuestionText = () => {
     if (!question.question_text.includes('{{')) {
       return <span>{question.question_text}</span>;
@@ -150,24 +151,62 @@ export function InlineFormQuestion({
       }
 
       const placeholderKey = match[1];
-      if (question.placeholders[placeholderKey] && question.placeholders[placeholderKey].type === "select") {
-        const placeholder = question.placeholders[placeholderKey];
-        parts.push(
-          <span 
-            key={`placeholder-${placeholderKey}`}
-            onClick={() => handlePlaceholderClick(placeholderKey)}
-            className="cursor-pointer"
-          >
-            <SelectPlaceholderBox
-              questionId={question.question_id}
-              placeholderKey={placeholderKey}
-              options={(placeholder as any).options}
-              className="text-[16px] py-0"
-            />
-          </span>
-        );
+      if (question.placeholders[placeholderKey]) {
+        if (question.placeholders[placeholderKey].type === "select") {
+          // Renderizza SelectPlaceholderBox per select
+          const placeholder = question.placeholders[placeholderKey];
+          parts.push(
+            <span 
+              key={`placeholder-${placeholderKey}`}
+              onClick={() => handlePlaceholderClick(placeholderKey)}
+              className="cursor-pointer"
+            >
+              <SelectPlaceholderBox
+                questionId={question.question_id}
+                placeholderKey={placeholderKey}
+                options={(placeholder as any).options}
+                className="text-[16px] py-0"
+              />
+            </span>
+          );
+        } else if (question.placeholders[placeholderKey].type === "input") {
+          // Renderizza campo input inline
+          const placeholder = question.placeholders[placeholderKey];
+          const existingResponse = getResponse(question.question_id, placeholderKey);
+          const value = (responses[placeholderKey] as string) || (existingResponse as string) || "";
+          
+          parts.push(
+            <span 
+              key={`placeholder-${placeholderKey}`}
+              className="inline-block align-middle mx-1"
+            >
+              <Input
+                type={(placeholder as any).input_type || "text"}
+                value={value}
+                onChange={(e) => handleResponseChange(placeholderKey, e.target.value)}
+                placeholder={(placeholder as any).placeholder_label || ""}
+                className={cn(
+                  "inline-block align-middle text-center",
+                  "border-[1.5px] border-[#245C4F] rounded-[8px]",
+                  "text-[16px] text-[#222222] font-['Inter']",
+                  "h-[48px] px-[12px] py-[10px]",
+                  "outline-none focus:ring-0 focus:border-[#245C4F]",
+                  "placeholder:text-[#E7E1D9] placeholder:font-normal",
+                  {
+                    "w-[70px]": (placeholder as any).input_type === "number",
+                    "w-[120px]": (placeholder as any).input_type === "text" && (placeholder as any).placeholder_label?.toLowerCase().includes("cap"),
+                    "w-[200px]": (placeholder as any).input_type === "text" && !(placeholder as any).placeholder_label?.toLowerCase().includes("cap"),
+                  }
+                )}
+              />
+            </span>
+          );
+        } else {
+          // Fallback per altri tipi di placeholder
+          parts.push(<span key={`placeholder-${placeholderKey}`} className="mx-1 px-1 py-0 bg-gray-100 rounded text-[16px]">_____</span>);
+        }
       } else {
-        // Fallback per altri tipi di placeholder o se la chiave non esiste
+        // Fallback se la chiave non esiste nei placeholders
         parts.push(<span key={`placeholder-${placeholderKey}`} className="mx-1 px-1 py-0 bg-gray-100 rounded text-[16px]">_____</span>);
       }
 
@@ -182,34 +221,11 @@ export function InlineFormQuestion({
     return <>{parts}</>;
   };
 
-  const renderPlaceholder = (key: string, placeholder: any) => {
+  // Ora renderizziamo solo i select options visibili sotto la domanda
+  const renderVisibleSelectOptions = (key: string, placeholder: any) => {
     const existingResponse = getResponse(question.question_id, key);
     
-    if (placeholder.type === "input") {
-      return (
-        <div className="mt-3">
-          <label htmlFor={`inline-input-${key}`} className="block text-sm font-medium text-gray-700 mb-1">
-            {placeholder.placeholder_label}
-          </label>
-          <Input
-            id={`inline-input-${key}`}
-            type={placeholder.input_type}
-            placeholder={placeholder.placeholder_label}
-            value={(responses[key] as string) || (existingResponse as string) || ""}
-            onChange={(e) => handleResponseChange(key, e.target.value)}
-            className="border-gray-300 focus:border-black focus:ring-0 w-full"
-          />
-        </div>
-      );
-    } else if (placeholder.type === "select") {
-      // Determina se le opzioni dovrebbero essere visibili
-      const hasResponse = (responses[key] !== undefined) || (existingResponse !== undefined);
-      const shouldShowOptions = visibleOptions[key] || !hasResponse;
-      
-      if (!shouldShowOptions) {
-        return null; // Non mostrare nulla se le opzioni sono nascoste
-      }
-      
+    if (placeholder.type === "select" && visibleOptions[key]) {
       return (
         <div key={`inline-select-${key}`} className="mt-4">
           <label className="block text-[16px] font-medium text-gray-700 mb-2">
@@ -256,9 +272,9 @@ export function InlineFormQuestion({
         {renderQuestionText()}
       </div>
       
-      {/* Contenitore per tutti i placeholder */}
+      {/* Contenitore per i select options visibili */}
       <div className="space-y-4 mt-2">
-        {Object.keys(question.placeholders).map(key => renderPlaceholder(key, question.placeholders[key]))}
+        {Object.keys(question.placeholders).map(key => renderVisibleSelectOptions(key, question.placeholders[key]))}
       </div>
       
       {/* Pulsante Avanti - mostrato solo se ci sono risposte valide, se è l'ultima domanda inline, e hideNextButton è false */}

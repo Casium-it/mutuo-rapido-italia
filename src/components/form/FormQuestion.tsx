@@ -19,7 +19,7 @@ export function FormQuestion({ question, hideNextButton = false }: FormQuestionP
   const { getResponse, setResponse, navigateToNextQuestion, addActiveBlock } = useForm();
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});
   const [isNavigating, setIsNavigating] = useState(false);
-  // Nuovo stato per tenere traccia di quali placeholder hanno opzioni visibili
+  // Stato per tenere traccia di quali placeholder hanno opzioni visibili
   const [visibleOptions, setVisibleOptions] = useState<{ [key: string]: boolean }>({});
   const params = useParams();
   const location = useLocation();
@@ -126,7 +126,7 @@ export function FormQuestion({ question, hideNextButton = false }: FormQuestionP
     }, 50);
   };
 
-  // Metodo per renderizzare il testo con i placeholder come box cliccabili
+  // Metodo per renderizzare il testo con i placeholder come input o select box
   const renderQuestionText = () => {
     if (!question.question_text.includes('{{')) {
       return <span>{question.question_text}</span>;
@@ -144,23 +144,61 @@ export function FormQuestion({ question, hideNextButton = false }: FormQuestionP
       }
 
       const placeholderKey = match[1];
-      if (question.placeholders[placeholderKey] && question.placeholders[placeholderKey].type === "select") {
-        const placeholder = question.placeholders[placeholderKey];
-        parts.push(
-          <span 
-            key={`placeholder-${placeholderKey}`}
-            onClick={() => handlePlaceholderClick(placeholderKey)}
-            className="cursor-pointer"
-          >
-            <SelectPlaceholderBox
-              questionId={question.question_id}
-              placeholderKey={placeholderKey}
-              options={(placeholder as any).options}
-            />
-          </span>
-        );
+      if (question.placeholders[placeholderKey]) {
+        if (question.placeholders[placeholderKey].type === "select") {
+          // Renderizza box selezionabile per opzioni
+          const placeholder = question.placeholders[placeholderKey];
+          parts.push(
+            <span 
+              key={`placeholder-${placeholderKey}`}
+              onClick={() => handlePlaceholderClick(placeholderKey)}
+              className="cursor-pointer"
+            >
+              <SelectPlaceholderBox
+                questionId={question.question_id}
+                placeholderKey={placeholderKey}
+                options={(placeholder as any).options}
+              />
+            </span>
+          );
+        } else if (question.placeholders[placeholderKey].type === "input") {
+          // Renderizza campo input inline
+          const placeholder = question.placeholders[placeholderKey];
+          const existingResponse = getResponse(question.question_id, placeholderKey);
+          const value = (responses[placeholderKey] as string) || (existingResponse as string) || "";
+          
+          parts.push(
+            <span 
+              key={`placeholder-${placeholderKey}`}
+              className="inline-block align-middle mx-1"
+            >
+              <Input
+                type={(placeholder as any).input_type || "text"}
+                value={value}
+                onChange={(e) => handleResponseChange(placeholderKey, e.target.value)}
+                placeholder={(placeholder as any).placeholder_label || ""}
+                className={cn(
+                  "inline-block align-middle text-center",
+                  "border-[1.5px] border-[#245C4F] rounded-[8px]",
+                  "text-[16px] text-[#222222] font-['Inter']",
+                  "h-[48px] px-[12px] py-[10px]",
+                  "outline-none focus:ring-0 focus:border-[#245C4F]",
+                  "placeholder:text-[#E7E1D9] placeholder:font-normal",
+                  {
+                    "w-[70px]": (placeholder as any).input_type === "number",
+                    "w-[120px]": (placeholder as any).input_type === "text" && (placeholder as any).placeholder_label?.toLowerCase().includes("cap"),
+                    "w-[200px]": (placeholder as any).input_type === "text" && !(placeholder as any).placeholder_label?.toLowerCase().includes("cap"),
+                  }
+                )}
+              />
+            </span>
+          );
+        } else {
+          // Fallback per altri tipi di placeholder o se la chiave non esiste
+          parts.push(<span key={`placeholder-${placeholderKey}`} className="mx-1 px-2 py-0.5 bg-gray-100 rounded-md text-[16px]">_____</span>);
+        }
       } else {
-        // Fallback per altri tipi di placeholder o se la chiave non esiste
+        // Fallback se la chiave non esiste nei placeholders
         parts.push(<span key={`placeholder-${placeholderKey}`} className="mx-1 px-2 py-0.5 bg-gray-100 rounded-md text-[16px]">_____</span>);
       }
 
@@ -175,102 +213,37 @@ export function FormQuestion({ question, hideNextButton = false }: FormQuestionP
     return <>{parts}</>;
   };
 
-  const renderPlaceholder = (key: string, placeholder: any, inline: boolean = false) => {
+  // Ora renderizziamo solo i placeholder select con opzioni visibili sotto la domanda
+  const renderVisibleSelectOptions = (key: string, placeholder: any) => {
     const existingResponse = getResponse(question.question_id, key);
     
-    if (placeholder.type === "input") {
+    if (placeholder.type === "select" && visibleOptions[key]) {
       return (
-        <div className="mt-5">
-          <label htmlFor={`input-${key}`} className="block text-[16px] font-medium text-gray-700 mb-2">
-            {placeholder.placeholder_label}
+        <div key={`select-${key}`} className="mt-5">
+          <label className="block text-[16px] font-medium text-gray-700 mb-2">
+            {placeholder.placeholder_label || "Seleziona un'opzione"}
           </label>
-          <Input
-            id={`input-${key}`}
-            type={placeholder.input_type}
-            placeholder={placeholder.placeholder_label}
-            value={(responses[key] as string) || (existingResponse as string) || ""}
-            onChange={(e) => handleResponseChange(key, e.target.value)}
-            className="border-gray-300 focus:border-black focus:ring-0 w-full max-w-md text-[16px]"
-          />
+          <div className="grid grid-cols-1 gap-2">
+            {placeholder.options.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                className={cn(
+                  "text-left px-[18px] py-[12px] border-[1.5px] rounded-[10px] transition-all font-['Inter'] text-[16px] font-normal",
+                  "shadow-[0_3px_0_0_#AFA89F] mb-[10px] cursor-pointer w-fit",
+                  "hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)]",
+                  responses[key] === option.id || existingResponse === option.id
+                    ? "border-black bg-gray-50"
+                    : "border-[#BEB8AE]"
+                )}
+                onClick={() => handleResponseChange(key, option.id)}
+              >
+                <div className="font-medium text-black">{option.label}</div>
+              </button>
+            ))}
+          </div>
         </div>
       );
-    } else if (placeholder.type === "select") {
-      if (placeholder.multiple) {
-        // Handle multi-select (checkboxes) con UI unificata
-        return (
-          <div key={`multiselect-${key}`} className="flex flex-col space-y-3 mt-5">
-            <label className="block text-[16px] font-medium text-gray-700 mb-2">
-              {placeholder.placeholder_label || "Seleziona le opzioni"}
-            </label>
-            <div className="space-y-2">
-              {placeholder.options.map((option) => (
-                <label 
-                  key={option.id} 
-                  className={cn(
-                    "flex items-center space-x-2 p-3 border rounded-md hover:bg-gray-50 cursor-pointer",
-                    "font-['Inter'] border-[#BEB8AE] rounded-[10px] shadow-[0_3px_0_0_#AFA89F] mb-[10px]",
-                    "hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)]"
-                  )}
-                >
-                  <input
-                    type="checkbox"
-                    checked={
-                      (responses[key] as string[] || existingResponse as string[] || []).includes(
-                        option.id
-                      )
-                    }
-                    onChange={(e) => {
-                      const current = (responses[key] as string[]) || (existingResponse as string[]) || [];
-                      const newValue = e.target.checked
-                        ? [...current, option.id]
-                        : current.filter((id) => id !== option.id);
-                      handleResponseChange(key, newValue);
-                    }}
-                    className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
-                  />
-                  <span className="text-gray-700 text-[16px]">{option.label}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-        );
-      } else {
-        // UI unificata per single-select con nuovo stile, visibile solo se visibleOptions[key] è true
-        // o se non è stata ancora selezionata un'opzione
-        const hasResponse = (responses[key] !== undefined) || (existingResponse !== undefined);
-        const shouldShowOptions = visibleOptions[key] || !hasResponse;
-        
-        if (!shouldShowOptions) {
-          return null; // Non mostrare nulla se le opzioni sono nascoste
-        }
-        
-        return (
-          <div key={`select-${key}`} className="mt-5">
-            <label className="block text-[16px] font-medium text-gray-700 mb-2">
-              {placeholder.placeholder_label || "Seleziona un'opzione"}
-            </label>
-            <div className="grid grid-cols-1 gap-2">
-              {placeholder.options.map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  className={cn(
-                    "text-left px-[18px] py-[12px] border-[1.5px] rounded-[10px] transition-all font-['Inter'] text-[16px] font-normal",
-                    "shadow-[0_3px_0_0_#AFA89F] mb-[10px] cursor-pointer w-fit",
-                    "hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)]",
-                    responses[key] === option.id || existingResponse === option.id
-                      ? "border-black bg-gray-50"
-                      : "border-[#BEB8AE]"
-                  )}
-                  onClick={() => handleResponseChange(key, option.id)}
-                >
-                  <div className="font-medium text-black">{option.label}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-        );
-      }
     }
     return null;
   };
@@ -291,9 +264,9 @@ export function FormQuestion({ question, hideNextButton = false }: FormQuestionP
       {/* Linea separatrice beige */}
       <Separator className="h-[1px] bg-[#F0EAE0] mb-5" />
       
-      {/* Contenitore per tutti i placeholder */}
+      {/* Contenitore per i select options visibili */}
       <div className="space-y-5">
-        {Object.keys(question.placeholders).map(key => renderPlaceholder(key, question.placeholders[key]))}
+        {Object.keys(question.placeholders).map(key => renderVisibleSelectOptions(key, question.placeholders[key]))}
       </div>
       
       {/* Pulsante Avanti - con lo stile aggiornato - mostrato solo se ci sono risposte valide e hideNextButton è false */}
