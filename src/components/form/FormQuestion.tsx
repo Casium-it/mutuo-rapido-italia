@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { Question } from "@/types/form";
@@ -90,7 +89,7 @@ export function FormQuestion({ question }: { question: Question }) {
               [key]: e.target.value
             });
           }}
-          className="inline-block mx-1 w-auto min-w-[120px] border-gray-300 focus:border-black focus:ring-0"
+          className="inline-block mx-1 w-32 min-w-[120px] border-gray-300 focus:border-black focus:ring-0"
         />
       );
     } else if (placeholder.type === "select") {
@@ -245,34 +244,72 @@ export function FormQuestion({ question }: { question: Question }) {
     }, 50);
   };
 
-  // Funzione migliorata per renderizzare il testo della domanda con i placeholders
+  // Questa è la funzione chiave che deve essere migliorata per gestire correttamente i placeholder
   const renderQuestionText = () => {
-    // Create a copy of the question text to work with
-    let text = question.question_text;
-    const placeholders = {};
+    if (!question.question_text.includes('{{')) {
+      // Se non ci sono placeholder, restituisce semplicemente il testo della domanda
+      return <div>{question.question_text}</div>;
+    }
+
+    // Split the question text by placeholder patterns
+    const parts = [];
+    let currentText = question.question_text;
+    let placeholderMatch;
+    let lastIndex = 0;
+    const placeholderRegex = /\{\{([^}]+)\}\}/g;
     
-    // First, replace all placeholders with unique markers
-    Object.keys(question.placeholders).forEach((key, index) => {
-      const placeholder = `{{${key}}}`;
-      const marker = `__PLACEHOLDER_${index}_${key}__`;
-      placeholders[marker] = key;
-      text = text.replace(new RegExp(placeholder, 'g'), marker);
-    });
-    
-    // Split by all markers at once using regex
-    const allMarkers = Object.keys(placeholders).join('|').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const parts = allMarkers ? text.split(new RegExp(`(${allMarkers})`, 'g')) : [text];
-    
-    // Map the parts to React nodes
-    return parts.map((part, index) => {
-      if (placeholders[part]) {
-        // This part is a placeholder marker
-        const key = placeholders[part];
-        return renderPlaceholder(key, question.placeholders[key]);
+    // Trova tutti i placeholder nel testo
+    while ((placeholderMatch = placeholderRegex.exec(question.question_text)) !== null) {
+      const matchStart = placeholderMatch.index;
+      const matchEnd = placeholderMatch.index + placeholderMatch[0].length;
+      const placeholderKey = placeholderMatch[1];
+      
+      // Aggiungi il testo prima del placeholder
+      if (matchStart > lastIndex) {
+        parts.push({
+          type: 'text',
+          content: question.question_text.substring(lastIndex, matchStart)
+        });
       }
-      // This part is regular text
-      return <span key={`text-${index}`}>{part}</span>;
-    });
+      
+      // Aggiungi il placeholder
+      if (question.placeholders[placeholderKey]) {
+        parts.push({
+          type: 'placeholder',
+          key: placeholderKey
+        });
+      } else {
+        // Se il placeholder non esiste, mantieni il testo originale
+        parts.push({
+          type: 'text',
+          content: placeholderMatch[0]
+        });
+      }
+      
+      lastIndex = matchEnd;
+    }
+    
+    // Aggiungi il resto del testo dopo l'ultimo placeholder
+    if (lastIndex < question.question_text.length) {
+      parts.push({
+        type: 'text',
+        content: question.question_text.substring(lastIndex)
+      });
+    }
+    
+    // Rendering delle parti
+    return (
+      <div className="flex flex-wrap items-center">
+        {parts.map((part, index) => {
+          if (part.type === 'text') {
+            return <span key={`text-${index}`}>{part.content}</span>;
+          } else {
+            // Renderizza l'input o il select per questo placeholder
+            return <span key={`placeholder-${index}`}>{renderPlaceholder(part.key, question.placeholders[part.key])}</span>;
+          }
+        })}
+      </div>
+    );
   };
 
   // Renderizza la domanda principale in stile Pretto

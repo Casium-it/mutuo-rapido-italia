@@ -91,7 +91,7 @@ export function InlineFormQuestion({
               [key]: e.target.value
             });
           }}
-          className="inline-block mx-1 w-auto min-w-[80px] border-gray-300 focus:border-black focus:ring-0"
+          className="inline-block mx-1 w-28 min-w-[80px] border-gray-300 focus:border-black focus:ring-0"
         />
       );
     } else if (placeholder.type === "select") {
@@ -169,31 +169,63 @@ export function InlineFormQuestion({
 
   // Funzione migliorata per renderizzare il testo della domanda inline con i placeholders
   const renderInlineQuestionText = () => {
-    // Create a copy of the question text to work with
-    let text = question.question_text;
-    const placeholders = {};
+    if (!question.question_text.includes('{{')) {
+      return <span>{question.question_text}</span>;
+    }
     
-    // First, replace all placeholders with unique markers
-    Object.keys(question.placeholders).forEach((key, index) => {
-      const placeholder = `{{${key}}}`;
-      const marker = `__PLACEHOLDER_${index}_${key}__`;
-      placeholders[marker] = key;
-      text = text.replace(new RegExp(placeholder, 'g'), marker);
-    });
+    // Split the question text by placeholder patterns
+    const parts = [];
+    let lastIndex = 0;
+    const placeholderRegex = /\{\{([^}]+)\}\}/g;
+    let placeholderMatch;
     
-    // Split by all markers at once using regex
-    const allMarkers = Object.keys(placeholders).join('|').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const parts = allMarkers ? text.split(new RegExp(`(${allMarkers})`, 'g')) : [text];
-    
-    // Map the parts to React nodes
-    return parts.map((part, index) => {
-      if (placeholders[part]) {
-        // This part is a placeholder marker
-        const key = placeholders[part];
-        return renderPlaceholder(key, question.placeholders[key]);
+    // Trova tutti i placeholder nel testo
+    while ((placeholderMatch = placeholderRegex.exec(question.question_text)) !== null) {
+      const matchStart = placeholderMatch.index;
+      const matchEnd = placeholderMatch.index + placeholderMatch[0].length;
+      const placeholderKey = placeholderMatch[1];
+      
+      // Aggiungi il testo prima del placeholder
+      if (matchStart > lastIndex) {
+        parts.push({
+          type: 'text',
+          content: question.question_text.substring(lastIndex, matchStart)
+        });
       }
-      // This part is regular text
-      return <span key={`text-${index}`}>{part}</span>;
+      
+      // Aggiungi il placeholder
+      if (question.placeholders[placeholderKey]) {
+        parts.push({
+          type: 'placeholder',
+          key: placeholderKey
+        });
+      } else {
+        // Se il placeholder non esiste, mantieni il testo originale
+        parts.push({
+          type: 'text',
+          content: placeholderMatch[0]
+        });
+      }
+      
+      lastIndex = matchEnd;
+    }
+    
+    // Aggiungi il resto del testo dopo l'ultimo placeholder
+    if (lastIndex < question.question_text.length) {
+      parts.push({
+        type: 'text',
+        content: question.question_text.substring(lastIndex)
+      });
+    }
+    
+    // Rendering delle parti
+    return parts.map((part, index) => {
+      if (part.type === 'text') {
+        return <span key={`text-${index}`}>{part.content}</span>;
+      } else {
+        // Renderizza l'input o il select per questo placeholder
+        return <span key={`placeholder-${index}`}>{renderPlaceholder(part.key, question.placeholders[part.key])}</span>;
+      }
     });
   };
 
