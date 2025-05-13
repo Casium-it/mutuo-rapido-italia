@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { FormQuestion } from "./FormQuestion";
@@ -242,7 +243,7 @@ export function QuestionView() {
                 "inline-flex items-center gap-[12px]"
               )}
               onClick={handleNextQuestion}
-              disabled={isNavigating || Object.keys(question.placeholders).length === 0}
+              disabled={state.isNavigating || Object.keys(activeQuestion.placeholders).length === 0}
             >
               Avanti <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
@@ -252,3 +253,4 @@ export function QuestionView() {
     </div>
   );
 }
+
