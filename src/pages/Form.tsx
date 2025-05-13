@@ -68,14 +68,14 @@ export default function Form() {
 
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar (ora non cliccabile) */}
+        {/* Sidebar */}
         <div className="hidden md:block w-[240px] bg-white border-r border-gray-200 overflow-y-auto">
           <div className="p-4 h-full">
             <BlockSidebar />
           </div>
         </div>
 
-        {/* Content area - ora utilizza una key basata sul pathname per forzare il re-rendering */}
+        {/* Content area - con key basata sul pathname per forzare il re-rendering */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12">
           <div className="max-w-2xl mx-auto">
             {/* Block title */}
@@ -83,7 +83,7 @@ export default function Form() {
               <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">{activeBlock?.title}</h1>
             </div>
 
-            {/* Question - aggiungiamo una key basata sull'URL per forzare il re-rendering */}
+            {/* Question - con key per forzare il re-rendering quando cambia l'URL */}
             <div key={location.pathname}>
               <QuestionView />
             </div>
@@ -91,7 +91,7 @@ export default function Form() {
         </div>
       </div>
       
-      {/* Reset button positioned at bottom left */}
+      {/* Reset button */}
       <div className="absolute bottom-4 left-4 z-10">
         <Button 
           variant="outline" 
