@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback } from "react";
 import { Block, FormState, FormResponse } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
@@ -27,8 +26,8 @@ type Action =
 const initialState: FormState = {
   activeBlocks: [],
   activeQuestion: {
-    block_id: "funnel",
-    question_id: "fase_mutuo"
+    block_id: "introduzione",
+    question_id: "soggetto_acquisto"
   },
   responses: {},
   answeredQuestions: new Set()
@@ -83,7 +82,6 @@ function formReducer(state: FormState, action: Action): FormState {
     case "RESET_FORM": {
       return {
         ...initialState,
-        // Mantieni solo i blocchi default_active
         activeBlocks: state.activeBlocks.filter(blockId => 
           initialState.activeBlocks.includes(blockId))
       };
@@ -128,8 +126,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     // Reimposta lo stato del form
     dispatch({ type: "RESET_FORM" });
     
-    // Torna alla prima domanda
-    navigate("/simulazione/pensando/funnel/fase_mutuo", { replace: true });
+    // Torna alla prima domanda (aggiornato per utilizzare introduzione/soggetto_acquisto)
+    navigate("/simulazione/pensando/introduzione/soggetto_acquisto", { replace: true });
   }, [params.blockType, navigate]);
 
   // Sincronizza lo stato del form con i parametri URL quando l'URL cambia
@@ -167,12 +165,12 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       }
     } else if (params.blockType) {
       // Se solo il tipo è specificato (pensando, cercando, ecc.), trova il blocco iniziale
-      const entryBlock = blocks.find(b => b.block_id === "funnel");
+      const entryBlock = blocks.find(b => b.block_id === "introduzione");
       if (entryBlock && entryBlock.questions.length > 0) {
         dispatch({ 
           type: "GO_TO_QUESTION", 
-          block_id: "funnel", 
-          question_id: "fase_mutuo" 
+          block_id: "introduzione", 
+          question_id: "soggetto_acquisto" 
         });
       }
     }

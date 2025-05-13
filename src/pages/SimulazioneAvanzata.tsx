@@ -6,6 +6,7 @@ import { ArrowRight, LightbulbIcon, Search, Home, Check, Badge } from "lucide-re
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge as UIBadge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
+import { allBlocks } from "@/data/blocks";
 
 const SimulazioneAvanzata = () => {
   const isMobile = useIsMobile();
@@ -15,27 +16,34 @@ const SimulazioneAvanzata = () => {
   const startNewForm = (path: string, addHouseBlock: boolean = false) => {
     // Rimuoviamo qualsiasi dato salvato in localStorage per i vari tipi di form
     const pathSegments = path.split('/');
-    const formType = pathSegments[pathSegments.length - 2]; // Estrai il tipo (pensando, cercando, ecc.)
+    const formType = pathSegments[pathSegments.length - 3]; // Estrai il tipo (pensando, cercando, offerta, ecc.)
     
     // Rimuovi tutti i dati salvati dal localStorage per questo tipo di form
     localStorage.removeItem(`form-state-${formType}`);
     
-    // Se dobbiamo aggiungere il blocco della casa, prepariamo lo stato iniziale
-    if (addHouseBlock) {
-      // Crea uno stato iniziale con il blocco 8 attivato
-      const initialState = {
-        activeBlocks: ["funnel", "la_tua_casa"], // Blocchi attivi iniziali
-        activeQuestion: {
-          block_id: "funnel",
-          question_id: "fase_mutuo"
-        },
-        responses: {},
-        answeredQuestions: []
-      };
-      
-      // Salva questo stato iniziale nel localStorage
-      localStorage.setItem(`form-state-${formType}`, JSON.stringify(initialState));
+    // Trova tutti i blocchi che sono attivi di default
+    const defaultActiveBlocks = allBlocks
+      .filter(block => block.default_active)
+      .map(block => block.block_id);
+    
+    // Crea uno stato iniziale con i blocchi di default attivi
+    const initialState = {
+      activeBlocks: [...defaultActiveBlocks],
+      activeQuestion: {
+        block_id: "introduzione", // Usiamo introduzione come blocco iniziale
+        question_id: "soggetto_acquisto" // Prima domanda del blocco introduzione
+      },
+      responses: {},
+      answeredQuestions: []
+    };
+    
+    // Se dobbiamo aggiungere il blocco della casa, aggiungiamolo allo stato iniziale
+    if (addHouseBlock && !initialState.activeBlocks.includes("la_tua_casa")) {
+      initialState.activeBlocks.push("la_tua_casa");
     }
+    
+    // Salva questo stato iniziale nel localStorage
+    localStorage.setItem(`form-state-${formType}`, JSON.stringify(initialState));
     
     // Naviga al percorso specificato
     navigate(path);
@@ -63,32 +71,32 @@ const SimulazioneAvanzata = () => {
             icon={LightbulbIcon}
             title="Sto pensando di acquistare"
             description="Non ho ancora iniziato le visite"
-            href="/simulazione/pensando/funnel/fase_mutuo"
-            onClick={() => startNewForm("/simulazione/pensando/funnel/fase_mutuo")}
+            href="/simulazione/pensando/introduzione/soggetto_acquisto"
+            onClick={() => startNewForm("/simulazione/pensando/introduzione/soggetto_acquisto")}
           />
           
           <OptionCard
             icon={Search}
             title="Sto cercando attivamente"
             description="Ho già iniziato o pianificato le visite"
-            href="/simulazione/cercando/funnel/fase_mutuo"
-            onClick={() => startNewForm("/simulazione/cercando/funnel/fase_mutuo")}
+            href="/simulazione/cercando/introduzione/soggetto_acquisto"
+            onClick={() => startNewForm("/simulazione/cercando/introduzione/soggetto_acquisto")}
           />
           
           <OptionCard
             icon={Home}
             title="Ho fatto un'offerta"
             description="Ho trovato l'immobile ideale"
-            href="/simulazione/offerta/funnel/fase_mutuo"
-            onClick={() => startNewForm("/simulazione/offerta/funnel/fase_mutuo", true)}
+            href="/simulazione/offerta/introduzione/soggetto_acquisto"
+            onClick={() => startNewForm("/simulazione/offerta/introduzione/soggetto_acquisto", true)}
           />
           
           <OptionCard
             icon={Check}
             title="Ho un'offerta accettata"
             description="Sono sicuro dell'immobile"
-            href="/simulazione/accettata/funnel/fase_mutuo"
-            onClick={() => startNewForm("/simulazione/accettata/funnel/fase_mutuo", true)}
+            href="/simulazione/accettata/introduzione/soggetto_acquisto"
+            onClick={() => startNewForm("/simulazione/accettata/introduzione/soggetto_acquisto", true)}
           />
           
           <OptionCard
