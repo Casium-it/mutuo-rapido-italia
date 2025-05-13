@@ -5,12 +5,12 @@ import { BlockSidebar } from "@/components/form/BlockSidebar";
 import { QuestionView } from "@/components/form/QuestionView";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, RefreshCcw } from "lucide-react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 
 export default function Form() {
-  const { state, blocks, getProgress } = useForm();
+  const { state, blocks, getProgress, resetForm } = useForm();
   const params = useParams();
   const navigate = useNavigate();
   
@@ -36,7 +36,7 @@ export default function Form() {
           </Link>
         </div>
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="sm" className="text-black border-gray-200 hover:bg-gray-50">
+          <Button variant="outline" size="sm" className="text-black border-gray-200 hover:bg-gray-50" onClick={handleSaveAndExit}>
             Salva ed esci
           </Button>
         </div>
@@ -76,6 +76,19 @@ export default function Form() {
             <QuestionView />
           </div>
         </div>
+      </div>
+      
+      {/* Reset button positioned at bottom left */}
+      <div className="absolute bottom-4 left-4 z-10">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200"
+          onClick={resetForm}
+        >
+          <RefreshCcw className="h-4 w-4 mr-2" />
+          Reimposta form
+        </Button>
       </div>
     </div>
   );
