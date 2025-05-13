@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { Question } from "@/types/form";
@@ -6,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLocation } from "react-router-dom";
 
 interface InlineFormQuestionProps {
   question: Question;
@@ -21,8 +21,9 @@ export function InlineFormQuestion({
   const { getResponse, setResponse, navigateToNextQuestion, addActiveBlock } = useForm();
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});
   const [isNavigating, setIsNavigating] = useState(false);
+  const location = useLocation();
 
-  // Ripristina le risposte esistenti
+  // Ripristina le risposte esistenti e resetta lo stato quando cambia l'URL
   useEffect(() => {
     const existingResponses: { [key: string]: string | string[] } = {};
     Object.keys(question.placeholders).forEach(key => {
@@ -38,9 +39,9 @@ export function InlineFormQuestion({
       setResponses({});
     }
     
-    // Resetta lo stato di navigazione quando la domanda cambia
+    // Resetta lo stato di navigazione quando la domanda cambia o l'URL cambia
     setIsNavigating(false);
-  }, [question.question_id, getResponse]);
+  }, [question.question_id, getResponse, location.pathname]);
 
   // Funzione per gestire il cambio di risposta senza navigazione automatica
   const handleResponseChange = (key: string, value: string | string[]) => {

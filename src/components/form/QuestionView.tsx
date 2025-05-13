@@ -1,12 +1,26 @@
-
-import React from "react";
+import React, { useEffect } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { FormQuestion } from "./FormQuestion";
 import { InlineFormQuestion } from "./InlineFormQuestion";
 import { Question } from "@/types/form";
+import { useLocation, useParams } from "react-router-dom";
 
 export function QuestionView() {
-  const { state, blocks } = useForm();
+  const { state, blocks, goToQuestion } = useForm();
+  const location = useLocation();
+  const params = useParams<{ blockId?: string, questionId?: string }>();
+  
+  // Sincronizza il componente con l'URL quando cambia
+  useEffect(() => {
+    if (params.blockId && params.questionId) {
+      // Se l'URL contiene blockId e questionId, ma sono diversi dallo stato attuale,
+      // aggiorna lo stato interno per allinearlo all'URL
+      if (state.activeQuestion.block_id !== params.blockId || 
+          state.activeQuestion.question_id !== params.questionId) {
+        goToQuestion(params.blockId, params.questionId, true);
+      }
+    }
+  }, [location.pathname, params.blockId, params.questionId, state.activeQuestion, goToQuestion]);
   
   // Find the current active block and question
   const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);

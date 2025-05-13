@@ -1,18 +1,19 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { BlockSidebar } from "@/components/form/BlockSidebar";
 import { QuestionView } from "@/components/form/QuestionView";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { RefreshCcw } from "lucide-react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 
 export default function Form() {
   const { state, blocks, getProgress, resetForm } = useForm();
   const params = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   
   // Trova il blocco attivo corrente
   const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
@@ -25,6 +26,12 @@ export default function Form() {
     // Lo stato è già salvato in localStorage grazie al FormContext
     navigate("/");
   };
+
+  // Assicuriamoci che il componente si ri-renderizzi quando cambia l'URL
+  useEffect(() => {
+    // Questo effetto verrà eseguito ogni volta che cambia l'URL (location.pathname)
+    // Poiché dipende da location.pathname, forza un ri-rendering del componente
+  }, [location.pathname]);
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -68,7 +75,7 @@ export default function Form() {
           </div>
         </div>
 
-        {/* Content area */}
+        {/* Content area - ora utilizza una key basata sul pathname per forzare il re-rendering */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12">
           <div className="max-w-2xl mx-auto">
             {/* Block title */}
@@ -76,8 +83,10 @@ export default function Form() {
               <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">{activeBlock?.title}</h1>
             </div>
 
-            {/* Question */}
-            <QuestionView />
+            {/* Question - aggiungiamo una key basata sull'URL per forzare il re-rendering */}
+            <div key={location.pathname}>
+              <QuestionView />
+            </div>
           </div>
         </div>
       </div>

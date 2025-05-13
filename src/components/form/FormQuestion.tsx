@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { Question } from "@/types/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 export function FormQuestion({ question }: { question: Question }) {
@@ -13,8 +12,9 @@ export function FormQuestion({ question }: { question: Question }) {
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});
   const [isNavigating, setIsNavigating] = useState(false);
   const params = useParams();
+  const location = useLocation();
 
-  // Ripristina le risposte se esistono quando la domanda cambia
+  // Ripristina le risposte se esistono quando la domanda cambia o l'URL cambia
   useEffect(() => {
     const existingResponses: { [key: string]: string | string[] } = {};
     Object.keys(question.placeholders).forEach(key => {
@@ -30,9 +30,9 @@ export function FormQuestion({ question }: { question: Question }) {
       setResponses({});
     }
     
-    // Resetta lo stato di navigazione quando la domanda cambia
+    // Resetta lo stato di navigazione quando la domanda cambia o l'URL cambia
     setIsNavigating(false);
-  }, [question.question_id, getResponse]);
+  }, [question.question_id, getResponse, location.pathname]);
 
   // Funzione per gestire il cambio di risposta senza navigazione automatica
   const handleResponseChange = (key: string, value: string | string[]) => {
