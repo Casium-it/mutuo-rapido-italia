@@ -13,10 +13,21 @@ import { Separator } from "@/components/ui/separator";
 interface FormQuestionProps {
   question: Question;
   hideNextButton?: boolean;
+  isInlineQuestion?: boolean;
+  previousQuestionId?: string;
+  previousPlaceholderKey?: string;
+  previousResponse?: string | string[];
 }
 
-export function FormQuestion({ question, hideNextButton = false }: FormQuestionProps) {
-  const { getResponse, setResponse, navigateToNextQuestion, addActiveBlock } = useForm();
+export function FormQuestion({ 
+  question, 
+  hideNextButton = false,
+  isInlineQuestion = false,
+  previousQuestionId,
+  previousPlaceholderKey,
+  previousResponse
+}: FormQuestionProps) {
+  const { getResponse, setResponse, navigateToNextQuestion, addActiveBlock, goToQuestion } = useForm();
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});
   const [isNavigating, setIsNavigating] = useState(false);
   // Stato per tenere traccia di quali placeholder hanno opzioni visibili
@@ -83,6 +94,13 @@ export function FormQuestion({ question, hideNextButton = false }: FormQuestionP
 
   // Funzione per gestire il click sul placeholder e mostrare di nuovo le opzioni
   const handlePlaceholderClick = (key: string) => {
+    // Se è un placeholder che rappresenta una selezione precedente, torniamo a quella domanda
+    if (isInlineQuestion && key === "previous_selection" && previousQuestionId) {
+      // Naviga indietro alla domanda precedente
+      goToQuestion(params.blockId || "", previousQuestionId, false);
+      return;
+    }
+    
     setVisibleOptions(prev => ({
       ...prev,
       [key]: !prev[key]
@@ -126,10 +144,68 @@ export function FormQuestion({ question, hideNextButton = false }: FormQuestionP
     }, 50);
   };
 
+  // Funzione per ottenere il testo della selezione precedente
+  const getPreviousSelectionText = (): string => {
+    if (!isInlineQuestion || !previousQuestionId || !previousPlaceholderKey || previousResponse === undefined) {
+      return "";
+    }
+    
+    // Se il tipo della risposta precedente è "select", otteni il testo dell'opzione selezionata
+    if (!Array.isArray(previousResponse)) {
+      const blocks = window.formBlocks || [];
+      const allBlocks = blocks.flatMap(block => block);
+      const previousQuestionBlock = allBlocks.find(block => 
+        block.questions.some(q => q.question_id === previousQuestionId)
+      );
+      
+      if (previousQuestionBlock) {
+        const prevQuestion = previousQuestionBlock.questions.find(q => q.question_id === previousQuestionId);
+        
+        if (prevQuestion && prevQuestion.placeholders[previousPlaceholderKey].type === "select") {
+          const options = (prevQuestion.placeholders[previousPlaceholderKey] as any).options;
+          const selectedOption = options.find((opt: any) => opt.id === previousResponse);
+          
+          if (selectedOption) {
+            return selectedOption.label;
+          }
+        }
+      }
+      
+      return previousResponse.toString();
+    }
+    
+    // Se è un array (multiple select), unisci i valori con virgole
+    return Array.isArray(previousResponse) ? previousResponse.join(", ") : previousResponse.toString();
+  };
+
   // Metodo per renderizzare il testo con i placeholder come input o select box
   const renderQuestionText = () => {
-    if (!question.question_text.includes('{{')) {
-      return <span>{question.question_text}</span>;
+    // Se è una domanda inline, aggiungi la selezione precedente prima del testo della domanda
+    let questionText = question.question_text;
+    const previousSelectionText = getPreviousSelectionText();
+    
+    if (isInlineQuestion && previousSelectionText) {
+      // Aggiungi la selezione precedente come elemento cliccabile
+      return (
+        <>
+          <span 
+            onClick={() => previousQuestionId && handlePlaceholderClick("previous_selection")}
+            className="inline-flex items-center justify-center mr-1 bg-[#F8F4EF] text-[#245C4F] font-semibold px-[10px] py-[4px] rounded-[6px] text-[16px] cursor-pointer hover:bg-[#E7E1D9]"
+          >
+            {previousSelectionText}
+          </span>
+          {renderQuestionTextWithPlaceholders(questionText)}
+        </>
+      );
+    }
+    
+    return renderQuestionTextWithPlaceholders(questionText);
+  };
+  
+  // Helper per renderizzare il testo con i placeholder
+  const renderQuestionTextWithPlaceholders = (text: string) => {
+    if (!text.includes('{{')) {
+      return <span>{text}</span>;
     }
 
     const parts = [];
@@ -137,10 +213,10 @@ export function FormQuestion({ question, hideNextButton = false }: FormQuestionP
     const regex = /\{\{([^}]+)\}\}/g;
     let match;
 
-    while ((match = regex.exec(question.question_text)) !== null) {
+    while ((match = regex.exec(text)) !== null) {
       // Aggiungi testo prima del placeholder
       if (match.index > lastIndex) {
-        parts.push(<span key={`text-${lastIndex}`}>{question.question_text.slice(lastIndex, match.index)}</span>);
+        parts.push(<span key={`text-${lastIndex}`}>{text.slice(lastIndex, match.index)}</span>);
       }
 
       const placeholderKey = match[1];
@@ -206,8 +282,8 @@ export function FormQuestion({ question, hideNextButton = false }: FormQuestionP
     }
 
     // Aggiungi il testo rimanente dopo l'ultimo placeholder
-    if (lastIndex < question.question_text.length) {
-      parts.push(<span key={`text-${lastIndex}`}>{question.question_text.slice(lastIndex)}</span>);
+    if (lastIndex < text.length) {
+      parts.push(<span key={`text-${lastIndex}`}>{text.slice(lastIndex)}</span>);
     }
 
     return <>{parts}</>;
@@ -256,7 +332,7 @@ export function FormQuestion({ question, hideNextButton = false }: FormQuestionP
   // Renderizza la domanda principale con UI unificata
   return (
     <div className="max-w-xl animate-fade-in">
-      {/* Domanda principale - aggiornato per utilizzare renderQuestionText */}
+      {/* Domanda - aggiornato per utilizzare renderQuestionText */}
       <div className="text-[16px] font-normal text-gray-900 mb-5 leading-relaxed">
         {renderQuestionText()}
       </div>

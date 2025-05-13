@@ -2,7 +2,6 @@
 import React, { useEffect } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { FormQuestion } from "./FormQuestion";
-import { InlineFormQuestion } from "./InlineFormQuestion";
 import { Question } from "@/types/form";
 import { useLocation, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -40,9 +39,19 @@ export function QuestionView() {
     );
   }
 
-  // Funzione migliorata per trovare domande inline di follow-up
-  const findInlineFollowUpQuestions = (): { question: Question; previousResponse: string | string[] | undefined }[] => {
-    const inlineFollowUpQuestions: { question: Question; previousResponse: string | string[] | undefined }[] = [];
+  // Funzione migliorata per trovare domande di follow-up inline con le relative informazioni
+  const findInlineFollowUpQuestions = (): { 
+    question: Question; 
+    previousQuestion: Question; 
+    previousPlaceholderKey: string; 
+    previousResponse: string | string[] | undefined 
+  }[] => {
+    const inlineFollowUpQuestions: { 
+      question: Question; 
+      previousQuestion: Question;
+      previousPlaceholderKey: string;
+      previousResponse: string | string[] | undefined 
+    }[] = [];
     
     // Trova l'indice della domanda corrente
     const currentQuestionIndex = activeBlock.questions.findIndex(q => q.question_id === activeQuestion.question_id);
@@ -72,6 +81,8 @@ export function QuestionView() {
         // Aggiungi questa domanda inline alla catena
         inlineFollowUpQuestions.push({
           question: potentialInlineQuestion,
+          previousQuestion,
+          previousPlaceholderKey,
           previousResponse
         });
         
@@ -109,20 +120,6 @@ export function QuestionView() {
     }
     
     return undefined;
-  };
-  
-  // Funzione semplificata per determinare se una domanda inline dovrebbe essere mostrata
-  const determineIfInlineQuestionShouldShow = (
-    previousQuestion: Question, 
-    placeholderKey: string, 
-    response: string | string[], 
-    nextQuestionId: string
-  ): boolean => {
-    // Ottieni il leads_to dalla risposta
-    const leadsTo = getLeadsToFromResponse(previousQuestion, placeholderKey, response);
-    
-    // Verifica se il leads_to corrisponde esattamente all'ID della domanda inline
-    return leadsTo === nextQuestionId;
   };
 
   const inlineFollowUpQuestions = findInlineFollowUpQuestions();
@@ -207,7 +204,6 @@ export function QuestionView() {
 
   return (
     <div className="max-w-2xl">
-      {/* Contenitore per la domanda principale e le domande inline */}
       <div className="space-y-4">
         {/* Main question - ALWAYS hide the button since we'll control it from here */}
         <FormQuestion 
@@ -215,21 +211,17 @@ export function QuestionView() {
           hideNextButton={true} 
         />
         
-        {/* Inline follow-up questions - ALWAYS hide the buttons */}
+        {/* Inline follow-up questions - ora renderizzate come domande normali con info sulla domanda precedente */}
         {inlineFollowUpQuestions.map((followUp, index) => (
-          <div key={followUp.question.question_id} className="mt-1">
-            <InlineFormQuestion
-              question={followUp.question}
-              previousQuestion={
-                index === 0
-                  ? activeQuestion
-                  : inlineFollowUpQuestions[index - 1].question
-              }
-              previousResponse={followUp.previousResponse}
-              isLastInline={index === inlineFollowUpQuestions.length - 1}
-              hideNextButton={true}
-            />
-          </div>
+          <FormQuestion
+            key={followUp.question.question_id}
+            question={followUp.question}
+            hideNextButton={true}
+            isInlineQuestion={true}
+            previousQuestionId={followUp.previousQuestion.question_id}
+            previousPlaceholderKey={followUp.previousPlaceholderKey}
+            previousResponse={followUp.previousResponse}
+          />
         ))}
         
         {/* Pulsante Avanti universale (mostrato solo se tutte le domande hanno risposte) */}
@@ -253,4 +245,3 @@ export function QuestionView() {
     </div>
   );
 }
-
