@@ -15,10 +15,27 @@ const SimulazioneAvanzata = () => {
   const startNewForm = (path: string, addHouseBlock: boolean = false) => {
     // Rimuoviamo qualsiasi dato salvato in localStorage per i vari tipi di form
     const pathSegments = path.split('/');
-    const formType = pathSegments[pathSegments.length - 1]; // Estrai l'ultimo segmento
+    const formType = pathSegments[pathSegments.length - 2]; // Estrai il tipo (pensando, cercando, ecc.)
     
     // Rimuovi tutti i dati salvati dal localStorage per questo tipo di form
     localStorage.removeItem(`form-state-${formType}`);
+    
+    // Se dobbiamo aggiungere il blocco della casa, prepariamo lo stato iniziale
+    if (addHouseBlock) {
+      // Crea uno stato iniziale con il blocco 8 attivato
+      const initialState = {
+        activeBlocks: ["funnel", "la_tua_casa"], // Blocchi attivi iniziali
+        activeQuestion: {
+          block_id: "funnel",
+          question_id: "fase_mutuo"
+        },
+        responses: {},
+        answeredQuestions: []
+      };
+      
+      // Salva questo stato iniziale nel localStorage
+      localStorage.setItem(`form-state-${formType}`, JSON.stringify(initialState));
+    }
     
     // Naviga al percorso specificato
     navigate(path);
@@ -63,7 +80,7 @@ const SimulazioneAvanzata = () => {
             title="Ho fatto un'offerta"
             description="Ho trovato l'immobile ideale"
             href="/simulazione/offerta/funnel/fase_mutuo"
-            onClick={() => startNewForm("/simulazione/offerta/funnel/fase_mutuo")}
+            onClick={() => startNewForm("/simulazione/offerta/funnel/fase_mutuo", true)}
           />
           
           <OptionCard
@@ -71,7 +88,7 @@ const SimulazioneAvanzata = () => {
             title="Ho un'offerta accettata"
             description="Sono sicuro dell'immobile"
             href="/simulazione/accettata/funnel/fase_mutuo"
-            onClick={() => startNewForm("/simulazione/accettata/funnel/fase_mutuo")}
+            onClick={() => startNewForm("/simulazione/accettata/funnel/fase_mutuo", true)}
           />
           
           <OptionCard

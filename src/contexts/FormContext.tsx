@@ -194,6 +194,16 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         dispatch({ type: "SET_FORM_STATE", state: parsedState });
         
         // Assicurati che tutti i blocchi necessari siano attivati in base alle risposte
+        if (parsedState.activeBlocks) {
+          // Attiva tutti i blocchi che erano attivi nel savedState
+          parsedState.activeBlocks.forEach((blockId: string) => {
+            if (!state.activeBlocks.includes(blockId)) {
+              dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
+            }
+          });
+        }
+        
+        // Anche se non ci sono blocchi attivi salvati, verifica le risposte
         if (parsedState.responses) {
           activateRequiredBlocksBasedOnResponses(parsedState.responses);
         }
