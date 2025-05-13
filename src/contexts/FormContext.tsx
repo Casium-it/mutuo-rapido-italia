@@ -298,32 +298,72 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
 
   const navigateToNextQuestion = useCallback((currentQuestionId: string, leadsTo: string) => {
     if (leadsTo === "next_block") {
-      // Trova il blocco corrente e naviga alla prima domanda del prossimo blocco attivo
+      // Trova il blocco corrente
       let currentBlockIndex = -1;
+      let currentBlock = null;
+      
+      // Cerca quale blocco contiene la domanda corrente
       for (let i = 0; i < blocks.length; i++) {
         const block = blocks[i];
         const hasQuestion = block.questions.some(q => q.question_id === currentQuestionId);
         if (hasQuestion) {
           currentBlockIndex = i;
+          currentBlock = block;
           break;
         }
       }
 
-      if (currentBlockIndex !== -1) {
+      if (currentBlockIndex !== -1 && currentBlock) {
+        console.log(`Navigating from block ${currentBlock.block_id} (index ${currentBlockIndex}) to next active block`);
+        console.log(`Active blocks: ${state.activeBlocks.join(', ')}`);
+        
         // Trova il prossimo blocco attivo
+        let foundNextActiveBlock = false;
+        
         for (let i = currentBlockIndex + 1; i < blocks.length; i++) {
           const nextBlock = blocks[i];
+          console.log(`Checking block ${nextBlock.block_id}, active: ${state.activeBlocks.includes(nextBlock.block_id)}`);
+          
+          // Verifica se questo blocco è attivo
           if (state.activeBlocks.includes(nextBlock.block_id) && nextBlock.questions.length > 0) {
+            console.log(`Found next active block: ${nextBlock.block_id}`);
+            foundNextActiveBlock = true;
             goToQuestion(nextBlock.block_id, nextBlock.questions[0].question_id);
-            return;
+            break;
           }
+        }
+        
+        // Se non è stato trovato un blocco attivo successivo, cerca se c'è qualche domanda successiva nello stesso blocco
+        // che NON sia marcata come inline (poiché le domande inline dovrebbero essere accessibili solo attraverso leads_to specifici)
+        if (!foundNextActiveBlock) {
+          console.log(`No next active block found after ${currentBlock.block_id}`);
+          
+          // Trova la posizione della domanda corrente nel blocco
+          const currentQuestionIndex = currentBlock.questions.findIndex(q => q.question_id === currentQuestionId);
+          
+          // Cerca la prossima domanda non-inline nel blocco corrente
+          for (let i = currentQuestionIndex + 1; i < currentBlock.questions.length; i++) {
+            const nextQuestion = currentBlock.questions[i];
+            if (!nextQuestion.inline) {
+              console.log(`No next active block, but found next non-inline question in current block: ${nextQuestion.question_id}`);
+              goToQuestion(currentBlock.block_id, nextQuestion.question_id);
+              return;
+            }
+          }
+          
+          // Se arriviamo qui, siamo all'ultima domanda dell'ultimo blocco attivo
+          console.log("Reached end of active blocks");
+          // Potremmo implementare una redirect a una pagina di riepilogo o di completamento qui
         }
       }
     } else {
       // Naviga a una domanda specifica
       const found = findQuestionById(leadsTo);
       if (found) {
+        console.log(`Navigating to specific question: ${found.question.question_id} in block ${found.block.block_id}`);
         goToQuestion(found.block.block_id, found.question.question_id);
+      } else {
+        console.log(`Question ID ${leadsTo} not found`);
       }
     }
   }, [blocks, state.activeBlocks, goToQuestion, findQuestionById]);
