@@ -9,6 +9,7 @@ import { useParams, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { SelectPlaceholderBox } from "./SelectPlaceholderBox";
 import { Separator } from "@/components/ui/separator";
+import { allBlocks } from "@/data/blocks"; // Importare i blocchi direttamente
 
 interface FormQuestionProps {
   question: Question;
@@ -152,8 +153,7 @@ export function FormQuestion({
     
     // Se il tipo della risposta precedente è "select", otteni il testo dell'opzione selezionata
     if (!Array.isArray(previousResponse)) {
-      const blocks = window.formBlocks || [];
-      const allBlocks = blocks.flatMap(block => block);
+      // Utilizziamo direttamente allBlocks importato anziché window.formBlocks
       const previousQuestionBlock = allBlocks.find(block => 
         block.questions.some(q => q.question_id === previousQuestionId)
       );
@@ -171,11 +171,12 @@ export function FormQuestion({
         }
       }
       
-      return previousResponse.toString();
+      // Se non è un'opzione select o se non troviamo una label corrispondente, convertiamo in stringa in modo sicuro
+      return String(previousResponse);
     }
     
     // Se è un array (multiple select), unisci i valori con virgole
-    return Array.isArray(previousResponse) ? previousResponse.join(", ") : previousResponse.toString();
+    return Array.isArray(previousResponse) ? previousResponse.join(", ") : String(previousResponse);
   };
 
   // Metodo per renderizzare il testo con i placeholder come input o select box
