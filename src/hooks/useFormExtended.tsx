@@ -1,6 +1,6 @@
 
 import { useForm as useOriginalForm } from "@/contexts/FormContext";
-import { getPreviousQuestion, getQuestionTextWithResponses } from "@/utils/formUtils";
+import { getPreviousQuestion as getPreviousQuestionUtil, getQuestionTextWithResponses } from "@/utils/formUtils";
 
 /**
  * Extended hook for the form context with additional functionality
@@ -15,7 +15,7 @@ export const useFormExtended = () => {
    * @returns The previous question's text with responses or empty string
    */
   const getPreviousQuestionText = (blockId: string, questionId: string): string => {
-    const previousQuestion = getPreviousQuestion(
+    const previousQuestion = getPreviousQuestionUtil(
       formContext.blocks,
       blockId,
       questionId
@@ -33,7 +33,7 @@ export const useFormExtended = () => {
    * @returns The previous question object or undefined
    */
   const getPreviousQuestion = (blockId: string, questionId: string) => {
-    return getPreviousQuestion(formContext.blocks, blockId, questionId);
+    return getPreviousQuestionUtil(formContext.blocks, blockId, questionId);
   };
   
   return {

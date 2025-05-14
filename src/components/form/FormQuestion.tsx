@@ -19,7 +19,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
     getResponse, 
     setResponse, 
     navigateToNextQuestion, 
-    getPreviousQuestionText, 
+    getPreviousQuestionText,
+    getPreviousQuestion, 
     state, 
     addActiveBlock, 
     goToQuestion 
