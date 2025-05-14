@@ -67,3 +67,78 @@ export const getQuestionTextWithResponses = (
   
   return text;
 };
+
+/**
+ * Gets the text value with clickable responses (for inline questions)
+ * @param question The question object
+ * @param responses The form responses
+ * @returns Object with parts array containing text and response objects
+ */
+export const getQuestionTextWithClickableResponses = (
+  question: Question,
+  responses: { [question_id: string]: { [placeholder_key: string]: string | string[] } }
+): { parts: Array<{type: 'text' | 'response', content: string, placeholderKey?: string}> } => {
+  if (!question || !question.question_text) return { parts: [] };
+
+  const text = question.question_text;
+  const parts: Array<{type: 'text' | 'response', content: string, placeholderKey?: string}> = [];
+  
+  let lastIndex = 0;
+  const regex = /\{\{([^}]+)\}\}/g;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    // Aggiungi testo prima del placeholder
+    if (match.index > lastIndex) {
+      parts.push({
+        type: 'text',
+        content: text.slice(lastIndex, match.index)
+      });
+    }
+
+    const placeholderKey = match[1];
+    const responseValue = responses[question.question_id]?.[placeholderKey];
+    
+    if (responseValue) {
+      let displayValue = "";
+      
+      // Handle select type placeholders
+      if (question.placeholders[placeholderKey].type === "select" && !Array.isArray(responseValue)) {
+        const option = (question.placeholders[placeholderKey] as any).options.find(
+          (opt: any) => opt.id === responseValue
+        );
+        if (option) {
+          displayValue = option.label;
+        }
+      } else {
+        // Handle other types
+        displayValue = Array.isArray(responseValue) 
+          ? responseValue.join(", ") 
+          : responseValue.toString();
+      }
+      
+      parts.push({
+        type: 'response',
+        content: displayValue,
+        placeholderKey: placeholderKey
+      });
+    } else {
+      parts.push({
+        type: 'text',
+        content: "____"
+      });
+    }
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Aggiungi il testo rimanente
+  if (lastIndex < text.length) {
+    parts.push({
+      type: 'text',
+      content: text.slice(lastIndex)
+    });
+  }
+
+  return { parts };
+};

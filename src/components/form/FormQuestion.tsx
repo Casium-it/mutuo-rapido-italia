@@ -8,13 +8,22 @@ import { useParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { SelectPlaceholderBox } from "./SelectPlaceholderBox";
 import { Separator } from "@/components/ui/separator";
+import { getQuestionTextWithClickableResponses } from "@/utils/formUtils";
 
 interface FormQuestionProps {
   question: Question;
 }
 
 export function FormQuestion({ question }: FormQuestionProps) {
-  const { getResponse, setResponse, navigateToNextQuestion, getPreviousQuestionText, state, addActiveBlock } = useFormExtended();
+  const { 
+    getResponse, 
+    setResponse, 
+    navigateToNextQuestion, 
+    getPreviousQuestionText, 
+    state, 
+    addActiveBlock, 
+    goToQuestion 
+  } = useFormExtended();
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});
   const [isNavigating, setIsNavigating] = useState(false);
   // Stato per tenere traccia di quali placeholder hanno opzioni visibili
@@ -75,6 +84,14 @@ export function FormQuestion({ question }: FormQuestionProps) {
     }));
   };
 
+  // Funzione per navigare alla domanda precedente quando si fa click su una risposta
+  const handlePreviousQuestionClick = () => {
+    const previousQuestion = getPreviousQuestion(state.activeQuestion.block_id, state.activeQuestion.question_id);
+    if (previousQuestion) {
+      goToQuestion(state.activeQuestion.block_id, previousQuestion.question_id);
+    }
+  };
+
   // Funzione per avanzare alla prossima domanda
   const handleNextQuestion = () => {
     if (isNavigating) return;
@@ -125,19 +142,70 @@ export function FormQuestion({ question }: FormQuestionProps) {
   const renderQuestionText = () => {
     const fullText = getQuestionText();
     
+    // Se questa è una domanda inline, mostriamo il testo della domanda precedente con risposte cliccabili
+    if (question.inline === true) {
+      const previousQuestion = getPreviousQuestion(state.activeQuestion.block_id, state.activeQuestion.question_id);
+      
+      if (previousQuestion) {
+        // Otteniamo le parti del testo precedente con risposte cliccabili
+        const { parts: previousParts } = getQuestionTextWithClickableResponses(
+          previousQuestion, 
+          state.responses
+        );
+        
+        return (
+          <div>
+            {/* Renderizziamo prima il testo della domanda precedente con risposte cliccabili */}
+            <span className="inline">
+              {previousParts.map((part, index) => {
+                if (part.type === 'text') {
+                  return <span key={`prev-part-${index}`}>{part.content}</span>;
+                } else {
+                  // Renderizziamo le risposte come testo verde, grassetto e cliccabile
+                  return (
+                    <span 
+                      key={`prev-part-${index}`}
+                      className="text-[#245C4F] font-bold cursor-pointer hover:underline"
+                      onClick={handlePreviousQuestionClick}
+                    >
+                      {part.content}
+                    </span>
+                  );
+                }
+              })}
+            </span>
+            
+            {/* Poi renderizziamo il testo della domanda attuale con i placeholder */}
+            <span className="ml-1">
+              {!fullText.includes('{{') ? (
+                <span>{question.question_text}</span>
+              ) : renderQuestionPlaceholders(question.question_text)}
+            </span>
+          </div>
+        );
+      }
+    }
+    
+    // Se non è una domanda inline, o non abbiamo trovato la domanda precedente,
+    // renderizziamo il testo normalmente
     if (!fullText.includes('{{')) {
       return <span>{fullText}</span>;
     }
-
+    
+    return renderQuestionPlaceholders(fullText);
+  };
+  
+  // Funzione per renderizzare i placeholder nella domanda
+  const renderQuestionPlaceholders = (text: string) => {
     const parts = [];
     let lastIndex = 0;
     const regex = /\{\{([^}]+)\}\}/g;
     let match;
 
-    while ((match = regex.exec(fullText)) !== null) {
+    while ((match = regex.exec(text)) !== null) {
       // Aggiungi testo prima del placeholder
       if (match.index > lastIndex) {
-        parts.push(<span key={`text-${lastIndex}`}>{fullText.slice(lastIndex, match.index)}</span>);
+        parts.push(<span key={`text-${lastIndex}`}>{text.slice(lastIndex, match.index)}</span>);
       }
 
       const placeholderKey = match[1];
@@ -201,8 +269,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
     }
 
     // Aggiungi il testo rimanente
-    if (lastIndex < fullText.length) {
-      parts.push(<span key={`text-${lastIndex}`}>{fullText.slice(lastIndex)}</span>);
+    if (lastIndex < text.length) {
+      parts.push(<span key={`text-${lastIndex}`}>{text.slice(lastIndex)}</span>);
     }
 
     return <>{parts}</>;

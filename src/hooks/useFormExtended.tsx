@@ -26,8 +26,19 @@ export const useFormExtended = () => {
     return getQuestionTextWithResponses(previousQuestion, formContext.state.responses);
   };
   
+  /**
+   * Gets the previous question object
+   * @param blockId Current block ID
+   * @param questionId Current question ID
+   * @returns The previous question object or undefined
+   */
+  const getPreviousQuestion = (blockId: string, questionId: string) => {
+    return getPreviousQuestion(formContext.blocks, blockId, questionId);
+  };
+  
   return {
     ...formContext,
-    getPreviousQuestionText
+    getPreviousQuestionText,
+    getPreviousQuestion
   };
 };
