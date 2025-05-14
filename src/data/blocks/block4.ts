@@ -6,6 +6,7 @@ export const block4: Block = {
   block_number: "4",
   block_id: "reddito_lavoro_autonomo",
   title: "Reddito lavoro autonomo",
+  priority: 40, // Priorità aggiunta
   default_active: false,
   questions: [
     {

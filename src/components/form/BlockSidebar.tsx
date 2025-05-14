@@ -8,8 +8,10 @@ export function BlockSidebar() {
   const { blocks, state } = useForm();
   const params = useParams<{ blockType?: string }>();
   
-  // Filter blocks that are active
-  const activeBlocks = blocks.filter(block => state.activeBlocks.includes(block.block_id));
+  // Filter blocks that are active and sort by priority
+  const activeBlocks = blocks
+    .filter(block => state.activeBlocks.includes(block.block_id))
+    .sort((a, b) => a.priority - b.priority); // Ordinamento per priorità
 
   const isBlockActive = (blockId: string) => {
     return state.activeQuestion.block_id === blockId;

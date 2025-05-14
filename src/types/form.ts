@@ -25,6 +25,7 @@ export type Question = {
   question_id: string;
   question_number: string;
   question_text: string;
+  block_id?: string; // Aggiunto il campo block_id per risolvere l'errore
   inline?: boolean;
   placeholders: Record<string, Placeholder>;
 };
@@ -33,6 +34,7 @@ export type Block = {
   block_number: string;
   block_id: string;
   title: string;
+  priority: number; // Nuovo campo per definire la priorità del blocco
   default_active?: boolean;
   questions: Question[];
 };
@@ -51,5 +53,5 @@ export type FormState = {
   };
   responses: FormResponse;
   answeredQuestions: Set<string>;
-  isNavigating?: boolean; // Added isNavigating property
+  isNavigating?: boolean;
 };

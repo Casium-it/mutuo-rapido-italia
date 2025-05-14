@@ -6,6 +6,7 @@ export const blockStop: Block = {
   block_number: "99",
   block_id: "stop_flow",
   title: "Interruzione percorso / Surroga",
+  priority: 999, // Priorità alta per mantenerlo alla fine
   default_active: false,
   questions: [
     {

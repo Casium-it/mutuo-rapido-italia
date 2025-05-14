@@ -104,9 +104,12 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   const params = useParams<{ blockType?: string; blockId?: string; questionId?: string }>();
   const location = useLocation();
   
+  // Ordina i blocchi per priorità
+  const sortedBlocks = [...blocks].sort((a, b) => a.priority - b.priority);
+  
   const [state, dispatch] = useReducer(formReducer, {
     ...initialState,
-    activeBlocks: blocks.filter(b => b.default_active).map(b => b.block_id)
+    activeBlocks: sortedBlocks.filter(b => b.default_active).map(b => b.block_id)
   });
 
   // Inizializza o aggiorna i blocchi attivi dal JSON
@@ -302,7 +305,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   }, [state.answeredQuestions]);
 
   const findQuestionById = useCallback((questionId: string): { block: Block; question: any } | null => {
-    for (const block of blocks) {
+    for (const block of sortedBlocks) { // Usa blocchi ordinati
       for (const question of block.questions) {
         if (question.question_id === questionId) {
           return { block, question };
@@ -310,7 +313,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       }
     }
     return null;
-  }, [blocks]);
+  }, [sortedBlocks]);
 
   const navigateToNextQuestion = useCallback((currentQuestionId: string, leadsTo: string) => {
     // Set navigating state when navigating
@@ -318,12 +321,12 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     
     if (leadsTo === "next_block") {
       // Trova il blocco corrente
-      let currentBlockIndex = -1;
       let currentBlock = null;
+      let currentBlockIndex = -1;
       
       // Cerca quale blocco contiene la domanda corrente
-      for (let i = 0; i < blocks.length; i++) {
-        const block = blocks[i];
+      for (let i = 0; i < sortedBlocks.length; i++) { // Usa blocchi ordinati
+        const block = sortedBlocks[i];
         const hasQuestion = block.questions.some(q => q.question_id === currentQuestionId);
         if (hasQuestion) {
           currentBlockIndex = i;
@@ -339,16 +342,25 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         // Trova il prossimo blocco attivo
         let foundNextActiveBlock = false;
         
-        for (let i = currentBlockIndex + 1; i < blocks.length; i++) {
-          const nextBlock = blocks[i];
-          console.log(`Checking block ${nextBlock.block_id}, active: ${state.activeBlocks.includes(nextBlock.block_id)}`);
-          
-          // Verifica se questo blocco è attivo
-          if (state.activeBlocks.includes(nextBlock.block_id) && nextBlock.questions.length > 0) {
-            console.log(`Found next active block: ${nextBlock.block_id}`);
-            foundNextActiveBlock = true;
-            goToQuestion(nextBlock.block_id, nextBlock.questions[0].question_id);
-            break;
+        // Ordina i blocchi attivi per priorità
+        const activeBlocksWithPriority = state.activeBlocks
+          .map(blockId => sortedBlocks.find(b => b.block_id === blockId))
+          .filter(Boolean)
+          .sort((a, b) => a!.priority - b!.priority);
+        
+        // Trova la posizione del blocco corrente nella lista di blocchi attivi ordinati per priorità
+        const currentActiveIndex = activeBlocksWithPriority.findIndex(b => b!.block_id === currentBlock.block_id);
+        
+        // Cerca il prossimo blocco attivo con priorità maggiore
+        if (currentActiveIndex !== -1) {
+          for (let i = currentActiveIndex + 1; i < activeBlocksWithPriority.length; i++) {
+            const nextBlock = activeBlocksWithPriority[i];
+            if (nextBlock && nextBlock.questions.length > 0) {
+              console.log(`Found next active block: ${nextBlock.block_id}`);
+              foundNextActiveBlock = true;
+              goToQuestion(nextBlock.block_id, nextBlock.questions[0].question_id);
+              break;
+            }
           }
         }
         
@@ -386,7 +398,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     setTimeout(() => {
       dispatch({ type: "SET_NAVIGATING", isNavigating: false });
     }, 300);
-  }, [blocks, state.activeBlocks, goToQuestion, findQuestionById]);
+  }, [sortedBlocks, state.activeBlocks, goToQuestion, findQuestionById]);
 
   // Calcola il progresso complessivo del form
   const getProgress = useCallback(() => {
@@ -416,7 +428,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     <FormContext.Provider
       value={{
         state,
-        blocks,
+        blocks: sortedBlocks, // Restituisci i blocchi ordinati per priorità
         goToQuestion,
         setResponse,
         getResponse,

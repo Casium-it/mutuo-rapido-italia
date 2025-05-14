@@ -6,6 +6,7 @@ export const block3: Block = {
   block_number: "3",
   block_id: "la_tua_professione",
   title: "La tua professione",
+  priority: 30, // Priorità aggiunta
   default_active: true,
   questions: [
     {

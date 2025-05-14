@@ -6,6 +6,7 @@ export const block9: Block = {
   block_number: "9",
   block_id: "casa_da_vendere",
   title: "La casa da vendere",
+  priority: 90, // Priorità aggiunta
   default_active: false,
   questions: [
     {

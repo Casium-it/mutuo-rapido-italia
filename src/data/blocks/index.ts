@@ -39,7 +39,7 @@ export {
   blockStop
 };
 
-// Esportare l'array completo di tutti i blocchi
+// Esportare l'array completo di tutti i blocchi, ordinato per priorità
 export const allBlocks: Block[] = [
   block1,
   block2,
@@ -58,4 +58,4 @@ export const allBlocks: Block[] = [
   block26,
   block27,
   blockStop
-];
+].sort((a, b) => a.priority - b.priority); // Ordina i blocchi per priorità
