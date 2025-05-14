@@ -73,7 +73,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
     // Se è un input, verifichiamo la validazione
     if (question.placeholders[key].type === "input" && typeof value === "string") {
       const placeholder = question.placeholders[key];
-      const validationType = (placeholder as any).input_validation as ValidationTypes | undefined;
+      const validationType = (placeholder as any).input_validation as ValidationTypes;
       
       // Verifichiamo la validità dell'input
       const isValid = validateInput(value, validationType);
@@ -310,9 +310,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
   };
   
   // Funzione per ottenere un messaggio di errore basato sul tipo di validazione
-  const getValidationErrorMessage = (validationType?: ValidationTypes): string => {
-    if (!validationType) return '';
-    
+  const getValidationErrorMessage = (validationType: ValidationTypes): string => {
     switch (validationType) {
       case 'euro':
         return 'Inserire un numero intero positivo';
@@ -404,7 +402,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
                   </span>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="bg-red-50 text-red-600 border border-red-200">
-                  {getValidationErrorMessage(placeholder.input_validation)}
+                  {getValidationErrorMessage(validationType)}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

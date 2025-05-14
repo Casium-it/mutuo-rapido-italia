@@ -19,7 +19,7 @@ export type InputPlaceholder = {
   input_type: "text" | "number" | "date";
   placeholder_label: string;
   leads_to?: string;
-  input_validation?: ValidationTypes; // Reso opzionale con il ?
+  input_validation: ValidationTypes; // Now required
 };
 
 export type Placeholder = SelectPlaceholder | InputPlaceholder;

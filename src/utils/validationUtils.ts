@@ -1,52 +1,90 @@
 
-import { ValidationTypes } from "@/types/form";
+/**
+ * Funzioni di validazione per vari tipi di input
+ */
 
-export function validateInput(value: string, validation?: ValidationTypes): boolean {
-  // Se non è specificato un tipo di validazione, consideriamo l'input valido
-  if (!validation) {
-    return true;
-  }
+// Lista dei mesi in italiano
+const mesiItaliani = [
+  "gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno",
+  "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"
+];
 
-  // Se il valore è vuoto, consideriamo l'input non valido indipendentemente dal tipo di validazione
-  if (!value || value.trim() === "") {
-    return false;
-  }
+/**
+ * Controlla se il valore è un numero intero positivo (formato euro)
+ */
+export const validateEuro = (value: string): boolean => {
+  const numValue = Number(value);
+  return !isNaN(numValue) && Number.isInteger(numValue) && numValue >= 0;
+};
 
-  switch (validation) {
-    case "free_text":
-      return true; // Nessuna validazione per il testo libero
+/**
+ * Controlla se il valore è un mese valido in italiano
+ */
+export const validateMonth = (value: string): boolean => {
+  const normalizedValue = value.trim().toLowerCase();
+  return mesiItaliani.includes(normalizedValue);
+};
 
+/**
+ * Controlla se il valore è un anno valido (1900-2150)
+ */
+export const validateYear = (value: string): boolean => {
+  const numValue = Number(value);
+  return !isNaN(numValue) && Number.isInteger(numValue) && numValue >= 1900 && numValue <= 2150;
+};
+
+/**
+ * Controlla se il valore è un'età valida (16-100)
+ */
+export const validateAge = (value: string): boolean => {
+  const numValue = Number(value);
+  return !isNaN(numValue) && Number.isInteger(numValue) && numValue >= 16 && numValue <= 100;
+};
+
+/**
+ * Controlla se il valore potrebbe essere una città valida
+ * (almeno 2 caratteri, solo lettere, spazi e alcuni caratteri speciali)
+ */
+export const validateCity = (value: string): boolean => {
+  if (value.trim().length < 2) return false;
+  // Consente lettere, spazi, apostrofi e trattini (comuni nei nomi di città italiane)
+  return /^[a-zA-ZàáâäãåąčćęèéêëėįìíîïłńòóôöõøùúûüųūÿýżźñçšžÀÁÂÄÃÅĄĆČĖĘÈÉÊËÌÍÎÏĮŁŃÒÓÔÖÕØÙÚÛÜŲŪŸÝŻŹÑßÇŒÆŠŽ\s'\-]+$/.test(value.trim());
+};
+
+/**
+ * Controlla se il valore è un CAP italiano valido (5 cifre)
+ */
+export const validateCap = (value: string): boolean => {
+  return /^\d{5}$/.test(value.trim());
+};
+
+/**
+ * Validazione per testo libero (sempre valido)
+ */
+export const validateFreeText = (value: string): boolean => {
+  return true;
+};
+
+/**
+ * Funzione di validazione principale che verifica un valore in base al tipo di validazione
+ */
+export const validateInput = (value: string, validationType: string): boolean => {
+  switch (validationType) {
     case "euro":
-      // Deve essere un numero intero positivo
-      return /^[1-9]\d*$/.test(value);
-
+      return validateEuro(value);
     case "month":
-      // Mesi in italiano, case insensitive
-      const months = [
-        "gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", 
-        "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"
-      ];
-      return months.includes(value.toLowerCase());
-
+      return validateMonth(value);
     case "year":
-      // Anno tra 1900 e 2150
-      const year = parseInt(value);
-      return !isNaN(year) && year >= 1900 && year <= 2150;
-
+      return validateYear(value);
     case "age":
-      // Età tra 16 e 100
-      const age = parseInt(value);
-      return !isNaN(age) && age >= 16 && age <= 100;
-
+      return validateAge(value);
     case "city":
-      // Semplice validazione per il nome di una città: almeno 2 caratteri, solo lettere e spazi
-      return /^[A-Za-zÀ-ÿ\s']{2,}$/.test(value);
-
+      return validateCity(value);
     case "cap":
-      // CAP italiano: 5 cifre
-      return /^\d{5}$/.test(value);
-
+      return validateCap(value);
+    case "free_text":
+      return validateFreeText(value);
     default:
-      return true;
+      return false; // Se il tipo di validazione non è riconosciuto, consideriamo l'input non valido
   }
-}
+};
