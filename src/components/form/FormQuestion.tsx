@@ -70,6 +70,12 @@ export function FormQuestion({ question }: FormQuestionProps) {
 
   // Funzione per gestire il cambio di risposta con validazione
   const handleResponseChange = (key: string, value: string | string[]) => {
+    // Aggiorniamo sempre lo stato locale indipendentemente dalla validazione
+    setResponses({
+      ...responses,
+      [key]: value
+    });
+
     // Se è un input, verifichiamo la validazione
     if (question.placeholders[key].type === "input" && typeof value === "string") {
       const placeholder = question.placeholders[key];
@@ -84,47 +90,34 @@ export function FormQuestion({ question }: FormQuestionProps) {
         [key]: !isValid
       }));
       
-      // Se non è valido, impostiamo comunque la risposta locale per mostrare
-      // il valore nell'input, ma non la salviamo nel contesto del form
-      if (!isValid) {
-        setResponses({
-          ...responses,
-          [key]: value
-        });
-        return; // Usciamo dalla funzione senza salvare nel contesto
+      // Salviamo nel contesto del form SOLO se l'input è valido
+      if (isValid) {
+        setResponse(question.question_id, key, value);
+        
+        // Nascondi le opzioni se valido
+        setVisibleOptions(prev => ({
+          ...prev,
+          [key]: false
+        }));
       }
-    }
-    
-    // Se arriva qui, la risposta è valida o non richiede validazione
-    setResponses({
-      ...responses,
-      [key]: value
-    });
-    
-    setResponse(question.question_id, key, value);
-    
-    setVisibleOptions(prev => ({
-      ...prev,
-      [key]: false
-    }));
-    
-    // Rimuoviamo l'errore se esiste
-    if (validationErrors[key]) {
-      setValidationErrors(prev => {
-        const newErrors = {...prev};
-        delete newErrors[key];
-        return newErrors;
-      });
-    }
-    
-    // Gestione dell'attivazione di blocchi aggiuntivi
-    if (question.placeholders[key].type === "select" && !Array.isArray(value)) {
-      const selectedOption = (question.placeholders[key] as any).options.find(
-        (opt: any) => opt.id === value
-      );
+    } else {
+      // Per i select o altri tipi, salviamo sempre nel contesto
+      setResponse(question.question_id, key, value);
       
-      if (selectedOption?.add_block) {
-        addActiveBlock(selectedOption.add_block);
+      setVisibleOptions(prev => ({
+        ...prev,
+        [key]: false
+      }));
+      
+      // Gestione dell'attivazione di blocchi aggiuntivi
+      if (question.placeholders[key].type === "select" && !Array.isArray(value)) {
+        const selectedOption = (question.placeholders[key] as any).options.find(
+          (opt: any) => opt.id === value
+        );
+        
+        if (selectedOption?.add_block) {
+          addActiveBlock(selectedOption.add_block);
+        }
       }
     }
   };
