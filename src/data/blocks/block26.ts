@@ -6,6 +6,7 @@ export const block26: Block = {
   block_number: "26",
   block_id: "reddito_suo_secondario",
   title: "Il suo reddito secondario",
+  priority: 260, // Priorità aggiunta
   default_active: false,
   questions: [
     {

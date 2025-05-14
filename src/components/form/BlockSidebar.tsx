@@ -53,7 +53,7 @@ export function BlockSidebar() {
                   {
                     "bg-black text-white font-medium": status === "attivo",
                     "bg-gray-100 text-gray-800 font-medium": status === "completato",
-                    "bg-gray-50 text-gray-700": status === "parziale",
+                    "bg-gray-50 text-gray-700": status === "parziale", 
                     "text-gray-700": status === "non iniziato"
                   }
                 )}

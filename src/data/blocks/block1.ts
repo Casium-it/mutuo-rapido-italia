@@ -6,6 +6,7 @@ export const block1: Block = {
   block_number: "1",
   block_id: "introduzione",
   title: "Introduzione",
+  priority: 10, // Priorità aggiunta
   default_active: true,
   questions: [
     {
