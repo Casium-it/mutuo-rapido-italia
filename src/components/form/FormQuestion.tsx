@@ -207,11 +207,11 @@ export function FormQuestion({ question }: FormQuestionProps) {
           if (part.type === 'text') {
             return <span key={`part-${q.question_id}-${index}`}>{part.content}</span>;
           } else {
-            // Renderizziamo le risposte come testo verde, grassetto e cliccabile
+            // Aggiorniamo lo stile delle risposte cliccabili secondo le specifiche fornite
             return (
               <span 
                 key={`part-${q.question_id}-${index}`}
-                className="text-[#245C4F] font-bold cursor-pointer hover:underline"
+                className="bg-[#F8F4EF] text-[#245C4F] font-semibold px-[10px] py-[4px] rounded-[6px] text-[16px] cursor-pointer mx-1"
                 onClick={() => handleQuestionClick(q.question_id)}
               >
                 {part.content}
