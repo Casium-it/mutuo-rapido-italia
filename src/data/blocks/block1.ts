@@ -44,7 +44,7 @@ export const block1: Block = {
     {
       question_number: "1.3",
       question_id: "localizzazione_immobile",
-      question_text: "La {{placeholder3}} proprietà si trova a {{placeholder1}}, {{placeholder2}}",
+      question_text: "La {{placeholder3}} proprietà si trova a {{placeholder1}}, {{placeholder2}} ooo oooo o o o o {{placeholder4}}",
       placeholders: {
         placeholder1: {
           type: "input",
@@ -65,6 +65,13 @@ export const block1: Block = {
             {"id": "in_costruzione", "label": "acquisto durante la costruzione", "leads_to": "venditore"},
             {"id": "terreno", "label": "terreno e progetto di costruzione", "leads_to": "venditore"},
             {"id": "su_progetto", "label": "su progetto di costruzione", "leads_to": "venditore"}
+          ]
+        },
+        placeholder4: {
+          type: "select",
+          options: [
+            {"id": "fisica", "label": "persona fisica", "leads_to": "next_block"},
+            {"id": "societa", "label": "società o ditta", "leads_to": "next_block"}
           ]
         }
       }
