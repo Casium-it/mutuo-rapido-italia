@@ -12,14 +12,14 @@ export type SelectPlaceholder = {
   multiple?: boolean;
 };
 
-export type ValidationTypes = "euro" | "month" | "year" | "age" | "city" | "cap";
+export type ValidationTypes = "euro" | "month" | "year" | "age" | "city" | "cap" | "free_text";
 
 export type InputPlaceholder = {
   type: "input";
   input_type: "text" | "number" | "date";
   placeholder_label: string;
   leads_to?: string;
-  input_validation?: ValidationTypes;
+  input_validation: ValidationTypes; // Now required
 };
 
 export type Placeholder = SelectPlaceholder | InputPlaceholder;

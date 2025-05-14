@@ -59,11 +59,16 @@ export const validateCap = (value: string): boolean => {
 };
 
 /**
+ * Validazione per testo libero (sempre valido)
+ */
+export const validateFreeText = (value: string): boolean => {
+  return true;
+};
+
+/**
  * Funzione di validazione principale che verifica un valore in base al tipo di validazione
  */
-export const validateInput = (value: string, validationType?: string): boolean => {
-  if (!validationType) return true; // Nessuna validazione richiesta
-  
+export const validateInput = (value: string, validationType: string): boolean => {
   switch (validationType) {
     case "euro":
       return validateEuro(value);
@@ -77,7 +82,9 @@ export const validateInput = (value: string, validationType?: string): boolean =
       return validateCity(value);
     case "cap":
       return validateCap(value);
+    case "free_text":
+      return validateFreeText(value);
     default:
-      return true; // Per sicurezza, se il tipo di validazione non è riconosciuto
+      return false; // Se il tipo di validazione non è riconosciuto, consideriamo l'input non valido
   }
 };

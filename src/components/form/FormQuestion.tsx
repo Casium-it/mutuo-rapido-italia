@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { Question, ValidationTypes } from "@/types/form";
@@ -53,8 +52,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
         // Verifica che le risposte esistenti siano ancora valide
         if (question.placeholders[key].type === "input") {
           const placeholder = question.placeholders[key];
-          const validationType = (placeholder as any).input_validation as ValidationTypes | undefined;
-          if (validationType && !validateInput(existingResponse as string, validationType)) {
+          const validationType = (placeholder as any).input_validation as ValidationTypes;
+          if (!validateInput(existingResponse as string, validationType)) {
             initialValidationErrors[key] = true;
           }
         }
@@ -74,27 +73,25 @@ export function FormQuestion({ question }: FormQuestionProps) {
     // Se è un input, verifichiamo la validazione
     if (question.placeholders[key].type === "input" && typeof value === "string") {
       const placeholder = question.placeholders[key];
-      const validationType = (placeholder as any).input_validation as ValidationTypes | undefined;
+      const validationType = (placeholder as any).input_validation as ValidationTypes;
       
-      // Se c'è un tipo di validazione, verifichiamo la validità
-      if (validationType) {
-        const isValid = validateInput(value, validationType);
-        
-        // Aggiorniamo lo stato di errore
-        setValidationErrors(prev => ({
-          ...prev,
-          [key]: !isValid
-        }));
-        
-        // Se non è valido, impostiamo comunque la risposta locale per mostrare
-        // il valore nell'input, ma non la salviamo nel contesto del form
-        if (!isValid) {
-          setResponses({
-            ...responses,
-            [key]: value
-          });
-          return; // Usciamo dalla funzione senza salvare nel contesto
-        }
+      // Verifichiamo la validità dell'input
+      const isValid = validateInput(value, validationType);
+      
+      // Aggiorniamo lo stato di errore
+      setValidationErrors(prev => ({
+        ...prev,
+        [key]: !isValid
+      }));
+      
+      // Se non è valido, impostiamo comunque la risposta locale per mostrare
+      // il valore nell'input, ma non la salviamo nel contesto del form
+      if (!isValid) {
+        setResponses({
+          ...responses,
+          [key]: value
+        });
+        return; // Usciamo dalla funzione senza salvare nel contesto
       }
     }
     
@@ -313,7 +310,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
   };
   
   // Funzione per ottenere un messaggio di errore basato sul tipo di validazione
-  const getValidationErrorMessage = (validationType?: ValidationTypes): string => {
+  const getValidationErrorMessage = (validationType: ValidationTypes): string => {
     switch (validationType) {
       case 'euro':
         return 'Inserire un numero intero positivo';
@@ -327,6 +324,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
         return 'Inserire un nome di città valido';
       case 'cap':
         return 'Inserire un CAP valido (5 cifre)';
+      case 'free_text':
+        return ''; // No error message for free text
       default:
         return 'Valore non valido';
     }
@@ -490,7 +489,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
       const placeholder = question.placeholders[key];
       if (placeholder.type === "input") {
         const validationType = (placeholder as any).input_validation;
-        if (validationType && !validateInput(value as string, validationType)) {
+        if (!validateInput(value as string, validationType)) {
           return false;
         }
       }
