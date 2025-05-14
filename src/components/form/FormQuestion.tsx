@@ -498,8 +498,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
     });
   };
   
-  // Determina se ci sono risposte valide
-  const hasValidResponses = Object.keys(question.placeholders).some(key => 
+  // Determina se ci sono risposte valide - MODIFICATO per richiedere TUTTE le risposte
+  const hasValidResponses = Object.keys(question.placeholders).every(key => 
     responses[key] !== undefined || getResponse(question.question_id, key) !== undefined
   ) && allInputsHaveValidContent();
 
