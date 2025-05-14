@@ -13,6 +13,7 @@ export const block3: Block = {
       question_number: "3.1",
       question_id: "categoria_professionale",
       question_text: "La tua categoria professionale è {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -32,6 +33,7 @@ export const block3: Block = {
       question_number: "3.2",
       question_id: "tipo_contratto",
       question_text: "Il mio attuale contratto è {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -48,6 +50,7 @@ export const block3: Block = {
       question_number: "3.3",
       question_id: "posizione_ricoperta",
       question_text: "La posizione che ricopro è di {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -62,6 +65,7 @@ export const block3: Block = {
       question_number: "3.4",
       question_id: "periodo_prova",
       question_text: "Il periodo di prova è {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -77,6 +81,7 @@ export const block3: Block = {
       question_id: "scadenza_contratto",
       question_text: "in scadenza nel {{placeholder1}} / {{placeholder2}}",
       inline: true,
+      leads_to_placeholder_priority: "placeholder2",
       placeholders: {
         placeholder1: {"type": "input", "input_type": "text", "placeholder_label": "Mese", "leads_to": "probabilita_rinnovo"},
         placeholder2: {"type": "input", "input_type": "number", "placeholder_label": "Anno", "leads_to": "probabilita_rinnovo"}
@@ -87,6 +92,7 @@ export const block3: Block = {
       question_id: "probabilita_rinnovo",
       question_text: "con {{placeholder1}} possibilità di rinnovo",
       inline: true,
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -102,6 +108,7 @@ export const block3: Block = {
       question_number: "3.7",
       question_id: "tipo_autonomo",
       question_text: "La tua professione è {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -119,6 +126,7 @@ export const block3: Block = {
       question_number: "3.7.1",
       question_id: "input_altro_autonomo",
       question_text: "Inserisci la tua professione",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "input",
@@ -132,6 +140,7 @@ export const block3: Block = {
       question_number: "3.8",
       question_id: "anno_autonomo",
       question_text: "Sei un lavoratore autonomo dal {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "input",
@@ -145,6 +154,7 @@ export const block3: Block = {
       question_number: "3.9",
       question_id: "anno_pensione",
       question_text: "Sei andato in pensione nel {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "input",
@@ -158,6 +168,7 @@ export const block3: Block = {
       question_number: "3.10",
       question_id: "periodo_studio",
       question_text: "Sei studente dal {{placeholder1}} e finirai nel {{placeholder2}}",
+      leads_to_placeholder_priority: "placeholder2",
       placeholders: {
         placeholder1: {"type": "input", "input_type": "number", "placeholder_label": "Anno inizio", "leads_to": "next_block"},
         placeholder2: {"type": "input", "input_type": "number", "placeholder_label": "Anno fine", "leads_to": "next_block"}
@@ -167,6 +178,7 @@ export const block3: Block = {
       question_number: "3.11",
       question_id: "stato_disoccupazione",
       question_text: "Sei disoccupato dal {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {"type": "input", "input_type": "number", "placeholder_label": "Anno", "leads_to": "ricerca_lavoro"}
       }
@@ -176,6 +188,7 @@ export const block3: Block = {
       question_id: "ricerca_lavoro",
       question_text: "e attualmente {{placeholder1}} lavoro",
       inline: true,
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",

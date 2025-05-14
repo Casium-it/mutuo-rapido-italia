@@ -13,6 +13,7 @@ export const block22: Block = {
       question_number: "22.1",
       question_id: "figli_a_carico_coint",
       question_text: "Il tuo cointestatario ha {{placeholder1}} a carico oltre quelli da te dichiarati",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -30,6 +31,7 @@ export const block22: Block = {
       question_number: "22.2",
       question_id: "residenza_cointestatario",
       question_text: "Attualmente il tuo cointestatario vive in {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -47,6 +49,7 @@ export const block22: Block = {
       question_id: "spesa_affitto_coint",
       question_text: "che paga {{placeholder1}} euro al mese, compreso condominio",
       inline: true,
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "input",
@@ -61,6 +64,7 @@ export const block22: Block = {
       question_id: "intenzione_vendita_coint",
       question_text: "che {{placeholder1}} per finanziare il nuovo acquisto",
       inline: true,
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -84,6 +88,7 @@ export const block22: Block = {
       question_number: "22.5",
       question_id: "convivenza_cointestatario",
       question_text: "Tu e il tuo cointestatario {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -98,6 +103,7 @@ export const block22: Block = {
       question_number: "22.6",
       question_id: "eta_e_citta_coint",
       question_text: "Il tuo cointestatario ha {{placeholder1}} anni e vive a {{placeholder2}}, {{placeholder3}}",
+      leads_to_placeholder_priority: "placeholder3",
       placeholders: {
         placeholder1: {
           type: "input",

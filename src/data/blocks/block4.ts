@@ -13,6 +13,7 @@ export const block4: Block = {
       question_number: "4.1",
       question_id: "reddito_guadagno_autonomo",
       question_text: "La tua professione principale ti permette di guadagnare {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -28,6 +29,7 @@ export const block4: Block = {
       question_id: "reddito_importo_lordo",
       question_text: "circa un importo {{placeholder1}}",
       inline: true,
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -43,6 +45,7 @@ export const block4: Block = {
       question_id: "reddito_importo_valore",
       question_text: "di {{placeholder1}} euro, in media negli ultimi 3 anni",
       inline: true,
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "input",
@@ -56,6 +59,7 @@ export const block4: Block = {
       question_number: "4.4",
       question_id: "reddito_netto_annuo",
       question_text: "Al netto dei costi legati all'attività e alle tasse che sostengo, annualmente in media mi rimangono {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "input",
@@ -69,6 +73,7 @@ export const block4: Block = {
       question_number: "4.5",
       question_id: "reddito_stabilita",
       question_text: "Ritengo che questa media {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -85,6 +90,7 @@ export const block4: Block = {
       question_number: "4.6",
       question_id: "reddito_previsione",
       question_text: "Infatti prevedo che l'anno prossimo al netto di tasse e costi per attività avrò {{placeholder1}} euro",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "input",

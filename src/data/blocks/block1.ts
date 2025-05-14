@@ -13,6 +13,7 @@ export const block1: Block = {
       question_number: "1.1",
       question_id: "soggetto_acquisto",
       question_text: "Voglio comprare casa {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -28,6 +29,7 @@ export const block1: Block = {
       question_number: "1.2",
       question_id: "finalita_acquisto",
       question_text: "L'acquisto è per {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -45,6 +47,7 @@ export const block1: Block = {
       question_number: "1.3",
       question_id: "localizzazione_immobile",
       question_text: "La {{placeholder3}} proprietà si trova a {{placeholder1}}, {{placeholder2}} ooo oooo o o o o {{placeholder4}}",
+      leads_to_placeholder_priority: "placeholder2",
       placeholders: {
         placeholder1: {
           type: "input",
@@ -80,6 +83,7 @@ export const block1: Block = {
       question_number: "1.4",
       question_id: "tipologia_acquisto",
       question_text: "La tipologia di acquisto è {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -97,6 +101,7 @@ export const block1: Block = {
       question_number: "1.5",
       question_id: "venditore",
       question_text: "Compro la casa da una {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",

@@ -13,6 +13,7 @@ export const block25: Block = {
       question_number: "25.1",
       question_id: "busta_paga_periodicita_coint",
       question_text: "Riceve busta paga {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -28,6 +29,7 @@ export const block25: Block = {
       question_id: "busta_paga_importo_coint",
       question_text: ", senza straordinari e bonus, di {{placeholder1}} euro",
       inline: true,
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "input",
@@ -41,6 +43,7 @@ export const block25: Block = {
       question_number: "25.3",
       question_id: "busta_paga_lordo_netto_coint",
       question_text: "L'importo indicato è {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -55,6 +58,7 @@ export const block25: Block = {
       question_number: "25.4",
       question_id: "contratto_tredicesime_coint",
       question_text: "Il suo contratto {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -70,6 +74,7 @@ export const block25: Block = {
       question_number: "25.5",
       question_id: "ricezione_bonus_coint",
       question_text: "Nella sua posizione {{placeholder1}} bonus.",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -84,6 +89,7 @@ export const block25: Block = {
       question_number: "25.6",
       question_id: "importo_bonus_coint",
       question_text: "Il bonus in media è di {{placeholder1}} euro netti annuali, negli ultimi 3 anni",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "input",
@@ -97,6 +103,7 @@ export const block25: Block = {
       question_number: "25.7",
       question_id: "bonus_stabilita_coint",
       question_text: "Il suo bonus è {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -113,6 +120,7 @@ export const block25: Block = {
       question_number: "25.8",
       question_id: "ricezione_benefit_coint",
       question_text: "Nella sua posizione {{placeholder1}} benefit aziendali.",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -127,6 +135,7 @@ export const block25: Block = {
       question_number: "25.9",
       question_id: "tipologia_benefit_coint",
       question_text: "I suoi benefit sono: {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",

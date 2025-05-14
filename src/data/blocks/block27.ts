@@ -13,6 +13,7 @@ export const block27: Block = {
       question_number: "27.1",
       question_id: "presenza_finanziamenti_coint",
       question_text: "Ad oggi {{placeholder1}} finanziamenti aperti",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -27,6 +28,7 @@ export const block27: Block = {
       question_number: "27.2",
       question_id: "tipo_finanziamento_coint",
       question_text: "Ha un finanziamento per {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -41,6 +43,7 @@ export const block27: Block = {
       question_number: "27.3",
       question_id: "oggetto_finanziamento_coint",
       question_text: "Per questo finanziamento ha dei pagamenti {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -56,6 +59,7 @@ export const block27: Block = {
       question_number: "27.3.1",
       question_id: "oggetto_finanziamento_altro_coint",
       question_text: "Specifica la destinazione del finanziamento",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "input",
@@ -70,6 +74,7 @@ export const block27: Block = {
       question_id: "importo_finanziamento_coint",
       question_text: "di {{placeholder1}} euro",
       inline: true,
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "input",
@@ -84,6 +89,7 @@ export const block27: Block = {
       question_id: "frequenza_rata_coint",
       question_text: "{{placeholder1}}",
       inline: true,
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -102,6 +108,7 @@ export const block27: Block = {
       question_id: "data_fine_finanziamento_coint",
       question_text: "che finiranno a {{placeholder1}} / {{placeholder2}}",
       inline: true,
+      leads_to_placeholder_priority: "placeholder2",
       placeholders: {
         placeholder1: {
           type: "input",
@@ -121,6 +128,7 @@ export const block27: Block = {
       question_number: "27.7",
       question_id: "storico_pagamento_coint",
       question_text: "Per questo finanziamento ha pagato {{placeholder1}} regolarmente",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",

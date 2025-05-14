@@ -13,6 +13,7 @@ export const block26: Block = {
       question_number: "26.1",
       question_id: "presenza_reddito_secondario_coint",
       question_text: "Negli ultimi anni {{placeholder1}} reddito aggiuntivo oltre al principale dichiarato",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -27,6 +28,7 @@ export const block26: Block = {
       question_number: "26.2",
       question_id: "tipo_reddito_secondario_coint",
       question_text: "Riceve reddito aggiuntivo da {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -45,6 +47,7 @@ export const block26: Block = {
       question_number: "26.2.1",
       question_id: "altro_descrizione_coint",
       question_text: "Specifica la fonte del reddito aggiuntivo",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "input",
@@ -59,6 +62,7 @@ export const block26: Block = {
       question_id: "media_reddito_secondario_coint",
       question_text: "Negli ultimi 3 anni di media ha ricevuto {{placeholder1}} euro",
       inline: true,
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "input",
@@ -73,6 +77,7 @@ export const block26: Block = {
       question_id: "frequenza_reddito_secondario_coint",
       question_text: "{{placeholder1}}",
       inline: true,
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -88,6 +93,7 @@ export const block26: Block = {
       question_id: "lordo_netto_reddito_secondario_coint",
       question_text: "{{placeholder1}}",
       inline: true,
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -102,6 +108,7 @@ export const block26: Block = {
       question_number: "26.6",
       question_id: "stabilita_reddito_secondario_coint",
       question_text: "Ritiene questa entrata {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -118,6 +125,7 @@ export const block26: Block = {
       question_number: "26.7",
       question_id: "data_inizio_reddito_coint",
       question_text: "Riceve questa entrata dal {{placeholder1}} / {{placeholder2}}",
+      leads_to_placeholder_priority: "placeholder2",
       placeholders: {
         placeholder1: {
           type: "input",
@@ -137,6 +145,7 @@ export const block26: Block = {
       question_number: "26.8",
       question_id: "data_fine_reddito_coint",
       question_text: "e continuerà a riceverla sicuramente fino al {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "input",

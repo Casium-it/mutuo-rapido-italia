@@ -13,6 +13,7 @@ export const blockStop: Block = {
       question_number: "99.1",
       question_id: "stop_flow_entry",
       question_text: "Al momento la funzionalità di surroga non è disponibile. {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",

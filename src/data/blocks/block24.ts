@@ -13,6 +13,7 @@ export const block24: Block = {
       question_number: "24.1",
       question_id: "guadagno_coint",
       question_text: "Il cointestatario attraverso la sua professione principale guadagna {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -28,6 +29,7 @@ export const block24: Block = {
       question_id: "importo_lordo_netto_coint",
       question_text: "circa un importo {{placeholder1}}",
       inline: true,
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -43,6 +45,7 @@ export const block24: Block = {
       question_id: "media_3_anni_coint",
       question_text: "di {{placeholder1}} euro, in media negli ultimi 3 anni",
       inline: true,
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "input",
@@ -56,6 +59,7 @@ export const block24: Block = {
       question_number: "24.4",
       question_id: "netto_annuo_coint",
       question_text: "Al netto dei costi legati all'attività e alle tasse che sostiene, annualmente in media gli rimangono {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "input",
@@ -69,6 +73,7 @@ export const block24: Block = {
       question_number: "24.5",
       question_id: "stabilita_coint",
       question_text: "Il cointestatario ritiene che questa media sia {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -85,6 +90,7 @@ export const block24: Block = {
       question_number: "24.6",
       question_id: "previsione_prossimo_anno_coint",
       question_text: "Infatti prevede che l'anno prossimo al netto di tasse e costi per attività avrà {{placeholder1}} euro",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "input",

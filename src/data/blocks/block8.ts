@@ -13,6 +13,7 @@ export const block8: Block = {
       question_number: "8.1",
       question_id: "offerta_casa",
       question_text: "L'offerta della casa individuata è di {{placeholder1}} euro",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "input",
@@ -26,6 +27,7 @@ export const block8: Block = {
       question_number: "8.2",
       question_id: "classe_energetica",
       question_text: "La casa è una classe energetica {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -44,6 +46,7 @@ export const block8: Block = {
       question_number: "8.3",
       question_id: "agenzia_intermediaria",
       question_text: "L'acquisto {{placeholder1}} un'agenzia immobiliare intermediaria",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -58,6 +61,7 @@ export const block8: Block = {
       question_number: "8.4",
       question_id: "costo_agenzia",
       question_text: "che costerà circa {{placeholder1}} euro",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "input",

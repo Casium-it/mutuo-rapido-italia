@@ -13,6 +13,7 @@ export const block9: Block = {
       question_number: "9.1",
       question_id: "valore_casa_vendita",
       question_text: "Il valore della casa da vendere oggi è circa {{placeholder1}} euro",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "input",
@@ -26,6 +27,7 @@ export const block9: Block = {
       question_number: "9.2",
       question_id: "presenza_mutuo_casa_vendita",
       question_text: "La casa attualmente {{placeholder1}} da saldare",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -48,6 +50,7 @@ export const block9: Block = {
       question_number: "9.3",
       question_id: "dettagli_mutuo_casa_vendita",
       question_text: "Al mutuo mancano {{placeholder1}} euro da saldare. Il mutuo aveva un tasso del {{placeholder2}}%, e finirà nel {{placeholder3}}",
+      leads_to_placeholder_priority: "placeholder3",
       placeholders: {
         placeholder1: {
           type: "input",
