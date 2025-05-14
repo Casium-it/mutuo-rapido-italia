@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { Question } from "@/types/form";
@@ -88,10 +87,10 @@ export function FormQuestion({ question }: FormQuestionProps) {
     }));
   };
 
-  // Funzione per navigare alla domanda specificata quando si fa click su una risposta
+  // Funzione modificata per navigare alla domanda specifica quando si fa click su una risposta
   const handleQuestionClick = (questionId: string) => {
-    const previousQuestion = getPreviousQuestion(state.activeQuestion.block_id, questionId);
-    if (previousQuestion) {
+    // Naviga direttamente alla domanda con l'ID specificato
+    if (questionId) {
       goToQuestion(state.activeQuestion.block_id, questionId);
     }
   };

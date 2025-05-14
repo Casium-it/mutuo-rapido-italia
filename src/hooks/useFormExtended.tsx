@@ -27,7 +27,7 @@ export const useFormExtended = () => {
     
     if (!previousQuestion) return "";
     
-    return getQuestionTextWithResponses(previousQuestion, formContext.responses);
+    return getQuestionTextWithResponses(previousQuestion, formContext.state.responses);
   };
   
   /**
