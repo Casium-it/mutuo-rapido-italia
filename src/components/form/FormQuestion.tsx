@@ -95,11 +95,46 @@ export function FormQuestion({ question }: FormQuestionProps) {
     }
   };
 
-  // Funzione per avanzare alla prossima domanda
+  // Funzione modificata per la gestione della navigazione basata sulla priorità
   const handleNextQuestion = () => {
     if (isNavigating) return;
     setIsNavigating(true);
     
+    // Verifica se è stata specificata una priorità per i placeholder
+    if (question.leads_to_placeholder_priority && 
+        question.placeholders[question.leads_to_placeholder_priority]) {
+      
+      // Ottieni il placeholder con priorità
+      const priorityPlaceholder = question.placeholders[question.leads_to_placeholder_priority];
+      const priorityResponse = responses[question.leads_to_placeholder_priority] || 
+                              getResponse(question.question_id, question.leads_to_placeholder_priority);
+      
+      // Se il placeholder prioritario è di tipo select
+      if (priorityResponse && priorityPlaceholder.type === "select" && !Array.isArray(priorityResponse)) {
+        const selectedOption = (priorityPlaceholder as any).options.find(
+          (opt: any) => opt.id === priorityResponse
+        );
+        
+        if (selectedOption?.leads_to) {
+          setTimeout(() => {
+            navigateToNextQuestion(question.question_id, selectedOption.leads_to);
+            setIsNavigating(false);
+          }, 50);
+          return;
+        }
+      } 
+      // Se il placeholder prioritario è di tipo input
+      else if (priorityResponse && priorityPlaceholder.type === "input" && (priorityPlaceholder as any).leads_to) {
+        setTimeout(() => {
+          navigateToNextQuestion(question.question_id, (priorityPlaceholder as any).leads_to);
+          setIsNavigating(false);
+        }, 50);
+        return;
+      }
+    }
+    
+    // Se non c'è un placeholder prioritario o non ha un leads_to valido,
+    // usa la logica esistente per verificare i placeholder in ordine
     for (const key of Object.keys(question.placeholders)) {
       const response = responses[key] || getResponse(question.question_id, key);
       
@@ -124,6 +159,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
       }
     }
     
+    // Se nessun placeholder ha un leads_to valido, vai al blocco successivo
     setTimeout(() => {
       navigateToNextQuestion(question.question_id, "next_block");
       setIsNavigating(false);

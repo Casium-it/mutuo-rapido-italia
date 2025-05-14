@@ -27,6 +27,7 @@ export type Question = {
   question_text: string;
   block_id?: string; // Aggiunto il campo block_id per risolvere l'errore
   inline?: boolean;
+  leads_to_placeholder_priority: string; // Nuovo campo obbligatorio per definire quale placeholder ha priorità per la navigazione
   placeholders: Record<string, Placeholder>;
 };
 

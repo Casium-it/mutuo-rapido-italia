@@ -13,6 +13,7 @@ export const block2: Block = {
       question_number: "2.1",
       question_id: "eta_e_citta",
       question_text: "Io ho {{placeholder1}} anni e vivo a {{placeholder2}}, {{placeholder3}}",
+      leads_to_placeholder_priority: "placeholder3", // Specifica quale placeholder ha priorità per la navigazione
       placeholders: {
         placeholder1: {
           type: "input",
@@ -36,6 +37,7 @@ export const block2: Block = {
       question_number: "2.2",
       question_id: "figli_a_carico",
       question_text: "Ho {{placeholder1}} a carico",
+      leads_to_placeholder_priority: "placeholder1", // Anche se c'è un solo placeholder, è obbligatorio specificare la priorità
       placeholders: {
         placeholder1: {
           type: "select",
@@ -53,6 +55,7 @@ export const block2: Block = {
       question_number: "2.3",
       question_id: "tipo_abitazione",
       question_text: "Attualmente vivo in {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -70,6 +73,7 @@ export const block2: Block = {
       question_id: "spesa_affitto",
       question_text: "che pago {{placeholder1}} euro al mese, compreso condominio",
       inline: true,
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "input",
@@ -84,6 +88,7 @@ export const block2: Block = {
       question_id: "intenzione_vendita",
       question_text: "che {{placeholder1}} per finanziare il nuovo acquisto",
       inline: true,
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
