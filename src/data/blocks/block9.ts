@@ -1,4 +1,3 @@
-
 import { Block } from "@/types/form";
 
 // Block 9 - La casa da vendere
@@ -19,7 +18,8 @@ export const block9: Block = {
           type: "input",
           input_type: "number",
           placeholder_label: "Valore stimato",
-          leads_to: "presenza_mutuo_casa_vendita"
+          leads_to: "presenza_mutuo_casa_vendita",
+          input_validation: "euro"
         }
       }
     },
@@ -55,18 +55,21 @@ export const block9: Block = {
         placeholder1: {
           type: "input",
           input_type: "number",
-          placeholder_label: "Importo residuo"
+          placeholder_label: "Importo residuo",
+          input_validation: "euro"
         },
         placeholder2: {
           type: "input",
           input_type: "number",
-          placeholder_label: "Tasso percentuale"
+          placeholder_label: "Tasso percentuale",
+          input_validation: "free_text"
         },
         placeholder3: {
           type: "input",
           input_type: "number",
           placeholder_label: "Anno",
-          leads_to: "next_block"
+          leads_to: "next_block",
+          input_validation: "year"
         }
       }
     }

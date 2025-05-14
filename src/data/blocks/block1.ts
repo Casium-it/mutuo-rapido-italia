@@ -52,13 +52,15 @@ export const block1: Block = {
         placeholder1: {
           type: "input",
           input_type: "text",
-          placeholder_label: "Città"
+          placeholder_label: "Città",
+          input_validation: "city"
         },
         placeholder2: {
           type: "input",
           input_type: "text",
           placeholder_label: "CAP",
-          leads_to: "tipologia_acquisto"
+          leads_to: "tipologia_acquisto",
+          input_validation: "cap"
         },
         placeholder3: {
           type: "select",

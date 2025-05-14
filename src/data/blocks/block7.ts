@@ -1,4 +1,3 @@
-
 import { Block } from "@/types/form";
 
 // Block 7 - Finanziamenti
@@ -93,7 +92,8 @@ export const block7: Block = {
           type: "input",
           input_type: "text",
           placeholder_label: "Descrizione",
-          leads_to: "importo_finanziamento"
+          leads_to: "importo_finanziamento",
+          input_validation: "free_text"
         }
       }
     },
@@ -108,7 +108,8 @@ export const block7: Block = {
           type: "input",
           input_type: "number",
           placeholder_label: "Importo",
-          leads_to: "frequenza_rata"
+          leads_to: "frequenza_rata",
+          input_validation: "euro"
         }
       }
     },
@@ -162,13 +163,15 @@ export const block7: Block = {
           type: "input",
           input_type: "text",
           placeholder_label: "Mese",
-          leads_to: "storico_pagamento"
+          leads_to: "storico_pagamento",
+          input_validation: "month"
         },
         placeholder2: {
           type: "input",
           input_type: "number",
           placeholder_label: "Anno",
-          leads_to: "storico_pagamento"
+          leads_to: "storico_pagamento",
+          input_validation: "year"
         }
       }
     },

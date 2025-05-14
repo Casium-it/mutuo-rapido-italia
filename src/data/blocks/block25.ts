@@ -1,4 +1,3 @@
-
 import { Block } from "@/types/form";
 
 // Block 25 - Reddito principale del cointestatario
@@ -35,7 +34,8 @@ export const block25: Block = {
           type: "input",
           input_type: "number",
           placeholder_label: "Importo",
-          leads_to: "busta_paga_lordo_netto_coint"
+          leads_to: "busta_paga_lordo_netto_coint",
+          input_validation: "euro"
         }
       }
     },
@@ -95,7 +95,8 @@ export const block25: Block = {
           type: "input",
           input_type: "number",
           placeholder_label: "Importo bonus",
-          leads_to: "bonus_stabilita_coint"
+          leads_to: "bonus_stabilita_coint",
+          input_validation: "euro"
         }
       }
     },

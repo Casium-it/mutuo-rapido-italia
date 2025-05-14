@@ -1,4 +1,3 @@
-
 import { Block } from "@/types/form";
 
 // Block 5 - Reddito principale
@@ -35,7 +34,8 @@ export const block5: Block = {
           type: "input",
           input_type: "number",
           placeholder_label: "Importo",
-          leads_to: "busta_paga_lordo_netto"
+          leads_to: "busta_paga_lordo_netto",
+          input_validation: "euro"
         }
       }
     },
@@ -95,7 +95,8 @@ export const block5: Block = {
           type: "input",
           input_type: "number",
           placeholder_label: "Importo bonus",
-          leads_to: "bonus_stabilita"
+          leads_to: "bonus_stabilita",
+          input_validation: "euro"
         }
       }
     },

@@ -1,4 +1,3 @@
-
 import { Block } from "@/types/form";
 
 // Block 26 - Reddito secondario del cointestatario
@@ -53,7 +52,8 @@ export const block26: Block = {
           type: "input",
           input_type: "text",
           placeholder_label: "Descrizione",
-          leads_to: "media_reddito_secondario_coint"
+          leads_to: "media_reddito_secondario_coint",
+          input_validation: "free_text"
         }
       }
     },
@@ -68,7 +68,8 @@ export const block26: Block = {
           type: "input",
           input_type: "number",
           placeholder_label: "Importo",
-          leads_to: "frequenza_reddito_secondario_coint"
+          leads_to: "frequenza_reddito_secondario_coint",
+          input_validation: "euro"
         }
       }
     },
@@ -131,13 +132,15 @@ export const block26: Block = {
           type: "input",
           input_type: "text",
           placeholder_label: "Mese",
-          leads_to: "data_fine_reddito_coint"
+          leads_to: "data_fine_reddito_coint",
+          input_validation: "month"
         },
         placeholder2: {
           type: "input",
           input_type: "number",
           placeholder_label: "Anno",
-          leads_to: "data_fine_reddito_coint"
+          leads_to: "data_fine_reddito_coint",
+          input_validation: "year"
         }
       }
     },
@@ -151,7 +154,8 @@ export const block26: Block = {
           type: "input",
           input_type: "text",
           placeholder_label: "Anno o 'non lo sa'",
-          leads_to: "tipo_reddito_secondario_coint"
+          leads_to: "tipo_reddito_secondario_coint",
+          input_validation: "free_text"
         }
       }
     }

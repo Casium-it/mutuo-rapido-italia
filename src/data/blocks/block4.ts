@@ -1,4 +1,3 @@
-
 import { Block } from "@/types/form";
 
 // Block 4 - Reddito lavoro autonomo
@@ -51,7 +50,8 @@ export const block4: Block = {
           type: "input",
           input_type: "number",
           placeholder_label: "Importo",
-          leads_to: "reddito_netto_annuo"
+          leads_to: "reddito_netto_annuo",
+          input_validation: "euro"
         }
       }
     },
@@ -65,7 +65,8 @@ export const block4: Block = {
           type: "input",
           input_type: "number",
           placeholder_label: "Importo netto annuo",
-          leads_to: "reddito_stabilita"
+          leads_to: "reddito_stabilita",
+          input_validation: "euro"
         }
       }
     },
@@ -96,7 +97,8 @@ export const block4: Block = {
           type: "input",
           input_type: "number",
           placeholder_label: "Previsione futura",
-          leads_to: "next_block"
+          leads_to: "next_block",
+          input_validation: "euro"
         }
       }
     }

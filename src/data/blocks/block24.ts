@@ -1,4 +1,3 @@
-
 import { Block } from "@/types/form";
 
 // Block 24 - Reddito lavoro autonomo del cointestatario
@@ -51,7 +50,8 @@ export const block24: Block = {
           type: "input",
           input_type: "number",
           placeholder_label: "Importo medio",
-          leads_to: "netto_annuo_coint"
+          leads_to: "netto_annuo_coint",
+          input_validation: "euro"
         }
       }
     },
@@ -65,7 +65,8 @@ export const block24: Block = {
           type: "input",
           input_type: "number",
           placeholder_label: "Netto annuo",
-          leads_to: "stabilita_coint"
+          leads_to: "stabilita_coint",
+          input_validation: "euro"
         }
       }
     },
@@ -96,7 +97,8 @@ export const block24: Block = {
           type: "input",
           input_type: "number",
           placeholder_label: "Previsione futura",
-          leads_to: "next_block"
+          leads_to: "next_block",
+          input_validation: "euro"
         }
       }
     }

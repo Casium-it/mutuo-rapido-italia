@@ -1,4 +1,3 @@
-
 import { Block } from "@/types/form";
 
 // Block 3 - La tua professione
@@ -6,7 +5,7 @@ export const block3: Block = {
   block_number: "3",
   block_id: "la_tua_professione",
   title: "La tua professione",
-  priority: 30, // Priorità aggiunta
+  priority: 30,
   default_active: true,
   questions: [
     {
@@ -83,8 +82,20 @@ export const block3: Block = {
       inline: true,
       leads_to_placeholder_priority: "placeholder2",
       placeholders: {
-        placeholder1: {"type": "input", "input_type": "text", "placeholder_label": "Mese", "leads_to": "probabilita_rinnovo"},
-        placeholder2: {"type": "input", "input_type": "number", "placeholder_label": "Anno", "leads_to": "probabilita_rinnovo"}
+        placeholder1: {
+          type: "input", 
+          input_type: "text", 
+          placeholder_label: "Mese", 
+          leads_to: "probabilita_rinnovo",
+          input_validation: "month"
+        },
+        placeholder2: {
+          type: "input", 
+          input_type: "number", 
+          placeholder_label: "Anno", 
+          leads_to: "probabilita_rinnovo",
+          input_validation: "year"
+        }
       }
     },
     {
@@ -132,7 +143,8 @@ export const block3: Block = {
           type: "input",
           input_type: "text",
           placeholder_label: "Professione",
-          leads_to: "anno_autonomo"
+          leads_to: "anno_autonomo",
+          input_validation: "free_text"
         }
       }
     },
@@ -146,7 +158,8 @@ export const block3: Block = {
           type: "input",
           input_type: "number",
           placeholder_label: "Anno",
-          leads_to: "next_block"
+          leads_to: "next_block",
+          input_validation: "year"
         }
       }
     },
@@ -160,7 +173,8 @@ export const block3: Block = {
           type: "input",
           input_type: "number",
           placeholder_label: "Anno",
-          leads_to: "next_block"
+          leads_to: "next_block",
+          input_validation: "year"
         }
       }
     },
@@ -170,8 +184,20 @@ export const block3: Block = {
       question_text: "Sei studente dal {{placeholder1}} e finirai nel {{placeholder2}}",
       leads_to_placeholder_priority: "placeholder2",
       placeholders: {
-        placeholder1: {"type": "input", "input_type": "number", "placeholder_label": "Anno inizio", "leads_to": "next_block"},
-        placeholder2: {"type": "input", "input_type": "number", "placeholder_label": "Anno fine", "leads_to": "next_block"}
+        placeholder1: {
+          type: "input", 
+          input_type: "number", 
+          placeholder_label: "Anno inizio", 
+          leads_to: "next_block",
+          input_validation: "year"
+        },
+        placeholder2: {
+          type: "input", 
+          input_type: "number", 
+          placeholder_label: "Anno fine", 
+          leads_to: "next_block",
+          input_validation: "year"
+        }
       }
     },
     {
@@ -180,7 +206,13 @@ export const block3: Block = {
       question_text: "Sei disoccupato dal {{placeholder1}}",
       leads_to_placeholder_priority: "placeholder1",
       placeholders: {
-        placeholder1: {"type": "input", "input_type": "number", "placeholder_label": "Anno", "leads_to": "ricerca_lavoro"}
+        placeholder1: {
+          type: "input", 
+          input_type: "number", 
+          placeholder_label: "Anno", 
+          leads_to: "ricerca_lavoro",
+          input_validation: "year"
+        }
       }
     },
     {
