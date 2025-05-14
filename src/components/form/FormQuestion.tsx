@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { Question } from "@/types/form";
@@ -21,7 +20,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
     setResponse, 
     navigateToNextQuestion, 
     getPreviousQuestionText,
-    getPreviousQuestion, 
+    getPreviousQuestion,
     getInlineQuestionChain,
     state, 
     addActiveBlock, 
@@ -99,12 +98,15 @@ export function FormQuestion({ question }: FormQuestionProps) {
     const prevQuestion = getQuestionFromId(questionId);
     
     if (prevQuestion && placeholderKey) {
+      // Get the block_id from state or from the question object
+      const blockId = prevQuestion.block_id || state.activeQuestion.block_id;
+      
       // Determina il tipo di placeholder su cui è stato fatto clic
       const placeholderType = prevQuestion.placeholders[placeholderKey]?.type;
       
       // Se è un placeholder di tipo select, naviga alla domanda e mostra le opzioni
       if (placeholderType === "select") {
-        goToQuestion(prevQuestion.block_id, questionId);
+        goToQuestion(blockId, questionId);
         
         // Aggiungiamo un piccolo timeout per assicurarci che il componente sia montato
         setTimeout(() => {
@@ -116,7 +118,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
       } 
       // Se è un placeholder di tipo input, naviga alla domanda e metti il focus sull'input
       else if (placeholderType === "input") {
-        goToQuestion(prevQuestion.block_id, questionId);
+        goToQuestion(blockId, questionId);
         
         // Aggiungiamo un piccolo timeout per assicurarci che il componente sia montato
         setTimeout(() => {
@@ -127,7 +129,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
       }
       // Per altri tipi di placeholder o se non trovato, naviga semplicemente alla domanda
       else {
-        goToQuestion(prevQuestion.block_id, questionId);
+        goToQuestion(blockId, questionId);
       }
     } else {
       // Se non abbiamo informazioni sul placeholder o la domanda non è trovata,
@@ -179,8 +181,9 @@ export function FormQuestion({ question }: FormQuestionProps) {
     }
     
     // Altrimenti, recupera la catena di domande inline
+    const blockId = question.block_id || state.activeQuestion.block_id;
     const questionChain = getInlineQuestionChain(
-      state.activeQuestion.block_id, 
+      blockId, 
       state.activeQuestion.question_id
     );
     

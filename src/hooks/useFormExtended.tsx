@@ -15,8 +15,6 @@ export const useFormExtended = () => {
   
   /**
    * Gets the text of the previous question with responses filled in
-   * @param blockId Current block ID
-   * @param questionId Current question ID
    * @returns The previous question's text with responses or empty string
    */
   const getPreviousQuestionText = useCallback(() => {
@@ -29,7 +27,7 @@ export const useFormExtended = () => {
     if (!previousQuestion) return "";
     
     return getQuestionTextWithResponses(previousQuestion, formContext.state.responses);
-  }, [formContext.state.activeQuestion.block_id, formContext.state.activeQuestion.question_id, formContext.blocks]);
+  }, [formContext.state.activeQuestion.block_id, formContext.state.activeQuestion.question_id, formContext.blocks, formContext.state.responses]);
   
   /**
    * Gets the previous question object
