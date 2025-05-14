@@ -23,6 +23,59 @@ export const getPreviousQuestion = (
 };
 
 /**
+ * Gets a chain of all connected inline questions, starting from the first non-inline question
+ * and including the specified question (unless includeCurrent is false)
+ * @param blocks All form blocks
+ * @param blockId Current block ID
+ * @param questionId Current question ID
+ * @param includeCurrent Whether to include the current question in the chain
+ * @returns Array of questions in the chain, ordered from first to last
+ */
+export const getChainOfInlineQuestions = (
+  blocks: Block[],
+  blockId: string,
+  questionId: string,
+  includeCurrent: boolean = false
+): Question[] => {
+  const currentBlock = blocks.find(block => block.block_id === blockId);
+  if (!currentBlock) return [];
+
+  const questionIndex = currentBlock.questions.findIndex(q => q.question_id === questionId);
+  if (questionIndex < 0) return [];
+
+  const currentQuestion = currentBlock.questions[questionIndex];
+  
+  // Se questa è la prima domanda o non è inline, restituisci solo la domanda attuale
+  if (questionIndex === 0 || !currentQuestion.inline) {
+    return includeCurrent ? [currentQuestion] : [];
+  }
+  
+  // Inizia la catena con la domanda precedente
+  const chain: Question[] = [];
+  let currentIndex = questionIndex - 1;
+  
+  // Continua ad aggiungere domande precedenti finché non troviamo una non inline
+  while (currentIndex >= 0) {
+    const question = currentBlock.questions[currentIndex];
+    chain.unshift(question); // Aggiungi all'inizio dell'array
+    
+    // Se questa domanda non è inline, abbiamo raggiunto l'inizio della catena
+    if (!question.inline) {
+      break;
+    }
+    
+    currentIndex--;
+  }
+  
+  // Aggiungi la domanda corrente alla fine se richiesto
+  if (includeCurrent) {
+    chain.push(currentQuestion);
+  }
+  
+  return chain;
+};
+
+/**
  * Gets the text value with responses from a question
  * @param question The question object
  * @param responses The form responses

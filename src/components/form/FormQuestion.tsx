@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { Question } from "@/types/form";
@@ -21,10 +22,12 @@ export function FormQuestion({ question }: FormQuestionProps) {
     navigateToNextQuestion, 
     getPreviousQuestionText,
     getPreviousQuestion, 
+    getInlineQuestionChain,
     state, 
     addActiveBlock, 
     goToQuestion 
   } = useFormExtended();
+  
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});
   const [isNavigating, setIsNavigating] = useState(false);
   // Stato per tenere traccia di quali placeholder hanno opzioni visibili
@@ -85,11 +88,11 @@ export function FormQuestion({ question }: FormQuestionProps) {
     }));
   };
 
-  // Funzione per navigare alla domanda precedente quando si fa click su una risposta
-  const handlePreviousQuestionClick = () => {
-    const previousQuestion = getPreviousQuestion(state.activeQuestion.block_id, state.activeQuestion.question_id);
+  // Funzione per navigare alla domanda specificata quando si fa click su una risposta
+  const handleQuestionClick = (questionId: string) => {
+    const previousQuestion = getPreviousQuestion(state.activeQuestion.block_id, questionId);
     if (previousQuestion) {
-      goToQuestion(state.activeQuestion.block_id, previousQuestion.question_id);
+      goToQuestion(state.activeQuestion.block_id, questionId);
     }
   };
 
@@ -128,57 +131,54 @@ export function FormQuestion({ question }: FormQuestionProps) {
     }, 50);
   };
 
-  // Funzione per ottenere il testo completo della domanda, includendo la domanda precedente se questa è inline
+  // Funzione per ottenere il testo completo della domanda, includendo la sequenza di domande inline
   const getQuestionText = () => {
-    if (question.inline === true) {
-      const previousText = getPreviousQuestionText(state.activeQuestion.block_id, state.activeQuestion.question_id);
-      if (previousText) {
-        return `${previousText} ${question.question_text}`;
-      }
+    // Se non è una domanda inline, restituisci semplicemente il testo della domanda
+    if (question.inline !== true) {
+      return question.question_text;
     }
+    
+    // Altrimenti, recupera la catena di domande inline
+    const questionChain = getInlineQuestionChain(
+      state.activeQuestion.block_id, 
+      state.activeQuestion.question_id
+    );
+    
+    // Se non ci sono domande nella catena, restituisci solo il testo della domanda attuale
+    if (questionChain.length === 0) {
+      return question.question_text;
+    }
+    
+    // Altrimenti, restituisci la catena di domande + la domanda attuale
     return question.question_text;
   };
 
   // Funzione per renderizzare il testo della domanda con placeholders
   const renderQuestionText = () => {
-    const fullText = getQuestionText();
-    
-    // Se questa è una domanda inline, mostriamo il testo della domanda precedente con risposte cliccabili
+    // Se questa è una domanda inline, mostriamo la catena di domande precedenti
     if (question.inline === true) {
-      const previousQuestion = getPreviousQuestion(state.activeQuestion.block_id, state.activeQuestion.question_id);
+      const inlineChain = getInlineQuestionChain(
+        state.activeQuestion.block_id, 
+        state.activeQuestion.question_id
+      );
       
-      if (previousQuestion) {
-        // Otteniamo le parti del testo precedente con risposte cliccabili
-        const { parts: previousParts } = getQuestionTextWithClickableResponses(
-          previousQuestion, 
-          state.responses
-        );
-        
+      if (inlineChain.length > 0) {
+        // Renderizza la catena di domande inline
         return (
-          <div>
-            {/* Renderizziamo prima il testo della domanda precedente con risposte cliccabili */}
-            <span className="inline">
-              {previousParts.map((part, index) => {
-                if (part.type === 'text') {
-                  return <span key={`prev-part-${index}`}>{part.content}</span>;
-                } else {
-                  // Renderizziamo le risposte come testo verde, grassetto e cliccabile
-                  return (
-                    <span 
-                      key={`prev-part-${index}`}
-                      className="text-[#245C4F] font-bold cursor-pointer hover:underline"
-                      onClick={handlePreviousQuestionClick}
-                    >
-                      {part.content}
-                    </span>
-                  );
-                }
-              })}
-            </span>
+          <div className="inline">
+            {/* Prima domanda (non inline) o inizio della catena */}
+            {renderQuestionWithResponses(inlineChain[0])}
             
-            {/* Poi renderizziamo il testo della domanda attuale con i placeholder */}
+            {/* Domande inline intermedie */}
+            {inlineChain.slice(1).map((q, index) => (
+              <span key={`inline-${q.question_id}`}>
+                {renderQuestionWithResponses(q)}
+              </span>
+            ))}
+            
+            {/* Domanda corrente */}
             <span className="ml-1">
-              {!fullText.includes('{{') ? (
+              {!question.question_text.includes('{{') ? (
                 <span>{question.question_text}</span>
               ) : renderQuestionPlaceholders(question.question_text)}
             </span>
@@ -187,13 +187,41 @@ export function FormQuestion({ question }: FormQuestionProps) {
       }
     }
     
-    // Se non è una domanda inline, o non abbiamo trovato la domanda precedente,
+    // Se non è una domanda inline o non ci sono domande precedenti,
     // renderizziamo il testo normalmente
+    const fullText = getQuestionText();
     if (!fullText.includes('{{')) {
       return <span>{fullText}</span>;
     }
     
     return renderQuestionPlaceholders(fullText);
+  };
+  
+  // Funzione per renderizzare una singola domanda con le sue risposte cliccabili
+  const renderQuestionWithResponses = (q: Question) => {
+    // Otteniamo le parti del testo con risposte cliccabili
+    const { parts } = getQuestionTextWithClickableResponses(q, state.responses);
+    
+    return (
+      <span className="inline">
+        {parts.map((part, index) => {
+          if (part.type === 'text') {
+            return <span key={`part-${q.question_id}-${index}`}>{part.content}</span>;
+          } else {
+            // Renderizziamo le risposte come testo verde, grassetto e cliccabile
+            return (
+              <span 
+                key={`part-${q.question_id}-${index}`}
+                className="text-[#245C4F] font-bold cursor-pointer hover:underline"
+                onClick={() => handleQuestionClick(q.question_id)}
+              >
+                {part.content}
+              </span>
+            );
+          }
+        })}
+      </span>
+    );
   };
   
   // Funzione per renderizzare i placeholder nella domanda

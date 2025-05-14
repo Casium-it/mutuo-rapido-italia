@@ -1,6 +1,10 @@
 
 import { useForm as useOriginalForm } from "@/contexts/FormContext";
-import { getPreviousQuestion as getPreviousQuestionUtil, getQuestionTextWithResponses } from "@/utils/formUtils";
+import { 
+  getPreviousQuestion as getPreviousQuestionUtil, 
+  getQuestionTextWithResponses,
+  getChainOfInlineQuestions
+} from "@/utils/formUtils";
 
 /**
  * Extended hook for the form context with additional functionality
@@ -23,7 +27,7 @@ export const useFormExtended = () => {
     
     if (!previousQuestion) return "";
     
-    return getQuestionTextWithResponses(previousQuestion, formContext.state.responses);
+    return getQuestionTextWithResponses(previousQuestion, formContext.responses);
   };
   
   /**
@@ -35,10 +39,25 @@ export const useFormExtended = () => {
   const getPreviousQuestion = (blockId: string, questionId: string) => {
     return getPreviousQuestionUtil(formContext.blocks, blockId, questionId);
   };
+
+  /**
+   * Gets all previous inline questions in a chain, starting from the current question
+   * @param blockId Current block ID
+   * @param questionId Current question ID
+   * @returns Array of previous questions in the chain, ordered from first to last
+   */
+  const getInlineQuestionChain = (blockId: string, questionId: string) => {
+    return getChainOfInlineQuestions(
+      formContext.blocks,
+      blockId,
+      questionId
+    );
+  };
   
   return {
     ...formContext,
     getPreviousQuestionText,
-    getPreviousQuestion
+    getPreviousQuestion,
+    getInlineQuestionChain
   };
 };
