@@ -1,11 +1,10 @@
+
 import { useForm as useOriginalForm } from "@/contexts/FormContext";
 import { 
   getPreviousQuestion as getPreviousQuestionUtil, 
   getQuestionTextWithResponses,
   getChainOfInlineQuestions
 } from "@/utils/formUtils";
-import { useCallback } from "react";
-import { Question } from "@/types/form";
 
 /**
  * Extended hook for the form context with additional functionality
@@ -15,19 +14,21 @@ export const useFormExtended = () => {
   
   /**
    * Gets the text of the previous question with responses filled in
+   * @param blockId Current block ID
+   * @param questionId Current question ID
    * @returns The previous question's text with responses or empty string
    */
-  const getPreviousQuestionText = useCallback(() => {
+  const getPreviousQuestionText = (blockId: string, questionId: string): string => {
     const previousQuestion = getPreviousQuestionUtil(
       formContext.blocks,
-      formContext.state.activeQuestion.block_id,
-      formContext.state.activeQuestion.question_id
+      blockId,
+      questionId
     );
     
     if (!previousQuestion) return "";
     
     return getQuestionTextWithResponses(previousQuestion, formContext.state.responses);
-  }, [formContext.state.activeQuestion.block_id, formContext.state.activeQuestion.question_id, formContext.blocks, formContext.state.responses]);
+  };
   
   /**
    * Gets the previous question object
@@ -35,9 +36,9 @@ export const useFormExtended = () => {
    * @param questionId Current question ID
    * @returns The previous question object or undefined
    */
-  const getPreviousQuestion = useCallback(() => {
-    return getPreviousQuestionUtil(formContext.blocks, formContext.state.activeQuestion.block_id, formContext.state.activeQuestion.question_id);
-  }, [formContext.state.activeQuestion.block_id, formContext.state.activeQuestion.question_id, formContext.blocks]);
+  const getPreviousQuestion = (blockId: string, questionId: string) => {
+    return getPreviousQuestionUtil(formContext.blocks, blockId, questionId);
+  };
 
   /**
    * Gets all previous inline questions in a chain, starting from the current question
@@ -45,31 +46,18 @@ export const useFormExtended = () => {
    * @param questionId Current question ID
    * @returns Array of previous questions in the chain, ordered from first to last
    */
-  const getInlineQuestionChain = useCallback((blockId: string, questionId: string) => {
+  const getInlineQuestionChain = (blockId: string, questionId: string) => {
     return getChainOfInlineQuestions(
       formContext.blocks,
       blockId,
       questionId
     );
-  }, [formContext.blocks]);
-  
-  // Nuova funzione per ottenere una domanda specifica dal suo ID
-  const getQuestionFromId = useCallback((questionId: string): Question | null => {
-    for (const block of formContext.blocks) {
-      for (const question of block.questions) {
-        if (question.question_id === questionId) {
-          return question;
-        }
-      }
-    }
-    return null;
-  }, [formContext.blocks]);
+  };
   
   return {
     ...formContext,
     getPreviousQuestionText,
     getPreviousQuestion,
-    getInlineQuestionChain,
-    getQuestionFromId
+    getInlineQuestionChain
   };
 };

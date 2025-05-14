@@ -26,7 +26,6 @@ export type Question = {
   question_number: string;
   question_text: string;
   inline?: boolean;
-  block_id?: string; // Aggiunto block_id alla definizione di Question
   placeholders: Record<string, Placeholder>;
 };
 

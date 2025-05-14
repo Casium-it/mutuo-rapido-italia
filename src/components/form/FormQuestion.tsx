@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { Question } from "@/types/form";
 import { Input } from "@/components/ui/input";
@@ -20,20 +20,17 @@ export function FormQuestion({ question }: FormQuestionProps) {
     setResponse, 
     navigateToNextQuestion, 
     getPreviousQuestionText,
-    getPreviousQuestion,
+    getPreviousQuestion, 
     getInlineQuestionChain,
     state, 
     addActiveBlock, 
-    goToQuestion,
-    getQuestionFromId,
+    goToQuestion 
   } = useFormExtended();
   
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});
   const [isNavigating, setIsNavigating] = useState(false);
   // Stato per tenere traccia di quali placeholder hanno opzioni visibili
   const [visibleOptions, setVisibleOptions] = useState<{ [key: string]: boolean }>({});
-  // Referenze per gli elementi di input che potrebbero necessitare di focus
-  const inputRefs = useRef<{[key: string]: HTMLInputElement | null}>({});
   const params = useParams();
 
   // Effetto per caricare le risposte esistenti e impostare visibilità iniziale delle opzioni
@@ -90,50 +87,10 @@ export function FormQuestion({ question }: FormQuestionProps) {
     }));
   };
 
-  // Funzione modificata per gestire il click su una risposta precedente
-  const handleQuestionClick = (questionId: string, placeholderKey?: string) => {
-    if (!questionId) return;
-    
-    // Recupera la domanda corrispondente all'ID
-    const prevQuestion = getQuestionFromId(questionId);
-    
-    if (prevQuestion && placeholderKey) {
-      // Get the block_id from state or from the question object
-      const blockId = prevQuestion.block_id || state.activeQuestion.block_id;
-      
-      // Determina il tipo di placeholder su cui è stato fatto clic
-      const placeholderType = prevQuestion.placeholders[placeholderKey]?.type;
-      
-      // Se è un placeholder di tipo select, naviga alla domanda e mostra le opzioni
-      if (placeholderType === "select") {
-        goToQuestion(blockId, questionId);
-        
-        // Aggiungiamo un piccolo timeout per assicurarci che il componente sia montato
-        setTimeout(() => {
-          setVisibleOptions(prev => ({
-            ...prev,
-            [placeholderKey]: true
-          }));
-        }, 100);
-      } 
-      // Se è un placeholder di tipo input, naviga alla domanda e metti il focus sull'input
-      else if (placeholderType === "input") {
-        goToQuestion(blockId, questionId);
-        
-        // Aggiungiamo un piccolo timeout per assicurarci che il componente sia montato
-        setTimeout(() => {
-          if (inputRefs.current[placeholderKey]) {
-            inputRefs.current[placeholderKey]?.focus();
-          }
-        }, 100);
-      }
-      // Per altri tipi di placeholder o se non trovato, naviga semplicemente alla domanda
-      else {
-        goToQuestion(blockId, questionId);
-      }
-    } else {
-      // Se non abbiamo informazioni sul placeholder o la domanda non è trovata,
-      // naviga semplicemente alla domanda
+  // Funzione modificata per navigare alla domanda specifica quando si fa click su una risposta
+  const handleQuestionClick = (questionId: string) => {
+    // Naviga direttamente alla domanda con l'ID specificato
+    if (questionId) {
       goToQuestion(state.activeQuestion.block_id, questionId);
     }
   };
@@ -181,9 +138,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
     }
     
     // Altrimenti, recupera la catena di domande inline
-    const blockId = question.block_id || state.activeQuestion.block_id;
     const questionChain = getInlineQuestionChain(
-      blockId, 
+      state.activeQuestion.block_id, 
       state.activeQuestion.question_id
     );
     
@@ -243,7 +199,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
   // Funzione per renderizzare una singola domanda con le sue risposte cliccabili
   const renderQuestionWithResponses = (q: Question) => {
     // Otteniamo le parti del testo con risposte cliccabili
-    const { parts, placeholderKeys } = getQuestionTextWithClickableResponses(q, state.responses);
+    const { parts } = getQuestionTextWithClickableResponses(q, state.responses);
     
     return (
       <span className="inline">
@@ -256,7 +212,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
               <span 
                 key={`part-${q.question_id}-${index}`}
                 className="bg-[#F8F4EF] text-[#245C4F] font-semibold px-[10px] py-[4px] rounded-[6px] text-[16px] cursor-pointer mx-1"
-                onClick={() => handleQuestionClick(q.question_id, part.placeholderKey)}
+                onClick={() => handleQuestionClick(q.question_id)}
               >
                 {part.content}
               </span>
@@ -314,7 +270,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
                 value={value}
                 onChange={(e) => handleResponseChange(placeholderKey, e.target.value)}
                 placeholder={(placeholder as any).placeholder_label || ""}
-                ref={el => inputRefs.current[placeholderKey] = el}
                 className={cn(
                   "inline-block align-middle text-center",
                   "border-[1.5px] border-[#245C4F] rounded-[8px]",
