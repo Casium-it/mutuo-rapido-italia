@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
-import { Question } from "@/types/form";
+import { Question, ValidationTypes } from "@/types/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
@@ -9,6 +10,8 @@ import { cn } from "@/lib/utils";
 import { SelectPlaceholderBox } from "./SelectPlaceholderBox";
 import { Separator } from "@/components/ui/separator";
 import { getQuestionTextWithClickableResponses } from "@/utils/formUtils";
+import { validateInput } from "@/utils/validationUtils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface FormQuestionProps {
   question: Question;
@@ -31,18 +34,30 @@ export function FormQuestion({ question }: FormQuestionProps) {
   const [isNavigating, setIsNavigating] = useState(false);
   // Stato per tenere traccia di quali placeholder hanno opzioni visibili
   const [visibleOptions, setVisibleOptions] = useState<{ [key: string]: boolean }>({});
+  // Nuovo stato per tenere traccia degli errori di validazione
+  const [validationErrors, setValidationErrors] = useState<{ [key: string]: boolean }>({});
   const params = useParams();
 
   // Effetto per caricare le risposte esistenti e impostare visibilità iniziale delle opzioni
   useEffect(() => {
     const existingResponses: { [key: string]: string | string[] } = {};
     const initialVisibleOptions: { [key: string]: boolean } = {};
+    const initialValidationErrors: { [key: string]: boolean } = {};
     
     Object.keys(question.placeholders).forEach(key => {
       const existingResponse = getResponse(question.question_id, key);
       if (existingResponse) {
         existingResponses[key] = existingResponse;
         initialVisibleOptions[key] = false;
+        
+        // Verifica che le risposte esistenti siano ancora valide
+        if (question.placeholders[key].type === "input") {
+          const placeholder = question.placeholders[key];
+          const validationType = (placeholder as any).input_validation as ValidationTypes | undefined;
+          if (validationType && !validateInput(existingResponse as string, validationType)) {
+            initialValidationErrors[key] = true;
+          }
+        }
       } else {
         initialVisibleOptions[key] = true;
       }
@@ -50,11 +65,40 @@ export function FormQuestion({ question }: FormQuestionProps) {
     
     setResponses(existingResponses);
     setVisibleOptions(initialVisibleOptions);
+    setValidationErrors(initialValidationErrors);
     setIsNavigating(false);
-  }, [question.question_id, getResponse]);
+  }, [question.question_id, getResponse, question.placeholders]);
 
-  // Funzione per gestire il cambio di risposta
+  // Funzione per gestire il cambio di risposta con validazione
   const handleResponseChange = (key: string, value: string | string[]) => {
+    // Se è un input, verifichiamo la validazione
+    if (question.placeholders[key].type === "input" && typeof value === "string") {
+      const placeholder = question.placeholders[key];
+      const validationType = (placeholder as any).input_validation as ValidationTypes | undefined;
+      
+      // Se c'è un tipo di validazione, verifichiamo la validità
+      if (validationType) {
+        const isValid = validateInput(value, validationType);
+        
+        // Aggiorniamo lo stato di errore
+        setValidationErrors(prev => ({
+          ...prev,
+          [key]: !isValid
+        }));
+        
+        // Se non è valido, impostiamo comunque la risposta locale per mostrare
+        // il valore nell'input, ma non la salviamo nel contesto del form
+        if (!isValid) {
+          setResponses({
+            ...responses,
+            [key]: value
+          });
+          return; // Usciamo dalla funzione senza salvare nel contesto
+        }
+      }
+    }
+    
+    // Se arriva qui, la risposta è valida o non richiede validazione
     setResponses({
       ...responses,
       [key]: value
@@ -66,6 +110,15 @@ export function FormQuestion({ question }: FormQuestionProps) {
       ...prev,
       [key]: false
     }));
+    
+    // Rimuoviamo l'errore se esiste
+    if (validationErrors[key]) {
+      setValidationErrors(prev => {
+        const newErrors = {...prev};
+        delete newErrors[key];
+        return newErrors;
+      });
+    }
     
     // Gestione dell'attivazione di blocchi aggiuntivi
     if (question.placeholders[key].type === "select" && !Array.isArray(value)) {
@@ -259,6 +312,26 @@ export function FormQuestion({ question }: FormQuestionProps) {
     );
   };
   
+  // Funzione per ottenere un messaggio di errore basato sul tipo di validazione
+  const getValidationErrorMessage = (validationType?: ValidationTypes): string => {
+    switch (validationType) {
+      case 'euro':
+        return 'Inserire un numero intero positivo';
+      case 'month':
+        return 'Inserire un mese valido in italiano (es. gennaio)';
+      case 'year':
+        return 'Inserire un anno tra 1900 e 2150';
+      case 'age':
+        return 'Inserire un\'età tra 16 e 100 anni';
+      case 'city':
+        return 'Inserire un nome di città valido';
+      case 'cap':
+        return 'Inserire un CAP valido (5 cifre)';
+      default:
+        return 'Valore non valido';
+    }
+  };
+  
   // Funzione per renderizzare i placeholder nella domanda
   const renderQuestionPlaceholders = (text: string) => {
     const parts = [];
@@ -291,36 +364,49 @@ export function FormQuestion({ question }: FormQuestionProps) {
             </span>
           );
         } else if (question.placeholders[placeholderKey].type === "input") {
-          // Renderizza campo input inline
-          const placeholder = question.placeholders[placeholderKey];
+          // Renderizza campo input inline con validazione
+          const placeholder = question.placeholders[placeholderKey] as any;
           const existingResponse = getResponse(question.question_id, placeholderKey);
           const value = (responses[placeholderKey] as string) || (existingResponse as string) || "";
+          const hasError = validationErrors[placeholderKey];
+          const validationType = placeholder.input_validation;
           
           parts.push(
-            <span 
-              key={`placeholder-${placeholderKey}`}
-              className="inline-block align-middle mx-1"
-            >
-              <Input
-                type={(placeholder as any).input_type || "text"}
-                value={value}
-                onChange={(e) => handleResponseChange(placeholderKey, e.target.value)}
-                placeholder={(placeholder as any).placeholder_label || ""}
-                className={cn(
-                  "inline-block align-middle text-center",
-                  "border-[1.5px] border-[#245C4F] rounded-[8px]",
-                  "text-[16px] text-[#222222] font-['Inter']",
-                  "h-[48px] px-[12px] py-[10px]",
-                  "outline-none focus:ring-0 focus:border-[#245C4F]",
-                  "placeholder:text-[#E7E1D9] placeholder:font-normal",
-                  {
-                    "w-[70px]": (placeholder as any).input_type === "number",
-                    "w-[120px]": (placeholder as any).input_type === "text" && (placeholder as any).placeholder_label?.toLowerCase().includes("cap"),
-                    "w-[200px]": (placeholder as any).input_type === "text" && !(placeholder as any).placeholder_label?.toLowerCase().includes("cap"),
-                  }
-                )}
-              />
-            </span>
+            <TooltipProvider key={`tooltip-${placeholderKey}`}>
+              <Tooltip open={hasError ? undefined : false}>
+                <TooltipTrigger asChild>
+                  <span 
+                    key={`placeholder-${placeholderKey}`}
+                    className="inline-block align-middle mx-1"
+                  >
+                    <Input
+                      type={placeholder.input_type || "text"}
+                      value={value}
+                      onChange={(e) => handleResponseChange(placeholderKey, e.target.value)}
+                      placeholder={placeholder.placeholder_label || ""}
+                      className={cn(
+                        "inline-block align-middle text-center",
+                        "border-[1.5px] rounded-[8px]",
+                        "text-[16px] text-[#222222] font-['Inter']",
+                        "h-[48px] px-[12px] py-[10px]",
+                        "outline-none focus:ring-0",
+                        "placeholder:text-[#E7E1D9] placeholder:font-normal",
+                        {
+                          "border-[#245C4F] focus:border-[#245C4F]": !hasError,
+                          "border-red-500 focus:border-red-500": hasError,
+                          "w-[70px]": placeholder.input_type === "number",
+                          "w-[120px]": placeholder.input_type === "text" && placeholder.placeholder_label?.toLowerCase().includes("cap"),
+                          "w-[200px]": placeholder.input_type === "text" && !placeholder.placeholder_label?.toLowerCase().includes("cap"),
+                        }
+                      )}
+                    />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="bg-red-50 text-red-600 border border-red-200">
+                  {getValidationErrorMessage(validationType)}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           );
         } else {
           parts.push(<span key={`placeholder-${placeholderKey}`} className="mx-1 px-2 py-0.5 bg-gray-100 rounded-md text-[16px]">_____</span>);
@@ -375,8 +461,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
     return null;
   };
 
-  // Funzione migliorata per determinare se tutte le input hanno contenuto
-  const allInputsHaveContent = () => {
+  // Funzione migliorata per determinare se tutte le input hanno contenuto valido
+  const allInputsHaveValidContent = () => {
     const inputPlaceholders = Object.keys(question.placeholders).filter(
       key => question.placeholders[key].type === "input"
     );
@@ -386,17 +472,37 @@ export function FormQuestion({ question }: FormQuestionProps) {
       return true;
     }
     
-    // Verifica se tutti gli input hanno un valore
+    // Verifica se tutti gli input hanno un valore e sono validi
     return inputPlaceholders.every(key => {
       const value = responses[key] || getResponse(question.question_id, key);
-      return value !== undefined && value !== "";
+      
+      // Verifica se il valore esiste
+      if (value === undefined || value === "") {
+        return false;
+      }
+      
+      // Verifica se c'è un errore di validazione
+      if (validationErrors[key]) {
+        return false;
+      }
+      
+      // Verifica validazione per i valori esistenti nel contesto
+      const placeholder = question.placeholders[key];
+      if (placeholder.type === "input") {
+        const validationType = (placeholder as any).input_validation;
+        if (validationType && !validateInput(value as string, validationType)) {
+          return false;
+        }
+      }
+      
+      return true;
     });
   };
   
-  // Determina se ci sono risposte valide (modifica per input)
+  // Determina se ci sono risposte valide
   const hasValidResponses = Object.keys(question.placeholders).some(key => 
     responses[key] !== undefined || getResponse(question.question_id, key) !== undefined
-  ) && allInputsHaveContent();
+  ) && allInputsHaveValidContent();
 
   return (
     <div className="max-w-xl animate-fade-in">
@@ -413,7 +519,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
         {Object.keys(question.placeholders).map(key => renderVisibleSelectOptions(key, question.placeholders[key]))}
       </div>
       
-      {/* Pulsante Avanti - mostrato solo se ci sono risposte valide e tutti gli input hanno contenuto */}
+      {/* Pulsante Avanti - mostrato solo se ci sono risposte valide e tutti gli input hanno contenuto valido */}
       {hasValidResponses && (
         <div className="mt-8">
           <Button

@@ -12,11 +12,14 @@ export type SelectPlaceholder = {
   multiple?: boolean;
 };
 
+export type ValidationTypes = "euro" | "month" | "year" | "age" | "city" | "cap";
+
 export type InputPlaceholder = {
   type: "input";
   input_type: "text" | "number" | "date";
   placeholder_label: string;
   leads_to?: string;
+  input_validation?: ValidationTypes;
 };
 
 export type Placeholder = SelectPlaceholder | InputPlaceholder;
@@ -25,9 +28,9 @@ export type Question = {
   question_id: string;
   question_number: string;
   question_text: string;
-  block_id?: string; // Aggiunto il campo block_id per risolvere l'errore
+  block_id?: string;
   inline?: boolean;
-  leads_to_placeholder_priority: string; // Nuovo campo obbligatorio per definire quale placeholder ha priorità per la navigazione
+  leads_to_placeholder_priority: string;
   placeholders: Record<string, Placeholder>;
 };
 
@@ -35,7 +38,7 @@ export type Block = {
   block_number: string;
   block_id: string;
   title: string;
-  priority: number; // Nuovo campo per definire la priorità del blocco
+  priority: number;
   default_active?: boolean;
   questions: Question[];
 };
