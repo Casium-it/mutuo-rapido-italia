@@ -6,7 +6,7 @@ export const block25: Block = {
   block_number: "25",
   block_id: "reddito_suo_principale",
   title: "Reddito principale del cointestatario",
-  priority: 250, // Priorità aggiunta
+  priority: 75, // Priorità aggiunta
   default_active: false,
   questions: [
     {

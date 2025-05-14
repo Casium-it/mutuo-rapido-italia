@@ -6,7 +6,7 @@ export const block22: Block = {
   block_number: "22",
   block_id: "cointestatario",
   title: "Il tuo cointestatario",
-  priority: 220, // Priorità aggiunta
+  priority: 72, // Priorità aggiunta
   default_active: false,
   questions: [
     {

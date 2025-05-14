@@ -6,7 +6,7 @@ export const block23: Block = {
   block_number: "23",
   block_id: "la_sua_professione",
   title: "La sua professione",
-  priority: 230, // Priorità aggiunta
+  priority: 73, // Priorità aggiunta
   default_active: false,
   questions: [
     {

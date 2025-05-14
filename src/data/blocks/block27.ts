@@ -6,7 +6,7 @@ export const block27: Block = {
   block_number: "27",
   block_id: "finanziamenti_suo",
   title: "I suoi finanziamenti",
-  priority: 270, // Priorità aggiunta
+  priority: 77, // Priorità aggiunta
   default_active: false,
   questions: [
     {

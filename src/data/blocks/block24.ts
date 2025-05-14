@@ -6,7 +6,7 @@ export const block24: Block = {
   block_number: "24",
   block_id: "reddito_suo_autonomo",
   title: "Reddito lavoro autonomo del cointestatario",
-  priority: 240, // Priorità aggiunta
+  priority: 74, // Priorità aggiunta
   default_active: false,
   questions: [
     {
