@@ -25,6 +25,9 @@ export const getPreviousQuestion = (
 /**
  * Gets a chain of all connected inline questions, starting from the first non-inline question
  * and including the specified question (unless includeCurrent is false)
+ * 
+ * Note: This function should ideally be used as a fallback when navigation history isn't available
+ * 
  * @param blocks All form blocks
  * @param blockId Current block ID
  * @param questionId Current question ID

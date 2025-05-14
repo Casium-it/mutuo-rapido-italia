@@ -5,6 +5,7 @@ import {
   getQuestionTextWithResponses,
   getChainOfInlineQuestions
 } from "@/utils/formUtils";
+import { Question } from "@/types/form";
 
 /**
  * Extended hook for the form context with additional functionality
@@ -46,7 +47,30 @@ export const useFormExtended = () => {
    * @param questionId Current question ID
    * @returns Array of previous questions in the chain, ordered from first to last
    */
-  const getInlineQuestionChain = (blockId: string, questionId: string) => {
+  const getInlineQuestionChain = (blockId: string, questionId: string): Question[] => {
+    // Se la domanda è inline, troviamo da dove viene l'utente attraverso la cronologia
+    const question = formContext.blocks
+      .find(b => b.block_id === blockId)
+      ?.questions.find(q => q.question_id === questionId);
+    
+    if (question?.inline) {
+      // Cerca nella cronologia di navigazione da dove l'utente è arrivato a questa domanda
+      const navigationHistory = formContext.getNavigationHistoryFor(questionId);
+      
+      if (navigationHistory) {
+        // Trova la domanda da cui l'utente è arrivato
+        const sourceQuestion = formContext.blocks
+          .find(b => b.block_id === navigationHistory.from_block_id)
+          ?.questions.find(q => q.question_id === navigationHistory.from_question_id);
+        
+        if (sourceQuestion) {
+          // Restituisci la catena formata dalla domanda di origine
+          return [sourceQuestion];
+        }
+      }
+    }
+    
+    // Fallback al comportamento precedente se non troviamo una cronologia
     return getChainOfInlineQuestions(
       formContext.blocks,
       blockId,

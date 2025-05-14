@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback } from "react";
-import { Block, FormState, FormResponse } from "@/types/form";
+import { Block, FormState, FormResponse, NavigationHistory } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 
 type FormContextType = {
@@ -13,6 +13,7 @@ type FormContextType = {
   navigateToNextQuestion: (currentQuestionId: string, leadsTo: string) => void;
   getProgress: () => number;
   resetForm: () => void;
+  getNavigationHistoryFor: (questionId: string) => NavigationHistory | undefined;
 };
 
 type Action =
@@ -22,7 +23,8 @@ type Action =
   | { type: "MARK_QUESTION_ANSWERED"; question_id: string }
   | { type: "SET_FORM_STATE"; state: Partial<FormState> }
   | { type: "RESET_FORM" }
-  | { type: "SET_NAVIGATING"; isNavigating: boolean };
+  | { type: "SET_NAVIGATING"; isNavigating: boolean }
+  | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory };
 
 const initialState: FormState = {
   activeBlocks: [],
@@ -32,7 +34,8 @@ const initialState: FormState = {
   },
   responses: {},
   answeredQuestions: new Set(),
-  isNavigating: false
+  isNavigating: false,
+  navigationHistory: []
 };
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
@@ -85,13 +88,26 @@ function formReducer(state: FormState, action: Action): FormState {
       return {
         ...initialState,
         activeBlocks: state.activeBlocks.filter(blockId => 
-          initialState.activeBlocks.includes(blockId))
+          initialState.activeBlocks.includes(blockId)),
+        navigationHistory: [] // Reset anche la cronologia di navigazione
       };
     }
     case "SET_NAVIGATING": {
       return {
         ...state,
         isNavigating: action.isNavigating
+      };
+    }
+    case "ADD_NAVIGATION_HISTORY": {
+      // Filtriamo la cronologia per rimuovere eventuali duplicati
+      const filteredHistory = state.navigationHistory.filter(item => 
+        !(item.from_question_id === action.history.from_question_id && 
+          item.to_question_id === action.history.to_question_id)
+      );
+      
+      return {
+        ...state,
+        navigationHistory: [...filteredHistory, action.history]
       };
     }
     default:
@@ -265,7 +281,22 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   };
 
   const goToQuestion = useCallback((block_id: string, question_id: string, replace = false) => {
+    const previousBlockId = state.activeQuestion.block_id;
+    const previousQuestionId = state.activeQuestion.question_id;
+
     dispatch({ type: "GO_TO_QUESTION", block_id, question_id });
+    
+    // Aggiungi la navigazione alla cronologia
+    dispatch({ 
+      type: "ADD_NAVIGATION_HISTORY", 
+      history: {
+        from_block_id: previousBlockId,
+        from_question_id: previousQuestionId,
+        to_block_id: block_id,
+        to_question_id: question_id,
+        timestamp: Date.now()
+      }
+    });
     
     // Set navigating state when navigating
     dispatch({ type: "SET_NAVIGATING", isNavigating: true });
@@ -284,7 +315,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     setTimeout(() => {
       dispatch({ type: "SET_NAVIGATING", isNavigating: false });
     }, 300);
-  }, [params.blockType, navigate]);
+  }, [params.blockType, navigate, state.activeQuestion]);
 
   const setResponse = useCallback((question_id: string, placeholder_key: string, value: string | string[]) => {
     dispatch({ type: "SET_RESPONSE", question_id, placeholder_key, value });
@@ -316,6 +347,9 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   }, [sortedBlocks]);
 
   const navigateToNextQuestion = useCallback((currentQuestionId: string, leadsTo: string) => {
+    // Salva la domanda corrente prima di navigare
+    const currentBlockId = state.activeQuestion.block_id;
+    
     // Set navigating state when navigating
     dispatch({ type: "SET_NAVIGATING", isNavigating: true });
     
@@ -388,6 +422,19 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       const found = findQuestionById(leadsTo);
       if (found) {
         console.log(`Navigating to specific question: ${found.question.question_id} in block ${found.block.block_id}`);
+        
+        // Aggiungi la navigazione alla cronologia
+        dispatch({ 
+          type: "ADD_NAVIGATION_HISTORY", 
+          history: {
+            from_block_id: currentBlockId,
+            from_question_id: currentQuestionId,
+            to_block_id: found.block.block_id,
+            to_question_id: found.question.question_id,
+            timestamp: Date.now()
+          }
+        });
+        
         goToQuestion(found.block.block_id, found.question.question_id);
       } else {
         console.log(`Question ID ${leadsTo} not found`);
@@ -398,7 +445,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     setTimeout(() => {
       dispatch({ type: "SET_NAVIGATING", isNavigating: false });
     }, 300);
-  }, [sortedBlocks, state.activeBlocks, goToQuestion, findQuestionById]);
+  }, [sortedBlocks, state.activeBlocks, goToQuestion, findQuestionById, state.activeQuestion.block_id]);
 
   // Calcola il progresso complessivo del form
   const getProgress = useCallback(() => {
@@ -424,6 +471,15 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
   }, [state.activeBlocks, state.answeredQuestions, blocks]);
 
+  // Nuova funzione per ottenere la cronologia di navigazione per una domanda specifica
+  const getNavigationHistoryFor = useCallback((questionId: string): NavigationHistory | undefined => {
+    // Ordina la cronologia dal più recente al meno recente
+    const sortedHistory = [...state.navigationHistory].sort((a, b) => b.timestamp - a.timestamp);
+    
+    // Trova la voce più recente che ha navigato a questa domanda
+    return sortedHistory.find(item => item.to_question_id === questionId);
+  }, [state.navigationHistory]);
+
   return (
     <FormContext.Provider
       value={{
@@ -436,7 +492,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         isQuestionAnswered,
         navigateToNextQuestion,
         getProgress,
-        resetForm
+        resetForm,
+        getNavigationHistoryFor
       }}
     >
       {children}

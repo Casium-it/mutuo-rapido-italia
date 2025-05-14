@@ -49,6 +49,14 @@ export type FormResponse = {
   };
 };
 
+export type NavigationHistory = {
+  from_block_id: string;
+  from_question_id: string;
+  to_block_id: string;
+  to_question_id: string;
+  timestamp: number;
+};
+
 export type FormState = {
   activeBlocks: string[];
   activeQuestion: {
@@ -58,4 +66,5 @@ export type FormState = {
   responses: FormResponse;
   answeredQuestions: Set<string>;
   isNavigating?: boolean;
+  navigationHistory: NavigationHistory[]; // Aggiungiamo la cronologia di navigazione
 };
