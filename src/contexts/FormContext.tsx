@@ -285,22 +285,49 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     // Itera su tutte le domande per trovare opzioni che richiedono l'attivazione di blocchi
     for (const questionId of Object.keys(responses)) {
       for (const blockObj of blocks) {
-        const question = blockObj.questions.find(q => q.question_id === questionId);
-        if (!question) continue;
+        // Verifica se il blocco è di tipo StandardBlock prima di accedere a .questions
+        if (isStandardBlock(blockObj)) {
+          const question = blockObj.questions.find(q => q.question_id === questionId);
+          if (!question) continue;
 
-        for (const [placeholderKey, value] of Object.entries(responses[questionId])) {
-          if (question.placeholders[placeholderKey].type === "select") {
-            const options = (question.placeholders[placeholderKey] as any).options;
-            if (!Array.isArray(value)) { // Per selezione singola
-              const selectedOption = options.find((opt: any) => opt.id === value);
-              if (selectedOption?.add_block && !state.activeBlocks.includes(selectedOption.add_block)) {
-                dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: selectedOption.add_block });
-              }
-            } else { // Per selezione multipla
-              for (const optionId of value) {
-                const selectedOption = options.find((opt: any) => opt.id === optionId);
+          for (const [placeholderKey, value] of Object.entries(responses[questionId])) {
+            if (question.placeholders[placeholderKey].type === "select") {
+              const options = (question.placeholders[placeholderKey] as any).options;
+              if (!Array.isArray(value)) { // Per selezione singola
+                const selectedOption = options.find((opt: any) => opt.id === value);
                 if (selectedOption?.add_block && !state.activeBlocks.includes(selectedOption.add_block)) {
                   dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: selectedOption.add_block });
+                }
+              } else { // Per selezione multipla
+                for (const optionId of value) {
+                  const selectedOption = options.find((opt: any) => opt.id === optionId);
+                  if (selectedOption?.add_block && !state.activeBlocks.includes(selectedOption.add_block)) {
+                    dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: selectedOption.add_block });
+                  }
+                }
+              }
+            }
+          }
+        }
+        // Per i RepeatingGroupBlock, potremmo avere questionId nelle domande del subflow
+        else if (isRepeatingGroupBlock(blockObj)) {
+          const question = blockObj.subflow.find(q => q.question_id === questionId);
+          if (!question) continue;
+
+          for (const [placeholderKey, value] of Object.entries(responses[questionId])) {
+            if (question.placeholders[placeholderKey].type === "select") {
+              const options = (question.placeholders[placeholderKey] as any).options;
+              if (!Array.isArray(value)) { // Per selezione singola
+                const selectedOption = options.find((opt: any) => opt.id === value);
+                if (selectedOption?.add_block && !state.activeBlocks.includes(selectedOption.add_block)) {
+                  dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: selectedOption.add_block });
+                }
+              } else { // Per selezione multipla
+                for (const optionId of value) {
+                  const selectedOption = options.find((opt: any) => opt.id === optionId);
+                  if (selectedOption?.add_block && !state.activeBlocks.includes(selectedOption.add_block)) {
+                    dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: selectedOption.add_block });
+                  }
                 }
               }
             }
@@ -311,6 +338,11 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   };
 
   const goToQuestion = useCallback((block_id: string, question_id: string, replace = false) => {
+    // Previeni navigazione simultanea
+    if (state.isNavigating) {
+      return; // Non permettere una nuova navigazione mentre è in corso una navigazione
+    }
+
     const previousBlockId = state.activeQuestion.block_id;
     const previousQuestionId = state.activeQuestion.question_id;
 
@@ -344,8 +376,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     // Reset navigating state after a short delay
     setTimeout(() => {
       dispatch({ type: "SET_NAVIGATING", isNavigating: false });
-    }, 300);
-  }, [params.blockType, navigate, state.activeQuestion]);
+    }, 500); // Aumentato a 500ms per assicurare che ci sia abbastanza tempo per la navigazione
+  }, [params.blockType, navigate, state.activeQuestion, state.isNavigating]);
 
   const setResponse = useCallback((question_id: string, placeholder_key: string, value: string | string[]) => {
     dispatch({ type: "SET_RESPONSE", question_id, placeholder_key, value });
@@ -387,6 +419,11 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   }, [sortedBlocks]);
 
   const navigateToNextQuestion = useCallback((currentQuestionId: string, leadsTo: string) => {
+    // Previeni navigazione simultanea
+    if (state.isNavigating) {
+      return; // Non permettere una nuova navigazione mentre è in corso una navigazione
+    }
+    
     // Salva la domanda corrente prima di navigare
     const currentBlockId = state.activeQuestion.block_id;
     
@@ -499,16 +536,17 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         });
         
         goToQuestion(found.block.block_id, found.question.question_id);
+        return; // Importante: qui usciamo perché goToQuestion già gestisce il timeout
       } else {
         console.log(`Question ID ${leadsTo} not found`);
       }
     }
     
-    // Reset navigating state in case navigation fails
+    // Reset navigating state if navigation failed or for next_block case
     setTimeout(() => {
       dispatch({ type: "SET_NAVIGATING", isNavigating: false });
-    }, 300);
-  }, [sortedBlocks, state.activeBlocks, goToQuestion, findQuestionById, state.activeQuestion.block_id]);
+    }, 500); // Aumentato a 500ms per assicurare che ci sia abbastanza tempo per la navigazione
+  }, [sortedBlocks, state.activeBlocks, goToQuestion, findQuestionById, state.activeQuestion.block_id, state.isNavigating]);
 
   // Calcola il progresso complessivo del form
   const getProgress = useCallback(() => {

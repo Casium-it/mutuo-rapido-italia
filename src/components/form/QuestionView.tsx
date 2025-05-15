@@ -53,8 +53,7 @@ export function QuestionView() {
   }
 
   // A questo punto sappiamo che è un StandardBlock
-  const standardBlock = activeBlock;
-  const activeQuestion = standardBlock.questions.find(
+  const activeQuestion = activeBlock.questions.find(
     question => question.question_id === state.activeQuestion.question_id
   );
 
