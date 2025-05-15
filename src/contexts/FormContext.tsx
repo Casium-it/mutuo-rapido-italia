@@ -692,6 +692,13 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       for (let i = 0; i < sortedBlocks.length; i++) {
         const block = sortedBlocks[i];
         
+        // Caso speciale per i repeating_group quando siamo sulla vista manager
+        if (isRepeatingGroupBlock(block) && block.block_id === currentBlock.block_id) {
+          currentBlockIndex = i;
+          currentBlock = block;
+          break;
+        }
+        
         // Verifica se la domanda appartiene a questo blocco (standard o repeating_group)
         let hasQuestion = false;
         if (isStandardBlock(block)) {
@@ -701,14 +708,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         }
         
         if (hasQuestion) {
-          currentBlockIndex = i;
-          currentBlock = block;
-          break;
-        }
-        
-        // Caso speciale per i repeating_group quando siamo sulla vista manager
-        if (isRepeatingGroupBlock(block) && state.activeQuestion.block_id === block.block_id && 
-            state.activeQuestion.question_id === "manager_view") {
           currentBlockIndex = i;
           currentBlock = block;
           break;
@@ -769,8 +768,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
           // Se arriviamo qui, siamo all'ultima domanda dell'ultimo blocco attivo
           console.log("Reached end of active blocks");
         }
-      } else {
-        console.log(`Could not find the current block for question ${currentQuestionId}`);
       }
     } else {
       // Naviga a una domanda specifica

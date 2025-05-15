@@ -22,16 +22,17 @@ export function QuestionView() {
   
   // Sincronizza il componente con l'URL quando cambia
   useEffect(() => {
-    if (!isInitialized && params.blockId && params.questionId) {
+    if (params.blockId && params.questionId) {
       // Se l'URL contiene blockId e questionId, ma sono diversi dallo stato attuale,
       // aggiorna lo stato interno per allinearlo all'URL
       if (state.activeQuestion.block_id !== params.blockId || 
           state.activeQuestion.question_id !== params.questionId) {
         goToQuestion(params.blockId, params.questionId, true);
       }
-      setIsInitialized(true);
     }
-  }, [params.blockId, params.questionId, state.activeQuestion, goToQuestion, isInitialized]);
+    
+    setIsInitialized(true);
+  }, [location.pathname, params.blockId, params.questionId, state.activeQuestion, goToQuestion]);
   
   // Attendere che il componente sia inizializzato prima di renderizzare
   if (!isInitialized) {
