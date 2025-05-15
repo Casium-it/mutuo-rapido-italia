@@ -11,7 +11,7 @@ export const block1: Block = {
   questions: [
      {
       question_id: "income_type",
-      question_number: "13.1",
+      question_number: "1.1",
       question_text: "Che tipo di reddito aggiuntivo hai?",
       leads_to_placeholder_priority: "placeholder1",
       placeholders: {
