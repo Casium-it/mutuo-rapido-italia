@@ -10,6 +10,7 @@ export type SelectPlaceholder = {
   type: "select";
   options: PlaceholderOption[];
   multiple?: boolean;
+  placeholder_label?: string; // Aggiungiamo questa proprietà
 };
 
 export type ValidationTypes = "euro" | "month" | "year" | "age" | "city" | "cap" | "free_text";

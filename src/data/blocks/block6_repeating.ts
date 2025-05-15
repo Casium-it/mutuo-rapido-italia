@@ -38,7 +38,7 @@ export const block6_repeating: RepeatingGroupBlock = {
       question_id: "amount_input",
       question_number: "13.2",
       question_text: "Percepisco {{placeholder1}} mensilmente",
-      questsion_notes: "Indica una media degli ultimi tre anni percepisci questo reddito da un po' di tempo",
+      question_notes: "Indica una media degli ultimi tre anni percepisci questo reddito da un po' di tempo",
       leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
@@ -59,7 +59,6 @@ export const block6_repeating: RepeatingGroupBlock = {
       placeholders: {
         placeholder1: {
             type: "select",
-            placeholder_label: "Mese",
             options: [
               { id: "gennaio", label: "Gennaio", leads_to: "secondary_income_stability" },
               { id: "febbraio", label: "Febbraio", leads_to: "secondary_income_stability" },
@@ -94,7 +93,6 @@ export const block6_repeating: RepeatingGroupBlock = {
       placeholders: {
         placeholder1: {
             type: "select",
-            placeholder_label: "Mese",
             options: [
               { id: "volatile", label: "volatile", leads_to: "income_to_date" },
               { id: "stabile", label: "stabile", leads_to: "income_to_date" },
@@ -112,7 +110,6 @@ export const block6_repeating: RepeatingGroupBlock = {
       placeholders: {
         placeholder1: {
             type: "select",
-            placeholder_label: "Mese",
             options: [
               { id: "sempre", label: "sempre", leads_to: "end_of_subflow" },
               { id: "non lo so", label: "non lo so", leads_to: "end_of_subflow" },
@@ -130,7 +127,6 @@ export const block6_repeating: RepeatingGroupBlock = {
       placeholders: {
         placeholder1: {
             type: "select",
-            placeholder_label: "Mese",
             options: [
               { id: "gennaio", label: "Gennaio", leads_to: "end_of_subflow" },
               { id: "febbraio", label: "Febbraio", leads_to: "end_of_subflow" },
@@ -138,7 +134,7 @@ export const block6_repeating: RepeatingGroupBlock = {
               { id: "aprile", label: "Aprile", leads_to: "end_of_subflow" },
               { id: "maggio", label: "Maggio", leads_to: "end_of_subflow" },
               { id: "giugno", label: "Giugno", leads_to: "end_of_subflow" },
-              { id: "luglio", label: "Luglio", leads_to: "income_to_date" },
+              { id: "luglio", label: "Luglio", leads_to: "end_of_subflow" },
               { id: "agosto", label: "Agosto", leads_to: "end_of_subflow" },
               { id: "settembre", label: "Settembre", leads_to: "end_of_subflow" },
               { id: "ottobre", label: "Ottobre", leads_to: "end_of_subflow" },

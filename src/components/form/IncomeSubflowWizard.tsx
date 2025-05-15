@@ -230,12 +230,12 @@ export function IncomeSubflowWizard({
                   value={formData[placeholderKey] || ''}
                   onChange={(e) => {
                     const value = placeholder.input_type === "number" 
-                      ? parseFloat(e.target.value) 
+                      ? e.target.value !== "" ? parseFloat(e.target.value) : ""
                       : e.target.value;
                     
                     handleValueChange(
                       placeholderKey, 
-                      !isNaN(value) ? value : e.target.value
+                      value
                     );
                   }}
                 />
