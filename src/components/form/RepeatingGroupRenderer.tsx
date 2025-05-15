@@ -13,7 +13,16 @@ interface RepeatingGroupRendererProps {
 }
 
 export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
-  const { repeating_id, subflow, title } = block;
+  const { 
+    repeating_id, 
+    subflow, 
+    title, 
+    subtitle = "Gestisci qui tutti i tuoi redditi aggiuntivi. Puoi aggiungere, modificare o eliminare fonti di reddito.",
+    empty_state_text = "Non hai ancora aggiunto nessuna fonte di reddito aggiuntiva.",
+    add_button_text = "Aggiungi fonte di reddito",
+    continue_button_text = "Continua"
+  } = block;
+  
   const { navigateToNextQuestion, state } = useForm();
   const { addEntry, updateEntry, refreshEntries, entries } = useRepeatingGroup(repeating_id);
   
@@ -108,7 +117,6 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
   };
   
   // Gestisce la pressione del pulsante continua
-  // MODIFICA: Ora utilizza il question_id attivo invece del block_id
   const handleContinue = () => {
     // Usa l'ID della domanda attiva corrente invece del block_id
     const currentQuestionId = state.activeQuestion.question_id;
@@ -130,6 +138,10 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
     <IncomeManagerView
       repeatingId={repeating_id}
       title={title}
+      subtitle={subtitle}
+      emptyStateText={empty_state_text}
+      addButtonText={add_button_text}
+      continueButtonText={continue_button_text}
       onAdd={handleAdd}
       onEdit={handleEdit}
       onContinue={handleContinue}

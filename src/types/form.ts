@@ -48,6 +48,11 @@ export type RepeatingGroupBlock = {
   type: "repeating_group";
   repeating_id: string;
   subflow: SubflowQuestion[];
+  // New optional fields for customizable text elements
+  subtitle?: string;
+  empty_state_text?: string;
+  add_button_text?: string;
+  continue_button_text?: string;
 };
 
 // Definizione regolare del blocco standard

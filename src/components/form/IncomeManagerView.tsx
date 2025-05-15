@@ -10,6 +10,10 @@ import { toast } from "@/components/ui/use-toast";
 interface IncomeManagerViewProps {
   repeatingId: string;
   title: string;
+  subtitle: string;
+  emptyStateText: string;
+  addButtonText: string;
+  continueButtonText: string;
   onAdd: () => void;
   onEdit: (entry: RepeatingGroupEntry, index: number) => void;
   onContinue: () => void;
@@ -18,6 +22,10 @@ interface IncomeManagerViewProps {
 export function IncomeManagerView({ 
   repeatingId, 
   title, 
+  subtitle,
+  emptyStateText,
+  addButtonText,
+  continueButtonText,
   onAdd, 
   onEdit,
   onContinue 
@@ -59,9 +67,7 @@ export function IncomeManagerView({
     <div className="space-y-6">
       <div className="flex flex-col">
         <h2 className="text-2xl font-semibold mb-2">{title}</h2>
-        <p className="text-gray-600 mb-6">
-          Gestisci qui tutti i tuoi redditi aggiuntivi. Puoi aggiungere, modificare o eliminare fonti di reddito.
-        </p>
+        <p className="text-gray-600 mb-6">{subtitle}</p>
         
         {hasEntries && (
           <div className="bg-gray-50 p-4 rounded-md mb-4 border border-gray-200">
@@ -89,15 +95,13 @@ export function IncomeManagerView({
           </div>
         ) : (
           <div className="bg-gray-50 border border-gray-200 rounded-md p-8 text-center">
-            <p className="text-gray-500 mb-4">
-              Non hai ancora aggiunto nessuna fonte di reddito aggiuntiva.
-            </p>
+            <p className="text-gray-500 mb-4">{emptyStateText}</p>
           </div>
         )}
 
         <div className="mt-6">
           <Button onClick={onAdd} className="w-full mb-4">
-            <Plus className="h-4 w-4 mr-2" /> Aggiungi fonte di reddito
+            <Plus className="h-4 w-4 mr-2" /> {addButtonText}
           </Button>
           
           <Button 
@@ -106,7 +110,7 @@ export function IncomeManagerView({
             variant={hasEntries ? "default" : "outline"}
             className="w-full"
           >
-            Continua
+            {continueButtonText}
           </Button>
         </div>
       </div>
