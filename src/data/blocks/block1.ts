@@ -18,29 +18,9 @@ export const block1: Block = {
         placeholder1: {
           type: "select",
           options: [
-            { id: "solo", label: "da solo", leads_to: "income_type" },
-            { id: "cointestatario", label: "con un cointestatario", leads_to: "income_type", add_block: "cointestatario" },
-            { id: "societa", label: "con una società", leads_to: "income_type" }
-          ]
-        }
-      }
-    },
-    {
-      question_number: "1.2",
-      question_id: "income_type",
-      question_text: "Che tipo di reddito aggiuntivo hai? {{placeholder1}} ",
-      leads_to_placeholder_priority: "placeholder1",
-      placeholders: {
-        placeholder1: {
-          type: "select",
-          options: [
-            { id: "rental", label: "Reddito da affitto", leads_to: "soggetto_acquisto" },
-            { id: "freelance", label: "Lavoro autonomo", leads_to: "soggetto_acquisto" },
-            { id: "child_support", label: "Mantenimento figli", leads_to: "soggetto_acquisto" },
-            { id: "allowance", label: "Indennità", leads_to: "soggetto_acquisto" },
-            { id: "dividends", label: "Dividendi", leads_to: "soggetto_acquisto" },
-            { id: "pension", label: "Pensione", leads_to: "soggetto_acquisto" },
-            { id: "other", label: "Altro", leads_to: "soggetto_acquisto" }
+            { id: "solo", label: "da solo", leads_to: "finalita_acquisto" },
+            { id: "cointestatario", label: "con un cointestatario", leads_to: "finalita_acquisto", add_block: "cointestatario" },
+            { id: "societa", label: "con una società", leads_to: "finalita_acquisto" }
           ]
         }
       }
