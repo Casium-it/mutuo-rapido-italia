@@ -26,11 +26,19 @@ export function QuestionView() {
     questionId?: string
   }>({});
   
+  // Add navigation lock to prevent multiple navigation attempts
+  const isNavigatingRef = useRef(false);
+  
   // Sincronizza il componente con l'URL quando cambia
   useEffect(() => {
     // Se non abbiamo parametri, non facciamo nulla
     if (!params.blockId || !params.questionId) {
       setIsInitialized(true);
+      return;
+    }
+    
+    // Skip if already navigating
+    if (isNavigatingRef.current) {
       return;
     }
     
@@ -50,14 +58,25 @@ export function QuestionView() {
       state.activeQuestion.block_id !== params.blockId ||
       state.activeQuestion.question_id !== params.questionId;
     
-    // Solo se è la prima inizializzazione o è necessario un aggiornamento dello stato
+    // Solo se è necessario un aggiornamento dello stato
     // e non abbiamo già processato questi parametri, aggiorniamo lo stato
     if (!isSameParams && needsStateUpdate) {
-      goToQuestion(params.blockId, params.questionId, true);
+      // Set navigation lock
+      isNavigatingRef.current = true;
+      
+      // Update state with a small delay to prevent immediate re-renders
+      setTimeout(() => {
+        goToQuestion(params.blockId!, params.questionId!, true);
+        
+        // Release navigation lock after a delay
+        setTimeout(() => {
+          isNavigatingRef.current = false;
+        }, 500);
+      }, 50);
     }
     
     setIsInitialized(true);
-  }, [location.pathname, params.blockId, params.questionId]); // Rimuoviamo state.activeQuestion dalla dipendenza
+  }, [location.pathname, params.blockId, params.questionId]); 
   
   // Attendere che il componente sia inizializzato prima di renderizzare
   if (!isInitialized) {

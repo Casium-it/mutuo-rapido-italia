@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { Question, ValidationTypes } from "@/types/form";
 import { Input } from "@/components/ui/input";
@@ -37,37 +36,57 @@ export function FormQuestion({ question }: FormQuestionProps) {
   // Nuovo stato per tenere traccia degli errori di validazione
   const [validationErrors, setValidationErrors] = useState<{ [key: string]: boolean }>({});
   const params = useParams();
+  
+  // Add ref to track if responses were already processed to prevent unnecessary rerenders
+  const responsesProcessedRef = useRef(false);
+  // Add ref to track question ID to detect actual question changes
+  const previousQuestionIdRef = useRef(question.question_id);
 
   // Effetto per caricare le risposte esistenti e impostare visibilità iniziale delle opzioni
   useEffect(() => {
-    const existingResponses: { [key: string]: string | string[] } = {};
-    const initialVisibleOptions: { [key: string]: boolean } = {};
-    const initialValidationErrors: { [key: string]: boolean } = {};
-    
-    Object.keys(question.placeholders).forEach(key => {
-      const existingResponse = getResponse(question.question_id, key);
-      if (existingResponse) {
-        existingResponses[key] = existingResponse;
-        initialVisibleOptions[key] = false;
-        
-        // Verifica che le risposte esistenti siano ancora valide
-        if (question.placeholders[key].type === "input") {
-          const placeholder = question.placeholders[key];
-          const validationType = (placeholder as any).input_validation as ValidationTypes;
-          if (!validateInput(existingResponse as string, validationType)) {
-            initialValidationErrors[key] = true;
+    // Only process if question changed or responses weren't processed yet
+    if (previousQuestionIdRef.current !== question.question_id || !responsesProcessedRef.current) {
+      previousQuestionIdRef.current = question.question_id;
+      
+      const existingResponses: { [key: string]: string | string[] } = {};
+      const initialVisibleOptions: { [key: string]: boolean } = {};
+      const initialValidationErrors: { [key: string]: boolean } = {};
+      
+      Object.keys(question.placeholders).forEach(key => {
+        const existingResponse = getResponse(question.question_id, key);
+        if (existingResponse) {
+          existingResponses[key] = existingResponse;
+          initialVisibleOptions[key] = false;
+          
+          // Verifica che le risposte esistenti siano ancora valide
+          if (question.placeholders[key].type === "input") {
+            const placeholder = question.placeholders[key];
+            const validationType = (placeholder as any).input_validation as ValidationTypes;
+            if (!validateInput(existingResponse as string, validationType)) {
+              initialValidationErrors[key] = true;
+            }
           }
+        } else {
+          initialVisibleOptions[key] = true;
         }
-      } else {
-        initialVisibleOptions[key] = true;
-      }
-    });
-    
-    setResponses(existingResponses);
-    setVisibleOptions(initialVisibleOptions);
-    setValidationErrors(initialValidationErrors);
-    setIsNavigating(false);
+      });
+      
+      setResponses(existingResponses);
+      setVisibleOptions(initialVisibleOptions);
+      setValidationErrors(initialValidationErrors);
+      setIsNavigating(false);
+      
+      // Mark as processed to prevent unnecessary rerenders
+      responsesProcessedRef.current = true;
+    }
   }, [question.question_id, getResponse, question.placeholders]);
+
+  // Reset the processed flag when the question changes
+  useEffect(() => {
+    return () => {
+      responsesProcessedRef.current = false;
+    };
+  }, [question.question_id]);
 
   // Funzione per gestire il cambio di risposta con validazione
   const handleResponseChange = (key: string, value: string | string[]) => {
@@ -133,9 +152,18 @@ export function FormQuestion({ question }: FormQuestionProps) {
 
   // Funzione modificata per navigare alla domanda specifica quando si fa click su una risposta
   const handleQuestionClick = (questionId: string) => {
+    // Previeni navigazione se già in corso
+    if (isNavigating) return;
+    
     // Naviga direttamente alla domanda con l'ID specificato
     if (questionId) {
+      setIsNavigating(true); // Lock navigation to prevent multiple clicks
       goToQuestion(state.activeQuestion.block_id, questionId);
+      
+      // Reset navigation lock after a delay
+      setTimeout(() => {
+        setIsNavigating(false);
+      }, 500);
     }
   };
 
@@ -144,70 +172,78 @@ export function FormQuestion({ question }: FormQuestionProps) {
     if (isNavigating) return;
     setIsNavigating(true);
     
-    // Verifica se è stata specificata una priorità per i placeholder
-    if (question.leads_to_placeholder_priority && 
-        question.placeholders[question.leads_to_placeholder_priority]) {
-      
-      // Ottieni il placeholder con priorità
-      const priorityPlaceholder = question.placeholders[question.leads_to_placeholder_priority];
-      const priorityResponse = responses[question.leads_to_placeholder_priority] || 
-                              getResponse(question.question_id, question.leads_to_placeholder_priority);
-      
-      // Se il placeholder prioritario è di tipo select
-      if (priorityResponse && priorityPlaceholder.type === "select" && !Array.isArray(priorityResponse)) {
-        const selectedOption = (priorityPlaceholder as any).options.find(
-          (opt: any) => opt.id === priorityResponse
-        );
-        
-        if (selectedOption?.leads_to) {
-          setTimeout(() => {
-            navigateToNextQuestion(question.question_id, selectedOption.leads_to);
-            setIsNavigating(false);
-          }, 50);
-          return;
-        }
-      } 
-      // Se il placeholder prioritario è di tipo input
-      else if (priorityResponse && priorityPlaceholder.type === "input" && (priorityPlaceholder as any).leads_to) {
-        setTimeout(() => {
-          navigateToNextQuestion(question.question_id, (priorityPlaceholder as any).leads_to);
-          setIsNavigating(false);
-        }, 50);
-        return;
-      }
-    }
-    
-    // Se non c'è un placeholder prioritario o non ha un leads_to valido,
-    // usa la logica esistente per verificare i placeholder in ordine
-    for (const key of Object.keys(question.placeholders)) {
-      const response = responses[key] || getResponse(question.question_id, key);
-      
-      if (response && question.placeholders[key].type === "select" && !Array.isArray(response)) {
-        const selectedOption = (question.placeholders[key] as any).options.find(
-          (opt: any) => opt.id === response
-        );
-        
-        if (selectedOption?.leads_to) {
-          setTimeout(() => {
-            navigateToNextQuestion(question.question_id, selectedOption.leads_to);
-            setIsNavigating(false);
-          }, 50);
-          return;
-        }
-      } else if (response && question.placeholders[key].type === "input" && (question.placeholders[key] as any).leads_to) {
-        setTimeout(() => {
-          navigateToNextQuestion(question.question_id, (question.placeholders[key] as any).leads_to);
-          setIsNavigating(false);
-        }, 50);
-        return;
-      }
-    }
-    
-    // Se nessun placeholder ha un leads_to valido, vai al blocco successivo
+    // Add a small delay before navigation to prevent rapid clicks
     setTimeout(() => {
+      // Verifica se è stata specificata una priorità per i placeholder
+      if (question.leads_to_placeholder_priority && 
+          question.placeholders[question.leads_to_placeholder_priority]) {
+        
+        // Ottieni il placeholder con priorità
+        const priorityPlaceholder = question.placeholders[question.leads_to_placeholder_priority];
+        const priorityResponse = responses[question.leads_to_placeholder_priority] || 
+                                getResponse(question.question_id, question.leads_to_placeholder_priority);
+        
+        // Se il placeholder prioritario è di tipo select
+        if (priorityResponse && priorityPlaceholder.type === "select" && !Array.isArray(priorityResponse)) {
+          const selectedOption = (priorityPlaceholder as any).options.find(
+            (opt: any) => opt.id === priorityResponse
+          );
+          
+          if (selectedOption?.leads_to) {
+            navigateToNextQuestion(question.question_id, selectedOption.leads_to);
+            // Reset navigation lock after a short delay
+            setTimeout(() => {
+              setIsNavigating(false);
+            }, 500);
+            return;
+          }
+        } 
+        // Se il placeholder prioritario è di tipo input
+        else if (priorityResponse && priorityPlaceholder.type === "input" && (priorityPlaceholder as any).leads_to) {
+          navigateToNextQuestion(question.question_id, (priorityPlaceholder as any).leads_to);
+          // Reset navigation lock after a short delay
+          setTimeout(() => {
+            setIsNavigating(false);
+          }, 500);
+          return;
+        }
+      }
+      
+      // Se non c'è un placeholder prioritario o non ha un leads_to valido,
+      // usa la logica esistente per verificare i placeholder in ordine
+      for (const key of Object.keys(question.placeholders)) {
+        const response = responses[key] || getResponse(question.question_id, key);
+        
+        if (response && question.placeholders[key].type === "select" && !Array.isArray(response)) {
+          const selectedOption = (question.placeholders[key] as any).options.find(
+            (opt: any) => opt.id === response
+          );
+          
+          if (selectedOption?.leads_to) {
+            navigateToNextQuestion(question.question_id, selectedOption.leads_to);
+            // Reset navigation lock after a short delay
+            setTimeout(() => {
+              setIsNavigating(false);
+            }, 500);
+            return;
+          }
+        } else if (response && question.placeholders[key].type === "input" && (question.placeholders[key] as any).leads_to) {
+          navigateToNextQuestion(question.question_id, (question.placeholders[key] as any).leads_to);
+          // Reset navigation lock after a short delay
+          setTimeout(() => {
+            setIsNavigating(false);
+          }, 500);
+          return;
+        }
+      }
+      
+      // Se nessun placeholder ha un leads_to valido, vai al blocco successivo
       navigateToNextQuestion(question.question_id, "next_block");
-      setIsNavigating(false);
-    }, 50);
+      // Reset navigation lock after a short delay
+      setTimeout(() => {
+        setIsNavigating(false);
+      }, 500);
+    }, 100); // Small delay before starting navigation
   };
 
   // Funzione per ottenere il testo completo della domanda, includendo la sequenza di domande inline
@@ -513,7 +549,11 @@ export function FormQuestion({ question }: FormQuestionProps) {
   return (
     <div className="max-w-xl animate-fade-in">
       {/* Banner note della domanda - NUOVO COMPONENTE */}
-      {renderQuestionNotes()}
+      {question.question_notes && (
+        <div className="mb-5 p-4 bg-[#F8F4EF] border-l-4 border-[#245C4F] rounded-md">
+          <p className="text-[14px] text-gray-700">{question.question_notes}</p>
+        </div>
+      )}
       
       {/* Testo della domanda semplificato */}
       <div className="text-[16px] font-normal text-gray-900 mb-5 leading-relaxed">
