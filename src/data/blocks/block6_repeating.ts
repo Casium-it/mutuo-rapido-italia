@@ -6,7 +6,7 @@ export const block6_repeating: RepeatingGroupBlock = {
   block_id: "secondary_income_manager",
   title: "Redditi aggiuntivi",
   priority: 60,
-  default_active: false,
+  default_active: true,
   type: "repeating_group",
   repeating_id: "secondary_income",
   subflow: [
