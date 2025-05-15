@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { RepeatingGroupBlock, RepeatingGroupEntry } from '@/types/form';
 import { IncomeManagerView } from './IncomeManagerView';
