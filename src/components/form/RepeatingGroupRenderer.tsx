@@ -108,9 +108,11 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
   };
   
   // Gestisce la pressione del pulsante continua
+  // MODIFICA: Ora utilizza il question_id attivo invece del block_id
   const handleContinue = () => {
-    // Trova il blocco corrente e passa al blocco successivo
-    navigateToNextQuestion(block.block_id, "next_block");
+    // Usa l'ID della domanda attiva corrente invece del block_id
+    const currentQuestionId = state.activeQuestion.question_id;
+    navigateToNextQuestion(currentQuestionId, "next_block");
   };
   
   if (mode === 'subflow') {

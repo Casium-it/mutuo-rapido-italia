@@ -1,7 +1,13 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback, useRef } from "react";
-import { Block, FormState, FormResponse, NavigationHistory, StandardBlock, RepeatingGroupBlock } from "@/types/form";
+import { Block, FormState, FormResponse, NavigationHistory, StandardBlock, RepeatingGroupBlock, RepeatingGroupEntry } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { resetAllRepeatingGroups, dispatchResetEvent, hasRepeatingGroupData } from "@/utils/repeatingGroupUtils";
+import {
+  resetAllRepeatingGroups,
+  dispatchResetEvent,
+  hasRepeatingGroupData,
+  getAllRepeatingGroups,
+  saveRepeatingGroupEntries
+} from "@/utils/repeatingGroupUtils";
 
 // Funzione di utilità per verificare se un blocco è di tipo StandardBlock
 const isStandardBlock = (block: Block): block is StandardBlock => {
@@ -25,6 +31,10 @@ type FormContextType = {
   getProgress: () => number;
   resetForm: () => void;
   getNavigationHistoryFor: (questionId: string) => NavigationHistory | undefined;
+  // Nuove funzioni per gestire i repeatingGroups direttamente dal FormContext
+  getRepeatingGroupEntries: (repeatingId: string) => RepeatingGroupEntry[];
+  saveRepeatingGroupEntry: (repeatingId: string, entry: RepeatingGroupEntry, index?: number) => boolean;
+  deleteRepeatingGroupEntry: (repeatingId: string, idOrIndex: string | number) => boolean;
 };
 
 type Action =
@@ -36,7 +46,8 @@ type Action =
   | { type: "RESET_FORM" }
   | { type: "SET_NAVIGATING"; isNavigating: boolean }
   | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory }
-  | { type: "RESET_NAVIGATION_STATE" };
+  | { type: "RESET_NAVIGATION_STATE" }
+  | { type: "UPDATE_REPEATING_GROUP"; repeatingId: string; entries: RepeatingGroupEntry[] };
 
 const initialState: FormState = {
   activeBlocks: [],
@@ -48,7 +59,7 @@ const initialState: FormState = {
   answeredQuestions: new Set(),
   isNavigating: false,
   navigationHistory: [],
-  repeatingGroups: {}
+  repeatingGroups: {} // Inizializzato come oggetto vuoto
 };
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
@@ -108,6 +119,15 @@ function formReducer(state: FormState, action: Action): FormState {
         ...action.state
       };
     }
+    case "UPDATE_REPEATING_GROUP": {
+      return {
+        ...state,
+        repeatingGroups: {
+          ...state.repeatingGroups,
+          [action.repeatingId]: action.entries
+        }
+      };
+    }
     case "RESET_FORM": {
       return {
         ...initialState,
@@ -116,7 +136,8 @@ function formReducer(state: FormState, action: Action): FormState {
           : state.activeBlocks.filter(blockId => 
               initialState.activeBlocks.includes(blockId)),
         navigationHistory: [],
-        isNavigating: false
+        isNavigating: false,
+        repeatingGroups: {} // Reset anche dei repeatingGroups
       };
     }
     case "SET_NAVIGATING": {
@@ -199,8 +220,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       // Rimuovi i dati salvati dal localStorage
       clearLocalStorageForBlockType(params.blockType);
       
-      // Reimposta tutti i gruppi ripetuti
-      resetAllRepeatingGroups();
+      // Non è più necessario resettare separatamente i repeatingGroups
+      // poiché ora sono parte dello stato del form
       
       // Reimposta lo stato del form
       dispatch({ type: "RESET_FORM" });
@@ -298,6 +319,12 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
           parsedState.answeredQuestions = new Set();
         }
         
+        // Leggi i repeating groups dallo stesso file di stato
+        if (parsedState.repeatingGroups) {
+          // Assicuriamo che repeatingGroups sia disponibile nello stato
+          parsedState.repeatingGroups = parsedState.repeatingGroups;
+        }
+        
         // Applica lo stato salvato
         dispatch({ type: "SET_FORM_STATE", state: parsedState });
         
@@ -327,7 +354,9 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       // Converti Set a array per JSON serialization
       const stateToSave = {
         ...state,
-        answeredQuestions: Array.from(state.answeredQuestions)
+        answeredQuestions: Array.from(state.answeredQuestions),
+        // Salva i repeating groups direttamente nello stato del form
+        repeatingGroups: state.repeatingGroups
       };
       localStorage.setItem(`form-state-${params.blockType}`, JSON.stringify(stateToSave));
     }
@@ -670,6 +699,85 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return sortedHistory.find(item => item.to_question_id === questionId);
   }, [state.navigationHistory]);
 
+  // Nuove funzioni per la gestione dei repeatingGroups direttamente dal FormContext
+  
+  // Ottiene le voci di un gruppo ripetuto
+  const getRepeatingGroupEntries = useCallback((repeatingId: string): RepeatingGroupEntry[] => {
+    return state.repeatingGroups?.[repeatingId] || [];
+  }, [state.repeatingGroups]);
+
+  // Salva una voce in un gruppo ripetuto
+  const saveRepeatingGroupEntry = useCallback((
+    repeatingId: string,
+    entry: RepeatingGroupEntry,
+    index?: number
+  ): boolean => {
+    try {
+      const entries = state.repeatingGroups?.[repeatingId] || [];
+      let updatedEntries: RepeatingGroupEntry[];
+      
+      // Se non abbiamo già un ID, generiamo un ID unico
+      if (!entry.id) {
+        entry.id = `${repeatingId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      }
+      
+      // Se è specificato un indice, aggiorniamo quell'elemento, altrimenti aggiungiamo
+      if (index !== undefined && index >= 0 && index < entries.length) {
+        updatedEntries = [...entries];
+        updatedEntries[index] = entry;
+      } else {
+        updatedEntries = [...entries, entry];
+      }
+      
+      // Aggiorna lo stato interno del form
+      dispatch({
+        type: "UPDATE_REPEATING_GROUP",
+        repeatingId,
+        entries: updatedEntries
+      });
+      
+      return true;
+    } catch (error) {
+      console.error(`Failed to save entry for ${repeatingId}:`, error);
+      return false;
+    }
+  }, [state.repeatingGroups]);
+
+  // Elimina una voce da un gruppo ripetuto
+  const deleteRepeatingGroupEntry = useCallback((
+    repeatingId: string,
+    idOrIndex: string | number
+  ): boolean => {
+    try {
+      const entries = state.repeatingGroups?.[repeatingId] || [];
+      let updatedEntries: RepeatingGroupEntry[];
+      
+      if (typeof idOrIndex === 'number') {
+        // Elimina per indice
+        if (idOrIndex < 0 || idOrIndex >= entries.length) {
+          console.error(`Index ${idOrIndex} out of bounds for ${repeatingId}`);
+          return false;
+        }
+        updatedEntries = entries.filter((_, i) => i !== idOrIndex);
+      } else {
+        // Elimina per ID
+        updatedEntries = entries.filter(entry => entry.id !== idOrIndex);
+      }
+      
+      // Aggiorna lo stato interno del form
+      dispatch({
+        type: "UPDATE_REPEATING_GROUP",
+        repeatingId,
+        entries: updatedEntries
+      });
+      
+      return true;
+    } catch (error) {
+      console.error(`Failed to delete entry from ${repeatingId}:`, error);
+      return false;
+    }
+  }, [state.repeatingGroups]);
+
   return (
     <FormContext.Provider
       value={{
@@ -683,7 +791,11 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         navigateToNextQuestion,
         getProgress,
         resetForm,
-        getNavigationHistoryFor
+        getNavigationHistoryFor,
+        // Aggiungi le nuove funzioni per i repeating groups
+        getRepeatingGroupEntries,
+        saveRepeatingGroupEntry,
+        deleteRepeatingGroupEntry
       }}
     >
       {children}
