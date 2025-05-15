@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { FormQuestion } from "./FormQuestion";
 import { useLocation, useParams } from "react-router-dom";
@@ -20,19 +20,44 @@ export function QuestionView() {
   const params = useParams<{ blockId?: string, questionId?: string }>();
   const [isInitialized, setIsInitialized] = useState(false);
   
+  // Uso un ref per tenere traccia dell'ultima navigazione
+  const lastProcessedParams = useRef<{
+    blockId?: string,
+    questionId?: string
+  }>({});
+  
   // Sincronizza il componente con l'URL quando cambia
   useEffect(() => {
-    if (params.blockId && params.questionId) {
-      // Se l'URL contiene blockId e questionId, ma sono diversi dallo stato attuale,
-      // aggiorna lo stato interno per allinearlo all'URL
-      if (state.activeQuestion.block_id !== params.blockId || 
-          state.activeQuestion.question_id !== params.questionId) {
-        goToQuestion(params.blockId, params.questionId, true);
-      }
+    // Se non abbiamo parametri, non facciamo nulla
+    if (!params.blockId || !params.questionId) {
+      setIsInitialized(true);
+      return;
+    }
+    
+    // Controlla se abbiamo già processato questi parametri esatti
+    const isSameParams = 
+      lastProcessedParams.current.blockId === params.blockId &&
+      lastProcessedParams.current.questionId === params.questionId;
+      
+    // Aggiorna il ref con i parametri correnti
+    lastProcessedParams.current = {
+      blockId: params.blockId,
+      questionId: params.questionId
+    };
+    
+    // Determina se è necessario aggiornare lo stato interno
+    const needsStateUpdate = 
+      state.activeQuestion.block_id !== params.blockId ||
+      state.activeQuestion.question_id !== params.questionId;
+    
+    // Solo se è la prima inizializzazione o è necessario un aggiornamento dello stato
+    // e non abbiamo già processato questi parametri, aggiorniamo lo stato
+    if (!isSameParams && needsStateUpdate) {
+      goToQuestion(params.blockId, params.questionId, true);
     }
     
     setIsInitialized(true);
-  }, [location.pathname, params.blockId, params.questionId, state.activeQuestion, goToQuestion]);
+  }, [location.pathname, params.blockId, params.questionId]); // Rimuoviamo state.activeQuestion dalla dipendenza
   
   // Attendere che il componente sia inizializzato prima di renderizzare
   if (!isInitialized) {
