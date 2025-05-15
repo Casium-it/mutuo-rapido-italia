@@ -5,8 +5,9 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SubflowQuestion, RepeatingGroupEntry } from "@/types/form";
-import { ArrowLeft, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import { Separator } from "@/components/ui/separator";
 
 interface IncomeSubflowWizardProps {
   questions: SubflowQuestion[];
@@ -79,12 +80,12 @@ export function IncomeSubflowWizard({
       // Tipo di reddito (select)
       return (
         <div className="space-y-3">
-          <Label htmlFor="income_type">{question_text}</Label>
+          <Label htmlFor="income_type" className="text-[16px] font-normal text-gray-900 block">{question_text}</Label>
           <Select
             value={formData.income_type}
             onValueChange={(value) => setFormData({ ...formData, income_type: value })}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full border-[#BEB8AE] focus:border-[#245C4F] focus-visible:ring-0">
               <SelectValue placeholder="Seleziona tipo di reddito" />
             </SelectTrigger>
             <SelectContent>
@@ -101,13 +102,13 @@ export function IncomeSubflowWizard({
       // Importo (numero)
       return (
         <div className="space-y-3">
-          <Label htmlFor="amount_input">{question_text}</Label>
+          <Label htmlFor="amount_input" className="text-[16px] font-normal text-gray-900 block">{question_text}</Label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">€</span>
             <Input
               id="amount_input"
               type="number"
-              className="pl-7"
+              className="pl-7 border-[#BEB8AE] focus:border-[#245C4F] focus-visible:ring-0"
               placeholder="0,00"
               value={formData.amount_input || ''}
               onChange={(e) => {
@@ -124,10 +125,11 @@ export function IncomeSubflowWizard({
       // Descrizione (testo)
       return (
         <div className="space-y-3">
-          <Label htmlFor="income_description">{question_text}</Label>
+          <Label htmlFor="income_description" className="text-[16px] font-normal text-gray-900 block">{question_text}</Label>
           <Input
             id="income_description"
             type="text"
+            className="border-[#BEB8AE] focus:border-[#245C4F] focus-visible:ring-0"
             placeholder="Descrivi questa fonte di reddito (opzionale)"
             value={formData.income_description || ''}
             onChange={(e) => setFormData({ ...formData, income_description: e.target.value })}
@@ -140,40 +142,47 @@ export function IncomeSubflowWizard({
   };
   
   return (
-    <div className="space-y-6 max-w-2xl">
-      <div>
-        <h3 className="text-xl font-semibold mb-1">
-          {initialData.id ? 'Modifica fonte di reddito' : 'Aggiungi fonte di reddito'}
-        </h3>
+    <div className="max-w-xl animate-fade-in">
+      <div className="mb-5">
+        <h2 className="text-[22px] font-semibold text-gray-900 mb-2">
+          {currentQuestion.question_text}
+        </h2>
+        <Separator className="h-[1px] bg-[#F0EAE0] my-5" />
       </div>
       
-      <div className="space-y-4">
+      <div className="space-y-6 mb-8">
         {renderQuestionInput()}
       </div>
       
-      <div className="flex justify-between pt-4">
-        <Button
+      <div className="flex justify-between pt-4 mt-8">
+        <button
           type="button"
-          variant="outline"
           onClick={handlePreviousStep}
+          className="border border-gray-300 text-gray-700 hover:bg-gray-50 px-[18px] py-[12px] rounded-[10px] text-[16px] font-medium inline-flex items-center"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           {currentStep === 0 ? 'Annulla' : 'Indietro'}
-        </Button>
+        </button>
         
-        <Button
-          type="button"
-          onClick={handleStepComplete}
-        >
-          {currentStep < questions.length - 1 ? (
-            'Avanti'
-          ) : (
-            <>
-              <Check className="mr-2 h-4 w-4" />
-              {initialData.id ? 'Salva modifiche' : 'Aggiungi reddito'}
-            </>
-          )}
-        </Button>
+        {currentStep < questions.length - 1 ? (
+          <button
+            type="button"
+            onClick={handleStepComplete}
+            className="form-next-button"
+          >
+            Avanti
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={handleStepComplete}
+            className="form-next-button"
+          >
+            <Check className="h-4 w-4" />
+            {initialData.id ? 'Salva modifiche' : 'Aggiungi reddito'}
+          </button>
+        )}
       </div>
     </div>
   );
