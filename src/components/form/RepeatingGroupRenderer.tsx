@@ -4,7 +4,7 @@ import { RepeatingGroupBlock, RepeatingGroupEntry } from '@/types/form';
 import { useRepeatingGroup } from '@/hooks/useRepeatingGroup';
 import { useForm } from '@/contexts/FormContext';
 import { toast } from '@/components/ui/use-toast';
-import { RepeatingGroupManagerView } from './RepeatingGroupManagerView';
+import { IncomeManagerView } from './IncomeManagerView';
 import { SubflowForm } from './SubflowForm';
 import { dispatchResetEvent } from '@/utils/repeatingGroupUtils';
 
@@ -127,12 +127,15 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
   }
   
   return (
-    <RepeatingGroupManagerView
-      block={block}
-      entries={entries}
+    <IncomeManagerView
+      repeatingId={repeating_id}
+      title={block.title}
+      subtitle={block.subtitle || "Gestisci qui tutti i tuoi redditi aggiuntivi. Puoi aggiungere, modificare o eliminare fonti di reddito."}
+      emptyStateText={block.empty_state_text || "Non hai ancora aggiunto nessuna fonte di reddito aggiuntiva."}
+      addButtonText={block.add_button_text || "Aggiungi fonte di reddito"}
+      continueButtonText={block.continue_button_text || "Continua"}
       onAdd={handleAdd}
       onEdit={handleEdit}
-      onDelete={deleteEntry}
       onContinue={handleContinue}
     />
   );

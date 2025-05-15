@@ -19,6 +19,14 @@ const isRepeatingGroupBlock = (block: Block): block is RepeatingGroupBlock => {
   return 'type' in block && block.type === 'repeating_group';
 };
 
+type NavigationSubscriber = (data: {
+  fromQuestionId: string;
+  toQuestionId: string;
+  fromBlockId: string;
+  toBlockId: string;
+  leadsToDest: string;
+}) => void;
+
 type FormContextType = {
   state: FormState;
   blocks: Block[];
@@ -35,6 +43,8 @@ type FormContextType = {
   getRepeatingGroupEntries: (repeatingId: string) => RepeatingGroupEntry[];
   saveRepeatingGroupEntry: (repeatingId: string, entry: RepeatingGroupEntry, index?: number) => boolean;
   deleteRepeatingGroupEntry: (repeatingId: string, idOrIndex: string | number) => boolean;
+  // New function to subscribe to navigation events
+  subscribeToNavigation: (callback: NavigationSubscriber) => () => void;
 };
 
 type Action =
@@ -175,6 +185,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   const location = useLocation();
   const navigationTimeoutRef = useRef<number | null>(null);
   const isResettingRef = useRef<boolean>(false);
+  const navigationSubscribersRef = useRef<NavigationSubscriber[]>([]);
   
   // Ordina i blocchi per priorità
   const sortedBlocks = [...blocks].sort((a, b) => a.priority - b.priority);
@@ -439,15 +450,28 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     dispatch({ type: "GO_TO_QUESTION", block_id, question_id });
     
     // Aggiungi la navigazione alla cronologia
+    const navigationData = {
+      from_block_id: previousBlockId,
+      from_question_id: previousQuestionId,
+      to_block_id: block_id,
+      to_question_id: question_id,
+      timestamp: Date.now()
+    };
+    
     dispatch({ 
       type: "ADD_NAVIGATION_HISTORY", 
-      history: {
-        from_block_id: previousBlockId,
-        from_question_id: previousQuestionId,
-        to_block_id: block_id,
-        to_question_id: question_id,
-        timestamp: Date.now()
-      }
+      history: navigationData
+    });
+    
+    // Notify navigation subscribers
+    navigationSubscribersRef.current.forEach(callback => {
+      callback({
+        fromBlockId: previousBlockId,
+        fromQuestionId: previousQuestionId,
+        toBlockId: block_id,
+        toQuestionId: question_id,
+        leadsToDest: question_id // Use the question_id as the leadsToDest for direct navigation
+      });
     });
     
     // Aggiorna l'URL per riflettere la nuova domanda
@@ -533,6 +557,17 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     
     // Salva la domanda corrente prima di navigare
     const currentBlockId = state.activeQuestion.block_id;
+    
+    // Notify navigation subscribers with the leadsTo destination
+    navigationSubscribersRef.current.forEach(callback => {
+      callback({
+        fromBlockId: currentBlockId,
+        fromQuestionId: currentQuestionId,
+        toBlockId: "", // Will be determined by navigation logic
+        toQuestionId: "", // Will be determined by navigation logic
+        leadsToDest: leadsTo // This is what subscribers need to check for endSignal
+      });
+    });
     
     if (leadsTo === "next_block") {
       // Trova il blocco corrente
@@ -778,6 +813,16 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     }
   }, [state.repeatingGroups]);
 
+  // New function to subscribe to navigation events
+  const subscribeToNavigation = useCallback((callback: NavigationSubscriber) => {
+    navigationSubscribersRef.current.push(callback);
+    
+    // Return unsubscribe function
+    return () => {
+      navigationSubscribersRef.current = navigationSubscribersRef.current.filter(cb => cb !== callback);
+    };
+  }, []);
+
   return (
     <FormContext.Provider
       value={{
@@ -795,7 +840,9 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         // Aggiungi le nuove funzioni per i repeating groups
         getRepeatingGroupEntries,
         saveRepeatingGroupEntry,
-        deleteRepeatingGroupEntry
+        deleteRepeatingGroupEntry,
+        // Add the new subscription function
+        subscribeToNavigation
       }}
     >
       {children}

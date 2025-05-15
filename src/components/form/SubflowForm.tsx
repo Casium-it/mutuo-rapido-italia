@@ -29,44 +29,49 @@ export function SubflowForm({
   const currentQuestion = questions[currentQuestionIndex];
   
   // Gestione dell'avanzamento
-  const handleNext = (questionId: string, value: any) => {
+  const handleAnswer = (questionId: string, value: any) => {
     // Salva la risposta
     setResponses(prev => ({ 
       ...prev, 
       [questionId]: value 
     }));
     
-    // Cerca la leads_to associata a questo valore
-    let leadsTo = "";
-    const question = questions.find(q => q.question_id === questionId);
-    
-    if (question) {
-      // Trova il placeholder usato per l'input
-      const priorityPlaceholder = question.leads_to_placeholder_priority;
-      const placeholder = question.placeholders[priorityPlaceholder];
+    // Controlla se c'è un _leads_to nel valore (passato da FormQuestion)
+    if (value._leads_to) {
+      const leadsTo = value._leads_to;
       
-      if (placeholder.type === 'select') {
-        // Per i select, trova l'opzione selezionata
-        const selectedOption = placeholder.options.find(opt => opt.id === value);
-        if (selectedOption) {
-          leadsTo = selectedOption.leads_to;
-        }
-      } else if ('leads_to' in placeholder) {
-        // Per gli input, usa direttamente leads_to
-        leadsTo = placeholder.leads_to || "";
+      // Rimuovi il campo _leads_to prima di salvare la risposta
+      delete value._leads_to;
+      
+      // Controlla se è il segnale di fine
+      if (leadsTo === endSignal) {
+        // Finito il subflow, ritorna i dati
+        onComplete(responses);
+        return;
       }
-    }
-    
-    // Controlla se è il segnale di fine
-    if (leadsTo === endSignal) {
-      // Finito il subflow, ritorna i dati
-      onComplete(responses);
-      return;
-    }
-    
-    // Altrimenti vai alla prossima domanda
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      
+      // Trova l'indice della domanda successiva
+      const nextIndex = questions.findIndex(q => q.question_id === leadsTo);
+      if (nextIndex !== -1) {
+        setCurrentQuestionIndex(nextIndex);
+        return;
+      }
+      
+      // Se non trovata, vai alla domanda successiva
+      if (currentQuestionIndex < questions.length - 1) {
+        setCurrentQuestionIndex(currentQuestionIndex + 1);
+      } else {
+        // Se siamo all'ultima domanda, considera completato il subflow
+        onComplete(responses);
+      }
+    } else {
+      // Comportamento predefinito: vai alla domanda successiva
+      if (currentQuestionIndex < questions.length - 1) {
+        setCurrentQuestionIndex(currentQuestionIndex + 1);
+      } else {
+        // Se siamo all'ultima domanda, considera completato il subflow
+        onComplete(responses);
+      }
     }
   };
   
@@ -90,13 +95,23 @@ export function SubflowForm({
     );
   }
   
+  // Calcola initialValue per FormQuestion
+  const getQuestionInitialValue = (questionId: string) => {
+    // Se la risposta è già presente nello stato, restituiscila
+    if (responses[questionId]) {
+      return { [questionId]: responses[questionId] };
+    }
+    // Altrimenti, restituisci undefined
+    return undefined;
+  };
+  
   return (
     <div className="space-y-6">
       {/* Mostra la domanda corrente */}
       <FormQuestion
         question={currentQuestion}
-        initialValue={responses[currentQuestion.question_id]}
-        onAnswer={handleNext}
+        initialValue={getQuestionInitialValue(currentQuestion.question_id)}
+        onAnswer={handleAnswer}
         inline={currentQuestion.inline}
       />
       
@@ -118,7 +133,7 @@ export function SubflowForm({
               // Prova ad avanzare automaticamente se c'è già una risposta
               const value = responses[currentQuestion.question_id];
               if (value !== undefined) {
-                handleNext(currentQuestion.question_id, value);
+                handleAnswer(currentQuestion.question_id, value);
               }
             }}
             className="flex items-center"

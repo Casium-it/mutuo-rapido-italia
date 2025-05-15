@@ -1,4 +1,3 @@
-
 import { useForm as useOriginalForm } from "@/contexts/FormContext";
 import { 
   getPreviousQuestion as getPreviousQuestionUtil, 
@@ -37,13 +36,6 @@ export const useFormExtended = (options?: UseFormExtendedOptions) => {
   // Listener per il segnale di completamento
   useEffect(() => {
     if (endSignal && onComplete) {
-      const checkForEndSignal = (questionId: string, leads_to: string) => {
-        if (leads_to === endSignal) {
-          // Quando troviamo il segnale di fine, inviamo le risposte
-          onComplete(formContext.state.responses);
-        }
-      };
-      
       // Sottoscrivi all'emettitore di navigazione
       const unsubscribe = formContext.subscribeToNavigation((data) => {
         if (data.leadsToDest === endSignal) {

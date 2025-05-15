@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { Question, ValidationTypes } from "@/types/form";
@@ -15,9 +14,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 interface FormQuestionProps {
   question: Question;
+  initialValue?: any;
+  onAnswer?: (questionId: string, value: any) => void;
+  inline?: boolean;
 }
 
-export function FormQuestion({ question }: FormQuestionProps) {
+export function FormQuestion({ question, initialValue, onAnswer, inline }: FormQuestionProps) {
   const { 
     getResponse, 
     setResponse, 
@@ -45,7 +47,15 @@ export function FormQuestion({ question }: FormQuestionProps) {
     const initialValidationErrors: { [key: string]: boolean } = {};
     
     Object.keys(question.placeholders).forEach(key => {
-      const existingResponse = getResponse(question.question_id, key);
+      // First check initialValue from props (for subflow mode)
+      let existingResponse;
+      if (initialValue && initialValue[question.question_id] && initialValue[question.question_id][key]) {
+        existingResponse = initialValue[question.question_id][key];
+      } else {
+        // Otherwise check the form context (for normal flow)
+        existingResponse = getResponse(question.question_id, key);
+      }
+
       if (existingResponse) {
         existingResponses[key] = existingResponse;
         initialVisibleOptions[key] = false;
@@ -67,7 +77,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
     setVisibleOptions(initialVisibleOptions);
     setValidationErrors(initialValidationErrors);
     setIsNavigating(false);
-  }, [question.question_id, getResponse, question.placeholders]);
+  }, [question.question_id, getResponse, question.placeholders, initialValue]);
 
   // Funzione per gestire il cambio di risposta con validazione
   const handleResponseChange = (key: string, value: string | string[]) => {
@@ -93,7 +103,12 @@ export function FormQuestion({ question }: FormQuestionProps) {
       
       // Salviamo nel contesto del form SOLO se l'input è valido
       if (isValid) {
-        setResponse(question.question_id, key, value);
+        // Use onAnswer prop in subflow mode, or setResponse in normal flow
+        if (onAnswer) {
+          onAnswer(question.question_id, { [key]: value });
+        } else {
+          setResponse(question.question_id, key, value);
+        }
         
         // Nascondi le opzioni se valido
         setVisibleOptions(prev => ({
@@ -103,7 +118,11 @@ export function FormQuestion({ question }: FormQuestionProps) {
       }
     } else {
       // Per i select o altri tipi, salviamo sempre nel contesto
-      setResponse(question.question_id, key, value);
+      if (onAnswer) {
+        onAnswer(question.question_id, { [key]: value });
+      } else {
+        setResponse(question.question_id, key, value);
+      }
       
       setVisibleOptions(prev => ({
         ...prev,
@@ -143,6 +162,58 @@ export function FormQuestion({ question }: FormQuestionProps) {
   const handleNextQuestion = () => {
     if (isNavigating) return;
     setIsNavigating(true);
+    
+    // If we have an onAnswer prop (subflow mode), use it
+    if (onAnswer) {
+      // Find which placeholder has priority
+      if (question.leads_to_placeholder_priority && 
+          question.placeholders[question.leads_to_placeholder_priority]) {
+        
+        // Get the priority placeholder
+        const priorityPlaceholder = question.placeholders[question.leads_to_placeholder_priority];
+        const priorityResponse = responses[question.leads_to_placeholder_priority];
+        
+        // If the priority placeholder is a select
+        if (priorityResponse && priorityPlaceholder.type === "select" && !Array.isArray(priorityResponse)) {
+          const selectedOption = (priorityPlaceholder as any).options.find(
+            (opt: any) => opt.id === priorityResponse
+          );
+          
+          if (selectedOption?.leads_to) {
+            // Signal that we should navigate to this destination
+            setTimeout(() => {
+              onAnswer(question.question_id, { 
+                ...responses, 
+                _leads_to: selectedOption.leads_to 
+              });
+              setIsNavigating(false);
+            }, 50);
+            return;
+          }
+        } 
+        // If the priority placeholder is an input
+        else if (priorityResponse && priorityPlaceholder.type === "input" && (priorityPlaceholder as any).leads_to) {
+          setTimeout(() => {
+            onAnswer(question.question_id, { 
+              ...responses, 
+              _leads_to: (priorityPlaceholder as any).leads_to 
+            });
+            setIsNavigating(false);
+          }, 50);
+          return;
+        }
+      }
+      
+      // Default: trigger navigation with current responses
+      setTimeout(() => {
+        onAnswer(question.question_id, { ...responses, _leads_to: "next_question" });
+        setIsNavigating(false);
+      }, 50);
+      return;
+    }
+    
+    // Normal flow navigation (existing code)
+    // ... keep existing code (regular form navigation)
     
     // Verifica se è stata specificata una priorità per i placeholder
     if (question.leads_to_placeholder_priority && 
@@ -473,26 +544,26 @@ export function FormQuestion({ question }: FormQuestionProps) {
       key => question.placeholders[key].type === "input"
     );
     
-    // Se non ci sono input, consideriamo valido (per gestire select e altri tipi)
+    // If not input placeholders, consider valid (for select and other types)
     if (inputPlaceholders.length === 0) {
       return true;
     }
     
-    // Verifica se tutti gli input hanno un valore e sono validi
+    // Verify if all inputs have a value and are valid
     return inputPlaceholders.every(key => {
       const value = responses[key] || getResponse(question.question_id, key);
       
-      // Verifica se il valore esiste
+      // Verify if the value exists
       if (value === undefined || value === "") {
         return false;
       }
       
-      // Verifica se c'è un errore di validazione
+      // Verify if there's a validation error
       if (validationErrors[key]) {
         return false;
       }
       
-      // Verifica validazione per i valori esistenti nel contesto
+      // Verify validation for existing values in context
       const placeholder = question.placeholders[key];
       if (placeholder.type === "input") {
         const validationType = (placeholder as any).input_validation;
@@ -505,7 +576,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
     });
   };
   
-  // Determina se ci sono risposte valide - MODIFICATO per richiedere TUTTE le risposte
+  // Determine if there are valid responses - MODIFIED to require ALL responses
   const hasValidResponses = Object.keys(question.placeholders).every(key => 
     responses[key] !== undefined || getResponse(question.question_id, key) !== undefined
   ) && allInputsHaveValidContent();
