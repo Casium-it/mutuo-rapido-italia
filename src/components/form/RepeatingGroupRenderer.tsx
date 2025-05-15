@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { RepeatingGroupBlock, RepeatingGroupEntry } from '@/types/form';
 import { IncomeManagerView } from './IncomeManagerView';
@@ -19,7 +20,7 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
     subtitle = "Gestisci qui tutti i tuoi redditi aggiuntivi. Puoi aggiungere, modificare o eliminare fonti di reddito.",
     empty_state_text = "Non hai ancora aggiunto nessuna fonte di reddito aggiuntiva.",
     add_button_text = "Aggiungi fonte di reddito",
-    continue_button_text = "Continua"
+    continue_button_text = "Avanti"
   } = block;
   
   const { navigateToNextQuestion, state } = useForm();
