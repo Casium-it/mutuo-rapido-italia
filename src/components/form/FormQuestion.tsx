@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { Question, ValidationTypes } from "@/types/form";
@@ -88,9 +89,9 @@ export function FormQuestion({ question }: FormQuestionProps) {
           // Aggiorna la fonte di reddito con il dettaglio
           updateIncomeSourceDetail(detailKey, existingResponse);
         }
-      }
+      });
     }
-  }, [question, getResponse]);
+  }, [question, getResponse, updateIncomeSourceDetail]);
 
   // Funzione per gestire il cambio di risposta con validazione
   const handleResponseChange = (key: string, value: string | string[]) => {
