@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { Question, ValidationTypes } from "@/types/form";
 import { Input } from "@/components/ui/input";
@@ -31,22 +31,36 @@ export function FormQuestion({ question }: FormQuestionProps) {
   
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});
   const [isNavigating, setIsNavigating] = useState(false);
-  // Stato per tenere traccia di quali placeholder hanno opzioni visibili
   const [visibleOptions, setVisibleOptions] = useState<{ [key: string]: boolean }>({});
-  // Nuovo stato per tenere traccia degli errori di validazione
   const [validationErrors, setValidationErrors] = useState<{ [key: string]: boolean }>({});
-  const params = useParams();
   
-  // Add ref to track if responses were already processed to prevent unnecessary rerenders
+  // Refs for preventing loops and tracking changes
   const responsesProcessedRef = useRef(false);
-  // Add ref to track question ID to detect actual question changes
   const previousQuestionIdRef = useRef(question.question_id);
-
-  // Effetto per caricare le risposte esistenti e impostare visibilità iniziale delle opzioni
+  const navigationInProgressRef = useRef(false);
+  const navigationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  // Reset state when the question changes
   useEffect(() => {
-    // Only process if question changed or responses weren't processed yet
-    if (previousQuestionIdRef.current !== question.question_id || !responsesProcessedRef.current) {
+    // Only reset when the question ID actually changes
+    if (previousQuestionIdRef.current !== question.question_id) {
       previousQuestionIdRef.current = question.question_id;
+      responsesProcessedRef.current = false;
+      setIsNavigating(false);
+      
+      // Clear any pending navigation timeouts
+      if (navigationTimeoutRef.current) {
+        clearTimeout(navigationTimeoutRef.current);
+        navigationTimeoutRef.current = null;
+      }
+    }
+  }, [question.question_id]);
+  
+  // Initialize responses from the form context
+  useEffect(() => {
+    // Only process if the question changed or responses weren't processed yet
+    if (!responsesProcessedRef.current) {
+      console.log(`FormQuestion: Loading responses for question ${question.question_id}`);
       
       const existingResponses: { [key: string]: string | string[] } = {};
       const initialVisibleOptions: { [key: string]: boolean } = {};
@@ -74,27 +88,28 @@ export function FormQuestion({ question }: FormQuestionProps) {
       setResponses(existingResponses);
       setVisibleOptions(initialVisibleOptions);
       setValidationErrors(initialValidationErrors);
-      setIsNavigating(false);
       
       // Mark as processed to prevent unnecessary rerenders
       responsesProcessedRef.current = true;
     }
-  }, [question.question_id, getResponse, question.placeholders]);
-
-  // Reset the processed flag when the question changes
+  }, [question.placeholders, question.question_id, getResponse]);
+  
+  // Clean up effect
   useEffect(() => {
     return () => {
-      responsesProcessedRef.current = false;
+      if (navigationTimeoutRef.current) {
+        clearTimeout(navigationTimeoutRef.current);
+      }
     };
-  }, [question.question_id]);
+  }, []);
 
-  // Funzione per gestire il cambio di risposta con validazione
-  const handleResponseChange = (key: string, value: string | string[]) => {
+  // Memoized handlers
+  const handleResponseChange = useCallback((key: string, value: string | string[]) => {
     // Aggiorniamo sempre lo stato locale indipendentemente dalla validazione
-    setResponses({
-      ...responses,
+    setResponses(prev => ({
+      ...prev,
       [key]: value
-    });
+    }));
 
     // Se è un input, verifichiamo la validazione
     if (question.placeholders[key].type === "input" && typeof value === "string") {
@@ -140,39 +155,50 @@ export function FormQuestion({ question }: FormQuestionProps) {
         }
       }
     }
-  };
+  }, [question.placeholders, question.question_id, setResponse, addActiveBlock]);
 
   // Funzione per gestire il click sul placeholder
-  const handlePlaceholderClick = (key: string) => {
+  const handlePlaceholderClick = useCallback((key: string) => {
     setVisibleOptions(prev => ({
       ...prev,
       [key]: !prev[key]
     }));
-  };
+  }, []);
 
-  // Funzione modificata per navigare alla domanda specifica quando si fa click su una risposta
-  const handleQuestionClick = (questionId: string) => {
+  // Funzione per navigare alla domanda specifica quando si fa click su una risposta
+  const handleQuestionClick = useCallback((questionId: string) => {
     // Previeni navigazione se già in corso
-    if (isNavigating) return;
+    if (isNavigating || navigationInProgressRef.current) return;
     
     // Naviga direttamente alla domanda con l'ID specificato
     if (questionId) {
-      setIsNavigating(true); // Lock navigation to prevent multiple clicks
+      setIsNavigating(true);
+      navigationInProgressRef.current = true;
+      console.log(`FormQuestion: Navigating to question ${questionId}`);
+      
       goToQuestion(state.activeQuestion.block_id, questionId);
       
       // Reset navigation lock after a delay
-      setTimeout(() => {
+      navigationTimeoutRef.current = setTimeout(() => {
         setIsNavigating(false);
-      }, 500);
+        navigationInProgressRef.current = false;
+        navigationTimeoutRef.current = null;
+      }, 1000);
     }
-  };
+  }, [goToQuestion, isNavigating, state.activeQuestion.block_id]);
 
-  // Funzione modificata per la gestione della navigazione basata sulla priorità
-  const handleNextQuestion = () => {
-    if (isNavigating) return;
-    setIsNavigating(true);
+  // Funzione per la gestione della navigazione basata sulla priorità
+  const handleNextQuestion = useCallback(() => {
+    if (isNavigating || navigationInProgressRef.current) {
+      console.log("FormQuestion: Navigation already in progress, skipping");
+      return;
+    }
     
-    // Add a small delay before navigation to prevent rapid clicks
+    setIsNavigating(true);
+    navigationInProgressRef.current = true;
+    console.log(`FormQuestion: Starting next question navigation from ${question.question_id}`);
+    
+    // Add a small delay before navigation
     setTimeout(() => {
       // Verifica se è stata specificata una priorità per i placeholder
       if (question.leads_to_placeholder_priority && 
@@ -181,7 +207,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
         // Ottieni il placeholder con priorità
         const priorityPlaceholder = question.placeholders[question.leads_to_placeholder_priority];
         const priorityResponse = responses[question.leads_to_placeholder_priority] || 
-                                getResponse(question.question_id, question.leads_to_placeholder_priority);
+                               getResponse(question.question_id, question.leads_to_placeholder_priority);
         
         // Se il placeholder prioritario è di tipo select
         if (priorityResponse && priorityPlaceholder.type === "select" && !Array.isArray(priorityResponse)) {
@@ -191,20 +217,12 @@ export function FormQuestion({ question }: FormQuestionProps) {
           
           if (selectedOption?.leads_to) {
             navigateToNextQuestion(question.question_id, selectedOption.leads_to);
-            // Reset navigation lock after a short delay
-            setTimeout(() => {
-              setIsNavigating(false);
-            }, 500);
             return;
           }
         } 
         // Se il placeholder prioritario è di tipo input
         else if (priorityResponse && priorityPlaceholder.type === "input" && (priorityPlaceholder as any).leads_to) {
           navigateToNextQuestion(question.question_id, (priorityPlaceholder as any).leads_to);
-          // Reset navigation lock after a short delay
-          setTimeout(() => {
-            setIsNavigating(false);
-          }, 500);
           return;
         }
       }
@@ -221,33 +239,82 @@ export function FormQuestion({ question }: FormQuestionProps) {
           
           if (selectedOption?.leads_to) {
             navigateToNextQuestion(question.question_id, selectedOption.leads_to);
-            // Reset navigation lock after a short delay
-            setTimeout(() => {
-              setIsNavigating(false);
-            }, 500);
             return;
           }
         } else if (response && question.placeholders[key].type === "input" && (question.placeholders[key] as any).leads_to) {
           navigateToNextQuestion(question.question_id, (question.placeholders[key] as any).leads_to);
-          // Reset navigation lock after a short delay
-          setTimeout(() => {
-            setIsNavigating(false);
-          }, 500);
           return;
         }
       }
       
       // Se nessun placeholder ha un leads_to valido, vai al blocco successivo
       navigateToNextQuestion(question.question_id, "next_block");
-      // Reset navigation lock after a short delay
-      setTimeout(() => {
+      
+      // Reset navigation state after a delay (in case the navigation fails)
+      navigationTimeoutRef.current = setTimeout(() => {
         setIsNavigating(false);
-      }, 500);
-    }, 100); // Small delay before starting navigation
-  };
+        navigationInProgressRef.current = false;
+        navigationTimeoutRef.current = null;
+      }, 1000);
+    }, 100);
+  }, [
+    isNavigating, 
+    question.leads_to_placeholder_priority, 
+    question.placeholders, 
+    question.question_id, 
+    responses, 
+    getResponse, 
+    navigateToNextQuestion
+  ]);
 
+  // Resto della funzione renderQuestion e altre funzioni ausiliarie
+  // ... keep existing code (the renderQuestionText, renderQuestionNotes, renderQuestionPlaceholders functions)
+
+  // Determina se ci sono risposte valide - MODIFICATO per richiedere TUTTE le risposte
+  const hasValidResponses = Object.keys(question.placeholders).every(key => 
+    responses[key] !== undefined || getResponse(question.question_id, key) !== undefined
+  ) && allInputsHaveValidContent();
+  
+  // Funzione per determinare se tutte le input hanno contenuto valido
+  function allInputsHaveValidContent() {
+    const inputPlaceholders = Object.keys(question.placeholders).filter(
+      key => question.placeholders[key].type === "input"
+    );
+    
+    // Se non ci sono input, consideriamo valido (per gestire select e altri tipi)
+    if (inputPlaceholders.length === 0) {
+      return true;
+    }
+    
+    // Verifica se tutti gli input hanno un valore e sono validi
+    return inputPlaceholders.every(key => {
+      const value = responses[key] || getResponse(question.question_id, key);
+      
+      // Verifica se il valore esiste
+      if (value === undefined || value === "") {
+        return false;
+      }
+      
+      // Verifica se c'è un errore di validazione
+      if (validationErrors[key]) {
+        return false;
+      }
+      
+      // Verifica validazione per i valori esistenti nel contesto
+      const placeholder = question.placeholders[key];
+      if (placeholder.type === "input") {
+        const validationType = (placeholder as any).input_validation;
+        if (!validateInput(value as string, validationType)) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  }
+  
   // Funzione per ottenere il testo completo della domanda, includendo la sequenza di domande inline
-  const getQuestionText = () => {
+  const getQuestionText = useCallback(() => {
     // Se non è una domanda inline, restituisci semplicemente il testo della domanda
     if (question.inline !== true) {
       return question.question_text;
@@ -266,9 +333,9 @@ export function FormQuestion({ question }: FormQuestionProps) {
     
     // Altrimenti, restituisci la catena di domande + la domanda attuale
     return question.question_text;
-  };
+  }, [question.inline, question.question_text, getInlineQuestionChain, state.activeQuestion]);
 
-  // Funzione per renderizzare la nota informativa sopra la domanda (NUOVO)
+  // Funzione per renderizzare la nota informativa sopra la domanda
   const renderQuestionNotes = () => {
     if (!question.question_notes) {
       return null;
@@ -503,57 +570,10 @@ export function FormQuestion({ question }: FormQuestionProps) {
     return null;
   };
 
-  // Funzione migliorata per determinare se tutte le input hanno contenuto valido
-  const allInputsHaveValidContent = () => {
-    const inputPlaceholders = Object.keys(question.placeholders).filter(
-      key => question.placeholders[key].type === "input"
-    );
-    
-    // Se non ci sono input, consideriamo valido (per gestire select e altri tipi)
-    if (inputPlaceholders.length === 0) {
-      return true;
-    }
-    
-    // Verifica se tutti gli input hanno un valore e sono validi
-    return inputPlaceholders.every(key => {
-      const value = responses[key] || getResponse(question.question_id, key);
-      
-      // Verifica se il valore esiste
-      if (value === undefined || value === "") {
-        return false;
-      }
-      
-      // Verifica se c'è un errore di validazione
-      if (validationErrors[key]) {
-        return false;
-      }
-      
-      // Verifica validazione per i valori esistenti nel contesto
-      const placeholder = question.placeholders[key];
-      if (placeholder.type === "input") {
-        const validationType = (placeholder as any).input_validation;
-        if (!validateInput(value as string, validationType)) {
-          return false;
-        }
-      }
-      
-      return true;
-    });
-  };
-  
-  // Determina se ci sono risposte valide - MODIFICATO per richiedere TUTTE le risposte
-  const hasValidResponses = Object.keys(question.placeholders).every(key => 
-    responses[key] !== undefined || getResponse(question.question_id, key) !== undefined
-  ) && allInputsHaveValidContent();
-
   return (
     <div className="max-w-xl animate-fade-in">
       {/* Banner note della domanda - NUOVO COMPONENTE */}
-      {question.question_notes && (
-        <div className="mb-5 p-4 bg-[#F8F4EF] border-l-4 border-[#245C4F] rounded-md">
-          <p className="text-[14px] text-gray-700">{question.question_notes}</p>
-        </div>
-      )}
+      {question.question_notes && renderQuestionNotes()}
       
       {/* Testo della domanda semplificato */}
       <div className="text-[16px] font-normal text-gray-900 mb-5 leading-relaxed">
@@ -576,10 +596,11 @@ export function FormQuestion({ question }: FormQuestionProps) {
             className={cn(
               "bg-[#245C4F] hover:bg-[#1e4f44] text-white px-[32px] py-[16px] rounded-[12px] text-[17px] font-medium",
               "transition-all shadow-[0_6px_12px_rgba(36,92,79,0.2)] hover:shadow-[0_8px_16px_rgba(36,92,79,0.25)]",
-              "inline-flex items-center gap-[12px]"
+              "inline-flex items-center gap-[12px]",
+              isNavigating ? "opacity-50 cursor-not-allowed" : ""
             )}
             onClick={handleNextQuestion}
-            disabled={isNavigating || Object.keys(question.placeholders).length === 0}
+            disabled={isNavigating || navigationInProgressRef.current || Object.keys(question.placeholders).length === 0}
           >
             Avanti <ArrowRight className="ml-1 h-4 w-4" />
           </Button>

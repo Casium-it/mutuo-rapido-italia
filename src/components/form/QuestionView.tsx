@@ -20,63 +20,77 @@ export function QuestionView() {
   const params = useParams<{ blockId?: string, questionId?: string }>();
   const [isInitialized, setIsInitialized] = useState(false);
   
-  // Uso un ref per tenere traccia dell'ultima navigazione
+  // Refs for tracking navigation and preventing loops
   const lastProcessedParams = useRef<{
     blockId?: string,
-    questionId?: string
-  }>({});
+    questionId?: string,
+    timestamp: number
+  }>({ timestamp: 0 });
   
-  // Add navigation lock to prevent multiple navigation attempts
   const isNavigatingRef = useRef(false);
+  const initCompletedRef = useRef(false);
   
   // Sincronizza il componente con l'URL quando cambia
   useEffect(() => {
-    // Se non abbiamo parametri, non facciamo nulla
+    // Se già completato l'inizializzazione e non ci sono parametri, non fare nulla
+    if (initCompletedRef.current && (!params.blockId || !params.questionId)) {
+      return;
+    }
+    
+    // Se non abbiamo parametri, imposta solo l'inizializzazione
     if (!params.blockId || !params.questionId) {
       setIsInitialized(true);
+      initCompletedRef.current = true;
       return;
     }
     
-    // Skip if already navigating
+    // Salta se già in navigazione
     if (isNavigatingRef.current) {
+      console.log("Already navigating, skipping URL sync");
       return;
     }
     
-    // Controlla se abbiamo già processato questi parametri esatti
+    // Controlla se abbiamo già processato questi parametri esatti recentemente (entro 1000ms)
     const isSameParams = 
       lastProcessedParams.current.blockId === params.blockId &&
-      lastProcessedParams.current.questionId === params.questionId;
+      lastProcessedParams.current.questionId === params.questionId &&
+      Date.now() - lastProcessedParams.current.timestamp < 1000;
       
-    // Aggiorna il ref con i parametri correnti
-    lastProcessedParams.current = {
-      blockId: params.blockId,
-      questionId: params.questionId
-    };
-    
     // Determina se è necessario aggiornare lo stato interno
     const needsStateUpdate = 
       state.activeQuestion.block_id !== params.blockId ||
       state.activeQuestion.question_id !== params.questionId;
     
-    // Solo se è necessario un aggiornamento dello stato
-    // e non abbiamo già processato questi parametri, aggiorniamo lo stato
+    // Solo se è necessario un aggiornamento dello stato e non abbiamo
+    // già processato questi parametri, aggiorniamo lo stato
     if (!isSameParams && needsStateUpdate) {
-      // Set navigation lock
-      isNavigatingRef.current = true;
+      // Aggiorna il ref con i parametri correnti e timestamp
+      lastProcessedParams.current = {
+        blockId: params.blockId,
+        questionId: params.questionId,
+        timestamp: Date.now()
+      };
       
-      // Update state with a small delay to prevent immediate re-renders
+      // Imposta il lock di navigazione
+      isNavigatingRef.current = true;
+      console.log(`QuestionView: Syncing state with URL: ${params.blockId}/${params.questionId}`);
+      
+      // Aggiorna lo stato con un piccolo ritardo per prevenire re-render immediati
       setTimeout(() => {
         goToQuestion(params.blockId!, params.questionId!, true);
         
-        // Release navigation lock after a delay
+        // Rilascia il lock di navigazione dopo un ritardo
         setTimeout(() => {
           isNavigatingRef.current = false;
-        }, 500);
+          console.log("QuestionView: Navigation lock released");
+        }, 1000);
       }, 50);
     }
     
+    // Imposta l'inizializzazione completata
     setIsInitialized(true);
-  }, [location.pathname, params.blockId, params.questionId]); 
+    initCompletedRef.current = true;
+  }, [location.pathname]); 
   
   // Attendere che il componente sia inizializzato prima di renderizzare
   if (!isInitialized) {

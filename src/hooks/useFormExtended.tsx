@@ -6,6 +6,7 @@ import {
   getChainOfInlineQuestions
 } from "@/utils/formUtils";
 import { Question, StandardBlock, Block, RepeatingGroupBlock } from "@/types/form";
+import { useCallback } from "react";
 
 /**
  * Funzione di utilità per verificare se un blocco è di tipo StandardBlock
@@ -33,7 +34,7 @@ export const useFormExtended = () => {
    * @param questionId Current question ID
    * @returns The previous question's text with responses or empty string
    */
-  const getPreviousQuestionText = (blockId: string, questionId: string): string => {
+  const getPreviousQuestionText = useCallback((blockId: string, questionId: string): string => {
     const previousQuestion = getPreviousQuestionUtil(
       formContext.blocks,
       blockId,
@@ -43,7 +44,7 @@ export const useFormExtended = () => {
     if (!previousQuestion) return "";
     
     return getQuestionTextWithResponses(previousQuestion, formContext.state.responses);
-  };
+  }, [formContext.blocks, formContext.state.responses]);
   
   /**
    * Gets the previous question object
@@ -51,9 +52,9 @@ export const useFormExtended = () => {
    * @param questionId Current question ID
    * @returns The previous question object or undefined
    */
-  const getPreviousQuestion = (blockId: string, questionId: string) => {
+  const getPreviousQuestion = useCallback((blockId: string, questionId: string) => {
     return getPreviousQuestionUtil(formContext.blocks, blockId, questionId);
-  };
+  }, [formContext.blocks]);
 
   /**
    * Gets all previous inline questions in a chain, starting from the current question
@@ -61,7 +62,7 @@ export const useFormExtended = () => {
    * @param questionId Current question ID
    * @returns Array of previous questions in the chain, ordered from first to last
    */
-  const getInlineQuestionChain = (blockId: string, questionId: string): Question[] => {
+  const getInlineQuestionChain = useCallback((blockId: string, questionId: string): Question[] => {
     // Verifica prima che si tratti di un blocco standard
     const block = formContext.blocks.find(b => b.block_id === blockId);
     if (!block || isRepeatingGroupBlock(block)) {
@@ -103,7 +104,7 @@ export const useFormExtended = () => {
       blockId,
       questionId
     );
-  };
+  }, [formContext.blocks, formContext.getNavigationHistoryFor]);
   
   return {
     ...formContext,
