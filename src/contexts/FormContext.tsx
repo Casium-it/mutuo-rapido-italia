@@ -693,7 +693,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         const block = sortedBlocks[i];
         
         // Caso speciale per i repeating_group quando siamo sulla vista manager
-        if (isRepeatingGroupBlock(block) && block.block_id === currentBlockId) {
+        if (isRepeatingGroupBlock(block) && block.block_id === currentBlock.block_id) {
           currentBlockIndex = i;
           currentBlock = block;
           break;
