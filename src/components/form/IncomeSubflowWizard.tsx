@@ -140,14 +140,11 @@ export function IncomeSubflowWizard({
   };
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-2xl">
       <div>
-        <h3 className="text-lg font-medium mb-2">
+        <h3 className="text-xl font-semibold mb-1">
           {initialData.id ? 'Modifica fonte di reddito' : 'Aggiungi fonte di reddito'}
         </h3>
-        <p className="text-sm text-gray-600">
-          Passo {currentStep + 1} di {questions.length}
-        </p>
       </div>
       
       <div className="space-y-4">
