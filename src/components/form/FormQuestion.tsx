@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { Question, ValidationTypes } from "@/types/form";
@@ -229,6 +230,19 @@ export function FormQuestion({ question }: FormQuestionProps) {
     
     // Altrimenti, restituisci la catena di domande + la domanda attuale
     return question.question_text;
+  };
+
+  // Funzione per renderizzare la nota informativa sopra la domanda (NUOVO)
+  const renderQuestionNotes = () => {
+    if (!question.question_notes) {
+      return null;
+    }
+
+    return (
+      <div className="mb-5 p-4 bg-[#F8F4EF] border-l-4 border-[#245C4F] rounded-md">
+        <p className="text-[14px] text-gray-700">{question.question_notes}</p>
+      </div>
+    );
   };
 
   // Funzione per renderizzare il testo della domanda con placeholders
@@ -498,6 +512,9 @@ export function FormQuestion({ question }: FormQuestionProps) {
 
   return (
     <div className="max-w-xl animate-fade-in">
+      {/* Banner note della domanda - NUOVO COMPONENTE */}
+      {renderQuestionNotes()}
+      
       {/* Testo della domanda semplificato */}
       <div className="text-[16px] font-normal text-gray-900 mb-5 leading-relaxed">
         {renderQuestionText()}

@@ -32,6 +32,7 @@ export type Question = {
   inline?: boolean;
   leads_to_placeholder_priority: string;
   placeholders: Record<string, Placeholder>;
+  question_notes?: string; // Nuovo campo per le note informative sopra la domanda
 };
 
 export type Block = {
