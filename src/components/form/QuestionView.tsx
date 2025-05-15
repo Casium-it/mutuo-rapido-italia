@@ -3,6 +3,7 @@ import React, { useEffect } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { FormQuestion } from "./FormQuestion";
 import { useLocation, useParams } from "react-router-dom";
+import { StandardBlock } from "@/types/form";
 
 export function QuestionView() {
   const { state, blocks, goToQuestion } = useFormExtended();
@@ -23,11 +24,32 @@ export function QuestionView() {
   
   // Find the current active block and question
   const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
-  const activeQuestion = activeBlock?.questions.find(
+  
+  // Verifica che il blocco sia un StandardBlock prima di cercare la domanda
+  if (!activeBlock) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-500">Blocco non trovato.</p>
+      </div>
+    );
+  }
+
+  // Se il blocco è un RepeatingGroupBlock, non dovremmo visualizzare questo componente
+  if ('type' in activeBlock && activeBlock.type === 'repeating_group') {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-500">Questo blocco utilizza un componente personalizzato.</p>
+      </div>
+    );
+  }
+
+  // A questo punto sappiamo che è un StandardBlock
+  const standardBlock = activeBlock as StandardBlock;
+  const activeQuestion = standardBlock.questions.find(
     question => question.question_id === state.activeQuestion.question_id
   );
 
-  if (!activeBlock || !activeQuestion) {
+  if (!activeQuestion) {
     return (
       <div className="text-center py-8">
         <p className="text-gray-500">Domanda non trovata.</p>

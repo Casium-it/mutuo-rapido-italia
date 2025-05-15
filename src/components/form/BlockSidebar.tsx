@@ -3,6 +3,7 @@ import { useForm } from "@/contexts/FormContext";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useParams } from "react-router-dom";
+import { StandardBlock, RepeatingGroupBlock } from "@/types/form";
 
 export function BlockSidebar() {
   const { blocks, state } = useForm();
@@ -21,18 +22,32 @@ export function BlockSidebar() {
     const block = blocks.find(b => b.block_id === blockId);
     if (!block) return false;
 
-    return block.questions.every(question => state.answeredQuestions.has(question.question_id));
+    // Gestisci sia i blocchi standard che i repeating_group
+    if ('type' in block && block.type === 'repeating_group') {
+      // Per repeating_group, considera completato se c'è almeno un elemento nel gruppo
+      const repeatingGroupEntries = state.repeatingGroups?.[block.repeating_id] || [];
+      return repeatingGroupEntries.length > 0;
+    } else {
+      // Per blocchi standard, considera completato se tutte le domande sono state risposto
+      const standardBlock = block as StandardBlock;
+      return standardBlock.questions.every(question => state.answeredQuestions.has(question.question_id));
+    }
   };
 
   const getBlockStatus = (blockId: string) => {
     if (isBlockCompleted(blockId)) return "completato";
     if (isBlockActive(blockId)) return "attivo";
     
-    // Se c'è almeno una domanda risposta ma non tutte
+    // Se c'è almeno una domanda risposta ma non tutte (solo per blocchi standard)
     const block = blocks.find(b => b.block_id === blockId);
     if (block) {
-      const hasAnyAnswer = block.questions.some(q => state.answeredQuestions.has(q.question_id));
-      if (hasAnyAnswer) return "parziale";
+      if ('type' in block && block.type === 'repeating_group') {
+        return "non iniziato"; // Per repeating_group, non c'è stato "parziale"
+      } else {
+        const standardBlock = block as StandardBlock;
+        const hasAnyAnswer = standardBlock.questions.some(q => state.answeredQuestions.has(q.question_id));
+        if (hasAnyAnswer) return "parziale";
+      }
     }
     
     return "non iniziato";

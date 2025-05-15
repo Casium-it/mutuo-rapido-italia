@@ -1,7 +1,12 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback } from "react";
-import { Block, FormState, FormResponse, NavigationHistory } from "@/types/form";
+import { Block, FormState, FormResponse, NavigationHistory, StandardBlock } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { resetAllRepeatingGroups } from "@/utils/repeatingGroupUtils";
+
+// Funzione di utilità per verificare se un blocco è di tipo StandardBlock
+const isStandardBlock = (block: Block): block is StandardBlock => {
+  return !('type' in block) || block.type !== 'repeating_group';
+};
 
 type FormContextType = {
   state: FormState;
@@ -36,7 +41,8 @@ const initialState: FormState = {
   responses: {},
   answeredQuestions: new Set(),
   isNavigating: false,
-  navigationHistory: []
+  navigationHistory: [],
+  repeatingGroups: {}
 };
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
@@ -179,25 +185,40 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     } else if (blockId) {
       // Se solo blockId è specificato, trova la prima domanda nel blocco
       const block = blocks.find(b => b.block_id === blockId);
-      if (block && block.questions.length > 0) {
-        const firstQuestionId = block.questions[0].question_id;
-        dispatch({ 
-          type: "GO_TO_QUESTION", 
-          block_id: blockId, 
-          question_id: firstQuestionId 
-        });
-        
-        if (!state.activeBlocks.includes(blockId)) {
-          dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
+      
+      if (block) {
+        // Gestisci distintamente i blocchi standard e repeating_group
+        if (isStandardBlock(block) && block.questions.length > 0) {
+          const firstQuestionId = block.questions[0].question_id;
+          dispatch({ 
+            type: "GO_TO_QUESTION", 
+            block_id: blockId, 
+            question_id: firstQuestionId 
+          });
+          
+          if (!state.activeBlocks.includes(blockId)) {
+            dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
+          }
+          
+          // Aggiorna l'URL per includere anche l'ID della domanda
+          navigate(`/simulazione/${params.blockType}/${blockId}/${firstQuestionId}`, { replace: true });
+        } else {
+          // Per i blocchi repeating_group, naviga direttamente al blocco
+          dispatch({ 
+            type: "GO_TO_QUESTION", 
+            block_id: blockId, 
+            question_id: "manager_view" // Un ID fittizio per il manager_view
+          });
+          
+          if (!state.activeBlocks.includes(blockId)) {
+            dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
+          }
         }
-        
-        // Aggiorna l'URL per includere anche l'ID della domanda
-        navigate(`/simulazione/${params.blockType}/${blockId}/${firstQuestionId}`, { replace: true });
       }
     } else if (params.blockType) {
       // Se solo il tipo è specificato (pensando, cercando, ecc.), trova il blocco iniziale
       const entryBlock = blocks.find(b => b.block_id === "introduzione");
-      if (entryBlock && entryBlock.questions.length > 0) {
+      if (entryBlock && isStandardBlock(entryBlock) && entryBlock.questions.length > 0) {
         dispatch({ 
           type: "GO_TO_QUESTION", 
           block_id: "introduzione", 
@@ -340,10 +361,20 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   }, [state.answeredQuestions]);
 
   const findQuestionById = useCallback((questionId: string): { block: Block; question: any } | null => {
-    for (const block of sortedBlocks) { // Usa blocchi ordinati
-      for (const question of block.questions) {
-        if (question.question_id === questionId) {
-          return { block, question };
+    for (const block of sortedBlocks) {
+      // Gestisci blocchi standard e repeating_group distintamente
+      if (isStandardBlock(block)) {
+        for (const question of block.questions) {
+          if (question.question_id === questionId) {
+            return { block, question };
+          }
+        }
+      } else {
+        // Per i blocchi repeating_group, cerca nelle domande del subflow
+        for (const question of block.subflow) {
+          if (question.question_id === questionId) {
+            return { block, question };
+          }
         }
       }
     }
@@ -363,9 +394,17 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       let currentBlockIndex = -1;
       
       // Cerca quale blocco contiene la domanda corrente
-      for (let i = 0; i < sortedBlocks.length; i++) { // Usa blocchi ordinati
+      for (let i = 0; i < sortedBlocks.length; i++) {
         const block = sortedBlocks[i];
-        const hasQuestion = block.questions.some(q => q.question_id === currentQuestionId);
+        
+        // Verifica se la domanda appartiene a questo blocco (standard o repeating_group)
+        let hasQuestion = false;
+        if (isStandardBlock(block)) {
+          hasQuestion = block.questions.some(q => q.question_id === currentQuestionId);
+        } else {
+          hasQuestion = block.subflow.some(q => q.question_id === currentQuestionId);
+        }
+        
         if (hasQuestion) {
           currentBlockIndex = i;
           currentBlock = block;
@@ -393,17 +432,25 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         if (currentActiveIndex !== -1) {
           for (let i = currentActiveIndex + 1; i < activeBlocksWithPriority.length; i++) {
             const nextBlock = activeBlocksWithPriority[i];
-            if (nextBlock && nextBlock.questions.length > 0) {
-              console.log(`Found next active block: ${nextBlock.block_id}`);
-              foundNextActiveBlock = true;
-              goToQuestion(nextBlock.block_id, nextBlock.questions[0].question_id);
-              break;
+            if (nextBlock) {
+              // Gestisci blocchi standard e repeating_group distintamente
+              if (isStandardBlock(nextBlock) && nextBlock.questions.length > 0) {
+                console.log(`Found next active block (standard): ${nextBlock.block_id}`);
+                foundNextActiveBlock = true;
+                goToQuestion(nextBlock.block_id, nextBlock.questions[0].question_id);
+                break;
+              } else if ('type' in nextBlock && nextBlock.type === 'repeating_group') {
+                console.log(`Found next active block (repeating_group): ${nextBlock.block_id}`);
+                foundNextActiveBlock = true;
+                goToQuestion(nextBlock.block_id, "manager_view"); // ID fittizio per il manager_view
+                break;
+              }
             }
           }
         }
         
         // Se non è stato trovato un blocco attivo successivo, cerca se c'è qualche domanda successiva nello stesso blocco
-        if (!foundNextActiveBlock) {
+        if (!foundNextActiveBlock && isStandardBlock(currentBlock)) {
           console.log(`No next active block found after ${currentBlock.block_id}`);
           
           // Trova la posizione della domanda corrente nel blocco
@@ -453,27 +500,36 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
 
   // Calcola il progresso complessivo del form
   const getProgress = useCallback(() => {
-    // Conta tutte le domande nei blocchi attivi (senza distinzione per inline)
+    // Conta tutte le domande nei blocchi attivi
     let totalQuestions = 0;
     let answeredCount = 0;
     
     for (const blockId of state.activeBlocks) {
       const block = blocks.find(b => b.block_id === blockId);
       if (block) {
-        // Conta tutte le domande per il totale
-        totalQuestions += block.questions.length;
-        
-        // Conta le domande già risposte in questo blocco
-        block.questions.forEach(q => {
-          if (state.answeredQuestions.has(q.question_id)) {
-            answeredCount++;
+        if (isStandardBlock(block)) {
+          // Per blocchi standard, conta tutte le domande
+          totalQuestions += block.questions.length;
+          
+          // Conta le domande già risposte in questo blocco
+          block.questions.forEach(q => {
+            if (state.answeredQuestions.has(q.question_id)) {
+              answeredCount++;
+            }
+          });
+        } else {
+          // Per repeating_group, conta 1 se c'è almeno un'entrata
+          const repeatingGroupEntries = state.repeatingGroups?.[block.repeating_id] || [];
+          totalQuestions += 1;
+          if (repeatingGroupEntries.length > 0) {
+            answeredCount += 1;
           }
-        });
+        }
       }
     }
     
     return totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
-  }, [state.activeBlocks, state.answeredQuestions, blocks]);
+  }, [state.activeBlocks, state.answeredQuestions, blocks, state.repeatingGroups]);
 
   // Nuova funzione per ottenere la cronologia di navigazione per una domanda specifica
   const getNavigationHistoryFor = useCallback((questionId: string): NavigationHistory | undefined => {
