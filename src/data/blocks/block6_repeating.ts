@@ -13,6 +13,8 @@ export const block6_repeating: RepeatingGroupBlock = {
   default_active: true,
   type: "repeating_group",
   repeating_id: "secondary_income",
+  summary_field: "amount_input",
+  summary_template: "{{amount_input}} €/mese",
   subflow: [
     {
       question_id: "income_type",

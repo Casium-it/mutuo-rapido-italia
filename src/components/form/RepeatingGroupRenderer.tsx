@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { RepeatingGroupBlock, RepeatingGroupEntry } from '@/types/form';
 import { IncomeManagerView } from './IncomeManagerView';
-import { IncomeSubflowWizard } from './IncomeSubflowWizard';
 import { useRepeatingGroup } from '@/hooks/useRepeatingGroup';
 import { useForm } from '@/contexts/FormContext';
+import { QuestionView } from './QuestionView';
 import { toast } from '@/components/ui/use-toast';
 import { dispatchResetEvent } from '@/utils/repeatingGroupUtils';
 
@@ -23,30 +22,35 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
     continue_button_text = "Avanti"
   } = block;
   
-  const { navigateToNextQuestion, state } = useForm();
-  const { addEntry, updateEntry, refreshEntries, entries } = useRepeatingGroup(repeating_id);
+  const { 
+    goToQuestion, 
+    navigateToNextQuestion, 
+    state, 
+    setResponse, 
+    clearSubflowResponses,
+    startEditingRepeatingEntry,
+    cancelEditingRepeatingEntry
+  } = useForm();
   
-  // Stato per la modalità di visualizzazione (manager o subflow)
-  const [mode, setMode] = useState<'manager' | 'subflow'>('manager');
+  const { 
+    addEntry, 
+    updateEntry, 
+    refreshEntries, 
+    entries, 
+    deleteEntry 
+  } = useRepeatingGroup(repeating_id);
   
-  // Stato per il record in corso di modifica
-  const [editingEntry, setEditingEntry] = useState<{
-    data: RepeatingGroupEntry;
-    index: number;
-  } | null>(null);
+  // Determine if we're in the manager view or a subflow view
+  const isInManagerView = state.activeQuestion.question_id === 'manager_view';
   
-  // Effetto per aggiornare i dati quando il form cambia modalità o blocco
+  // Effect to update data when the form changes mode or block
   useEffect(() => {
-    // Reset mode e stati quando cambia il blocco attivo
-    setMode('manager');
-    setEditingEntry(null);
-    
-    // Forza un refresh dei dati per assicurarsi che siano aggiornati
+    // Reset states when the active block changes
     refreshEntries();
     
-    // Controllo quando la pagina viene ricaricata o quando si naviga
+    // Control when page is reloaded or navigated
     const handleBeforeUnload = () => {
-      // Dispara un evento di reset quando la pagina viene ricaricata
+      // Dispatch a reset event when the page is reloaded
       dispatchResetEvent();
     };
     
@@ -57,83 +61,95 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
     };
   }, [block.block_id, state.activeQuestion.block_id, refreshEntries]);
   
-  // Gestisce l'aggiunta di un nuovo record
+  // Handle adding a new entry (clear previous responses and navigate to the first question)
   const handleAdd = () => {
-    setEditingEntry(null); // Non stiamo modificando, stiamo aggiungendo
-    setMode('subflow');
+    // Clear any previous responses for the subflow questions
+    clearSubflowResponses(subflow);
+    
+    // Navigate to the first question in the subflow
+    const firstQuestion = subflow[0];
+    if (firstQuestion) {
+      goToQuestion(block.block_id, firstQuestion.question_id);
+    }
   };
   
-  // Gestisce la modifica di un record esistente
+  // Handle editing an existing entry (prefill responses and navigate to the first question)
   const handleEdit = (entry: RepeatingGroupEntry, index: number) => {
-    setEditingEntry({ data: entry, index });
-    setMode('subflow');
+    // Mark that we're editing this specific entry
+    startEditingRepeatingEntry(repeating_id, index);
+    
+    // Clear any previous responses first
+    clearSubflowResponses(subflow);
+    
+    // Set responses for all subflow questions based on the entry
+    subflow.forEach(question => {
+      const questionId = question.question_id;
+      
+      // Handle direct properties (assume one placeholder per question for simplicity)
+      if (entry[questionId] !== undefined) {
+        const placeholderKey = Object.keys(question.placeholders)[0];
+        // Ensure we have a value to set
+        if (entry[questionId] !== undefined) {
+          setResponse(questionId, placeholderKey, entry[questionId]);
+        }
+      }
+      
+      // Handle nested properties (if stored in old format)
+      if (typeof entry[questionId] === 'object') {
+        Object.entries(entry[questionId]).forEach(([placeholderKey, value]) => {
+          setResponse(questionId, placeholderKey, value as string | string[]);
+        });
+      }
+    });
+    
+    // Navigate to the first question
+    const firstQuestion = subflow[0];
+    if (firstQuestion) {
+      goToQuestion(block.block_id, firstQuestion.question_id);
+    }
   };
   
-  // Gestisce il completamento del subflow
-  const handleSubflowComplete = (data: RepeatingGroupEntry) => {
-    let success = false;
-    
-    if (editingEntry) {
-      // Aggiorna un record esistente
-      success = updateEntry(data, editingEntry.index);
+  // Handle deleting an entry
+  const handleDelete = (index: number) => {
+    if (window.confirm("Sei sicuro di voler eliminare questa fonte di reddito?")) {
+      const success = deleteEntry(index);
       
       if (success) {
         toast({
-          title: "Reddito aggiornato",
-          description: "Le modifiche alla fonte di reddito sono state salvate con successo."
+          title: "Fonte di reddito eliminata",
+          description: "La fonte di reddito è stata eliminata con successo.",
         });
-      }
-    } else {
-      // Aggiunge un nuovo record
-      success = addEntry(data);
-      
-      if (success) {
+      } else {
         toast({
-          title: "Reddito aggiunto",
-          description: "La nuova fonte di reddito è stata aggiunta con successo."
+          title: "Errore",
+          description: "Si è verificato un errore durante l'eliminazione della fonte di reddito.",
+          variant: "destructive"
         });
       }
     }
-    
-    if (!success) {
-      toast({
-        title: "Errore",
-        description: "Si è verificato un errore durante il salvataggio dei dati.",
-        variant: "destructive"
-      });
-    }
-    
-    // Forza un aggiornamento dei dati
-    refreshEntries();
-    
-    // Torna alla vista manager
-    setMode('manager');
   };
   
-  // Gestisce l'annullamento del subflow
-  const handleSubflowCancel = () => {
-    setMode('manager');
-    setEditingEntry(null);
-  };
-  
-  // Gestisce la pressione del pulsante continua
+  // Handle continuing to the next block from the manager view
   const handleContinue = () => {
-    // Usa l'ID della domanda attiva corrente invece del block_id
+    // Get the current question ID (should be 'manager_view')
     const currentQuestionId = state.activeQuestion.question_id;
-    navigateToNextQuestion(currentQuestionId, "next_block");
+    
+    // Navigate to the next block
+    if (block.next_block_id) {
+      // If we have a specific next block, go there
+      goToQuestion(block.next_block_id, 'manager_view');
+    } else {
+      // Otherwise use the standard navigation to find the next block
+      navigateToNextQuestion(currentQuestionId, 'next_block');
+    }
   };
   
-  if (mode === 'subflow') {
-    return (
-      <IncomeSubflowWizard
-        questions={subflow}
-        initialData={editingEntry?.data}
-        onComplete={handleSubflowComplete}
-        onCancel={handleSubflowCancel}
-      />
-    );
+  // If we're not in the manager view, we must be in a subflow question
+  if (!isInManagerView) {
+    return <QuestionView />;
   }
   
+  // In manager view, render the IncomeManagerView
   return (
     <IncomeManagerView
       repeatingId={repeating_id}
@@ -142,9 +158,13 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
       emptyStateText={empty_state_text}
       addButtonText={add_button_text}
       continueButtonText={continue_button_text}
+      summaryField={block.summary_field}
+      summaryTemplate={block.summary_template}
       onAdd={handleAdd}
       onEdit={handleEdit}
+      onDelete={handleDelete}
       onContinue={handleContinue}
+      entries={entries}
     />
   );
 }

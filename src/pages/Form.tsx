@@ -17,29 +17,29 @@ export default function Form() {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Trova il blocco attivo corrente
+  // Find the current active block
   const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
 
-  // Calcola il progresso del form
+  // Calculate the form progress
   const progress = getProgress();
 
-  // Gestisci il salvataggio e l'uscita
+  // Handle save and exit
   const handleSaveAndExit = () => {
-    // Lo stato è già salvato in localStorage grazie al FormContext
+    // State is already saved to localStorage thanks to FormContext
     navigate("/");
   };
 
-  // Assicuriamoci che il componente si ri-renderizzi quando cambia l'URL
+  // Make sure the component re-renders when the URL changes
   useEffect(() => {
-    // Questo effetto verrà eseguito ogni volta che cambia l'URL (location.pathname)
-    // Poiché dipende da location.pathname, forza un ri-rendering del componente
+    // This effect will run every time the URL (location.pathname) changes
+    // Since it depends on location.pathname, it forces a re-rendering of the component
   }, [location.pathname]);
 
-  // Determina quale contenuto mostrare in base al tipo di blocco attivo
+  // Determine which content to show based on the active block type
   const renderActiveContent = () => {
     if (!activeBlock) return null;
     
-    // Se è un gruppo ripetuto, usa il RepeatingGroupRenderer
+    // If it's a repeating group, use the RepeatingGroupRenderer
     if ('type' in activeBlock && activeBlock.type === 'repeating_group') {
       return <RepeatingGroupRenderer block={activeBlock as RepeatingGroupBlock} />;
     }
@@ -90,7 +90,7 @@ export default function Form() {
           </div>
         </div>
 
-        {/* Content area - con key basata sul pathname per forzare il re-rendering */}
+        {/* Content area - with key based on pathname to force re-rendering */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12">
           <div className="max-w-2xl mx-auto">
             {/* Block title */}
@@ -98,7 +98,7 @@ export default function Form() {
               <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">{activeBlock?.title}</h1>
             </div>
 
-            {/* Question or RepeatingGroup - con key per forzare il re-rendering quando cambia l'URL */}
+            {/* Question or RepeatingGroup - with key to force re-rendering when URL changes */}
             <div key={location.pathname}>
               {renderActiveContent()}
             </div>

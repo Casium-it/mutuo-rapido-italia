@@ -51,16 +51,43 @@ export function QuestionView() {
     );
   }
 
-  // Se il blocco è un RepeatingGroupBlock, non dovremmo visualizzare questo componente
+  // Handle repeating group blocks, find the active question in the subflow
   if (isRepeatingGroupBlock(activeBlock)) {
+    const activeQuestion = activeBlock.subflow.find(
+      question => question.question_id === state.activeQuestion.question_id
+    );
+
+    if (!activeQuestion) {
+      // If the active question is not in the subflow, it's likely the manager_view
+      if (state.activeQuestion.question_id === 'manager_view') {
+        return (
+          <div className="text-center py-8">
+            <p className="text-gray-500">Vista manager per il gruppo ripetuto.</p>
+          </div>
+        );
+      }
+      
+      return (
+        <div className="text-center py-8">
+          <p className="text-gray-500">Domanda non trovata nel sottoflusso.</p>
+        </div>
+      );
+    }
+
+    // Render the question from the subflow with the correct block_id
     return (
-      <div className="text-center py-8">
-        <p className="text-gray-500">Questo blocco utilizza un componente personalizzato.</p>
+      <div className="max-w-2xl">
+        <div className="space-y-4">
+          <FormQuestion question={{
+            ...activeQuestion,
+            block_id: activeBlock.block_id
+          }} />
+        </div>
       </div>
     );
   }
 
-  // A questo punto sappiamo che è un StandardBlock
+  // Handle standard blocks
   const activeQuestion = activeBlock.questions.find(
     question => question.question_id === state.activeQuestion.question_id
   );

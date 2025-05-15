@@ -8,12 +8,46 @@ import { RepeatingGroupEntry } from "@/types/form";
 
 interface IncomeEntryCardProps {
   entry: RepeatingGroupEntry;
+  summaryField?: string;
+  summaryTemplate?: string;
   onEdit: () => void;
   onDelete: () => void;
 }
 
-export function IncomeEntryCard({ entry, onEdit, onDelete }: IncomeEntryCardProps) {
-  const { income_type, amount_input, income_description } = entry;
+export function IncomeEntryCard({ 
+  entry, 
+  summaryField,
+  summaryTemplate,
+  onEdit, 
+  onDelete 
+}: IncomeEntryCardProps) {
+  // Get the income type and amount (will still work with old data structure)
+  const incomeType = entry.income_type;
+  const amountInput = entry.amount_input;
+  
+  // Render a dynamic summary line from a template and entry data
+  const renderSummary = (entry: RepeatingGroupEntry, template?: string, field?: string): string => {
+    if (!template && !field) {
+      // If no template or field is provided, use default
+      return formatCurrency(entry.amount_input);
+    }
+    
+    if (!template && field && entry[field] !== undefined) {
+      // If only a field is provided, return its formatted value
+      if (field === 'amount_input') {
+        return formatCurrency(entry[field]);
+      }
+      return String(entry[field]);
+    }
+    
+    // Replace tokens in the template with values from the entry
+    return (template || "").replace(/\{\{(.+?)\}\}/g, (_, field) => {
+      if (field === 'amount_input' && entry[field] !== undefined) {
+        return formatCurrency(entry[field]);
+      }
+      return entry[field] !== undefined ? String(entry[field]) : "";
+    });
+  };
   
   return (
     <Card className="w-full mb-4 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
@@ -21,17 +55,12 @@ export function IncomeEntryCard({ entry, onEdit, onDelete }: IncomeEntryCardProp
         <div className="flex justify-between items-start">
           <div className="space-y-1">
             <h3 className="font-medium text-gray-900">
-              {getIncomeTypeLabel(income_type)}
+              {getIncomeTypeLabel(incomeType)}
             </h3>
             <p className="text-xl font-semibold text-gray-900">
-              {formatCurrency(amount_input)}
+              {renderSummary(entry, summaryTemplate, summaryField || 'amount_input')}
               <span className="text-sm font-normal text-gray-600 ml-1">/mese</span>
             </p>
-            {income_description && (
-              <p className="text-sm text-gray-600 mt-1 max-w-md">
-                {income_description}
-              </p>
-            )}
           </div>
         </div>
       </CardContent>
