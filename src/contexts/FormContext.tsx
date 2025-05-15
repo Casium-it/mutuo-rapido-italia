@@ -1,12 +1,6 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback } from "react";
-import { Block, FormState, FormResponse, NavigationHistory, IncomeSource } from "@/types/form";
+import { Block, FormState, FormResponse, NavigationHistory } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { generateUniqueId } from "@/utils/formUtils";
-
-// Chiavi per il localStorage
-const FORM_STATE_KEY_PREFIX = 'form-state-';
-const INCOME_SOURCES_KEY_PREFIX = 'income-sources-';
-const CURRENT_INCOME_KEY_PREFIX = 'current-income-';
 
 type FormContextType = {
   state: FormState;
@@ -20,17 +14,6 @@ type FormContextType = {
   getProgress: () => number;
   resetForm: () => void;
   getNavigationHistoryFor: (questionId: string) => NavigationHistory | undefined;
-  // Funzioni per la gestione delle fonti di reddito
-  addIncomeSource: (type: string) => string;
-  updateIncomeSourceDetail: (key: string, value: any) => void;
-  getIncomeSources: () => IncomeSource[];
-  getIncomeSource: (id: string) => IncomeSource | undefined;
-  getCurrentIncomeSource: () => IncomeSource | undefined;
-  removeIncomeSource: (id: string) => void;
-  editIncomeSource: (id: string) => void;
-  // NUOVE funzioni
-  clearIncomeTypeResponses: (incomeType: string) => void;
-  resetCurrentIncomeSource: () => void;
 };
 
 type Action =
@@ -41,16 +24,7 @@ type Action =
   | { type: "SET_FORM_STATE"; state: Partial<FormState> }
   | { type: "RESET_FORM" }
   | { type: "SET_NAVIGATING"; isNavigating: boolean }
-  | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory }
-  // Azioni per la gestione delle fonti di reddito
-  | { type: "ADD_INCOME_SOURCE"; id: string; incomeType: string }
-  | { type: "UPDATE_INCOME_SOURCE"; id: string; details: Record<string, any> }
-  | { type: "MARK_INCOME_SOURCE_COMPLETE"; id: string }
-  | { type: "REMOVE_INCOME_SOURCE"; id: string }
-  | { type: "SET_CURRENT_INCOME_SOURCE"; id: string }
-  // NUOVE azioni
-  | { type: "CLEAR_CURRENT_INCOME_SOURCE" }
-  | { type: "CLEAR_INCOME_TYPE_RESPONSES"; incomeType: string; blocks: Block[] };
+  | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory };
 
 const initialState: FormState = {
   activeBlocks: [],
@@ -61,9 +35,7 @@ const initialState: FormState = {
   responses: {},
   answeredQuestions: new Set(),
   isNavigating: false,
-  navigationHistory: [],
-  incomeSources: [], // Inizializza l'array delle fonti di reddito
-  currentIncomeSourceId: undefined // Nessuna fonte di reddito attualmente selezionata
+  navigationHistory: []
 };
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
@@ -138,118 +110,6 @@ function formReducer(state: FormState, action: Action): FormState {
         navigationHistory: [...filteredHistory, action.history]
       };
     }
-    case "ADD_INCOME_SOURCE": {
-      console.log("Adding new income source:", action.incomeType, "with ID:", action.id);
-      
-      return {
-        ...state,
-        incomeSources: [...state.incomeSources, {
-          id: action.id,
-          type: action.incomeType,
-          details: {},
-          isComplete: false
-        }],
-        currentIncomeSourceId: action.id // Imposta la nuova fonte come corrente
-      };
-    }
-      
-    case "UPDATE_INCOME_SOURCE": {
-      console.log("Updating income source:", action.id, "with details:", action.details);
-      
-      const updatedIncomeSources = state.incomeSources.map(source => 
-        source.id === action.id 
-          ? { ...source, details: { ...source.details, ...action.details } }
-          : source
-      );
-      
-      return {
-        ...state,
-        incomeSources: updatedIncomeSources
-      };
-    }
-      
-    case "MARK_INCOME_SOURCE_COMPLETE": {
-      console.log("Marking income source as complete:", action.id);
-      
-      return {
-        ...state,
-        incomeSources: state.incomeSources.map(source => 
-          source.id === action.id 
-            ? { ...source, isComplete: true }
-            : source
-        )
-      };
-    }
-      
-    case "REMOVE_INCOME_SOURCE": {
-      console.log("Removing income source:", action.id);
-      
-      const filteredIncomeSources = state.incomeSources.filter(source => source.id !== action.id);
-      
-      // Reimposta currentIncomeSourceId se è stato rimosso
-      const newCurrentId = state.currentIncomeSourceId === action.id 
-        ? undefined 
-        : state.currentIncomeSourceId;
-        
-      return {
-        ...state,
-        incomeSources: filteredIncomeSources,
-        currentIncomeSourceId: newCurrentId
-      };
-    }
-    
-    case "SET_CURRENT_INCOME_SOURCE": {
-      console.log("Setting current income source:", action.id);
-      
-      return {
-        ...state,
-        currentIncomeSourceId: action.id
-      };
-    }
-      
-    case "CLEAR_CURRENT_INCOME_SOURCE": {
-      console.log("Clearing current income source");
-      
-      return {
-        ...state,
-        currentIncomeSourceId: undefined
-      };
-    }
-      
-    case "CLEAR_INCOME_TYPE_RESPONSES": {
-      // Trova tutte le domande relative a questo tipo di reddito
-      const relatedQuestionIds: string[] = [];
-      
-      for (const block of action.blocks) {
-        for (const question of block.questions) {
-          if (question.income_source_type === action.incomeType && 
-              question.income_source_details) {
-            relatedQuestionIds.push(question.question_id);
-          }
-        }
-      }
-      
-      // Crea una copia delle risposte e rimuovi quelle correlate a questo tipo di reddito
-      const newResponses = { ...state.responses };
-      relatedQuestionIds.forEach(qId => {
-        if (newResponses[qId]) {
-          delete newResponses[qId];
-        }
-      });
-      
-      // Aggiorna anche l'insieme delle domande risposte
-      const newAnsweredQuestions = new Set(state.answeredQuestions);
-      relatedQuestionIds.forEach(qId => {
-        newAnsweredQuestions.delete(qId);
-      });
-      
-      return {
-        ...state,
-        responses: newResponses,
-        answeredQuestions: newAnsweredQuestions
-      };
-    }
-      
     default:
       return state;
   }
@@ -265,8 +125,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   
   const [state, dispatch] = useReducer(formReducer, {
     ...initialState,
-    activeBlocks: sortedBlocks.filter(b => b.default_active).map(b => b.block_id),
-    incomeSources: [] // Assicurati che le fonti di reddito siano inizializzate
+    activeBlocks: sortedBlocks.filter(b => b.default_active).map(b => b.block_id)
   });
 
   // Inizializza o aggiorna i blocchi attivi dal JSON
@@ -288,9 +147,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   const resetForm = useCallback(() => {
     // Rimuovi i dati salvati dal localStorage
     if (params.blockType) {
-      localStorage.removeItem(`${FORM_STATE_KEY_PREFIX}${params.blockType}`);
-      localStorage.removeItem(`${INCOME_SOURCES_KEY_PREFIX}${params.blockType}`);
-      localStorage.removeItem(`${CURRENT_INCOME_KEY_PREFIX}${params.blockType}`);
+      localStorage.removeItem(`form-state-${params.blockType}`);
     }
     
     // Reimposta lo stato del form
@@ -346,116 +203,53 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     }
     
     // Carica lo stato salvato dal localStorage, se disponibile
-    try {
-      if (params.blockType) {
-        // Carica lo stato principale del form (senza le fonti di reddito)
-        const savedState = localStorage.getItem(`${FORM_STATE_KEY_PREFIX}${params.blockType}`);
-        if (savedState) {
-          const parsedState = JSON.parse(savedState);
-          
-          // Converti answeredQuestions da array a Set
-          if (Array.isArray(parsedState.answeredQuestions)) {
-            parsedState.answeredQuestions = new Set(parsedState.answeredQuestions);
-          } else {
-            parsedState.answeredQuestions = new Set();
-          }
-          
-          // Carica separatamente le fonti di reddito
-          const savedIncomeSources = localStorage.getItem(`${INCOME_SOURCES_KEY_PREFIX}${params.blockType}`);
-          if (savedIncomeSources) {
-            try {
-              const parsedIncomeSources = JSON.parse(savedIncomeSources);
-              console.log("Income sources loaded from localStorage:", parsedIncomeSources);
-              parsedState.incomeSources = Array.isArray(parsedIncomeSources) ? parsedIncomeSources : [];
-            } catch (e) {
-              console.error("Errore nel caricamento delle fonti di reddito:", e);
-              parsedState.incomeSources = [];
-            }
-          } else {
-            parsedState.incomeSources = [];
-          }
-          
-          // Carica separatamente l'ID della fonte di reddito corrente
-          const savedCurrentIncomeId = localStorage.getItem(`${CURRENT_INCOME_KEY_PREFIX}${params.blockType}`);
-          if (savedCurrentIncomeId) {
-            parsedState.currentIncomeSourceId = savedCurrentIncomeId;
-          }
-          
-          console.log("Parsed state with income sources:", parsedState);
-          
-          // Applica lo stato salvato
-          dispatch({ type: "SET_FORM_STATE", state: parsedState });
-          
-          // Assicurati che tutti i blocchi necessari siano attivati in base alle risposte
-          if (parsedState.activeBlocks) {
-            // Attiva tutti i blocchi che erano attivi nel savedState
-            parsedState.activeBlocks.forEach((blockId: string) => {
-              if (!state.activeBlocks.includes(blockId)) {
-                dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
-              }
-            });
-          }
-          
-          // Anche se non ci sono blocchi attivi salvati, verifica le risposte
-          if (parsedState.responses) {
-            activateRequiredBlocksBasedOnResponses(parsedState.responses);
-          }
-        }
-      }
-    } catch (e) {
-      console.error("Errore nel caricamento dello stato salvato:", e);
-    }
-  }, [params.blockId, params.questionId, params.blockType, blocks, navigate, state.activeBlocks]);
-
-  // Salvataggio migliorato dello stato in localStorage
-  useEffect(() => {
-    if (params.blockType) {
+    const savedState = localStorage.getItem(`form-state-${params.blockType}`);
+    if (savedState) {
       try {
-        // Salva lo stato principale del form (senza le fonti di reddito)
-        const stateToSave = {
-          ...state,
-          answeredQuestions: Array.from(state.answeredQuestions),
-          // Rimuoviamo le fonti di reddito dallo stato principale
-          incomeSources: undefined,
-          currentIncomeSourceId: undefined
-        };
+        const parsedState = JSON.parse(savedState);
         
-        localStorage.setItem(`${FORM_STATE_KEY_PREFIX}${params.blockType}`, JSON.stringify(stateToSave));
-        
-        // Salva separatamente le fonti di reddito
-        if (state.incomeSources && state.incomeSources.length > 0) {
-          console.log("Saving income sources to localStorage:", state.incomeSources);
-          localStorage.setItem(`${INCOME_SOURCES_KEY_PREFIX}${params.blockType}`, 
-            JSON.stringify(state.incomeSources));
-            
-          // Verifica che il salvataggio sia avvenuto correttamente
-          const savedSources = localStorage.getItem(`${INCOME_SOURCES_KEY_PREFIX}${params.blockType}`);
-          if (savedSources) {
-            try {
-              const parsed = JSON.parse(savedSources);
-              console.log("Verification of saved sources:", parsed);
-            } catch (e) {
-              console.error("Error verifying saved sources:", e);
-            }
-          }
+        // Converti answeredQuestions da array a Set
+        if (Array.isArray(parsedState.answeredQuestions)) {
+          parsedState.answeredQuestions = new Set(parsedState.answeredQuestions);
         } else {
-          // Se non ci sono fonti di reddito, cancella la chiave
-          localStorage.removeItem(`${INCOME_SOURCES_KEY_PREFIX}${params.blockType}`);
+          parsedState.answeredQuestions = new Set();
         }
         
-        // Salva separatamente l'ID della fonte di reddito corrente
-        if (state.currentIncomeSourceId) {
-          localStorage.setItem(`${CURRENT_INCOME_KEY_PREFIX}${params.blockType}`, 
-            state.currentIncomeSourceId);
-        } else {
-          localStorage.removeItem(`${CURRENT_INCOME_KEY_PREFIX}${params.blockType}`);
+        // Applica lo stato salvato
+        dispatch({ type: "SET_FORM_STATE", state: parsedState });
+        
+        // Assicurati che tutti i blocchi necessari siano attivati in base alle risposte
+        if (parsedState.activeBlocks) {
+          // Attiva tutti i blocchi che erano attivi nel savedState
+          parsedState.activeBlocks.forEach((blockId: string) => {
+            if (!state.activeBlocks.includes(blockId)) {
+              dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
+            }
+          });
+        }
+        
+        // Anche se non ci sono blocchi attivi salvati, verifica le risposte
+        if (parsedState.responses) {
+          activateRequiredBlocksBasedOnResponses(parsedState.responses);
         }
       } catch (e) {
-        console.error("Errore nel salvataggio dello stato:", e);
+        console.error("Errore nel caricamento dello stato salvato:", e);
       }
     }
+  }, [params.blockId, params.questionId, params.blockType, blocks, navigate]);
+
+  // Salva lo stato in localStorage quando cambia
+  useEffect(() => {
+    if (params.blockType) {
+      // Converti Set a array per JSON serialization
+      const stateToSave = {
+        ...state,
+        answeredQuestions: Array.from(state.answeredQuestions)
+      };
+      localStorage.setItem(`form-state-${params.blockType}`, JSON.stringify(stateToSave));
+    }
   }, [state, params.blockType]);
-  
+
   // Attiva i blocchi necessari in base alle risposte salvate
   const activateRequiredBlocksBasedOnResponses = (responses: FormResponse) => {
     // Itera su tutte le domande per trovare opzioni che richiedono l'attivazione di blocchi
@@ -686,100 +480,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return sortedHistory.find(item => item.to_question_id === questionId);
   }, [state.navigationHistory]);
 
-  // Funzione per aggiungere una nuova fonte di reddito con ID generato automaticamente
-  const addIncomeSource = useCallback((type: string): string => {
-    const id = generateUniqueId();
-    console.log(`Adding new income source of type: ${type} with ID: ${id}`);
-    dispatch({ type: "ADD_INCOME_SOURCE", id, incomeType: type });
-    return id;
-  }, []);
-  
-  // Funzione migliorata per aggiornare i dettagli di una fonte di reddito
-  const updateIncomeSourceDetail = useCallback((key: string, value: any) => {
-    if (!state.currentIncomeSourceId) {
-      console.warn("Tentativo di aggiornare fonte di reddito senza ID corrente");
-      return;
-    }
-    
-    console.log(`Updating income source ${state.currentIncomeSourceId}, key: ${key}, value:`, value);
-    
-    dispatch({ 
-      type: "UPDATE_INCOME_SOURCE", 
-      id: state.currentIncomeSourceId, 
-      details: { [key]: value } 
-    });
-    
-    // Verifica che l'aggiornamento sia stato applicato
-    setTimeout(() => {
-      const updatedSource = state.incomeSources.find(s => s.id === state.currentIncomeSourceId);
-      console.log("Source after update:", updatedSource);
-    }, 0);
-  }, [state.currentIncomeSourceId, state.incomeSources]);
-  
-  // Funzione per ottenere tutte le fonti di reddito con controllo aggiuntivo
-  const getIncomeSources = useCallback((): IncomeSource[] => {
-    console.log("Getting all income sources:", state.incomeSources);
-    
-    // Controllo di integrità: assicurati che tutte le fonti abbiano un ID
-    const validSources = state.incomeSources.filter(source => !!source.id);
-    
-    if (validSources.length !== state.incomeSources.length) {
-      console.warn("Alcuni oggetti fonte di reddito non sono validi - filtrati");
-    }
-    
-    return validSources;
-  }, [state.incomeSources]);
-  
-  // Funzione per ottenere una specifica fonte di reddito
-  const getIncomeSource = useCallback((id: string): IncomeSource | undefined => {
-    return state.incomeSources.find(source => source.id === id);
-  }, [state.incomeSources]);
-  
-  // Funzione per ottenere la fonte di reddito correntemente in modifica
-  const getCurrentIncomeSource = useCallback((): IncomeSource | undefined => {
-    if (!state.currentIncomeSourceId) return undefined;
-    return state.incomeSources.find(source => source.id === state.currentIncomeSourceId);
-  }, [state.incomeSources, state.currentIncomeSourceId]);
-  
-  // Funzione migliorata per rimuovere una fonte di reddito
-  const removeIncomeSource = useCallback((id: string) => {
-    console.log(`Removing income source with ID: ${id}`);
-    
-    // Verifica prima che esista
-    const sourceExists = state.incomeSources.some(s => s.id === id);
-    if (!sourceExists) {
-      console.warn(`Tentativo di rimuovere fonte di reddito inesistente: ${id}`);
-    }
-    
-    dispatch({ type: "REMOVE_INCOME_SOURCE", id });
-    
-    // Verifica che sia stata rimossa
-    setTimeout(() => {
-      const stillExists = state.incomeSources.some(s => s.id === id);
-      if (stillExists) {
-        console.error(`La fonte di reddito ${id} non è stata rimossa correttamente`);
-      } else {
-        console.log(`La fonte di reddito ${id} è stata rimossa con successo`);
-      }
-    }, 0);
-  }, [state.incomeSources]);
-  
-  // Funzione migliorata per impostare la fonte di reddito corrente per la modifica
-  const editIncomeSource = useCallback((id: string) => {
-    dispatch({ type: "SET_CURRENT_INCOME_SOURCE", id });
-  }, []);
-
-  // Funzione per cancellare le risposte relative a un tipo di reddito
-  const clearIncomeTypeResponses = useCallback((incomeType: string) => {
-    dispatch({ type: "CLEAR_INCOME_TYPE_RESPONSES", incomeType, blocks: sortedBlocks });
-  }, [sortedBlocks]);
-  
-  // Funzione migliorata per resettare l'ID della fonte di reddito corrente
-  const resetCurrentIncomeSource = useCallback(() => {
-    console.log("Resetting current income source ID");
-    dispatch({ type: "CLEAR_CURRENT_INCOME_SOURCE" });
-  }, []);
-
   return (
     <FormContext.Provider
       value={{
@@ -793,18 +493,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         navigateToNextQuestion,
         getProgress,
         resetForm,
-        getNavigationHistoryFor,
-        // Funzioni per la gestione delle fonti di reddito
-        addIncomeSource,
-        updateIncomeSourceDetail,
-        getIncomeSources,
-        getIncomeSource,
-        getCurrentIncomeSource,
-        removeIncomeSource,
-        editIncomeSource,
-        // NUOVE funzioni
-        clearIncomeTypeResponses,
-        resetCurrentIncomeSource
+        getNavigationHistoryFor
       }}
     >
       {children}

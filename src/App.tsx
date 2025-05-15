@@ -10,7 +10,6 @@ import Index from "./pages/Index";
 import SimulazioneAvanzata from "./pages/SimulazioneAvanzata";
 import Form from "./pages/Form";
 import NotFound from "./pages/NotFound";
-import Testing from "./pages/Testing"; // Importa la pagina di test
 
 const queryClient = new QueryClient();
 
@@ -23,7 +22,6 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/simulazione-avanzata" element={<SimulazioneAvanzata />} />
-          <Route path="/test" element={<Testing />} /> {/* Nuova rotta di test */}
           <Route 
             path="/simulazione/:blockType" 
             element={

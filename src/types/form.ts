@@ -32,12 +32,7 @@ export type Question = {
   inline?: boolean;
   leads_to_placeholder_priority: string;
   placeholders: Record<string, Placeholder>;
-  question_notes?: string; // Note informative sopra la domanda
-  is_income_manager?: boolean; // Flag per domande di gestione reddito
-  is_new_income_source?: boolean; // Flag per domande di selezione nuovo tipo reddito
-  income_source_type?: string; // Tipo di reddito per domande specifiche
-  income_source_details?: boolean; // Flag per domande di dettagli reddito
-  is_last_income_detail?: boolean; // Flag per l'ultima domanda di dettaglio
+  question_notes?: string; // Nuovo campo per le note informative sopra la domanda
 };
 
 export type Block = {
@@ -63,14 +58,6 @@ export type NavigationHistory = {
   timestamp: number;
 };
 
-// Nuovo tipo per le fonti di reddito
-export type IncomeSource = {
-  id: string; // ID univoco per la fonte di reddito
-  type: string; // Tipo di reddito (es. "affitti", "lavoro_autonomo")
-  details: Record<string, any>; // Tutti i dettagli per questa fonte
-  isComplete: boolean; // Se sono stati forniti tutti i dettagli obbligatori
-};
-
 export type FormState = {
   activeBlocks: string[];
   activeQuestion: {
@@ -80,7 +67,5 @@ export type FormState = {
   responses: FormResponse;
   answeredQuestions: Set<string>;
   isNavigating?: boolean;
-  navigationHistory: NavigationHistory[]; // Cronologia di navigazione
-  incomeSources: IncomeSource[]; // Nuova proprietà per le fonti di reddito
-  currentIncomeSourceId?: string; // ID della fonte di reddito attualmente in modifica
+  navigationHistory: NavigationHistory[]; // Aggiungiamo la cronologia di navigazione
 };
