@@ -42,6 +42,7 @@ export {
 };
 
 // Esportare l'array completo di tutti i blocchi, ordinato per priorità
+// IMPORTANTE: Utilizziamo SOLO block6_repeating invece di block6 per evitare conflitti
 export const allBlocks: Block[] = [
   block1,
   block2,

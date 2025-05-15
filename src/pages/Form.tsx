@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { BlockSidebar } from "@/components/form/BlockSidebar";
 import { QuestionView } from "@/components/form/QuestionView";
@@ -16,6 +16,7 @@ export default function Form() {
   const params = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const contentKey = useRef(Date.now());
   
   // Find the current active block
   const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
@@ -31,9 +32,16 @@ export default function Form() {
 
   // Make sure the component re-renders when the URL changes
   useEffect(() => {
-    // This effect will run every time the URL (location.pathname) changes
-    // Since it depends on location.pathname, it forces a re-rendering of the component
+    // Forza il re-rendering del contenuto quando cambia l'URL
+    contentKey.current = Date.now();
   }, [location.pathname]);
+
+  // Reset navigation state if needed
+  useEffect(() => {
+    return () => {
+      // Pulizia quando il componente viene smontato
+    };
+  }, []);
 
   // Determine which content to show based on the active block type
   const renderActiveContent = () => {
@@ -99,7 +107,7 @@ export default function Form() {
             </div>
 
             {/* Question or RepeatingGroup - with key to force re-rendering when URL changes */}
-            <div key={location.pathname}>
+            <div key={contentKey.current}>
               {renderActiveContent()}
             </div>
           </div>

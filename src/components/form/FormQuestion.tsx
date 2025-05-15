@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+
+import React, { useState, useEffect, useRef, useCallback, memo } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { Question, ValidationTypes } from "@/types/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import { useParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { SelectPlaceholderBox } from "./SelectPlaceholderBox";
 import { Separator } from "@/components/ui/separator";
@@ -16,7 +16,7 @@ interface FormQuestionProps {
   question: Question;
 }
 
-export function FormQuestion({ question }: FormQuestionProps) {
+export const FormQuestion = memo(function FormQuestion({ question }: FormQuestionProps) {
   const { 
     getResponse, 
     setResponse, 
@@ -39,14 +39,32 @@ export function FormQuestion({ question }: FormQuestionProps) {
   const previousQuestionIdRef = useRef(question.question_id);
   const navigationInProgressRef = useRef(false);
   const navigationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef = useRef(true);
+  
+  // Clear timeouts when component unmounts
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+      if (navigationTimeoutRef.current) {
+        clearTimeout(navigationTimeoutRef.current);
+        navigationTimeoutRef.current = null;
+      }
+    };
+  }, []);
   
   // Reset state when the question changes
   useEffect(() => {
     // Only reset when the question ID actually changes
     if (previousQuestionIdRef.current !== question.question_id) {
+      console.log(`FormQuestion: Question changed from ${previousQuestionIdRef.current} to ${question.question_id}`);
       previousQuestionIdRef.current = question.question_id;
       responsesProcessedRef.current = false;
       setIsNavigating(false);
+      
+      // Reset state values
+      setResponses({});
+      setVisibleOptions({});
+      setValidationErrors({});
       
       // Clear any pending navigation timeouts
       if (navigationTimeoutRef.current) {
@@ -58,6 +76,9 @@ export function FormQuestion({ question }: FormQuestionProps) {
   
   // Initialize responses from the form context
   useEffect(() => {
+    // Skip if component is unmounted
+    if (!mountedRef.current) return;
+    
     // Only process if the question changed or responses weren't processed yet
     if (!responsesProcessedRef.current) {
       console.log(`FormQuestion: Loading responses for question ${question.question_id}`);
@@ -76,7 +97,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
           if (question.placeholders[key].type === "input") {
             const placeholder = question.placeholders[key];
             const validationType = (placeholder as any).input_validation as ValidationTypes;
-            if (!validateInput(existingResponse as string, validationType)) {
+            if (validationType && typeof existingResponse === 'string' && !validateInput(existingResponse, validationType)) {
               initialValidationErrors[key] = true;
             }
           }
@@ -93,15 +114,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
       responsesProcessedRef.current = true;
     }
   }, [question.placeholders, question.question_id, getResponse]);
-  
-  // Clean up effect
-  useEffect(() => {
-    return () => {
-      if (navigationTimeoutRef.current) {
-        clearTimeout(navigationTimeoutRef.current);
-      }
-    };
-  }, []);
 
   // Memoized handlers
   const handleResponseChange = useCallback((key: string, value: string | string[]) => {
@@ -117,7 +129,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
       const validationType = (placeholder as any).input_validation as ValidationTypes;
       
       // Verifichiamo la validità dell'input
-      const isValid = validateInput(value, validationType);
+      const isValid = !validationType || validateInput(value, validationType);
       
       // Aggiorniamo lo stato di errore
       setValidationErrors(prev => ({
@@ -168,7 +180,10 @@ export function FormQuestion({ question }: FormQuestionProps) {
   // Funzione per navigare alla domanda specifica quando si fa click su una risposta
   const handleQuestionClick = useCallback((questionId: string) => {
     // Previeni navigazione se già in corso
-    if (isNavigating || navigationInProgressRef.current) return;
+    if (isNavigating || navigationInProgressRef.current) {
+      console.log(`FormQuestion: Navigation prevented - already navigating to ${questionId}`);
+      return;
+    }
     
     // Naviga direttamente alla domanda con l'ID specificato
     if (questionId) {
@@ -176,14 +191,22 @@ export function FormQuestion({ question }: FormQuestionProps) {
       navigationInProgressRef.current = true;
       console.log(`FormQuestion: Navigating to question ${questionId}`);
       
+      // Pulizia di eventuali timeout precedenti
+      if (navigationTimeoutRef.current) {
+        clearTimeout(navigationTimeoutRef.current);
+      }
+      
       goToQuestion(state.activeQuestion.block_id, questionId);
       
       // Reset navigation lock after a delay
       navigationTimeoutRef.current = setTimeout(() => {
-        setIsNavigating(false);
-        navigationInProgressRef.current = false;
+        if (mountedRef.current) {
+          setIsNavigating(false);
+          navigationInProgressRef.current = false;
+          console.log(`FormQuestion: Navigation lock released for ${questionId}`);
+        }
         navigationTimeoutRef.current = null;
-      }, 1000);
+      }, 1500);
     }
   }, [goToQuestion, isNavigating, state.activeQuestion.block_id]);
 
@@ -198,8 +221,13 @@ export function FormQuestion({ question }: FormQuestionProps) {
     navigationInProgressRef.current = true;
     console.log(`FormQuestion: Starting next question navigation from ${question.question_id}`);
     
+    // Pulizia di eventuali timeout precedenti
+    if (navigationTimeoutRef.current) {
+      clearTimeout(navigationTimeoutRef.current);
+    }
+    
     // Add a small delay before navigation
-    setTimeout(() => {
+    navigationTimeoutRef.current = setTimeout(() => {
       // Verifica se è stata specificata una priorità per i placeholder
       if (question.leads_to_placeholder_priority && 
           question.placeholders[question.leads_to_placeholder_priority]) {
@@ -252,10 +280,13 @@ export function FormQuestion({ question }: FormQuestionProps) {
       
       // Reset navigation state after a delay (in case the navigation fails)
       navigationTimeoutRef.current = setTimeout(() => {
-        setIsNavigating(false);
-        navigationInProgressRef.current = false;
+        if (mountedRef.current) {
+          setIsNavigating(false);
+          navigationInProgressRef.current = false;
+          console.log(`FormQuestion: Navigation timeout reset for ${question.question_id}`);
+        }
         navigationTimeoutRef.current = null;
-      }, 1000);
+      }, 1500);
     }, 100);
   }, [
     isNavigating, 
@@ -304,7 +335,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
       const placeholder = question.placeholders[key];
       if (placeholder.type === "input") {
         const validationType = (placeholder as any).input_validation;
-        if (!validateInput(value as string, validationType)) {
+        if (validationType && typeof value === 'string' && !validateInput(value, validationType)) {
           return false;
         }
       }
@@ -608,4 +639,4 @@ export function FormQuestion({ question }: FormQuestionProps) {
       )}
     </div>
   );
-}
+});

@@ -6,7 +6,7 @@ import {
   getChainOfInlineQuestions
 } from "@/utils/formUtils";
 import { Question, StandardBlock, Block, RepeatingGroupBlock } from "@/types/form";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 
 /**
  * Funzione di utilità per verificare se un blocco è di tipo StandardBlock
@@ -28,6 +28,9 @@ const isRepeatingGroupBlock = (block: Block): block is RepeatingGroupBlock => {
 export const useFormExtended = () => {
   const formContext = useOriginalForm();
   
+  // Memoize blocks to prevent unnecessary re-renders
+  const processedBlocks = useMemo(() => formContext.blocks, [formContext.blocks]);
+  
   /**
    * Gets the text of the previous question with responses filled in
    * @param blockId Current block ID
@@ -36,7 +39,7 @@ export const useFormExtended = () => {
    */
   const getPreviousQuestionText = useCallback((blockId: string, questionId: string): string => {
     const previousQuestion = getPreviousQuestionUtil(
-      formContext.blocks,
+      processedBlocks,
       blockId,
       questionId
     );
@@ -44,7 +47,7 @@ export const useFormExtended = () => {
     if (!previousQuestion) return "";
     
     return getQuestionTextWithResponses(previousQuestion, formContext.state.responses);
-  }, [formContext.blocks, formContext.state.responses]);
+  }, [processedBlocks, formContext.state.responses]);
   
   /**
    * Gets the previous question object
@@ -53,8 +56,8 @@ export const useFormExtended = () => {
    * @returns The previous question object or undefined
    */
   const getPreviousQuestion = useCallback((blockId: string, questionId: string) => {
-    return getPreviousQuestionUtil(formContext.blocks, blockId, questionId);
-  }, [formContext.blocks]);
+    return getPreviousQuestionUtil(processedBlocks, blockId, questionId);
+  }, [processedBlocks]);
 
   /**
    * Gets all previous inline questions in a chain, starting from the current question
@@ -64,7 +67,7 @@ export const useFormExtended = () => {
    */
   const getInlineQuestionChain = useCallback((blockId: string, questionId: string): Question[] => {
     // Verifica prima che si tratti di un blocco standard
-    const block = formContext.blocks.find(b => b.block_id === blockId);
+    const block = processedBlocks.find(b => b.block_id === blockId);
     if (!block || isRepeatingGroupBlock(block)) {
       return [];
     }
@@ -81,7 +84,7 @@ export const useFormExtended = () => {
       if (navigationHistory) {
         // Trova la domanda da cui l'utente è arrivato
         const sourceBlockId = navigationHistory.from_block_id;
-        const sourceBlock = formContext.blocks.find(b => b.block_id === sourceBlockId);
+        const sourceBlock = processedBlocks.find(b => b.block_id === sourceBlockId);
         
         // Verifica che il blocco di origine sia un blocco standard
         if (sourceBlock && isStandardBlock(sourceBlock)) {
@@ -100,16 +103,21 @@ export const useFormExtended = () => {
     
     // Fallback al comportamento precedente se non troviamo una cronologia
     return getChainOfInlineQuestions(
-      formContext.blocks,
+      processedBlocks,
       blockId,
       questionId
     );
-  }, [formContext.blocks, formContext.getNavigationHistoryFor]);
+  }, [processedBlocks, formContext.getNavigationHistoryFor]);
   
-  return {
-    ...formContext,
-    getPreviousQuestionText,
-    getPreviousQuestion,
-    getInlineQuestionChain
-  };
+  // Crea un oggetto con tutte le funzioni del form context originale più quelle estese
+  const extendedFormContext = useMemo(() => {
+    return {
+      ...formContext,
+      getPreviousQuestionText,
+      getPreviousQuestion,
+      getInlineQuestionChain
+    };
+  }, [formContext, getPreviousQuestionText, getPreviousQuestion, getInlineQuestionChain]);
+  
+  return extendedFormContext;
 };

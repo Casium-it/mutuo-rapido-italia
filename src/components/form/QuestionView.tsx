@@ -20,17 +20,30 @@ export function QuestionView() {
   const params = useParams<{ blockId?: string, questionId?: string }>();
   const [isInitialized, setIsInitialized] = useState(false);
   
-  // Refs for tracking navigation and preventing loops
+  // Refs per tracciare lo stato di navigazione e prevenire loop
   const lastProcessedParams = useRef<{
     blockId?: string,
     questionId?: string,
+    pathname: string,
     timestamp: number
-  }>({ timestamp: 0 });
+  }>({ pathname: '', timestamp: 0 });
   
   const isNavigatingRef = useRef(false);
   const initCompletedRef = useRef(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // Sincronizza il componente con l'URL quando cambia
+  useEffect(() => {
+    // Pulizia dei timeout quando il componente viene smontato
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, []);
+
+  // Effetto principale per la sincronizzazione con l'URL
   useEffect(() => {
     // Se già completato l'inizializzazione e non ci sono parametri, non fare nulla
     if (initCompletedRef.current && (!params.blockId || !params.questionId)) {
@@ -50,24 +63,29 @@ export function QuestionView() {
       return;
     }
     
-    // Controlla se abbiamo già processato questi parametri esatti recentemente (entro 1000ms)
-    const isSameParams = 
-      lastProcessedParams.current.blockId === params.blockId &&
-      lastProcessedParams.current.questionId === params.questionId &&
-      Date.now() - lastProcessedParams.current.timestamp < 1000;
-      
+    // Controlla se è lo stesso pathname che abbiamo già processato recentemente
+    const currentPathname = location.pathname;
+    const isSamePathname = lastProcessedParams.current.pathname === currentPathname;
+    const isRecentNavigation = Date.now() - lastProcessedParams.current.timestamp < 1500;
+    
+    if (isSamePathname && isRecentNavigation) {
+      console.log(`QuestionView: Skipping duplicate navigation to ${currentPathname}`);
+      setIsInitialized(true);
+      return;
+    }
+    
     // Determina se è necessario aggiornare lo stato interno
     const needsStateUpdate = 
       state.activeQuestion.block_id !== params.blockId ||
       state.activeQuestion.question_id !== params.questionId;
     
-    // Solo se è necessario un aggiornamento dello stato e non abbiamo
-    // già processato questi parametri, aggiorniamo lo stato
-    if (!isSameParams && needsStateUpdate) {
+    // Solo se è necessario un aggiornamento dello stato, procediamo
+    if (needsStateUpdate) {
       // Aggiorna il ref con i parametri correnti e timestamp
       lastProcessedParams.current = {
         blockId: params.blockId,
         questionId: params.questionId,
+        pathname: currentPathname,
         timestamp: Date.now()
       };
       
@@ -75,22 +93,28 @@ export function QuestionView() {
       isNavigatingRef.current = true;
       console.log(`QuestionView: Syncing state with URL: ${params.blockId}/${params.questionId}`);
       
+      // Pulisci eventuali timeout precedenti
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      
       // Aggiorna lo stato con un piccolo ritardo per prevenire re-render immediati
-      setTimeout(() => {
+      timeoutRef.current = setTimeout(() => {
         goToQuestion(params.blockId!, params.questionId!, true);
         
         // Rilascia il lock di navigazione dopo un ritardo
-        setTimeout(() => {
+        timeoutRef.current = setTimeout(() => {
           isNavigatingRef.current = false;
           console.log("QuestionView: Navigation lock released");
-        }, 1000);
+          timeoutRef.current = null;
+        }, 1500);
       }, 50);
     }
     
     // Imposta l'inizializzazione completata
     setIsInitialized(true);
     initCompletedRef.current = true;
-  }, [location.pathname]); 
+  }, [location.pathname, params.blockId, params.questionId]); 
   
   // Attendere che il componente sia inizializzato prima di renderizzare
   if (!isInitialized) {
