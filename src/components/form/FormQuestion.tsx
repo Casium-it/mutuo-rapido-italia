@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { Question, ValidationTypes } from "@/types/form";
@@ -29,7 +28,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
     state, 
     addActiveBlock, 
     goToQuestion, 
-    updateIncomeSourceDetail 
+    updateIncomeSourceDetail,
+    getCurrentIncomeSource
   } = useFormExtended();
   
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});
@@ -75,6 +75,10 @@ export function FormQuestion({ question }: FormQuestionProps) {
   useEffect(() => {
     // Se siamo in una domanda di dettaglio reddito ed esiste una fonte di reddito corrente
     if (question.income_source_details) {
+      // Verifica che esista una fonte di reddito corrente
+      const currentSource = getCurrentIncomeSource();
+      if (!currentSource) return;
+      
       // Per ogni placeholder nella domanda
       Object.keys(question.placeholders).forEach(key => {
         const existingResponse = getResponse(question.question_id, key);
@@ -91,7 +95,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
         }
       });
     }
-  }, [question, getResponse, updateIncomeSourceDetail]);
+  }, [question, getResponse, updateIncomeSourceDetail, getCurrentIncomeSource]);
 
   // Funzione per gestire il cambio di risposta con validazione
   const handleResponseChange = (key: string, value: string | string[]) => {
@@ -541,7 +545,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
 
   return (
     <div className="max-w-xl animate-fade-in">
-      {/* Banner note della domanda - NUOVO COMPONENTE */}
+      {/* Banner note della domanda */}
       {renderQuestionNotes()}
       
       {/* Testo della domanda semplificato */}

@@ -83,10 +83,13 @@ export const useFormExtended = () => {
   const navigateToNextQuestion = (currentQuestionId: string, leadsTo: string) => {
     // Trova la domanda corrente
     let currentQuestion: Question | undefined;
+    let currentBlock: string | undefined;
+    
     for (const block of formContext.blocks) {
       const question = block.questions.find(q => q.question_id === currentQuestionId);
       if (question) {
         currentQuestion = question;
+        currentBlock = block.block_id;
         break;
       }
     }
@@ -106,8 +109,20 @@ export const useFormExtended = () => {
       // Estrai il tipo di reddito dal leads_to
       const incomeType = leadsTo.replace("dettagli_", "");
       
+      // NUOVO: Pulisci le risposte precedenti relative al tipo di reddito
+      formContext.clearIncomeTypeResponses(incomeType);
+      
+      // Resetta l'ID della fonte di reddito corrente prima di crearne una nuova
+      formContext.resetCurrentIncomeSource();
+      
       // Crea una nuova fonte di reddito
       formContext.addIncomeSource(incomeType);
+    }
+    
+    // NUOVO: Se stiamo navigando alla pagina di selezione nuovo reddito, resettiamo lo stato corrente
+    if (leadsTo === "nuovo_reddito_secondario") {
+      // Resetta l'ID della fonte di reddito corrente
+      formContext.resetCurrentIncomeSource();
     }
     
     // Delega alla funzione originale per la navigazione effettiva

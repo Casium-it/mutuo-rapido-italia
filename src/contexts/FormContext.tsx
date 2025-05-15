@@ -15,7 +15,7 @@ type FormContextType = {
   getProgress: () => number;
   resetForm: () => void;
   getNavigationHistoryFor: (questionId: string) => NavigationHistory | undefined;
-  // Nuove funzioni per la gestione delle fonti di reddito
+  // Funzioni per la gestione delle fonti di reddito
   addIncomeSource: (type: string) => string;
   updateIncomeSourceDetail: (key: string, value: any) => void;
   getIncomeSources: () => IncomeSource[];
@@ -23,6 +23,9 @@ type FormContextType = {
   getCurrentIncomeSource: () => IncomeSource | undefined;
   removeIncomeSource: (id: string) => void;
   editIncomeSource: (id: string) => void;
+  // NUOVE funzioni
+  clearIncomeTypeResponses: (incomeType: string) => void;
+  resetCurrentIncomeSource: () => void;
 };
 
 type Action =
@@ -34,12 +37,15 @@ type Action =
   | { type: "RESET_FORM" }
   | { type: "SET_NAVIGATING"; isNavigating: boolean }
   | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory }
-  // Nuove azioni per la gestione delle fonti di reddito
+  // Azioni per la gestione delle fonti di reddito
   | { type: "ADD_INCOME_SOURCE"; id: string; incomeType: string }
   | { type: "UPDATE_INCOME_SOURCE"; id: string; details: Record<string, any> }
   | { type: "MARK_INCOME_SOURCE_COMPLETE"; id: string }
   | { type: "REMOVE_INCOME_SOURCE"; id: string }
-  | { type: "SET_CURRENT_INCOME_SOURCE"; id: string };
+  | { type: "SET_CURRENT_INCOME_SOURCE"; id: string }
+  // NUOVE azioni
+  | { type: "CLEAR_CURRENT_INCOME_SOURCE" }
+  | { type: "CLEAR_INCOME_TYPE_RESPONSES"; incomeType: string };
 
 const initialState: FormState = {
   activeBlocks: [],
@@ -182,6 +188,46 @@ function formReducer(state: FormState, action: Action): FormState {
         ...state,
         currentIncomeSourceId: action.id
       };
+      
+    case "CLEAR_CURRENT_INCOME_SOURCE":
+      return {
+        ...state,
+        currentIncomeSourceId: undefined
+      };
+      
+    case "CLEAR_INCOME_TYPE_RESPONSES": {
+      // Trova tutte le domande relative a questo tipo di reddito
+      const relatedQuestionIds: string[] = [];
+      
+      for (const block of state.blocks || []) {
+        for (const question of block.questions) {
+          if (question.income_source_type === action.incomeType && 
+              question.income_source_details) {
+            relatedQuestionIds.push(question.question_id);
+          }
+        }
+      }
+      
+      // Crea una copia delle risposte e rimuovi quelle correlate a questo tipo di reddito
+      const newResponses = { ...state.responses };
+      relatedQuestionIds.forEach(qId => {
+        if (newResponses[qId]) {
+          delete newResponses[qId];
+        }
+      });
+      
+      // Aggiorna anche l'insieme delle domande risposte
+      const newAnsweredQuestions = new Set(state.answeredQuestions);
+      relatedQuestionIds.forEach(qId => {
+        newAnsweredQuestions.delete(qId);
+      });
+      
+      return {
+        ...state,
+        responses: newResponses,
+        answeredQuestions: newAnsweredQuestions
+      };
+    }
       
     default:
       return state;
@@ -598,6 +644,16 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     dispatch({ type: "SET_CURRENT_INCOME_SOURCE", id });
   }, []);
 
+  // Funzione per cancellare le risposte relative a un tipo di reddito
+  const clearIncomeTypeResponses = useCallback((incomeType: string) => {
+    dispatch({ type: "CLEAR_INCOME_TYPE_RESPONSES", incomeType });
+  }, []);
+  
+  // Funzione per resettare l'ID della fonte di reddito corrente
+  const resetCurrentIncomeSource = useCallback(() => {
+    dispatch({ type: "CLEAR_CURRENT_INCOME_SOURCE" });
+  }, []);
+
   return (
     <FormContext.Provider
       value={{
@@ -612,14 +668,17 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         getProgress,
         resetForm,
         getNavigationHistoryFor,
-        // Nuove funzioni per la gestione delle fonti di reddito
+        // Funzioni per la gestione delle fonti di reddito
         addIncomeSource,
         updateIncomeSourceDetail,
         getIncomeSources,
         getIncomeSource,
         getCurrentIncomeSource,
         removeIncomeSource,
-        editIncomeSource
+        editIncomeSource,
+        // NUOVE funzioni
+        clearIncomeTypeResponses,
+        resetCurrentIncomeSource
       }}
     >
       {children}

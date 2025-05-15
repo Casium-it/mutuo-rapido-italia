@@ -7,7 +7,6 @@ import { AddIncomeSourceButton } from "./AddIncomeSourceButton";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { generateUniqueId } from "@/utils/formUtils";
 import { toast } from "@/hooks/use-toast";
 
 interface IncomeSourceManagerProps {
@@ -21,12 +20,19 @@ export function IncomeSourceManager({ question }: IncomeSourceManagerProps) {
     removeIncomeSource, 
     navigateToNextQuestion,
     editIncomeSource,
+    resetCurrentIncomeSource,
     state
   } = useFormExtended();
   
+  // Ottieni le fonti di reddito aggiornate dal contesto
   const incomeSources = getIncomeSources();
   
+  // Log per debug
+  console.log("Fonti di reddito disponibili:", incomeSources);
+  
   const handleAddNew = () => {
+    // Resetta l'ID della fonte di reddito corrente prima di navigare
+    resetCurrentIncomeSource();
     navigateToNextQuestion(question.question_id, "nuovo_reddito_secondario");
   };
   
