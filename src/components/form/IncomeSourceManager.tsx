@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { Question, IncomeSource } from "@/types/form";
 import { IncomeSourceCard } from "./IncomeSourceCard";
@@ -28,7 +28,11 @@ export function IncomeSourceManager({ question }: IncomeSourceManagerProps) {
   const incomeSources = getIncomeSources();
   
   // Log per debug
-  console.log("Fonti di reddito disponibili:", incomeSources);
+  useEffect(() => {
+    console.log("IncomeSourceManager mounted/updated");
+    console.log("Fonti di reddito disponibili:", incomeSources);
+    console.log("State income sources:", state.incomeSources);
+  }, [incomeSources, state.incomeSources]);
   
   const handleAddNew = () => {
     // Resetta l'ID della fonte di reddito corrente prima di navigare
@@ -37,6 +41,8 @@ export function IncomeSourceManager({ question }: IncomeSourceManagerProps) {
   };
   
   const handleEditSource = (source: IncomeSource) => {
+    console.log("Editing income source:", source);
+    
     // Imposta la fonte di reddito corrente per la modifica
     editIncomeSource(source.id);
     
@@ -77,7 +83,7 @@ export function IncomeSourceManager({ question }: IncomeSourceManagerProps) {
   return (
     <div className="space-y-6">
       {/* Lista delle fonti di reddito esistenti */}
-      {incomeSources.length > 0 ? (
+      {incomeSources && incomeSources.length > 0 ? (
         <div className="space-y-4">
           {incomeSources.map(source => (
             <IncomeSourceCard 
@@ -99,7 +105,7 @@ export function IncomeSourceManager({ question }: IncomeSourceManagerProps) {
       <AddIncomeSourceButton onClick={handleAddNew} />
       
       {/* Pulsante "Continua" - mostrato solo se ci sono fonti di reddito */}
-      {incomeSources.length > 0 && (
+      {incomeSources && incomeSources.length > 0 && (
         <div className="mt-8">
           <Button
             type="button"

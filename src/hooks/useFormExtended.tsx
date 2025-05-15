@@ -7,12 +7,18 @@ import {
   generateUniqueId
 } from "@/utils/formUtils";
 import { Question, IncomeSource } from "@/types/form";
+import { useEffect } from "react";
 
 /**
  * Extended hook for the form context with additional functionality
  */
 export const useFormExtended = () => {
   const formContext = useOriginalForm();
+  
+  // Debug log all income sources when the hook is used
+  useEffect(() => {
+    console.log("useFormExtended hook used, income sources:", formContext.getIncomeSources());
+  }, [formContext]);
   
   /**
    * Gets the text of the previous question with responses filled in
@@ -79,7 +85,7 @@ export const useFormExtended = () => {
     );
   };
 
-  // Aggiungiamo una funzione ausiliaria per gestire la navigazione speciale per i redditi
+  // Migliora la funzione di navigazione per gestire la mappatura tra risposte e dettagli reddito
   const navigateToNextQuestion = (currentQuestionId: string, leadsTo: string) => {
     // Trova la domanda corrente
     let currentQuestion: Question | undefined;
@@ -94,11 +100,81 @@ export const useFormExtended = () => {
       }
     }
     
+    console.log("Navigating from", currentQuestionId, "to", leadsTo);
+    console.log("Current question:", currentQuestion);
+    
+    // Se la domanda corrente fa parte dei dettagli di una fonte di reddito
+    if (currentQuestion?.income_source_details && formContext.state.currentIncomeSourceId) {
+      // Ottieni tutte le risposte per questa domanda
+      const responses = formContext.state.responses[currentQuestionId];
+      
+      if (responses) {
+        console.log("Found responses for question", currentQuestionId, ":", responses);
+        
+        // Mappa le risposte ai dettagli della fonte di reddito corrente
+        // Estrai la chiave della risposta (campo del form) dal question_id
+        let detailKey = currentQuestionId;
+        
+        // Mappa dei nomi delle chiavi di dettaglio per ciascuna domanda
+        const detailKeyMap: Record<string, string> = {
+          // Affitti
+          'dettagli_affitti': 'importo',
+          'frequenza_affitti': 'frequenza',
+          'stabilita_affitti': 'stabilita',
+          
+          // Lavoro autonomo
+          'dettagli_lavoro_autonomo': 'importo',
+          'frequenza_lavoro_autonomo': 'frequenza',
+          'stabilita_lavoro_autonomo': 'stabilita',
+          
+          // Assegno minori
+          'dettagli_assegno_minori': 'importo',
+          'frequenza_assegno_minori': 'frequenza',
+          'stabilita_assegno_minori': 'stabilita',
+          
+          // Supporto familiari
+          'dettagli_supporto_familiari': 'importo',
+          'frequenza_supporto_familiari': 'frequenza',
+          'stabilita_supporto_familiari': 'stabilita',
+          
+          // Dividendi e diritti
+          'dettagli_dividendi_diritti': 'importo',
+          'frequenza_dividendi_diritti': 'frequenza',
+          'stabilita_dividendi_diritti': 'stabilita',
+          
+          // Altro
+          'dettagli_altro': 'descrizione',
+          'importo_altro': 'importo',
+          'frequenza_altro': 'frequenza',
+          'stabilita_altro': 'stabilita'
+        };
+        
+        // Se il question_id è nella mappa, usa la chiave mappata
+        if (detailKeyMap[currentQuestionId]) {
+          detailKey = detailKeyMap[currentQuestionId];
+        }
+        
+        // Ottieni il valore della risposta
+        let value: any;
+        // Usa la prima chiave di placeholder come default
+        const firstPlaceholderKey = Object.keys(responses)[0];
+        
+        if (firstPlaceholderKey) {
+          value = responses[firstPlaceholderKey];
+          
+          // Aggiorna i dettagli della fonte di reddito
+          console.log("Updating income source detail:", detailKey, "=", value);
+          formContext.updateIncomeSourceDetail(detailKey, value);
+        }
+      }
+    }
+    
     // Se la domanda corrente è l'ultima di un flusso di dettagli reddito
     // e stiamo navigando alla gestione redditi, marchiamo la fonte come completa
-    if (currentQuestion?.is_last_income_detail) {
+    if (currentQuestion?.is_last_income_detail && leadsTo === "fonti_reddito_secondario") {
       const currentIncomeSource = formContext.getCurrentIncomeSource();
       if (currentIncomeSource) {
+        console.log("Marking income source as complete:", currentIncomeSource.id);
         // Marchiamo la fonte di reddito come completa
         formContext.updateIncomeSourceDetail('isComplete', true);
       }
@@ -108,6 +184,7 @@ export const useFormExtended = () => {
     if (currentQuestionId === "nuovo_reddito_secondario" && leadsTo.startsWith("dettagli_")) {
       // Estrai il tipo di reddito dal leads_to
       const incomeType = leadsTo.replace("dettagli_", "");
+      console.log("Selected new income type:", incomeType);
       
       // NUOVO: Pulisci le risposte precedenti relative al tipo di reddito
       formContext.clearIncomeTypeResponses(incomeType);
@@ -116,7 +193,8 @@ export const useFormExtended = () => {
       formContext.resetCurrentIncomeSource();
       
       // Crea una nuova fonte di reddito
-      formContext.addIncomeSource(incomeType);
+      const newId = formContext.addIncomeSource(incomeType);
+      console.log("Created new income source with ID:", newId);
     }
     
     // NUOVO: Se stiamo navigando alla pagina di selezione nuovo reddito, resettiamo lo stato corrente

@@ -133,7 +133,9 @@ function formReducer(state: FormState, action: Action): FormState {
         navigationHistory: [...filteredHistory, action.history]
       };
     }
-    case "ADD_INCOME_SOURCE":
+    case "ADD_INCOME_SOURCE": {
+      console.log("Adding new income source:", action.incomeType, "with ID:", action.id);
+      
       return {
         ...state,
         incomeSources: [...state.incomeSources, {
@@ -144,8 +146,11 @@ function formReducer(state: FormState, action: Action): FormState {
         }],
         currentIncomeSourceId: action.id // Imposta la nuova fonte come corrente
       };
+    }
       
     case "UPDATE_INCOME_SOURCE": {
+      console.log("Updating income source:", action.id, "with details:", action.details);
+      
       const updatedIncomeSources = state.incomeSources.map(source => 
         source.id === action.id 
           ? { ...source, details: { ...source.details, ...action.details } }
@@ -158,7 +163,9 @@ function formReducer(state: FormState, action: Action): FormState {
       };
     }
       
-    case "MARK_INCOME_SOURCE_COMPLETE":
+    case "MARK_INCOME_SOURCE_COMPLETE": {
+      console.log("Marking income source as complete:", action.id);
+      
       return {
         ...state,
         incomeSources: state.incomeSources.map(source => 
@@ -167,8 +174,11 @@ function formReducer(state: FormState, action: Action): FormState {
             : source
         )
       };
+    }
       
     case "REMOVE_INCOME_SOURCE": {
+      console.log("Removing income source:", action.id);
+      
       const filteredIncomeSources = state.incomeSources.filter(source => source.id !== action.id);
       
       // Reimposta currentIncomeSourceId se è stato rimosso
@@ -183,17 +193,23 @@ function formReducer(state: FormState, action: Action): FormState {
       };
     }
     
-    case "SET_CURRENT_INCOME_SOURCE":
+    case "SET_CURRENT_INCOME_SOURCE": {
+      console.log("Setting current income source:", action.id);
+      
       return {
         ...state,
         currentIncomeSourceId: action.id
       };
+    }
       
-    case "CLEAR_CURRENT_INCOME_SOURCE":
+    case "CLEAR_CURRENT_INCOME_SOURCE": {
+      console.log("Clearing current income source");
+      
       return {
         ...state,
         currentIncomeSourceId: undefined
       };
+    }
       
     case "CLEAR_INCOME_TYPE_RESPONSES": {
       // Trova tutte le domande relative a questo tipo di reddito
@@ -335,6 +351,13 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
           parsedState.answeredQuestions = new Set();
         }
         
+        // Assicurati che le fonti di reddito vengano ripristinate correttamente
+        if (!parsedState.incomeSources) {
+          parsedState.incomeSources = [];
+        }
+        
+        console.log("Income sources from localStorage:", parsedState.incomeSources);
+        
         // Applica lo stato salvato
         dispatch({ type: "SET_FORM_STATE", state: parsedState });
         
@@ -358,18 +381,23 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     }
   }, [params.blockId, params.questionId, params.blockType, blocks, navigate]);
 
-  // Salva lo stato in localStorage quando cambia
+  // Modifica per salvare correttamente lo stato in localStorage
   useEffect(() => {
     if (params.blockType) {
       // Converti Set a array per JSON serialization
       const stateToSave = {
         ...state,
-        answeredQuestions: Array.from(state.answeredQuestions)
+        answeredQuestions: Array.from(state.answeredQuestions),
+        // Assicurati che le fonti di reddito vengano salvate esplicitamente
+        incomeSources: state.incomeSources,
+        currentIncomeSourceId: state.currentIncomeSourceId
       };
+      
+      console.log("Saving state to localStorage:", stateToSave);
       localStorage.setItem(`form-state-${params.blockType}`, JSON.stringify(stateToSave));
     }
   }, [state, params.blockType]);
-
+  
   // Attiva i blocchi necessari in base alle risposte salvate
   const activateRequiredBlocksBasedOnResponses = (responses: FormResponse) => {
     // Itera su tutte le domande per trovare opzioni che richiedono l'attivazione di blocchi
