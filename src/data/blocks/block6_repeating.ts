@@ -13,6 +13,8 @@ export const block6_repeating: RepeatingGroupBlock = {
   default_active: true,
   type: "repeating_group",
   repeating_id: "secondary_income",
+  summary_id: "amount_input",
+  summary_template: "{{income_type}}: {{amount_input}}€ al mese",
   subflow: [
     {
       question_id: "income_type",
@@ -55,35 +57,34 @@ export const block6_repeating: RepeatingGroupBlock = {
       question_number: "13.3",
       question_text: "Ricevo questo reddito da {{placeholder1}}, {{placeholder2}}",
       leads_to_placeholder_priority: "placeholder2",
-      inline:false,
+      inline: false,
       placeholders: {
         placeholder1: {
-            type: "select",
-            options: [
-              { id: "gennaio", label: "Gennaio", leads_to: "secondary_income_stability" },
-              { id: "febbraio", label: "Febbraio", leads_to: "secondary_income_stability" },
-              { id: "marzo", label: "Marzo", leads_to: "secondary_income_stability" },
-              { id: "aprile", label: "Aprile", leads_to: "secondary_income_stability" },
-              { id: "maggio", label: "Maggio", leads_to: "secondary_income_stability" },
-              { id: "giugno", label: "Giugno", leads_to: "secondary_income_stability" },
-              { id: "luglio", label: "Luglio", leads_to: "secondary_income_stability" },
-              { id: "agosto", label: "Agosto", leads_to: "secondary_income_stability" },
-              { id: "settembre", label: "Settembre", leads_to: "secondary_income_stability" },
-              { id: "ottobre", label: "Ottobre", leads_to: "secondary_income_stability" },
-              { id: "novembre", label: "Novembre", leads_to: "secondary_income_stability" },
-              { id: "dicembre", label: "Dicembre", leads_to: "secondary_income_stability" }
-            ]
-          },
+          type: "select",
+          options: [
+            { id: "gennaio", label: "Gennaio", leads_to: "secondary_income_stability" },
+            { id: "febbraio", label: "Febbraio", leads_to: "secondary_income_stability" },
+            { id: "marzo", label: "Marzo", leads_to: "secondary_income_stability" },
+            { id: "aprile", label: "Aprile", leads_to: "secondary_income_stability" },
+            { id: "maggio", label: "Maggio", leads_to: "secondary_income_stability" },
+            { id: "giugno", label: "Giugno", leads_to: "secondary_income_stability" },
+            { id: "luglio", label: "Luglio", leads_to: "secondary_income_stability" },
+            { id: "agosto", label: "Agosto", leads_to: "secondary_income_stability" },
+            { id: "settembre", label: "Settembre", leads_to: "secondary_income_stability" },
+            { id: "ottobre", label: "Ottobre", leads_to: "secondary_income_stability" },
+            { id: "novembre", label: "Novembre", leads_to: "secondary_income_stability" },
+            { id: "dicembre", label: "Dicembre", leads_to: "secondary_income_stability" }
+          ]
+        },
         placeholder2: {
-            type: "input",
-            input_type: "number",
-            placeholder_label: "Anno",
-            input_validation: "year",
-            leads_to: "secondary_income_stability"
-          }
+          type: "input",
+          input_type: "number",
+          placeholder_label: "Anno",
+          input_validation: "year",
+          leads_to: "secondary_income_stability"
+        }
       }
     },
-    
     {
       question_id: "secondary_income_stability",
       question_number: "13.4",
@@ -92,63 +93,63 @@ export const block6_repeating: RepeatingGroupBlock = {
       inline: false,
       placeholders: {
         placeholder1: {
-            type: "select",
-            options: [
-              { id: "volatile", label: "volatile", leads_to: "income_to_date" },
-              { id: "stabile", label: "stabile", leads_to: "income_to_date" },
-              { id: "garantita", label: "garantita", leads_to: "income_to_date" },
-            ]
-          },
+          type: "select",
+          options: [
+            { id: "volatile", label: "volatile", leads_to: "income_to_date" },
+            { id: "stabile", label: "stabile", leads_to: "income_to_date" },
+            { id: "garantita", label: "garantita", leads_to: "income_to_date" },
+          ]
+        },
       }
     },
     {
       question_id: "income_to_date",
-      question_number: "13.3",
+      question_number: "13.5",
       question_text: "e prevedo di percepire questo reddito fino a {{placeholder1}}",
       leads_to_placeholder_priority: "placeholder1",
       inline: true,
       placeholders: {
         placeholder1: {
-            type: "select",
-            options: [
-              { id: "sempre", label: "sempre", leads_to: "end_of_subflow" },
-              { id: "non lo so", label: "non lo so", leads_to: "end_of_subflow" },
-              { id: "una data specifica", label: "una data specifica", leads_to: "specific_date" },
-            ]
-          },
+          type: "select",
+          options: [
+            { id: "sempre", label: "sempre", leads_to: "end_of_subflow" },
+            { id: "non lo so", label: "non lo so", leads_to: "end_of_subflow" },
+            { id: "una data specifica", label: "una data specifica", leads_to: "specific_date" },
+          ]
+        },
       }
     },
     {
       question_id: "specific_date",
-      question_number: "13.3",
+      question_number: "13.6",
       question_text: ", ovvero {{placeholder1}}, {{placeholder2}}",
       leads_to_placeholder_priority: "placeholder2",
       inline: true,
       placeholders: {
         placeholder1: {
-            type: "select",
-            options: [
-              { id: "gennaio", label: "Gennaio", leads_to: "end_of_subflow" },
-              { id: "febbraio", label: "Febbraio", leads_to: "end_of_subflow" },
-              { id: "marzo", label: "Marzo", leads_to: "end_of_subflow" },
-              { id: "aprile", label: "Aprile", leads_to: "end_of_subflow" },
-              { id: "maggio", label: "Maggio", leads_to: "end_of_subflow" },
-              { id: "giugno", label: "Giugno", leads_to: "end_of_subflow" },
-              { id: "luglio", label: "Luglio", leads_to: "end_of_subflow" },
-              { id: "agosto", label: "Agosto", leads_to: "end_of_subflow" },
-              { id: "settembre", label: "Settembre", leads_to: "end_of_subflow" },
-              { id: "ottobre", label: "Ottobre", leads_to: "end_of_subflow" },
-              { id: "novembre", label: "Novembre", leads_to: "end_of_subflow" },
-              { id: "dicembre", label: "Dicembre", leads_to: "end_of_subflow" }
-            ]
-          },
+          type: "select",
+          options: [
+            { id: "gennaio", label: "Gennaio", leads_to: "end_of_subflow" },
+            { id: "febbraio", label: "Febbraio", leads_to: "end_of_subflow" },
+            { id: "marzo", label: "Marzo", leads_to: "end_of_subflow" },
+            { id: "aprile", label: "Aprile", leads_to: "end_of_subflow" },
+            { id: "maggio", label: "Maggio", leads_to: "end_of_subflow" },
+            { id: "giugno", label: "Giugno", leads_to: "end_of_subflow" },
+            { id: "luglio", label: "Luglio", leads_to: "end_of_subflow" },
+            { id: "agosto", label: "Agosto", leads_to: "end_of_subflow" },
+            { id: "settembre", label: "Settembre", leads_to: "end_of_subflow" },
+            { id: "ottobre", label: "Ottobre", leads_to: "end_of_subflow" },
+            { id: "novembre", label: "Novembre", leads_to: "end_of_subflow" },
+            { id: "dicembre", label: "Dicembre", leads_to: "end_of_subflow" }
+          ]
+        },
         placeholder2: {
-            type: "input",
-            input_type: "number",
-            placeholder_label: "Anno",
-            input_validation: "year",
-            leads_to: "end_of_subflow"
-          }
+          type: "input",
+          input_type: "number",
+          placeholder_label: "Anno",
+          input_validation: "year",
+          leads_to: "end_of_subflow"
+        }
       }
     }
   ]

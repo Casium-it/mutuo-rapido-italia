@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { RepeatingGroupBlock, RepeatingGroupEntry } from '@/types/form';
-import { IncomeManagerView } from './IncomeManagerView';
-import { IncomeSubflowWizard } from './IncomeSubflowWizard';
 import { useRepeatingGroup } from '@/hooks/useRepeatingGroup';
 import { useForm } from '@/contexts/FormContext';
 import { toast } from '@/components/ui/use-toast';
+import { RepeatingGroupManagerView } from './RepeatingGroupManagerView';
+import { SubflowForm } from './SubflowForm';
 import { dispatchResetEvent } from '@/utils/repeatingGroupUtils';
 
 interface RepeatingGroupRendererProps {
@@ -13,18 +13,9 @@ interface RepeatingGroupRendererProps {
 }
 
 export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
-  const { 
-    repeating_id, 
-    subflow, 
-    title, 
-    subtitle = "Gestisci qui tutti i tuoi redditi aggiuntivi. Puoi aggiungere, modificare o eliminare fonti di reddito.",
-    empty_state_text = "Non hai ancora aggiunto nessuna fonte di reddito aggiuntiva.",
-    add_button_text = "Aggiungi fonte di reddito",
-    continue_button_text = "Avanti"
-  } = block;
-  
+  const { repeating_id, subflow } = block;
   const { navigateToNextQuestion, state } = useForm();
-  const { addEntry, updateEntry, refreshEntries, entries } = useRepeatingGroup(repeating_id);
+  const { addEntry, updateEntry, refreshEntries, entries, deleteEntry } = useRepeatingGroup(repeating_id);
   
   // Stato per la modalità di visualizzazione (manager o subflow)
   const [mode, setMode] = useState<'manager' | 'subflow'>('manager');
@@ -79,8 +70,8 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
       
       if (success) {
         toast({
-          title: "Reddito aggiornato",
-          description: "Le modifiche alla fonte di reddito sono state salvate con successo."
+          title: "Dati aggiornati",
+          description: "Le modifiche sono state salvate con successo."
         });
       }
     } else {
@@ -89,8 +80,8 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
       
       if (success) {
         toast({
-          title: "Reddito aggiunto",
-          description: "La nuova fonte di reddito è stata aggiunta con successo."
+          title: "Dati aggiunti",
+          description: "Il nuovo elemento è stato aggiunto con successo."
         });
       }
     }
@@ -125,25 +116,23 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
   
   if (mode === 'subflow') {
     return (
-      <IncomeSubflowWizard
+      <SubflowForm
         questions={subflow}
         initialData={editingEntry?.data}
         onComplete={handleSubflowComplete}
         onCancel={handleSubflowCancel}
+        endSignal="end_of_subflow"
       />
     );
   }
   
   return (
-    <IncomeManagerView
-      repeatingId={repeating_id}
-      title={title}
-      subtitle={subtitle}
-      emptyStateText={empty_state_text}
-      addButtonText={add_button_text}
-      continueButtonText={continue_button_text}
+    <RepeatingGroupManagerView
+      block={block}
+      entries={entries}
       onAdd={handleAdd}
       onEdit={handleEdit}
+      onDelete={deleteEntry}
       onContinue={handleContinue}
     />
   );

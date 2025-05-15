@@ -6,6 +6,7 @@ import {
   getChainOfInlineQuestions
 } from "@/utils/formUtils";
 import { Question, StandardBlock, Block, RepeatingGroupBlock } from "@/types/form";
+import { useEffect } from "react";
 
 /**
  * Funzione di utilità per verificare se un blocco è di tipo StandardBlock
@@ -21,11 +22,38 @@ const isRepeatingGroupBlock = (block: Block): block is RepeatingGroupBlock => {
   return 'type' in block && block.type === 'repeating_group';
 };
 
+interface UseFormExtendedOptions {
+  endSignal?: string;
+  onComplete?: (responses: Record<string, any>) => void;
+}
+
 /**
  * Extended hook for the form context with additional functionality
  */
-export const useFormExtended = () => {
+export const useFormExtended = (options?: UseFormExtendedOptions) => {
   const formContext = useOriginalForm();
+  const { endSignal, onComplete } = options || {};
+  
+  // Listener per il segnale di completamento
+  useEffect(() => {
+    if (endSignal && onComplete) {
+      const checkForEndSignal = (questionId: string, leads_to: string) => {
+        if (leads_to === endSignal) {
+          // Quando troviamo il segnale di fine, inviamo le risposte
+          onComplete(formContext.state.responses);
+        }
+      };
+      
+      // Sottoscrivi all'emettitore di navigazione
+      const unsubscribe = formContext.subscribeToNavigation((data) => {
+        if (data.leadsToDest === endSignal) {
+          onComplete(formContext.state.responses);
+        }
+      });
+      
+      return unsubscribe;
+    }
+  }, [endSignal, onComplete, formContext]);
   
   /**
    * Gets the text of the previous question with responses filled in

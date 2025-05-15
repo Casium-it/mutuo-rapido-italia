@@ -49,11 +49,14 @@ export type RepeatingGroupBlock = {
   type: "repeating_group";
   repeating_id: string;
   subflow: SubflowQuestion[];
-  // New optional fields for customizable text elements
+  // New fields for customizable text elements
   subtitle?: string;
   empty_state_text?: string;
   add_button_text?: string;
   continue_button_text?: string;
+  // New fields for summary customization
+  summary_id?: string;                // ID della domanda da mostrare nel sommario
+  summary_template?: string;          // es. "Hai indicato {{amount_input}} €/mese"
 };
 
 // Definizione regolare del blocco standard
