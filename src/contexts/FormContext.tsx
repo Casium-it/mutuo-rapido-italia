@@ -45,7 +45,7 @@ type Action =
   | { type: "SET_CURRENT_INCOME_SOURCE"; id: string }
   // NUOVE azioni
   | { type: "CLEAR_CURRENT_INCOME_SOURCE" }
-  | { type: "CLEAR_INCOME_TYPE_RESPONSES"; incomeType: string };
+  | { type: "CLEAR_INCOME_TYPE_RESPONSES"; incomeType: string; blocks: Block[] };
 
 const initialState: FormState = {
   activeBlocks: [],
@@ -199,7 +199,7 @@ function formReducer(state: FormState, action: Action): FormState {
       // Trova tutte le domande relative a questo tipo di reddito
       const relatedQuestionIds: string[] = [];
       
-      for (const block of state.blocks || []) {
+      for (const block of action.blocks) {
         for (const question of block.questions) {
           if (question.income_source_type === action.incomeType && 
               question.income_source_details) {
@@ -646,8 +646,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
 
   // Funzione per cancellare le risposte relative a un tipo di reddito
   const clearIncomeTypeResponses = useCallback((incomeType: string) => {
-    dispatch({ type: "CLEAR_INCOME_TYPE_RESPONSES", incomeType });
-  }, []);
+    dispatch({ type: "CLEAR_INCOME_TYPE_RESPONSES", incomeType, blocks: sortedBlocks });
+  }, [sortedBlocks]);
   
   // Funzione per resettare l'ID della fonte di reddito corrente
   const resetCurrentIncomeSource = useCallback(() => {
