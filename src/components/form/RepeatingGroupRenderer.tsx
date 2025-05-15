@@ -6,6 +6,7 @@ import { IncomeSubflowWizard } from './IncomeSubflowWizard';
 import { useRepeatingGroup } from '@/hooks/useRepeatingGroup';
 import { useForm } from '@/contexts/FormContext';
 import { toast } from '@/components/ui/use-toast';
+import { dispatchResetEvent } from '@/utils/repeatingGroupUtils';
 
 interface RepeatingGroupRendererProps {
   block: RepeatingGroupBlock;
@@ -14,7 +15,7 @@ interface RepeatingGroupRendererProps {
 export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
   const { repeating_id, subflow, title } = block;
   const { navigateToNextQuestion, state } = useForm();
-  const { addEntry, updateEntry, refreshEntries } = useRepeatingGroup(repeating_id);
+  const { addEntry, updateEntry, refreshEntries, entries } = useRepeatingGroup(repeating_id);
   
   // Stato per la modalità di visualizzazione (manager o subflow)
   const [mode, setMode] = useState<'manager' | 'subflow'>('manager');
@@ -33,6 +34,18 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
     
     // Forza un refresh dei dati per assicurarsi che siano aggiornati
     refreshEntries();
+    
+    // Controllo quando la pagina viene ricaricata o quando si naviga
+    const handleBeforeUnload = () => {
+      // Dispara un evento di reset quando la pagina viene ricaricata
+      dispatchResetEvent();
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
   }, [block.block_id, state.activeQuestion.block_id, refreshEntries]);
   
   // Gestisce l'aggiunta di un nuovo record
@@ -80,6 +93,9 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
         variant: "destructive"
       });
     }
+    
+    // Forza un aggiornamento dei dati
+    refreshEntries();
     
     // Torna alla vista manager
     setMode('manager');

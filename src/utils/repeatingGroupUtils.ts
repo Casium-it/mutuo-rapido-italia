@@ -156,8 +156,8 @@ export const getIncomeTypeLabel = (typeId: string): string => {
  */
 export const resetAllRepeatingGroups = (): void => {
   try {
-    // Rimuovi tutti i dati dei gruppi ripetuti
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({}));
+    // Rimuovi ESPLICITAMENTE tutti i dati dei gruppi ripetuti
+    localStorage.removeItem(STORAGE_KEY);
     
     // Dispara un evento personalizzato per notificare le componenti
     const resetEvent = new CustomEvent(RESET_EVENT_NAME);
@@ -190,4 +190,24 @@ export const dispatchResetEvent = (): void => {
   const resetEvent = new CustomEvent(RESET_EVENT_NAME);
   window.dispatchEvent(resetEvent);
   console.log("Manual reset event dispatched for repeating groups");
+};
+
+/**
+ * Verifica se esistono dati per i gruppi ripetuti nel localStorage
+ */
+export const hasRepeatingGroupData = (): boolean => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) return false;
+    
+    const parsed = JSON.parse(stored);
+    if (typeof parsed !== 'object' || parsed === null) {
+      return false;
+    }
+    
+    return Object.keys(parsed).length > 0;
+  } catch (error) {
+    console.error("Failed to check repeating groups data:", error);
+    return false;
+  }
 };
