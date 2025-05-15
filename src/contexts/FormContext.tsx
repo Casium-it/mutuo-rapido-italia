@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback } from "react";
+
+import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback, useRef } from "react";
 import { Block, FormState, FormResponse, NavigationHistory, StandardBlock, RepeatingGroupBlock } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { resetAllRepeatingGroups } from "@/utils/repeatingGroupUtils";
+import { resetAllRepeatingGroups, dispatchResetEvent } from "@/utils/repeatingGroupUtils";
 
 // Funzione di utilità per verificare se un blocco è di tipo StandardBlock
 const isStandardBlock = (block: Block): block is StandardBlock => {
@@ -52,6 +53,17 @@ const initialState: FormState = {
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
 
+// Funzione per la rimozione di tutti i dati da localStorage per un tipo di blocco
+const clearLocalStorageForBlockType = (blockType?: string): void => {
+  if (!blockType) return;
+  
+  // Rimuovi i dati dello stato del form
+  localStorage.removeItem(`form-state-${blockType}`);
+  
+  // Log per debugging
+  console.log(`Cleared localStorage for block type: ${blockType}`);
+};
+
 function formReducer(state: FormState, action: Action): FormState {
   switch (action.type) {
     case "GO_TO_QUESTION":
@@ -99,8 +111,10 @@ function formReducer(state: FormState, action: Action): FormState {
     case "RESET_FORM": {
       return {
         ...initialState,
-        activeBlocks: state.activeBlocks.filter(blockId => 
-          initialState.activeBlocks.includes(blockId)),
+        activeBlocks: initialState.activeBlocks.length > 0 
+          ? [...initialState.activeBlocks] 
+          : state.activeBlocks.filter(blockId => 
+              initialState.activeBlocks.includes(blockId)),
         navigationHistory: [] // Reset anche la cronologia di navigazione
       };
     }
@@ -131,6 +145,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   const navigate = useNavigate();
   const params = useParams<{ blockType?: string; blockId?: string; questionId?: string }>();
   const location = useLocation();
+  const navigationTimeoutRef = useRef<number | null>(null);
   
   // Ordina i blocchi per priorità
   const sortedBlocks = [...blocks].sort((a, b) => a.priority - b.priority);
@@ -139,6 +154,16 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     ...initialState,
     activeBlocks: sortedBlocks.filter(b => b.default_active).map(b => b.block_id)
   });
+
+  // Pulizia dei timeout alla smontaggio del componente
+  useEffect(() => {
+    return () => {
+      // Cancella eventuali timeout di navigazione quando il componente viene smontato
+      if (navigationTimeoutRef.current !== null) {
+        clearTimeout(navigationTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Inizializza o aggiorna i blocchi attivi dal JSON
   useEffect(() => {
@@ -157,10 +182,10 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
 
   // Funzione per reimpostare il form
   const resetForm = useCallback(() => {
+    console.log("Resetting form...");
+    
     // Rimuovi i dati salvati dal localStorage
-    if (params.blockType) {
-      localStorage.removeItem(`form-state-${params.blockType}`);
-    }
+    clearLocalStorageForBlockType(params.blockType);
     
     // Reimposta tutti i gruppi ripetuti
     resetAllRepeatingGroups();
@@ -168,8 +193,13 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     // Reimposta lo stato del form
     dispatch({ type: "RESET_FORM" });
     
-    // Torna alla prima domanda (aggiornato per utilizzare introduzione/soggetto_acquisto)
+    // Forza un aggiornamento del contesto
+    dispatchResetEvent();
+    
+    // Torna alla prima domanda
     navigate("/simulazione/pensando/introduzione/soggetto_acquisto", { replace: true });
+    
+    console.log("Form reset complete");
   }, [params.blockType, navigate]);
 
   // Sincronizza lo stato del form con i parametri URL quando l'URL cambia
@@ -337,12 +367,16 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     }
   };
 
+  // Navigazione alle domande - migliorato per prevenire doppi click
   const goToQuestion = useCallback((block_id: string, question_id: string, replace = false) => {
     // Previeni navigazione simultanea
     if (state.isNavigating) {
+      console.log(`Navigation prevented: already navigating to ${state.activeQuestion.block_id}/${state.activeQuestion.question_id}`);
       return; // Non permettere una nuova navigazione mentre è in corso una navigazione
     }
 
+    console.log(`Navigating to ${block_id}/${question_id}`);
+    
     const previousBlockId = state.activeQuestion.block_id;
     const previousQuestionId = state.activeQuestion.question_id;
 
@@ -374,9 +408,16 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     }
     
     // Reset navigating state after a short delay
-    setTimeout(() => {
+    if (navigationTimeoutRef.current !== null) {
+      clearTimeout(navigationTimeoutRef.current);
+    }
+    
+    // Utilizziamo un timeout più lungo (800ms) per assicurare che la navigazione sia completata
+    navigationTimeoutRef.current = setTimeout(() => {
       dispatch({ type: "SET_NAVIGATING", isNavigating: false });
-    }, 500); // Aumentato a 500ms per assicurare che ci sia abbastanza tempo per la navigazione
+      navigationTimeoutRef.current = null;
+      console.log(`Navigation to ${block_id}/${question_id} completed`);
+    }, 800) as unknown as number;
   }, [params.blockType, navigate, state.activeQuestion, state.isNavigating]);
 
   const setResponse = useCallback((question_id: string, placeholder_key: string, value: string | string[]) => {
@@ -421,14 +462,17 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   const navigateToNextQuestion = useCallback((currentQuestionId: string, leadsTo: string) => {
     // Previeni navigazione simultanea
     if (state.isNavigating) {
+      console.log(`Next question navigation prevented: already navigating`);
       return; // Non permettere una nuova navigazione mentre è in corso una navigazione
     }
     
+    console.log(`Starting navigation from question ${currentQuestionId} to ${leadsTo}`);
+    
+    // Set navigating state quando inizia la navigazione
+    dispatch({ type: "SET_NAVIGATING", isNavigating: true });
+    
     // Salva la domanda corrente prima di navigare
     const currentBlockId = state.activeQuestion.block_id;
-    
-    // Set navigating state when navigating
-    dispatch({ type: "SET_NAVIGATING", isNavigating: true });
     
     if (leadsTo === "next_block") {
       // Trova il blocco corrente
@@ -463,7 +507,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
 
       if (currentBlockIndex !== -1 && currentBlock) {
         console.log(`Navigating from block ${currentBlock.block_id} (index ${currentBlockIndex}) to next active block`);
-        console.log(`Active blocks: ${state.activeBlocks.join(', ')}`);
         
         // Trova il prossimo blocco attivo
         let foundNextActiveBlock = false;
@@ -487,12 +530,12 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
                 console.log(`Found next active block (standard): ${nextBlock.block_id}`);
                 foundNextActiveBlock = true;
                 goToQuestion(nextBlock.block_id, nextBlock.questions[0].question_id);
-                break;
+                return; // Importante uscire qui perché goToQuestion gestisce già il timeout
               } else if (isRepeatingGroupBlock(nextBlock)) {
                 console.log(`Found next active block (repeating_group): ${nextBlock.block_id}`);
                 foundNextActiveBlock = true;
                 goToQuestion(nextBlock.block_id, "manager_view"); // ID fittizio per il manager_view
-                break;
+                return; // Importante uscire qui perché goToQuestion gestisce già il timeout
               }
             }
           }
@@ -510,7 +553,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
             const nextQuestion = currentBlock.questions[currentQuestionIndex + 1];
             console.log(`No next active block, but found next question in current block: ${nextQuestion.question_id}`);
             goToQuestion(currentBlock.block_id, nextQuestion.question_id);
-            return;
+            return; // Importante uscire qui perché goToQuestion gestisce già il timeout
           }
           
           // Se arriviamo qui, siamo all'ultima domanda dell'ultimo blocco attivo
@@ -543,9 +586,15 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     }
     
     // Reset navigating state if navigation failed or for next_block case
-    setTimeout(() => {
+    if (navigationTimeoutRef.current !== null) {
+      clearTimeout(navigationTimeoutRef.current);
+    }
+    
+    navigationTimeoutRef.current = setTimeout(() => {
       dispatch({ type: "SET_NAVIGATING", isNavigating: false });
-    }, 500); // Aumentato a 500ms per assicurare che ci sia abbastanza tempo per la navigazione
+      navigationTimeoutRef.current = null;
+      console.log("Navigation reset - no valid target found");
+    }, 800) as unknown as number;
   }, [sortedBlocks, state.activeBlocks, goToQuestion, findQuestionById, state.activeQuestion.block_id, state.isNavigating]);
 
   // Calcola il progresso complessivo del form

@@ -2,6 +2,7 @@
 import { RepeatingGroupEntry, RepeatingGroupEntries } from "@/types/form";
 
 const STORAGE_KEY = "casium-repeating-groups";
+const RESET_EVENT_NAME = "repeating-groups-reset";
 
 /**
  * Ottiene tutti gli elementi salvati per tutti i gruppi ripetuti
@@ -151,12 +152,42 @@ export const getIncomeTypeLabel = (typeId: string): string => {
 
 /**
  * Reimposta tutti i gruppi ripetuti (utile per il reset del modulo)
+ * Ora dispatura anche un evento personalizzato per notificare le componenti
  */
 export const resetAllRepeatingGroups = (): void => {
   try {
+    // Rimuovi tutti i dati dei gruppi ripetuti
     localStorage.setItem(STORAGE_KEY, JSON.stringify({}));
-    console.log("All repeating groups have been reset");
+    
+    // Dispara un evento personalizzato per notificare le componenti
+    const resetEvent = new CustomEvent(RESET_EVENT_NAME);
+    window.dispatchEvent(resetEvent);
+    
+    console.log("All repeating groups have been reset and event dispatched");
   } catch (error) {
     console.error("Failed to reset repeating groups:", error);
   }
+};
+
+/**
+ * Aggiunge un listener per l'evento di reset dei gruppi ripetuti
+ */
+export const addResetListener = (callback: () => void): () => void => {
+  const handler = () => {
+    console.log("Received repeating groups reset event");
+    callback();
+  };
+  
+  window.addEventListener(RESET_EVENT_NAME, handler);
+  return () => window.removeEventListener(RESET_EVENT_NAME, handler);
+};
+
+/**
+ * Dispara manualmente un evento di reset
+ * Utile quando si vuole che tutte le componenti che usano repeatingGroups si aggiornino
+ */
+export const dispatchResetEvent = (): void => {
+  const resetEvent = new CustomEvent(RESET_EVENT_NAME);
+  window.dispatchEvent(resetEvent);
+  console.log("Manual reset event dispatched for repeating groups");
 };

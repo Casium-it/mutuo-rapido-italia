@@ -4,7 +4,8 @@ import {
   getRepeatingGroupEntries, 
   saveRepeatingGroupEntry, 
   deleteRepeatingGroupEntry, 
-  saveRepeatingGroupEntries 
+  saveRepeatingGroupEntries,
+  addResetListener
 } from "@/utils/repeatingGroupUtils";
 import { RepeatingGroupEntry } from "@/types/form";
 
@@ -16,28 +17,30 @@ export interface UseRepeatingGroupReturn {
   resetEntries: () => void;
   loading: boolean;
   hasEntries: boolean;
+  refreshEntries: () => void;
 }
 
 export function useRepeatingGroup(repeatingId: string): UseRepeatingGroupReturn {
   const [entries, setEntries] = useState<RepeatingGroupEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Funzione per caricare le voci
+  const loadEntries = useCallback(() => {
+    try {
+      setLoading(true);
+      const loadedEntries = getRepeatingGroupEntries(repeatingId);
+      setEntries(loadedEntries);
+      console.log(`Loaded ${loadedEntries.length} entries for ${repeatingId}`);
+    } catch (error) {
+      console.error(`Error loading entries for ${repeatingId}:`, error);
+      setEntries([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [repeatingId]);
+
   // Carica le voci quando il componente si monta o quando cambia repeatingId
   useEffect(() => {
-    const loadEntries = () => {
-      try {
-        setLoading(true);
-        const loadedEntries = getRepeatingGroupEntries(repeatingId);
-        setEntries(loadedEntries);
-        console.log(`Loaded ${loadedEntries.length} entries for ${repeatingId}`);
-      } catch (error) {
-        console.error(`Error loading entries for ${repeatingId}:`, error);
-        setEntries([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadEntries();
     
     // Aggiungiamo un listener per aggiornare gli elementi se cambiano in un'altra scheda
@@ -48,8 +51,18 @@ export function useRepeatingGroup(repeatingId: string): UseRepeatingGroupReturn 
     };
     
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, [repeatingId]);
+    
+    // Aggiungi un listener per l'evento di reset
+    const removeResetListener = addResetListener(() => {
+      console.log(`Reset listener triggered for ${repeatingId}, reloading entries`);
+      loadEntries();
+    });
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      removeResetListener();
+    };
+  }, [repeatingId, loadEntries]);
 
   // Aggiunge un nuovo elemento
   const addEntry = useCallback((entry: RepeatingGroupEntry): boolean => {
@@ -93,6 +106,11 @@ export function useRepeatingGroup(repeatingId: string): UseRepeatingGroupReturn 
     saveRepeatingGroupEntries(repeatingId, []);
     setEntries([]);
   }, [repeatingId]);
+  
+  // Forza un aggiornamento delle voci
+  const refreshEntries = useCallback(() => {
+    loadEntries();
+  }, [loadEntries]);
 
   return {
     entries,
@@ -101,6 +119,7 @@ export function useRepeatingGroup(repeatingId: string): UseRepeatingGroupReturn 
     deleteEntry,
     resetEntries,
     loading,
-    hasEntries: entries.length > 0
+    hasEntries: entries.length > 0,
+    refreshEntries
   };
 }

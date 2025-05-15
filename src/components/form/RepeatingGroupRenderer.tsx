@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { RepeatingGroupBlock, RepeatingGroupEntry } from '@/types/form';
 import { IncomeManagerView } from './IncomeManagerView';
 import { IncomeSubflowWizard } from './IncomeSubflowWizard';
@@ -13,8 +13,8 @@ interface RepeatingGroupRendererProps {
 
 export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
   const { repeating_id, subflow, title } = block;
-  const { navigateToNextQuestion } = useForm();
-  const { addEntry, updateEntry } = useRepeatingGroup(repeating_id);
+  const { navigateToNextQuestion, state } = useForm();
+  const { addEntry, updateEntry, refreshEntries } = useRepeatingGroup(repeating_id);
   
   // Stato per la modalità di visualizzazione (manager o subflow)
   const [mode, setMode] = useState<'manager' | 'subflow'>('manager');
@@ -24,6 +24,16 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
     data: RepeatingGroupEntry;
     index: number;
   } | null>(null);
+  
+  // Effetto per aggiornare i dati quando il form cambia modalità o blocco
+  useEffect(() => {
+    // Reset mode e stati quando cambia il blocco attivo
+    setMode('manager');
+    setEditingEntry(null);
+    
+    // Forza un refresh dei dati per assicurarsi che siano aggiornati
+    refreshEntries();
+  }, [block.block_id, state.activeQuestion.block_id, refreshEntries]);
   
   // Gestisce l'aggiunta di un nuovo record
   const handleAdd = () => {

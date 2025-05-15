@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { FormQuestion } from "./FormQuestion";
 import { useLocation, useParams } from "react-router-dom";
@@ -18,6 +18,7 @@ export function QuestionView() {
   const { state, blocks, goToQuestion } = useFormExtended();
   const location = useLocation();
   const params = useParams<{ blockId?: string, questionId?: string }>();
+  const [isInitialized, setIsInitialized] = useState(false);
   
   // Sincronizza il componente con l'URL quando cambia
   useEffect(() => {
@@ -29,7 +30,14 @@ export function QuestionView() {
         goToQuestion(params.blockId, params.questionId, true);
       }
     }
+    
+    setIsInitialized(true);
   }, [location.pathname, params.blockId, params.questionId, state.activeQuestion, goToQuestion]);
+  
+  // Attendere che il componente sia inizializzato prima di renderizzare
+  if (!isInitialized) {
+    return <div className="p-4">Caricamento...</div>;
+  }
   
   // Find the current active block and question
   const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
