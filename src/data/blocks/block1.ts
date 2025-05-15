@@ -9,6 +9,26 @@ export const block1: Block = {
   priority: 10, // Priorità aggiunta
   default_active: true,
   questions: [
+     {
+      question_id: "income_type",
+      question_number: "13.1",
+      question_text: "Che tipo di reddito aggiuntivo hai?",
+      leads_to_placeholder_priority: "placeholder1",
+      placeholders: {
+        placeholder1: {
+          type: "select",
+          options: [
+            { id: "rental", label: "Reddito da affitto", leads_to: "soggetto_acquisto" },
+            { id: "freelance", label: "Lavoro autonomo", leads_to: "soggetto_acquisto" },
+            { id: "child_support", label: "Mantenimento figli", leads_to: "soggetto_acquisto" },
+            { id: "allowance", label: "Indennità", leads_to: "soggetto_acquisto" },
+            { id: "dividends", label: "Dividendi", leads_to: "soggetto_acquisto" },
+            { id: "pension", label: "Pensione", leads_to: "soggetto_acquisto" },
+            { id: "other", label: "Altro", leads_to: "soggetto_acquisto" }
+          ]
+        }
+      }
+    },
     {
       question_number: "1.1",
       question_id: "soggetto_acquisto",
