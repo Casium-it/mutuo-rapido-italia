@@ -1,4 +1,3 @@
-
 import { Block, Question } from "@/types/form";
 
 /**
@@ -198,3 +197,11 @@ export const getQuestionTextWithClickableResponses = (
 
   return { parts };
 };
+
+/**
+ * Genera un ID univoco per le fonti di reddito
+ * @returns string ID univoco
+ */
+export function generateUniqueId(): string {
+  return `income_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+}

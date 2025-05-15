@@ -3,9 +3,10 @@ import { useForm as useOriginalForm } from "@/contexts/FormContext";
 import { 
   getPreviousQuestion as getPreviousQuestionUtil, 
   getQuestionTextWithResponses,
-  getChainOfInlineQuestions
+  getChainOfInlineQuestions,
+  generateUniqueId
 } from "@/utils/formUtils";
-import { Question } from "@/types/form";
+import { Question, IncomeSource } from "@/types/form";
 
 /**
  * Extended hook for the form context with additional functionality
@@ -77,11 +78,48 @@ export const useFormExtended = () => {
       questionId
     );
   };
+
+  // Aggiungiamo una funzione ausiliaria per gestire la navigazione speciale per i redditi
+  const navigateToNextQuestion = (currentQuestionId: string, leadsTo: string) => {
+    // Trova la domanda corrente
+    let currentQuestion: Question | undefined;
+    for (const block of formContext.blocks) {
+      const question = block.questions.find(q => q.question_id === currentQuestionId);
+      if (question) {
+        currentQuestion = question;
+        break;
+      }
+    }
+    
+    // Se la domanda corrente è l'ultima di un flusso di dettagli reddito
+    // e stiamo navigando alla gestione redditi, marchiamo la fonte come completa
+    if (currentQuestion?.is_last_income_detail) {
+      const currentIncomeSource = formContext.getCurrentIncomeSource();
+      if (currentIncomeSource) {
+        // Marchiamo la fonte di reddito come completa
+        formContext.updateIncomeSourceDetail('isComplete', true);
+      }
+    }
+    
+    // Se stiamo selezionando un nuovo tipo di reddito secondario
+    if (currentQuestionId === "nuovo_reddito_secondario" && leadsTo.startsWith("dettagli_")) {
+      // Estrai il tipo di reddito dal leads_to
+      const incomeType = leadsTo.replace("dettagli_", "");
+      
+      // Crea una nuova fonte di reddito
+      formContext.addIncomeSource(incomeType);
+    }
+    
+    // Delega alla funzione originale per la navigazione effettiva
+    formContext.navigateToNextQuestion(currentQuestionId, leadsTo);
+  };
   
   return {
     ...formContext,
     getPreviousQuestionText,
     getPreviousQuestion,
-    getInlineQuestionChain
+    getInlineQuestionChain,
+    // Sostituisci la funzione di navigazione con la nostra versione estesa
+    navigateToNextQuestion
   };
 };

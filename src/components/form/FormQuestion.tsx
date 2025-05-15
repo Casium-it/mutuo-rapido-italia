@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { Question, ValidationTypes } from "@/types/form";
@@ -12,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { getQuestionTextWithClickableResponses } from "@/utils/formUtils";
 import { validateInput } from "@/utils/validationUtils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { IncomeSourceManager } from "./IncomeSourceManager";
 
 interface FormQuestionProps {
   question: Question;
@@ -27,7 +27,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
     getInlineQuestionChain,
     state, 
     addActiveBlock, 
-    goToQuestion 
+    goToQuestion, 
+    updateIncomeSourceDetail 
   } = useFormExtended();
   
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});
@@ -68,6 +69,28 @@ export function FormQuestion({ question }: FormQuestionProps) {
     setValidationErrors(initialValidationErrors);
     setIsNavigating(false);
   }, [question.question_id, getResponse, question.placeholders]);
+
+  // Effetto per aggiornare i dettagli della fonte di reddito corrente quando cambia la risposta
+  useEffect(() => {
+    // Se siamo in una domanda di dettaglio reddito ed esiste una fonte di reddito corrente
+    if (question.income_source_details) {
+      // Per ogni placeholder nella domanda
+      Object.keys(question.placeholders).forEach(key => {
+        const existingResponse = getResponse(question.question_id, key);
+        
+        // Se esiste già una risposta, aggiorna i dettagli della fonte di reddito
+        if (existingResponse !== undefined) {
+          // Il nome del campo nei dettagli è basato sul nome del placeholder
+          const detailKey = key === "placeholder1" ? "importo" : 
+                           key === "placeholder2" ? "frequenza" :
+                           key === "placeholder3" ? "stabilita" : key;
+          
+          // Aggiorna la fonte di reddito con il dettaglio
+          updateIncomeSourceDetail(detailKey, existingResponse);
+        }
+      }
+    }
+  }, [question, getResponse]);
 
   // Funzione per gestire il cambio di risposta con validazione
   const handleResponseChange = (key: string, value: string | string[]) => {
@@ -509,6 +532,11 @@ export function FormQuestion({ question }: FormQuestionProps) {
   const hasValidResponses = Object.keys(question.placeholders).every(key => 
     responses[key] !== undefined || getResponse(question.question_id, key) !== undefined
   ) && allInputsHaveValidContent();
+
+  // Se questa domanda è un gestore di fonti di reddito, renderizzala con il componente specializzato
+  if (question.is_income_manager) {
+    return <IncomeSourceManager question={question} />;
+  }
 
   return (
     <div className="max-w-xl animate-fade-in">

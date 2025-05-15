@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback } from "react";
-import { Block, FormState, FormResponse, NavigationHistory } from "@/types/form";
+import { Block, FormState, FormResponse, NavigationHistory, IncomeSource } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { generateUniqueId } from "@/utils/formUtils";
 
 type FormContextType = {
   state: FormState;
@@ -14,6 +15,14 @@ type FormContextType = {
   getProgress: () => number;
   resetForm: () => void;
   getNavigationHistoryFor: (questionId: string) => NavigationHistory | undefined;
+  // Nuove funzioni per la gestione delle fonti di reddito
+  addIncomeSource: (type: string) => string;
+  updateIncomeSourceDetail: (key: string, value: any) => void;
+  getIncomeSources: () => IncomeSource[];
+  getIncomeSource: (id: string) => IncomeSource | undefined;
+  getCurrentIncomeSource: () => IncomeSource | undefined;
+  removeIncomeSource: (id: string) => void;
+  editIncomeSource: (id: string) => void;
 };
 
 type Action =
@@ -24,7 +33,13 @@ type Action =
   | { type: "SET_FORM_STATE"; state: Partial<FormState> }
   | { type: "RESET_FORM" }
   | { type: "SET_NAVIGATING"; isNavigating: boolean }
-  | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory };
+  | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory }
+  // Nuove azioni per la gestione delle fonti di reddito
+  | { type: "ADD_INCOME_SOURCE"; id: string; incomeType: string }
+  | { type: "UPDATE_INCOME_SOURCE"; id: string; details: Record<string, any> }
+  | { type: "MARK_INCOME_SOURCE_COMPLETE"; id: string }
+  | { type: "REMOVE_INCOME_SOURCE"; id: string }
+  | { type: "SET_CURRENT_INCOME_SOURCE"; id: string };
 
 const initialState: FormState = {
   activeBlocks: [],
@@ -35,7 +50,9 @@ const initialState: FormState = {
   responses: {},
   answeredQuestions: new Set(),
   isNavigating: false,
-  navigationHistory: []
+  navigationHistory: [],
+  incomeSources: [], // Inizializza l'array delle fonti di reddito
+  currentIncomeSourceId: undefined // Nessuna fonte di reddito attualmente selezionata
 };
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
@@ -110,6 +127,62 @@ function formReducer(state: FormState, action: Action): FormState {
         navigationHistory: [...filteredHistory, action.history]
       };
     }
+    case "ADD_INCOME_SOURCE":
+      return {
+        ...state,
+        incomeSources: [...state.incomeSources, {
+          id: action.id,
+          type: action.incomeType,
+          details: {},
+          isComplete: false
+        }],
+        currentIncomeSourceId: action.id // Imposta la nuova fonte come corrente
+      };
+      
+    case "UPDATE_INCOME_SOURCE": {
+      const updatedIncomeSources = state.incomeSources.map(source => 
+        source.id === action.id 
+          ? { ...source, details: { ...source.details, ...action.details } }
+          : source
+      );
+      
+      return {
+        ...state,
+        incomeSources: updatedIncomeSources
+      };
+    }
+      
+    case "MARK_INCOME_SOURCE_COMPLETE":
+      return {
+        ...state,
+        incomeSources: state.incomeSources.map(source => 
+          source.id === action.id 
+            ? { ...source, isComplete: true }
+            : source
+        )
+      };
+      
+    case "REMOVE_INCOME_SOURCE": {
+      const filteredIncomeSources = state.incomeSources.filter(source => source.id !== action.id);
+      
+      // Reimposta currentIncomeSourceId se è stato rimosso
+      const newCurrentId = state.currentIncomeSourceId === action.id 
+        ? undefined 
+        : state.currentIncomeSourceId;
+        
+      return {
+        ...state,
+        incomeSources: filteredIncomeSources,
+        currentIncomeSourceId: newCurrentId
+      };
+    }
+    
+    case "SET_CURRENT_INCOME_SOURCE":
+      return {
+        ...state,
+        currentIncomeSourceId: action.id
+      };
+      
     default:
       return state;
   }
@@ -125,7 +198,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   
   const [state, dispatch] = useReducer(formReducer, {
     ...initialState,
-    activeBlocks: sortedBlocks.filter(b => b.default_active).map(b => b.block_id)
+    activeBlocks: sortedBlocks.filter(b => b.default_active).map(b => b.block_id),
+    incomeSources: [] // Assicurati che le fonti di reddito siano inizializzate
   });
 
   // Inizializza o aggiorna i blocchi attivi dal JSON
@@ -480,6 +554,50 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return sortedHistory.find(item => item.to_question_id === questionId);
   }, [state.navigationHistory]);
 
+  // Funzione per aggiungere una nuova fonte di reddito
+  const addIncomeSource = useCallback((type: string): string => {
+    const id = generateUniqueId();
+    dispatch({ type: "ADD_INCOME_SOURCE", id, incomeType: type });
+    return id;
+  }, []);
+  
+  // Funzione per aggiornare i dettagli di una fonte di reddito
+  const updateIncomeSourceDetail = useCallback((key: string, value: any) => {
+    if (!state.currentIncomeSourceId) return;
+    
+    dispatch({ 
+      type: "UPDATE_INCOME_SOURCE", 
+      id: state.currentIncomeSourceId, 
+      details: { [key]: value } 
+    });
+  }, [state.currentIncomeSourceId]);
+  
+  // Funzione per ottenere tutte le fonti di reddito
+  const getIncomeSources = useCallback((): IncomeSource[] => {
+    return state.incomeSources;
+  }, [state.incomeSources]);
+  
+  // Funzione per ottenere una specifica fonte di reddito
+  const getIncomeSource = useCallback((id: string): IncomeSource | undefined => {
+    return state.incomeSources.find(source => source.id === id);
+  }, [state.incomeSources]);
+  
+  // Funzione per ottenere la fonte di reddito correntemente in modifica
+  const getCurrentIncomeSource = useCallback((): IncomeSource | undefined => {
+    if (!state.currentIncomeSourceId) return undefined;
+    return state.incomeSources.find(source => source.id === state.currentIncomeSourceId);
+  }, [state.incomeSources, state.currentIncomeSourceId]);
+  
+  // Funzione per rimuovere una fonte di reddito
+  const removeIncomeSource = useCallback((id: string) => {
+    dispatch({ type: "REMOVE_INCOME_SOURCE", id });
+  }, []);
+  
+  // Funzione per impostare la fonte di reddito corrente per la modifica
+  const editIncomeSource = useCallback((id: string) => {
+    dispatch({ type: "SET_CURRENT_INCOME_SOURCE", id });
+  }, []);
+
   return (
     <FormContext.Provider
       value={{
@@ -493,7 +611,15 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         navigateToNextQuestion,
         getProgress,
         resetForm,
-        getNavigationHistoryFor
+        getNavigationHistoryFor,
+        // Nuove funzioni per la gestione delle fonti di reddito
+        addIncomeSource,
+        updateIncomeSourceDetail,
+        getIncomeSources,
+        getIncomeSource,
+        getCurrentIncomeSource,
+        removeIncomeSource,
+        editIncomeSource
       }}
     >
       {children}
