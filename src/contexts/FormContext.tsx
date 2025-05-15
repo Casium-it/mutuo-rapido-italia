@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback } from "react";
 import { Block, FormState, FormResponse, NavigationHistory } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { resetAllRepeatingGroups } from "@/utils/repeatingGroupUtils";
 
 type FormContextType = {
   state: FormState;
@@ -149,6 +150,9 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     if (params.blockType) {
       localStorage.removeItem(`form-state-${params.blockType}`);
     }
+    
+    // Reimposta tutti i gruppi ripetuti
+    resetAllRepeatingGroups();
     
     // Reimposta lo stato del form
     dispatch({ type: "RESET_FORM" });

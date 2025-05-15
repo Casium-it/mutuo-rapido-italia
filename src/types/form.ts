@@ -32,16 +32,46 @@ export type Question = {
   inline?: boolean;
   leads_to_placeholder_priority: string;
   placeholders: Record<string, Placeholder>;
-  question_notes?: string; // Nuovo campo per le note informative sopra la domanda
+  question_notes?: string;
 };
 
-export type Block = {
+// Nuovo tipo per le domande del sottoflusso nei gruppi ripetuti
+export type SubflowQuestion = Question;
+
+// Definizione del blocco repeating_group
+export type RepeatingGroupBlock = {
+  block_number: string;
+  block_id: string;
+  title: string;
+  priority: number;
+  default_active?: boolean;
+  type: "repeating_group";
+  repeating_id: string;
+  subflow: SubflowQuestion[];
+};
+
+// Definizione regolare del blocco standard
+export type StandardBlock = {
   block_number: string;
   block_id: string;
   title: string;
   priority: number;
   default_active?: boolean;
   questions: Question[];
+};
+
+// Union type per supportare sia blocchi standard che repeating_group
+export type Block = StandardBlock | RepeatingGroupBlock;
+
+// Tipo per un singolo record di entrata in un gruppo ripetuto
+export type RepeatingGroupEntry = {
+  id?: string;
+  [key: string]: any;
+};
+
+// Tipo per l'elenco di record in un gruppo ripetuto
+export type RepeatingGroupEntries = {
+  [repeating_id: string]: RepeatingGroupEntry[];
 };
 
 export type FormResponse = {
@@ -67,5 +97,6 @@ export type FormState = {
   responses: FormResponse;
   answeredQuestions: Set<string>;
   isNavigating?: boolean;
-  navigationHistory: NavigationHistory[]; // Aggiungiamo la cronologia di navigazione
+  navigationHistory: NavigationHistory[];
+  repeatingGroups?: RepeatingGroupEntries; // Aggiungiamo supporto per i gruppi ripetuti nello stato
 };
