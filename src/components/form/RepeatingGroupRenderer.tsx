@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { RepeatingGroupBlock, RepeatingGroupEntry } from '@/types/form';
 import { IncomeManagerView } from './IncomeManagerView';
@@ -45,8 +46,10 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
   
   // Effect to update data when the form changes mode or block
   useEffect(() => {
-    // Reset states when the active block changes
-    refreshEntries();
+    // Only refresh entries when we're in this block
+    if (state.activeQuestion.block_id === block.block_id) {
+      refreshEntries();
+    }
     
     // Control when page is reloaded or navigated
     const handleBeforeUnload = () => {
@@ -65,6 +68,9 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
   const handleAdd = () => {
     // Clear any previous responses for the subflow questions
     clearSubflowResponses(subflow);
+    
+    // Cancel any ongoing editing
+    cancelEditingRepeatingEntry();
     
     // Navigate to the first question in the subflow
     const firstQuestion = subflow[0];
