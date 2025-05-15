@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { Question, IncomeSource } from "@/types/form";
 import { IncomeSourceCard } from "./IncomeSourceCard";
@@ -24,17 +24,45 @@ export function IncomeSourceManager({ question }: IncomeSourceManagerProps) {
     state
   } = useFormExtended();
   
-  // Ottieni le fonti di reddito aggiornate dal contesto
-  const incomeSources = getIncomeSources();
+  // Stato locale per le fonti di reddito
+  const [incomeSources, setIncomeSources] = useState<IncomeSource[]>([]);
   
-  // Log per debug
+  // Carica e aggiorna le fonti di reddito quando il componente monta o lo stato cambia
   useEffect(() => {
-    console.log("IncomeSourceManager mounted/updated");
-    console.log("Fonti di reddito disponibili:", incomeSources);
+    const sources = getIncomeSources();
+    console.log("IncomeSourceManager - Fonti di reddito aggiornate:", sources);
+    
+    // Validazione dei dati prima di impostarli nello stato locale
+    const validSources = sources.filter(source => {
+      const isValid = !!source && !!source.id && !!source.type;
+      if (!isValid) {
+        console.warn("Fonte di reddito non valida rilevata:", source);
+      }
+      return isValid;
+    });
+    
+    setIncomeSources(validSources);
+  }, [getIncomeSources, state.incomeSources]);
+  
+  // Log di debug avanzato
+  useEffect(() => {
+    console.log("IncomeSourceManager - Component mounted/updated");
     console.log("State income sources:", state.incomeSources);
-  }, [incomeSources, state.incomeSources]);
+    console.log("Local income sources state:", incomeSources);
+    
+    // Verifica l'integrità dei dati
+    if (state.incomeSources && state.incomeSources.length > 0) {
+      state.incomeSources.forEach((source, index) => {
+        console.log(`Source ${index}:`, source);
+        if (!source.id) console.error(`Source ${index} missing ID!`);
+        if (!source.type) console.error(`Source ${index} missing type!`);
+        console.log(`Source ${index} details:`, source.details);
+      });
+    }
+  }, [state.incomeSources, incomeSources]);
   
   const handleAddNew = () => {
+    console.log("Aggiunta nuova fonte di reddito");
     // Resetta l'ID della fonte di reddito corrente prima di navigare
     resetCurrentIncomeSource();
     navigateToNextQuestion(question.question_id, "nuovo_reddito_secondario");
@@ -42,6 +70,16 @@ export function IncomeSourceManager({ question }: IncomeSourceManagerProps) {
   
   const handleEditSource = (source: IncomeSource) => {
     console.log("Editing income source:", source);
+    
+    if (!source || !source.id) {
+      console.error("Tentativo di modificare una fonte di reddito non valida:", source);
+      toast({
+        title: "Errore",
+        description: "Impossibile modificare questa fonte di reddito.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     // Imposta la fonte di reddito corrente per la modifica
     editIncomeSource(source.id);
@@ -52,7 +90,18 @@ export function IncomeSourceManager({ question }: IncomeSourceManagerProps) {
   };
   
   const handleRemoveSource = (sourceId: string) => {
+    console.log("Removing income source:", sourceId);
+    
+    if (!sourceId) {
+      console.error("Tentativo di rimuovere una fonte di reddito senza ID");
+      return;
+    }
+    
     removeIncomeSource(sourceId);
+    
+    // Aggiorna immediatamente lo stato locale per una UI reattiva
+    setIncomeSources(prev => prev.filter(source => source.id !== sourceId));
+    
     toast({
       title: "Fonte di reddito rimossa",
       description: "La fonte di reddito è stata eliminata correttamente.",
@@ -82,6 +131,16 @@ export function IncomeSourceManager({ question }: IncomeSourceManagerProps) {
 
   return (
     <div className="space-y-6">
+      {/* Mostra informazioni di debug durante lo sviluppo */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="p-2 bg-yellow-50 border border-yellow-200 rounded-md text-xs">
+          <p>Debug: {incomeSources.length} fonti di reddito</p>
+          <pre className="mt-1 overflow-auto max-h-20">
+            {JSON.stringify(incomeSources, null, 2)}
+          </pre>
+        </div>
+      )}
+      
       {/* Lista delle fonti di reddito esistenti */}
       {incomeSources && incomeSources.length > 0 ? (
         <div className="space-y-4">

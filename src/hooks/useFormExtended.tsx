@@ -1,4 +1,3 @@
-
 import { useForm as useOriginalForm } from "@/contexts/FormContext";
 import { 
   getPreviousQuestion as getPreviousQuestionUtil, 
@@ -18,6 +17,16 @@ export const useFormExtended = () => {
   // Debug log all income sources when the hook is used
   useEffect(() => {
     console.log("useFormExtended hook used, income sources:", formContext.getIncomeSources());
+    
+    // Verifica l'integrità dei dati
+    const sources = formContext.getIncomeSources();
+    if (sources) {
+      sources.forEach((source, idx) => {
+        if (!source.id) console.error(`Income source at index ${idx} has no ID!`);
+        if (!source.type) console.error(`Income source ${source.id || idx} has no type!`);
+        if (!source.details) console.warn(`Income source ${source.id || idx} has no details!`);
+      });
+    }
   }, [formContext]);
   
   /**
@@ -85,7 +94,7 @@ export const useFormExtended = () => {
     );
   };
 
-  // Migliora la funzione di navigazione per gestire la mappatura tra risposte e dettagli reddito
+  // Funzione migliorata di navigazione per gestire la mappatura tra risposte e dettagli reddito
   const navigateToNextQuestion = (currentQuestionId: string, leadsTo: string) => {
     // Trova la domanda corrente
     let currentQuestion: Question | undefined;
@@ -165,6 +174,12 @@ export const useFormExtended = () => {
           // Aggiorna i dettagli della fonte di reddito
           console.log("Updating income source detail:", detailKey, "=", value);
           formContext.updateIncomeSourceDetail(detailKey, value);
+          
+          // Verifica che il dettaglio sia stato aggiornato
+          setTimeout(() => {
+            const currentSource = formContext.getCurrentIncomeSource();
+            console.log("Current source after update:", currentSource);
+          }, 0);
         }
       }
     }
@@ -177,6 +192,12 @@ export const useFormExtended = () => {
         console.log("Marking income source as complete:", currentIncomeSource.id);
         // Marchiamo la fonte di reddito come completa
         formContext.updateIncomeSourceDetail('isComplete', true);
+        
+        // Log di verifica
+        setTimeout(() => {
+          const updatedSource = formContext.getCurrentIncomeSource();
+          console.log("Source after marking complete:", updatedSource);
+        }, 0);
       }
     }
     
@@ -186,7 +207,7 @@ export const useFormExtended = () => {
       const incomeType = leadsTo.replace("dettagli_", "");
       console.log("Selected new income type:", incomeType);
       
-      // NUOVO: Pulisci le risposte precedenti relative al tipo di reddito
+      // Pulisci le risposte precedenti relative al tipo di reddito
       formContext.clearIncomeTypeResponses(incomeType);
       
       // Resetta l'ID della fonte di reddito corrente prima di crearne una nuova
@@ -195,9 +216,17 @@ export const useFormExtended = () => {
       // Crea una nuova fonte di reddito
       const newId = formContext.addIncomeSource(incomeType);
       console.log("Created new income source with ID:", newId);
+      
+      // Verifica la creazione
+      setTimeout(() => {
+        const allSources = formContext.getIncomeSources();
+        const newSource = allSources.find(s => s.id === newId);
+        console.log("All sources after creation:", allSources);
+        console.log("New source found:", newSource);
+      }, 0);
     }
     
-    // NUOVO: Se stiamo navigando alla pagina di selezione nuovo reddito, resettiamo lo stato corrente
+    // Se stiamo navigando alla pagina di selezione nuovo reddito, resettiamo lo stato corrente
     if (leadsTo === "nuovo_reddito_secondario") {
       // Resetta l'ID della fonte di reddito corrente
       formContext.resetCurrentIncomeSource();
