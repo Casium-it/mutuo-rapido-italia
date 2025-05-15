@@ -3,7 +3,16 @@ import React, { useEffect } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { FormQuestion } from "./FormQuestion";
 import { useLocation, useParams } from "react-router-dom";
-import { StandardBlock } from "@/types/form";
+import { StandardBlock, Block, RepeatingGroupBlock } from "@/types/form";
+
+// Funzioni di utilità per il controllo del tipo
+const isStandardBlock = (block: Block): block is StandardBlock => {
+  return !('type' in block) || block.type !== 'repeating_group';
+};
+
+const isRepeatingGroupBlock = (block: Block): block is RepeatingGroupBlock => {
+  return 'type' in block && block.type === 'repeating_group';
+};
 
 export function QuestionView() {
   const { state, blocks, goToQuestion } = useFormExtended();
@@ -25,7 +34,7 @@ export function QuestionView() {
   // Find the current active block and question
   const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
   
-  // Verifica che il blocco sia un StandardBlock prima di cercare la domanda
+  // Verifica che il blocco sia esistente
   if (!activeBlock) {
     return (
       <div className="text-center py-8">
@@ -35,7 +44,7 @@ export function QuestionView() {
   }
 
   // Se il blocco è un RepeatingGroupBlock, non dovremmo visualizzare questo componente
-  if ('type' in activeBlock && activeBlock.type === 'repeating_group') {
+  if (isRepeatingGroupBlock(activeBlock)) {
     return (
       <div className="text-center py-8">
         <p className="text-gray-500">Questo blocco utilizza un componente personalizzato.</p>
@@ -44,7 +53,7 @@ export function QuestionView() {
   }
 
   // A questo punto sappiamo che è un StandardBlock
-  const standardBlock = activeBlock as StandardBlock;
+  const standardBlock = activeBlock;
   const activeQuestion = standardBlock.questions.find(
     question => question.question_id === state.activeQuestion.question_id
   );

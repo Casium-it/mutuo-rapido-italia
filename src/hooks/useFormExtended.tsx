@@ -5,7 +5,21 @@ import {
   getQuestionTextWithResponses,
   getChainOfInlineQuestions
 } from "@/utils/formUtils";
-import { Question, StandardBlock } from "@/types/form";
+import { Question, StandardBlock, Block, RepeatingGroupBlock } from "@/types/form";
+
+/**
+ * Funzione di utilità per verificare se un blocco è di tipo StandardBlock
+ */
+const isStandardBlock = (block: Block): block is StandardBlock => {
+  return !('type' in block) || block.type !== 'repeating_group';
+};
+
+/**
+ * Funzione di utilità per verificare se un blocco è di tipo RepeatingGroupBlock
+ */
+const isRepeatingGroupBlock = (block: Block): block is RepeatingGroupBlock => {
+  return 'type' in block && block.type === 'repeating_group';
+};
 
 /**
  * Extended hook for the form context with additional functionality
@@ -50,11 +64,11 @@ export const useFormExtended = () => {
   const getInlineQuestionChain = (blockId: string, questionId: string): Question[] => {
     // Verifica prima che si tratti di un blocco standard
     const block = formContext.blocks.find(b => b.block_id === blockId);
-    if (!block || ('type' in block && block.type === 'repeating_group')) {
+    if (!block || isRepeatingGroupBlock(block)) {
       return [];
     }
 
-    const standardBlock = block as StandardBlock;
+    const standardBlock = block;
     
     // Se la domanda è inline, troviamo da dove viene l'utente attraverso la cronologia
     const question = standardBlock.questions.find(q => q.question_id === questionId);
@@ -69,8 +83,8 @@ export const useFormExtended = () => {
         const sourceBlock = formContext.blocks.find(b => b.block_id === sourceBlockId);
         
         // Verifica che il blocco di origine sia un blocco standard
-        if (sourceBlock && !('type' in sourceBlock)) {
-          const standardSourceBlock = sourceBlock as StandardBlock;
+        if (sourceBlock && isStandardBlock(sourceBlock)) {
+          const standardSourceBlock = sourceBlock;
           const sourceQuestion = standardSourceBlock.questions.find(
             q => q.question_id === navigationHistory.from_question_id
           );

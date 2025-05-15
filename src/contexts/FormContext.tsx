@@ -1,11 +1,16 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback } from "react";
-import { Block, FormState, FormResponse, NavigationHistory, StandardBlock } from "@/types/form";
+import { Block, FormState, FormResponse, NavigationHistory, StandardBlock, RepeatingGroupBlock } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { resetAllRepeatingGroups } from "@/utils/repeatingGroupUtils";
 
 // Funzione di utilità per verificare se un blocco è di tipo StandardBlock
 const isStandardBlock = (block: Block): block is StandardBlock => {
   return !('type' in block) || block.type !== 'repeating_group';
+};
+
+// Funzione di utilità per verificare se un blocco è di tipo RepeatingGroupBlock
+const isRepeatingGroupBlock = (block: Block): block is RepeatingGroupBlock => {
+  return 'type' in block && block.type === 'repeating_group';
 };
 
 type FormContextType = {
@@ -393,9 +398,16 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       let currentBlock = null;
       let currentBlockIndex = -1;
       
-      // Cerca quale blocco contiene la domanda corrente
+      // Cerca quale blocco contiene la domanda corrente o è il blocco stesso (per repeating_group)
       for (let i = 0; i < sortedBlocks.length; i++) {
         const block = sortedBlocks[i];
+        
+        // Caso speciale per i repeating_group quando siamo sulla vista manager
+        if (isRepeatingGroupBlock(block) && block.block_id === currentBlockId) {
+          currentBlockIndex = i;
+          currentBlock = block;
+          break;
+        }
         
         // Verifica se la domanda appartiene a questo blocco (standard o repeating_group)
         let hasQuestion = false;
@@ -426,7 +438,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
           .sort((a, b) => a!.priority - b!.priority);
         
         // Trova la posizione del blocco corrente nella lista di blocchi attivi ordinati per priorità
-        const currentActiveIndex = activeBlocksWithPriority.findIndex(b => b!.block_id === currentBlock.block_id);
+        const currentActiveIndex = activeBlocksWithPriority.findIndex(b => b!.block_id === currentBlock!.block_id);
         
         // Cerca il prossimo blocco attivo con priorità maggiore
         if (currentActiveIndex !== -1) {
@@ -439,7 +451,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
                 foundNextActiveBlock = true;
                 goToQuestion(nextBlock.block_id, nextBlock.questions[0].question_id);
                 break;
-              } else if ('type' in nextBlock && nextBlock.type === 'repeating_group') {
+              } else if (isRepeatingGroupBlock(nextBlock)) {
                 console.log(`Found next active block (repeating_group): ${nextBlock.block_id}`);
                 foundNextActiveBlock = true;
                 goToQuestion(nextBlock.block_id, "manager_view"); // ID fittizio per il manager_view

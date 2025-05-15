@@ -1,5 +1,4 @@
-
-import { Block, Question, StandardBlock } from "@/types/form";
+import { Block, Question, StandardBlock, RepeatingGroupBlock } from "@/types/form";
 
 /**
  * Verifica se un blocco è di tipo StandardBlock
@@ -8,6 +7,15 @@ import { Block, Question, StandardBlock } from "@/types/form";
  */
 const isStandardBlock = (block: Block): block is StandardBlock => {
   return !('type' in block) || block.type !== 'repeating_group';
+};
+
+/**
+ * Verifica se un blocco è di tipo RepeatingGroupBlock
+ * @param block Blocco da verificare
+ * @returns true se è un RepeatingGroupBlock, false altrimenti
+ */
+const isRepeatingGroupBlock = (block: Block): block is RepeatingGroupBlock => {
+  return 'type' in block && block.type === 'repeating_group';
 };
 
 /**
