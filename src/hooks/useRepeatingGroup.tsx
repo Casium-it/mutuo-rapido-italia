@@ -16,15 +16,15 @@ export interface UseRepeatingGroupReturn {
 }
 
 export function useRepeatingGroup(repeatingId: string): UseRepeatingGroupReturn {
-  // Get functions and state from FormContext
+  // Ottieni le funzioni e lo stato dal FormContext
   const { getRepeatingGroupEntries, saveRepeatingGroupEntry, deleteRepeatingGroupEntry } = useForm();
   
-  // Local state for entries (synchronized with FormContext)
+  // Stato locale per le voci (sincronizzato con il FormContext)
   const [entries, setEntries] = useState<RepeatingGroupEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [forceUpdate, setForceUpdate] = useState(0);
 
-  // Function to load entries from FormContext
+  // Funzione per caricare le voci dal FormContext
   const loadEntries = useCallback(() => {
     try {
       setLoading(true);
@@ -39,16 +39,16 @@ export function useRepeatingGroup(repeatingId: string): UseRepeatingGroupReturn 
     }
   }, [repeatingId, getRepeatingGroupEntries]);
 
-  // Load entries when the component mounts or when repeatingId or forceUpdate changes
+  // Carica le voci quando il componente si monta o quando cambia repeatingId o forceUpdate
   useEffect(() => {
     loadEntries();
     
-    // Add a listener for the reset event specific to the repeating group
+    // Aggiungi un listener per l'evento di reset specifico per il repeating group
     const removeResetListener = addResetListener(() => {
       console.log(`Reset listener triggered for ${repeatingId}, reloading entries`);
       setEntries([]);
       loadEntries();
-      // Force an update even if loadEntries doesn't find any changes
+      // Forza un aggiornamento anche se loadEntries non trova modifiche
       setForceUpdate(prev => prev + 1);
     });
     
@@ -57,21 +57,21 @@ export function useRepeatingGroup(repeatingId: string): UseRepeatingGroupReturn 
     };
   }, [repeatingId, loadEntries, forceUpdate]);
 
-  // Add a new entry
+  // Aggiunge un nuovo elemento
   const addEntry = useCallback((entry: RepeatingGroupEntry): boolean => {
     const success = saveRepeatingGroupEntry(repeatingId, entry);
     if (success) {
-      // Update local state
+      // Aggiorna lo stato locale
       setEntries(prev => [...prev, { ...entry }]);
     }
     return success;
   }, [repeatingId, saveRepeatingGroupEntry]);
 
-  // Update an existing entry
+  // Aggiorna un elemento esistente
   const updateEntry = useCallback((entry: RepeatingGroupEntry, index: number): boolean => {
     const success = saveRepeatingGroupEntry(repeatingId, entry, index);
     if (success) {
-      // Update local state
+      // Aggiorna lo stato locale
       setEntries(prev => {
         const updated = [...prev];
         updated[index] = { ...entry };
@@ -81,11 +81,11 @@ export function useRepeatingGroup(repeatingId: string): UseRepeatingGroupReturn 
     return success;
   }, [repeatingId, saveRepeatingGroupEntry]);
 
-  // Delete an entry
+  // Elimina un elemento
   const deleteEntry = useCallback((idOrIndex: string | number): boolean => {
     const success = deleteRepeatingGroupEntry(repeatingId, idOrIndex);
     if (success) {
-      // Update local state
+      // Aggiorna lo stato locale
       setEntries(prev => {
         if (typeof idOrIndex === 'number') {
           return prev.filter((_, i) => i !== idOrIndex);
@@ -97,22 +97,22 @@ export function useRepeatingGroup(repeatingId: string): UseRepeatingGroupReturn 
     return success;
   }, [repeatingId, deleteRepeatingGroupEntry]);
 
-  // Reset all entries
+  // Reimposta tutte le voci
   const resetEntries = useCallback(() => {
-    // Set an empty array in the repeating group
+    // Imposta un array vuoto nel repeating group
     const success = saveRepeatingGroupEntry(repeatingId, [] as any);
     if (success) {
       setEntries([]);
-      // Force a component update
+      // Forza un aggiornamento del componente
       setForceUpdate(prev => prev + 1);
     }
     return success;
   }, [repeatingId, saveRepeatingGroupEntry]);
   
-  // Force an update of entries
+  // Forza un aggiornamento delle voci
   const refreshEntries = useCallback(() => {
     loadEntries();
-    // Force a component update even if there are no changes
+    // Forza un aggiornamento del componente anche se non ci sono modifiche
     setForceUpdate(prev => prev + 1);
   }, [loadEntries]);
 

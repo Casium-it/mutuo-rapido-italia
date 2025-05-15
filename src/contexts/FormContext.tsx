@@ -23,7 +23,7 @@ type FormContextType = {
   state: FormState;
   blocks: Block[];
   goToQuestion: (block_id: string, question_id: string, replace?: boolean) => void;
-  setResponse: (question_id: string, placeholder_key: string, value: string | string[] | undefined) => void;
+  setResponse: (question_id: string, placeholder_key: string, value: string | string[]) => void;
   getResponse: (question_id: string, placeholder_key: string) => string | string[] | undefined;
   addActiveBlock: (block_id: string) => void;
   isQuestionAnswered: (question_id: string) => boolean;
@@ -31,18 +31,15 @@ type FormContextType = {
   getProgress: () => number;
   resetForm: () => void;
   getNavigationHistoryFor: (questionId: string) => NavigationHistory | undefined;
+  // Nuove funzioni per gestire i repeatingGroups direttamente dal FormContext
   getRepeatingGroupEntries: (repeatingId: string) => RepeatingGroupEntry[];
   saveRepeatingGroupEntry: (repeatingId: string, entry: RepeatingGroupEntry, index?: number) => boolean;
   deleteRepeatingGroupEntry: (repeatingId: string, idOrIndex: string | number) => boolean;
-  startEditingRepeatingEntry: (repeatingId: string, index: number) => void;
-  cancelEditingRepeatingEntry: () => void;
-  getEditingRepeatingEntry: () => { repeatingId: string; index: number } | null;
-  clearSubflowResponses: (subflowQuestions: Array<{ question_id: string }>) => void;
 };
 
 type Action =
   | { type: "GO_TO_QUESTION"; block_id: string; question_id: string }
-  | { type: "SET_RESPONSE"; question_id: string; placeholder_key: string; value: string | string[] | undefined }
+  | { type: "SET_RESPONSE"; question_id: string; placeholder_key: string; value: string | string[] }
   | { type: "ADD_ACTIVE_BLOCK"; block_id: string }
   | { type: "MARK_QUESTION_ANSWERED"; question_id: string }
   | { type: "SET_FORM_STATE"; state: Partial<FormState> }
@@ -50,9 +47,7 @@ type Action =
   | { type: "SET_NAVIGATING"; isNavigating: boolean }
   | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory }
   | { type: "RESET_NAVIGATION_STATE" }
-  | { type: "UPDATE_REPEATING_GROUP"; repeatingId: string; entries: RepeatingGroupEntry[] }
-  | { type: "START_EDITING_REPEATING_ENTRY"; repeatingId: string; index: number }
-  | { type: "CANCEL_EDITING_REPEATING_ENTRY" };
+  | { type: "UPDATE_REPEATING_GROUP"; repeatingId: string; entries: RepeatingGroupEntry[] };
 
 const initialState: FormState = {
   activeBlocks: [],
@@ -64,8 +59,7 @@ const initialState: FormState = {
   answeredQuestions: new Set(),
   isNavigating: false,
   navigationHistory: [],
-  repeatingGroups: {},
-  editingRepeatingEntry: null
+  repeatingGroups: {} // Inizializzato come oggetto vuoto
 };
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
@@ -96,22 +90,7 @@ function formReducer(state: FormState, action: Action): FormState {
       if (!newResponses[action.question_id]) {
         newResponses[action.question_id] = {};
       }
-      
-      if (action.value === undefined) {
-        // If value is undefined, delete the placeholder key
-        if (newResponses[action.question_id]) {
-          delete newResponses[action.question_id][action.placeholder_key];
-          
-          // If there are no more placeholder keys, delete the question_id
-          if (Object.keys(newResponses[action.question_id]).length === 0) {
-            delete newResponses[action.question_id];
-          }
-        }
-      } else {
-        // Otherwise set the value
-        newResponses[action.question_id][action.placeholder_key] = action.value;
-      }
-      
+      newResponses[action.question_id][action.placeholder_key] = action.value;
       return {
         ...state,
         responses: newResponses
@@ -158,8 +137,7 @@ function formReducer(state: FormState, action: Action): FormState {
               initialState.activeBlocks.includes(blockId)),
         navigationHistory: [],
         isNavigating: false,
-        repeatingGroups: {},
-        editingRepeatingEntry: null
+        repeatingGroups: {} // Reset anche dei repeatingGroups
       };
     }
     case "SET_NAVIGATING": {
@@ -186,21 +164,6 @@ function formReducer(state: FormState, action: Action): FormState {
         isNavigating: false
       };
     }
-    case "START_EDITING_REPEATING_ENTRY": {
-      return {
-        ...state,
-        editingRepeatingEntry: {
-          repeatingId: action.repeatingId,
-          index: action.index
-        }
-      };
-    }
-    case "CANCEL_EDITING_REPEATING_ENTRY": {
-      return {
-        ...state,
-        editingRepeatingEntry: null
-      };
-    }
     default:
       return state;
   }
@@ -213,29 +176,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   const navigationTimeoutRef = useRef<number | null>(null);
   const isResettingRef = useRef<boolean>(false);
   
-  // Process blocks to include subflow questions in the main question registry
-  const processBlocks = useCallback((inputBlocks: Block[]): Block[] => {
-    return inputBlocks.map(block => {
-      if (isRepeatingGroupBlock(block)) {
-        // For repeating group blocks, inject the subflow questions as regular questions
-        return {
-          ...block,
-          questions: block.subflow.map(q => ({
-            ...q,
-            block_id: block.block_id,
-            _isRepeating: true, // Flag to identify these as part of a subflow
-          }))
-        } as Block;
-      }
-      return block;
-    });
-  }, []);
-  
-  // Enhanced blocks with subflow questions included
-  const enhancedBlocks = processBlocks(blocks);
-  
   // Ordina i blocchi per priorità
-  const sortedBlocks = [...enhancedBlocks].sort((a, b) => a.priority - b.priority);
+  const sortedBlocks = [...blocks].sort((a, b) => a.priority - b.priority);
   
   const [state, dispatch] = useReducer(formReducer, {
     ...initialState,
@@ -277,6 +219,9 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     try {
       // Rimuovi i dati salvati dal localStorage
       clearLocalStorageForBlockType(params.blockType);
+      
+      // Non è più necessario resettare separatamente i repeatingGroups
+      // poiché ora sono parte dello stato del form
       
       // Reimposta lo stato del form
       dispatch({ type: "RESET_FORM" });
@@ -336,7 +281,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
           
           // Aggiorna l'URL per includere anche l'ID della domanda
           navigate(`/simulazione/${params.blockType}/${blockId}/${firstQuestionId}`, { replace: true });
-        } else if (isRepeatingGroupBlock(block)) {
+        } else {
           // Per i blocchi repeating_group, naviga direttamente al blocco
           dispatch({ 
             type: "GO_TO_QUESTION", 
@@ -401,7 +346,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         console.error("Errore nel caricamento dello stato salvato:", e);
       }
     }
-  }, [params.blockId, params.questionId, params.blockType, blocks, navigate, state.activeBlocks]);
+  }, [params.blockId, params.questionId, params.blockType, blocks, navigate]);
 
   // Salva lo stato in localStorage quando cambia
   useEffect(() => {
@@ -535,13 +480,9 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     }, 1000) as unknown as number;
   }, [params.blockType, navigate, state.activeQuestion, state.isNavigating]);
 
-  const setResponse = useCallback((question_id: string, placeholder_key: string, value: string | string[] | undefined) => {
+  const setResponse = useCallback((question_id: string, placeholder_key: string, value: string | string[]) => {
     dispatch({ type: "SET_RESPONSE", question_id, placeholder_key, value });
-    
-    // Only mark as answered if setting a value, not when clearing a value
-    if (value !== undefined) {
-      dispatch({ type: "MARK_QUESTION_ANSWERED", question_id });
-    }
+    dispatch({ type: "MARK_QUESTION_ANSWERED", question_id });
   }, []);
 
   const getResponse = useCallback((question_id: string, placeholder_key: string) => {
@@ -557,20 +498,17 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return state.answeredQuestions.has(question_id);
   }, [state.answeredQuestions]);
 
-  // Enhanced findQuestionById to search through both standard questions and subflow questions
   const findQuestionById = useCallback((questionId: string): { block: Block; question: any } | null => {
     for (const block of sortedBlocks) {
-      // For standard blocks, look in the questions array
-      if ('questions' in block) {
+      // Gestisci blocchi standard e repeating_group distintamente
+      if (isStandardBlock(block)) {
         for (const question of block.questions) {
           if (question.question_id === questionId) {
             return { block, question };
           }
         }
-      }
-      
-      // For repeating group blocks, look in the subflow array
-      if ('subflow' in block) {
+      } else {
+        // Per i blocchi repeating_group, cerca nelle domande del subflow
         for (const question of block.subflow) {
           if (question.question_id === questionId) {
             return { block, question };
@@ -593,96 +531,9 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     // Set navigating state quando inizia la navigazione
     dispatch({ type: "SET_NAVIGATING", isNavigating: true });
     
-    // Handle special case for end_of_subflow
-    if (leadsTo === 'end_of_subflow') {
-      // Find the question and its repeating group block
-      const found = findQuestionById(currentQuestionId);
-      
-      if (found && isRepeatingGroupBlock(found.block)) {
-        const repeatingBlock = found.block;
-        const repeatingId = repeatingBlock.repeating_id;
-        
-        // Collect all responses from the subflow
-        const subflowResponses: Record<string, any> = {};
-        repeatingBlock.subflow.forEach(q => {
-          const questionId = q.question_id;
-          if (state.responses[questionId]) {
-            // For each question, collect all its placeholder responses
-            subflowResponses[questionId] = state.responses[questionId];
-          }
-        });
-        
-        // Create or update the entry
-        let entry: RepeatingGroupEntry = {};
-        
-        // If we're editing an existing entry, start with its data
-        let entryIndex = -1;
-        if (state.editingRepeatingEntry && state.editingRepeatingEntry.repeatingId === repeatingId) {
-          entryIndex = state.editingRepeatingEntry.index;
-          const existingEntries = state.repeatingGroups?.[repeatingId] || [];
-          if (entryIndex >= 0 && entryIndex < existingEntries.length) {
-            entry = { ...existingEntries[entryIndex] };
-          }
-        }
-        
-        // Map responses to the entry (this can be customized per repeating group)
-        // For simplicity, we just copy all responses directly
-        for (const [questionId, placeholders] of Object.entries(subflowResponses)) {
-          for (const [placeholderKey, value] of Object.entries(placeholders)) {
-            entry[questionId] = {
-              ...entry[questionId],
-              [placeholderKey]: value
-            };
-          }
-        }
-        
-        // Make sure the entry has an ID
-        if (!entry.id) {
-          entry.id = `${repeatingId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        }
-        
-        // Also store the question ID-based responses as direct properties for ease of access
-        for (const question of repeatingBlock.subflow) {
-          const questionId = question.question_id;
-          const placeholderKey = Object.keys(question.placeholders)[0]; // Assume one placeholder per question
-          
-          if (state.responses[questionId] && state.responses[questionId][placeholderKey] !== undefined) {
-            // Store the response value directly as a property
-            entry[questionId] = state.responses[questionId][placeholderKey];
-          }
-        }
-        
-        // Save the entry
-        let success = false;
-        const entries = state.repeatingGroups?.[repeatingId] || [];
-        let updatedEntries: RepeatingGroupEntry[];
-        
-        if (entryIndex >= 0) {
-          // Update existing entry
-          updatedEntries = [...entries];
-          updatedEntries[entryIndex] = entry;
-        } else {
-          // Add new entry
-          updatedEntries = [...entries, entry];
-        }
-        
-        // Update repeating group entries
-        dispatch({
-          type: "UPDATE_REPEATING_GROUP",
-          repeatingId,
-          entries: updatedEntries
-        });
-        
-        // Clear editing state
-        dispatch({ type: "CANCEL_EDITING_REPEATING_ENTRY" });
-        
-        // Navigate back to the manager view
-        goToQuestion(found.block.block_id, "manager_view", true);
-        return;
-      }
-    }
+    // Salva la domanda corrente prima di navigare
+    const currentBlockId = state.activeQuestion.block_id;
     
-    // Handle normal navigation to next question or block
     if (leadsTo === "next_block") {
       // Trova il blocco corrente
       let currentBlock = null;
@@ -693,7 +544,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         const block = sortedBlocks[i];
         
         // Caso speciale per i repeating_group quando siamo sulla vista manager
-        if (isRepeatingGroupBlock(block) && block.block_id === currentBlock.block_id) {
+        if (isRepeatingGroupBlock(block) && block.block_id === currentBlockId) {
           currentBlockIndex = i;
           currentBlock = block;
           break;
@@ -779,7 +630,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         dispatch({ 
           type: "ADD_NAVIGATION_HISTORY", 
           history: {
-            from_block_id: state.activeQuestion.block_id,
+            from_block_id: currentBlockId,
             from_question_id: currentQuestionId,
             to_block_id: found.block.block_id,
             to_question_id: found.question.question_id,
@@ -804,7 +655,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       navigationTimeoutRef.current = null;
       console.log("Navigation reset - no valid target found");
     }, 1000) as unknown as number;
-  }, [sortedBlocks, state.activeBlocks, goToQuestion, findQuestionById, state.activeQuestion.block_id, state.isNavigating, state.responses, state.repeatingGroups, state.editingRepeatingEntry]);
+  }, [sortedBlocks, state.activeBlocks, goToQuestion, findQuestionById, state.activeQuestion.block_id, state.isNavigating]);
 
   // Calcola il progresso complessivo del form
   const getProgress = useCallback(() => {
@@ -848,11 +699,14 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return sortedHistory.find(item => item.to_question_id === questionId);
   }, [state.navigationHistory]);
 
-  // Functions for managing repeating groups
+  // Nuove funzioni per la gestione dei repeatingGroups direttamente dal FormContext
+  
+  // Ottiene le voci di un gruppo ripetuto
   const getRepeatingGroupEntries = useCallback((repeatingId: string): RepeatingGroupEntry[] => {
     return state.repeatingGroups?.[repeatingId] || [];
   }, [state.repeatingGroups]);
 
+  // Salva una voce in un gruppo ripetuto
   const saveRepeatingGroupEntry = useCallback((
     repeatingId: string,
     entry: RepeatingGroupEntry,
@@ -889,6 +743,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     }
   }, [state.repeatingGroups]);
 
+  // Elimina una voce da un gruppo ripetuto
   const deleteRepeatingGroupEntry = useCallback((
     repeatingId: string,
     idOrIndex: string | number
@@ -923,34 +778,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     }
   }, [state.repeatingGroups]);
 
-  // New functions for managing repeating group editing state
-  const startEditingRepeatingEntry = useCallback((repeatingId: string, index: number) => {
-    dispatch({ type: "START_EDITING_REPEATING_ENTRY", repeatingId, index });
-  }, []);
-
-  const cancelEditingRepeatingEntry = useCallback(() => {
-    dispatch({ type: "CANCEL_EDITING_REPEATING_ENTRY" });
-  }, []);
-
-  const getEditingRepeatingEntry = useCallback(() => {
-    return state.editingRepeatingEntry || null;
-  }, [state.editingRepeatingEntry]);
-
-  // Function to clear responses for a set of questions (useful when entering a new subflow)
-  const clearSubflowResponses = useCallback((subflowQuestions: Array<{ question_id: string }>) => {
-    // For each question in the subflow
-    subflowQuestions.forEach(q => {
-      // If we have responses for this question
-      if (state.responses[q.question_id]) {
-        // Clear each placeholder
-        Object.keys(state.responses[q.question_id]).forEach(placeholderKey => {
-          // Use setResponse with undefined to clear
-          setResponse(q.question_id, placeholderKey, undefined);
-        });
-      }
-    });
-  }, [state.responses, setResponse]);
-
   return (
     <FormContext.Provider
       value={{
@@ -968,12 +795,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         // Aggiungi le nuove funzioni per i repeating groups
         getRepeatingGroupEntries,
         saveRepeatingGroupEntry,
-        deleteRepeatingGroupEntry,
-        // New functions for repeating entry editing
-        startEditingRepeatingEntry,
-        cancelEditingRepeatingEntry,
-        getEditingRepeatingEntry,
-        clearSubflowResponses
+        deleteRepeatingGroupEntry
       }}
     >
       {children}

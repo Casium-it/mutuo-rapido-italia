@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { BlockSidebar } from "@/components/form/BlockSidebar";
 import { QuestionView } from "@/components/form/QuestionView";
@@ -16,38 +16,30 @@ export default function Form() {
   const params = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const contentKey = useRef(Date.now());
   
-  // Find the current active block
+  // Trova il blocco attivo corrente
   const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
 
-  // Calculate the form progress
+  // Calcola il progresso del form
   const progress = getProgress();
 
-  // Handle save and exit
+  // Gestisci il salvataggio e l'uscita
   const handleSaveAndExit = () => {
-    // State is already saved to localStorage thanks to FormContext
+    // Lo stato è già salvato in localStorage grazie al FormContext
     navigate("/");
   };
 
-  // Make sure the component re-renders when the URL changes
+  // Assicuriamoci che il componente si ri-renderizzi quando cambia l'URL
   useEffect(() => {
-    // Forza il re-rendering del contenuto quando cambia l'URL
-    contentKey.current = Date.now();
+    // Questo effetto verrà eseguito ogni volta che cambia l'URL (location.pathname)
+    // Poiché dipende da location.pathname, forza un ri-rendering del componente
   }, [location.pathname]);
 
-  // Reset navigation state if needed
-  useEffect(() => {
-    return () => {
-      // Pulizia quando il componente viene smontato
-    };
-  }, []);
-
-  // Determine which content to show based on the active block type
+  // Determina quale contenuto mostrare in base al tipo di blocco attivo
   const renderActiveContent = () => {
     if (!activeBlock) return null;
     
-    // If it's a repeating group, use the RepeatingGroupRenderer
+    // Se è un gruppo ripetuto, usa il RepeatingGroupRenderer
     if ('type' in activeBlock && activeBlock.type === 'repeating_group') {
       return <RepeatingGroupRenderer block={activeBlock as RepeatingGroupBlock} />;
     }
@@ -98,7 +90,7 @@ export default function Form() {
           </div>
         </div>
 
-        {/* Content area - with key based on pathname to force re-rendering */}
+        {/* Content area - con key basata sul pathname per forzare il re-rendering */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12">
           <div className="max-w-2xl mx-auto">
             {/* Block title */}
@@ -106,8 +98,8 @@ export default function Form() {
               <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">{activeBlock?.title}</h1>
             </div>
 
-            {/* Question or RepeatingGroup - with key to force re-rendering when URL changes */}
-            <div key={contentKey.current}>
+            {/* Question or RepeatingGroup - con key per forzare il re-rendering quando cambia l'URL */}
+            <div key={location.pathname}>
               {renderActiveContent()}
             </div>
           </div>

@@ -8,14 +8,13 @@ import { allBlocks } from "./blocks";
 export { allBlocks };
 
 // Re-esportiamo anche i singoli blocchi per mantenere la retrocompatibilità
-// IMPORTANTE: Non esportiamo il block6 originale, utilizziamo solo block6_repeating
 export {
   block1,
   block2,
   block3,
   block4,
   block5,
-  block6_repeating as block6,  // Esporta block6_repeating come block6 per retrocompatibilità
+  block6,
   block7,
   block8,
   block9,

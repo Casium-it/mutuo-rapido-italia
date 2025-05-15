@@ -6,7 +6,6 @@ import {
   getChainOfInlineQuestions
 } from "@/utils/formUtils";
 import { Question, StandardBlock, Block, RepeatingGroupBlock } from "@/types/form";
-import { useCallback, useMemo } from "react";
 
 /**
  * Funzione di utilità per verificare se un blocco è di tipo StandardBlock
@@ -28,18 +27,15 @@ const isRepeatingGroupBlock = (block: Block): block is RepeatingGroupBlock => {
 export const useFormExtended = () => {
   const formContext = useOriginalForm();
   
-  // Memoize blocks to prevent unnecessary re-renders
-  const processedBlocks = useMemo(() => formContext.blocks, [formContext.blocks]);
-  
   /**
    * Gets the text of the previous question with responses filled in
    * @param blockId Current block ID
    * @param questionId Current question ID
    * @returns The previous question's text with responses or empty string
    */
-  const getPreviousQuestionText = useCallback((blockId: string, questionId: string): string => {
+  const getPreviousQuestionText = (blockId: string, questionId: string): string => {
     const previousQuestion = getPreviousQuestionUtil(
-      processedBlocks,
+      formContext.blocks,
       blockId,
       questionId
     );
@@ -47,7 +43,7 @@ export const useFormExtended = () => {
     if (!previousQuestion) return "";
     
     return getQuestionTextWithResponses(previousQuestion, formContext.state.responses);
-  }, [processedBlocks, formContext.state.responses]);
+  };
   
   /**
    * Gets the previous question object
@@ -55,9 +51,9 @@ export const useFormExtended = () => {
    * @param questionId Current question ID
    * @returns The previous question object or undefined
    */
-  const getPreviousQuestion = useCallback((blockId: string, questionId: string) => {
-    return getPreviousQuestionUtil(processedBlocks, blockId, questionId);
-  }, [processedBlocks]);
+  const getPreviousQuestion = (blockId: string, questionId: string) => {
+    return getPreviousQuestionUtil(formContext.blocks, blockId, questionId);
+  };
 
   /**
    * Gets all previous inline questions in a chain, starting from the current question
@@ -65,9 +61,9 @@ export const useFormExtended = () => {
    * @param questionId Current question ID
    * @returns Array of previous questions in the chain, ordered from first to last
    */
-  const getInlineQuestionChain = useCallback((blockId: string, questionId: string): Question[] => {
+  const getInlineQuestionChain = (blockId: string, questionId: string): Question[] => {
     // Verifica prima che si tratti di un blocco standard
-    const block = processedBlocks.find(b => b.block_id === blockId);
+    const block = formContext.blocks.find(b => b.block_id === blockId);
     if (!block || isRepeatingGroupBlock(block)) {
       return [];
     }
@@ -84,7 +80,7 @@ export const useFormExtended = () => {
       if (navigationHistory) {
         // Trova la domanda da cui l'utente è arrivato
         const sourceBlockId = navigationHistory.from_block_id;
-        const sourceBlock = processedBlocks.find(b => b.block_id === sourceBlockId);
+        const sourceBlock = formContext.blocks.find(b => b.block_id === sourceBlockId);
         
         // Verifica che il blocco di origine sia un blocco standard
         if (sourceBlock && isStandardBlock(sourceBlock)) {
@@ -103,21 +99,16 @@ export const useFormExtended = () => {
     
     // Fallback al comportamento precedente se non troviamo una cronologia
     return getChainOfInlineQuestions(
-      processedBlocks,
+      formContext.blocks,
       blockId,
       questionId
     );
-  }, [processedBlocks, formContext.getNavigationHistoryFor]);
+  };
   
-  // Crea un oggetto con tutte le funzioni del form context originale più quelle estese
-  const extendedFormContext = useMemo(() => {
-    return {
-      ...formContext,
-      getPreviousQuestionText,
-      getPreviousQuestion,
-      getInlineQuestionChain
-    };
-  }, [formContext, getPreviousQuestionText, getPreviousQuestion, getInlineQuestionChain]);
-  
-  return extendedFormContext;
+  return {
+    ...formContext,
+    getPreviousQuestionText,
+    getPreviousQuestion,
+    getInlineQuestionChain
+  };
 };

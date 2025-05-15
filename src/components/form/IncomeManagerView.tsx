@@ -5,6 +5,7 @@ import { IncomeEntryCard } from "./IncomeEntryCard";
 import { useRepeatingGroup } from "@/hooks/useRepeatingGroup";
 import { RepeatingGroupEntry } from "@/types/form";
 import { Plus } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 
 interface IncomeManagerViewProps {
   repeatingId: string;
@@ -13,13 +14,9 @@ interface IncomeManagerViewProps {
   emptyStateText: string;
   addButtonText: string;
   continueButtonText: string;
-  summaryField?: string;
-  summaryTemplate?: string;
   onAdd: () => void;
   onEdit: (entry: RepeatingGroupEntry, index: number) => void;
-  onDelete: (index: number) => void;
   onContinue: () => void;
-  entries: RepeatingGroupEntry[];
 }
 
 export function IncomeManagerView({ 
@@ -29,37 +26,32 @@ export function IncomeManagerView({
   emptyStateText,
   addButtonText,
   continueButtonText,
-  summaryField,
-  summaryTemplate,
   onAdd, 
   onEdit,
-  onDelete,
-  onContinue,
-  entries 
+  onContinue 
 }: IncomeManagerViewProps) {
-  const { loading } = useRepeatingGroup(repeatingId);
-  const hasEntries = entries.length > 0;
+  const { entries, loading, hasEntries, deleteEntry } = useRepeatingGroup(repeatingId);
 
-  // Render a dynamic summary line from a template and entry data
-  const renderSummary = (entry: RepeatingGroupEntry, template?: string, defaultField?: string): string => {
-    if (!template && !defaultField) {
-      // If no template or field is provided, just return empty
-      return "";
+  const handleDelete = (index: number) => {
+    if (window.confirm("Sei sicuro di voler eliminare questa fonte di reddito?")) {
+      const success = deleteEntry(index);
+      if (success) {
+        toast({
+          title: "Fonte di reddito eliminata",
+          description: "La fonte di reddito è stata eliminata con successo.",
+        });
+      } else {
+        toast({
+          title: "Errore",
+          description: "Si è verificato un errore durante l'eliminazione della fonte di reddito.",
+          variant: "destructive"
+        });
+      }
     }
-    
-    if (!template && defaultField && entry[defaultField]) {
-      // If only a field is provided, return its raw value
-      return String(entry[defaultField]);
-    }
-    
-    // Replace tokens in the template with values from the entry
-    return (template || "").replace(/\{\{(.+?)\}\}/g, (_, field) => {
-      return entry[field] !== undefined ? String(entry[field]) : "";
-    });
   };
 
   const totalMonthlyIncome = entries.reduce((sum, entry) => {
-    const amount = parseFloat(String(entry["amount_input"]));
+    const amount = parseFloat(String(entry.amount_input));
     return sum + (isNaN(amount) ? 0 : amount);
   }, 0);
 
@@ -97,9 +89,7 @@ export function IncomeManagerView({
                 key={entry.id || index}
                 entry={entry}
                 onEdit={() => onEdit(entry, index)}
-                onDelete={() => onDelete(index)}
-                summaryField={summaryField}
-                summaryTemplate={summaryTemplate}
+                onDelete={() => handleDelete(index)}
               />
             ))}
           </div>

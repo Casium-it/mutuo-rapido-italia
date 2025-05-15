@@ -10,7 +10,7 @@ export type SelectPlaceholder = {
   type: "select";
   options: PlaceholderOption[];
   multiple?: boolean;
-  placeholder_label?: string;
+  placeholder_label?: string; // Aggiungiamo questa proprietà
 };
 
 export type ValidationTypes = "euro" | "month" | "year" | "age" | "city" | "cap" | "free_text";
@@ -20,7 +20,7 @@ export type InputPlaceholder = {
   input_type: "text" | "number" | "date";
   placeholder_label: string;
   leads_to?: string;
-  input_validation: ValidationTypes;
+  input_validation: ValidationTypes; // Now required
 };
 
 export type Placeholder = SelectPlaceholder | InputPlaceholder;
@@ -34,7 +34,6 @@ export type Question = {
   leads_to_placeholder_priority: string;
   placeholders: Record<string, Placeholder>;
   question_notes?: string;
-  _isRepeating?: boolean; // Flag to identify questions from repeating groups
 };
 
 // Nuovo tipo per le domande del sottoflusso nei gruppi ripetuti
@@ -55,11 +54,6 @@ export type RepeatingGroupBlock = {
   empty_state_text?: string;
   add_button_text?: string;
   continue_button_text?: string;
-  // New fields for summary display
-  summary_field?: string;
-  summary_template?: string;
-  // Optional field for explicit next block navigation
-  next_block_id?: string;
 };
 
 // Definizione regolare del blocco standard
@@ -110,9 +104,5 @@ export type FormState = {
   answeredQuestions: Set<string>;
   isNavigating?: boolean;
   navigationHistory: NavigationHistory[];
-  repeatingGroups?: RepeatingGroupEntries;
-  editingRepeatingEntry?: {
-    repeatingId: string;
-    index: number;
-  } | null;
+  repeatingGroups?: RepeatingGroupEntries; // Aggiungiamo supporto per i gruppi ripetuti nello stato
 };

@@ -9,12 +9,10 @@ export const block6_repeating: RepeatingGroupBlock = {
   empty_state_text: "Non hai ancora aggiunto nessuna fonte di reddito aggiuntiva.",
   add_button_text: "Aggiungi fonte di reddito",
   continue_button_text: "Continua",
-  priority: 61, // Ensuring a distinct priority
-  default_active: false,
+  priority: 60,
+  default_active: true,
   type: "repeating_group",
   repeating_id: "secondary_income",
-  summary_field: "amount_input",
-  summary_template: "{{amount_input}} €/mese",
   subflow: [
     {
       question_id: "income_type",

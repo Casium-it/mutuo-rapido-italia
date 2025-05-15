@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { RepeatingGroupBlock, RepeatingGroupEntry } from '@/types/form';
 import { IncomeManagerView } from './IncomeManagerView';
+import { IncomeSubflowWizard } from './IncomeSubflowWizard';
 import { useRepeatingGroup } from '@/hooks/useRepeatingGroup';
 import { useForm } from '@/contexts/FormContext';
-import { QuestionView } from './QuestionView';
 import { toast } from '@/components/ui/use-toast';
 import { dispatchResetEvent } from '@/utils/repeatingGroupUtils';
 
@@ -22,35 +23,30 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
     continue_button_text = "Avanti"
   } = block;
   
-  const { 
-    goToQuestion, 
-    navigateToNextQuestion, 
-    state, 
-    setResponse, 
-    clearSubflowResponses,
-    startEditingRepeatingEntry,
-    cancelEditingRepeatingEntry
-  } = useForm();
+  const { navigateToNextQuestion, state } = useForm();
+  const { addEntry, updateEntry, refreshEntries, entries } = useRepeatingGroup(repeating_id);
   
-  const { 
-    addEntry, 
-    updateEntry, 
-    refreshEntries, 
-    entries, 
-    deleteEntry 
-  } = useRepeatingGroup(repeating_id);
+  // Stato per la modalità di visualizzazione (manager o subflow)
+  const [mode, setMode] = useState<'manager' | 'subflow'>('manager');
   
-  // Determine if we're in the manager view or a subflow view
-  const isInManagerView = state.activeQuestion.question_id === 'manager_view';
+  // Stato per il record in corso di modifica
+  const [editingEntry, setEditingEntry] = useState<{
+    data: RepeatingGroupEntry;
+    index: number;
+  } | null>(null);
   
-  // Effect to update data when the form changes mode or block
+  // Effetto per aggiornare i dati quando il form cambia modalità o blocco
   useEffect(() => {
-    // Reset states when the active block changes
+    // Reset mode e stati quando cambia il blocco attivo
+    setMode('manager');
+    setEditingEntry(null);
+    
+    // Forza un refresh dei dati per assicurarsi che siano aggiornati
     refreshEntries();
     
-    // Control when page is reloaded or navigated
+    // Controllo quando la pagina viene ricaricata o quando si naviga
     const handleBeforeUnload = () => {
-      // Dispatch a reset event when the page is reloaded
+      // Dispara un evento di reset quando la pagina viene ricaricata
       dispatchResetEvent();
     };
     
@@ -61,95 +57,83 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
     };
   }, [block.block_id, state.activeQuestion.block_id, refreshEntries]);
   
-  // Handle adding a new entry (clear previous responses and navigate to the first question)
+  // Gestisce l'aggiunta di un nuovo record
   const handleAdd = () => {
-    // Clear any previous responses for the subflow questions
-    clearSubflowResponses(subflow);
-    
-    // Navigate to the first question in the subflow
-    const firstQuestion = subflow[0];
-    if (firstQuestion) {
-      goToQuestion(block.block_id, firstQuestion.question_id);
-    }
+    setEditingEntry(null); // Non stiamo modificando, stiamo aggiungendo
+    setMode('subflow');
   };
   
-  // Handle editing an existing entry (prefill responses and navigate to the first question)
+  // Gestisce la modifica di un record esistente
   const handleEdit = (entry: RepeatingGroupEntry, index: number) => {
-    // Mark that we're editing this specific entry
-    startEditingRepeatingEntry(repeating_id, index);
-    
-    // Clear any previous responses first
-    clearSubflowResponses(subflow);
-    
-    // Set responses for all subflow questions based on the entry
-    subflow.forEach(question => {
-      const questionId = question.question_id;
-      
-      // Handle direct properties (assume one placeholder per question for simplicity)
-      if (entry[questionId] !== undefined) {
-        const placeholderKey = Object.keys(question.placeholders)[0];
-        // Ensure we have a value to set
-        if (entry[questionId] !== undefined) {
-          setResponse(questionId, placeholderKey, entry[questionId]);
-        }
-      }
-      
-      // Handle nested properties (if stored in old format)
-      if (typeof entry[questionId] === 'object') {
-        Object.entries(entry[questionId]).forEach(([placeholderKey, value]) => {
-          setResponse(questionId, placeholderKey, value as string | string[]);
-        });
-      }
-    });
-    
-    // Navigate to the first question
-    const firstQuestion = subflow[0];
-    if (firstQuestion) {
-      goToQuestion(block.block_id, firstQuestion.question_id);
-    }
+    setEditingEntry({ data: entry, index });
+    setMode('subflow');
   };
   
-  // Handle deleting an entry
-  const handleDelete = (index: number) => {
-    if (window.confirm("Sei sicuro di voler eliminare questa fonte di reddito?")) {
-      const success = deleteEntry(index);
+  // Gestisce il completamento del subflow
+  const handleSubflowComplete = (data: RepeatingGroupEntry) => {
+    let success = false;
+    
+    if (editingEntry) {
+      // Aggiorna un record esistente
+      success = updateEntry(data, editingEntry.index);
       
       if (success) {
         toast({
-          title: "Fonte di reddito eliminata",
-          description: "La fonte di reddito è stata eliminata con successo.",
+          title: "Reddito aggiornato",
+          description: "Le modifiche alla fonte di reddito sono state salvate con successo."
         });
-      } else {
+      }
+    } else {
+      // Aggiunge un nuovo record
+      success = addEntry(data);
+      
+      if (success) {
         toast({
-          title: "Errore",
-          description: "Si è verificato un errore durante l'eliminazione della fonte di reddito.",
-          variant: "destructive"
+          title: "Reddito aggiunto",
+          description: "La nuova fonte di reddito è stata aggiunta con successo."
         });
       }
     }
-  };
-  
-  // Handle continuing to the next block from the manager view
-  const handleContinue = () => {
-    // Get the current question ID (should be 'manager_view')
-    const currentQuestionId = state.activeQuestion.question_id;
     
-    // Navigate to the next block
-    if (block.next_block_id) {
-      // If we have a specific next block, go there
-      goToQuestion(block.next_block_id, 'manager_view');
-    } else {
-      // Otherwise use the standard navigation to find the next block
-      navigateToNextQuestion(currentQuestionId, 'next_block');
+    if (!success) {
+      toast({
+        title: "Errore",
+        description: "Si è verificato un errore durante il salvataggio dei dati.",
+        variant: "destructive"
+      });
     }
+    
+    // Forza un aggiornamento dei dati
+    refreshEntries();
+    
+    // Torna alla vista manager
+    setMode('manager');
   };
   
-  // If we're not in the manager view, we must be in a subflow question
-  if (!isInManagerView) {
-    return <QuestionView />;
+  // Gestisce l'annullamento del subflow
+  const handleSubflowCancel = () => {
+    setMode('manager');
+    setEditingEntry(null);
+  };
+  
+  // Gestisce la pressione del pulsante continua
+  const handleContinue = () => {
+    // Usa l'ID della domanda attiva corrente invece del block_id
+    const currentQuestionId = state.activeQuestion.question_id;
+    navigateToNextQuestion(currentQuestionId, "next_block");
+  };
+  
+  if (mode === 'subflow') {
+    return (
+      <IncomeSubflowWizard
+        questions={subflow}
+        initialData={editingEntry?.data}
+        onComplete={handleSubflowComplete}
+        onCancel={handleSubflowCancel}
+      />
+    );
   }
   
-  // In manager view, render the IncomeManagerView
   return (
     <IncomeManagerView
       repeatingId={repeating_id}
@@ -158,13 +142,9 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
       emptyStateText={empty_state_text}
       addButtonText={add_button_text}
       continueButtonText={continue_button_text}
-      summaryField={block.summary_field}
-      summaryTemplate={block.summary_template}
       onAdd={handleAdd}
       onEdit={handleEdit}
-      onDelete={handleDelete}
       onContinue={handleContinue}
-      entries={entries}
     />
   );
 }
