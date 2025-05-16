@@ -11,7 +11,6 @@ import { Separator } from "@/components/ui/separator";
 import { getQuestionTextWithClickableResponses } from "@/utils/formUtils";
 import { validateInput } from "@/utils/validationUtils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { SubblockPlaceholder } from "./SubblockPlaceholder";
 
 interface FormQuestionProps {
   question: Question;
@@ -27,8 +26,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
     getInlineQuestionChain,
     state, 
     addActiveBlock, 
-    goToQuestion,
-    isInSubblock
+    goToQuestion 
   } = useFormExtended();
   
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});
@@ -176,24 +174,15 @@ export function FormQuestion({ question }: FormQuestionProps) {
         }, 50);
         return;
       }
-      // Se il placeholder prioritario è di tipo subblock
-      else if (priorityPlaceholder.type === "subblock" && priorityPlaceholder.leads_to) {
-        setTimeout(() => {
-          navigateToNextQuestion(question.question_id, priorityPlaceholder.leads_to);
-          setIsNavigating(false);
-        }, 50);
-        return;
-      }
     }
     
     // Se non c'è un placeholder prioritario o non ha un leads_to valido,
     // usa la logica esistente per verificare i placeholder in ordine
     for (const key of Object.keys(question.placeholders)) {
       const response = responses[key] || getResponse(question.question_id, key);
-      const placeholder = question.placeholders[key];
       
-      if (response && placeholder.type === "select" && !Array.isArray(response)) {
-        const selectedOption = (placeholder as any).options.find(
+      if (response && question.placeholders[key].type === "select" && !Array.isArray(response)) {
+        const selectedOption = (question.placeholders[key] as any).options.find(
           (opt: any) => opt.id === response
         );
         
@@ -204,15 +193,9 @@ export function FormQuestion({ question }: FormQuestionProps) {
           }, 50);
           return;
         }
-      } else if (response && placeholder.type === "input" && (placeholder as any).leads_to) {
+      } else if (response && question.placeholders[key].type === "input" && (question.placeholders[key] as any).leads_to) {
         setTimeout(() => {
-          navigateToNextQuestion(question.question_id, (placeholder as any).leads_to);
-          setIsNavigating(false);
-        }, 50);
-        return;
-      } else if (placeholder.type === "subblock" && placeholder.leads_to) {
-        setTimeout(() => {
-          navigateToNextQuestion(question.question_id, placeholder.leads_to);
+          navigateToNextQuestion(question.question_id, (question.placeholders[key] as any).leads_to);
           setIsNavigating(false);
         }, 50);
         return;
@@ -508,38 +491,10 @@ export function FormQuestion({ question }: FormQuestionProps) {
     });
   };
   
-  // Renderizza i sottoblocchi - MODIFICA: rimuoviamo la condizione visibleOptions[key]
-  const renderSubblockPlaceholder = (key: string, placeholder: any) => {
-    if (placeholder.type === "subblock") {
-      // Rimuoviamo la condizione che richiede visibleOptions[key]
-      return (
-        <SubblockPlaceholder
-          key={`subblock-${key}`}
-          questionId={question.question_id}
-          placeholderKey={key}
-          placeholder={placeholder}
-          onContinue={handleNextQuestion}
-        />
-      );
-    }
-    return null;
-  };
-  
   // Determina se ci sono risposte valide - MODIFICATO per richiedere TUTTE le risposte
-  const hasValidResponses = Object.keys(question.placeholders).every(key => {
-    // Per i sottoblocchi, consideriamo valido se c'è almeno un'istanza o se non è obbligatorio (repeatable: false)
-    if (question.placeholders[key].type === "subblock") {
-      // I sottoblocchi sono gestiti dal loro componente dedicato
-      return true;
-    }
-    
-    return responses[key] !== undefined || getResponse(question.question_id, key) !== undefined;
-  }) && allInputsHaveValidContent();
-
-  // Se siamo in un sottoblocco, non mostrare il form normale
-  if (isInSubblock()) {
-    return null;
-  }
+  const hasValidResponses = Object.keys(question.placeholders).every(key => 
+    responses[key] !== undefined || getResponse(question.question_id, key) !== undefined
+  ) && allInputsHaveValidContent();
 
   return (
     <div className="max-w-xl animate-fade-in">
@@ -551,25 +506,13 @@ export function FormQuestion({ question }: FormQuestionProps) {
       {/* Linea separatrice beige */}
       <Separator className="h-[1px] bg-[#F0EAE0] mb-5" />
       
-      {/* Contenitore per i select options e i sottoblocchi visibili */}
+      {/* Contenitore per i select options visibili */}
       <div className="space-y-5">
-        {Object.keys(question.placeholders).map(key => {
-          const placeholder = question.placeholders[key];
-          
-          if (placeholder.type === "subblock") {
-            return renderSubblockPlaceholder(key, placeholder);
-          } else {
-            return renderVisibleSelectOptions(key, placeholder);
-          }
-        })}
+        {Object.keys(question.placeholders).map(key => renderVisibleSelectOptions(key, question.placeholders[key]))}
       </div>
       
-      {/* Pulsante Avanti - mostrato solo se ci sono risposte valide e non ci sono sottoblocchi visibili */}
-      {hasValidResponses && !Object.keys(question.placeholders).some(key => 
-        question.placeholders[key].type === "subblock" && 
-        state.activeSubblock?.question_id === question.question_id &&
-        state.activeSubblock?.placeholder_key === key
-      ) && (
+      {/* Pulsante Avanti - mostrato solo se ci sono risposte valide e tutti gli input hanno contenuto valido */}
+      {hasValidResponses && (
         <div className="mt-8">
           <Button
             type="button"

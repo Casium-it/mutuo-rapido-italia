@@ -5,7 +5,7 @@ import {
   getQuestionTextWithResponses,
   getChainOfInlineQuestions
 } from "@/utils/formUtils";
-import { Question, SubblockInstance } from "@/types/form";
+import { Question } from "@/types/form";
 
 /**
  * Extended hook for the form context with additional functionality
@@ -78,30 +78,10 @@ export const useFormExtended = () => {
     );
   };
   
-  /**
-   * Verifica se stiamo attualmente in un sottoblocco
-   * @returns true se siamo in un sottoblocco, false altrimenti
-   */
-  const isInSubblock = () => {
-    return formContext.state.activeSubblock !== null && formContext.state.activeSubblock !== undefined;
-  };
-  
-  /**
-   * Ottiene le istanze di un sottoblocco
-   * @param questionId ID della domanda
-   * @param placeholderKey Chiave del placeholder
-   * @returns Array di istanze del sottoblocco
-   */
-  const getSubblockInstances = (questionId: string, placeholderKey: string): SubblockInstance[] => {
-    return formContext.getSubblockInstances(questionId, placeholderKey);
-  };
-  
   return {
     ...formContext,
     getPreviousQuestionText,
     getPreviousQuestion,
-    getInlineQuestionChain,
-    isInSubblock,
-    getSubblockInstances
+    getInlineQuestionChain
   };
 };

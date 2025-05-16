@@ -22,17 +22,7 @@ export type InputPlaceholder = {
   input_validation: ValidationTypes; // Now required
 };
 
-// Nuovo tipo di placeholder per i sottoblocchi
-export type SubblockPlaceholder = {
-  type: "subblock";
-  repeatable?: boolean;
-  repeat_label?: string;
-  leads_to: string;
-  placeholder_label?: string;
-  questions: Question[];
-};
-
-export type Placeholder = SelectPlaceholder | InputPlaceholder | SubblockPlaceholder;
+export type Placeholder = SelectPlaceholder | InputPlaceholder;
 
 export type Question = {
   question_id: string;
@@ -59,18 +49,6 @@ export type FormResponse = {
   };
 };
 
-// Tipo per le risposte dei sottoblocchi
-export type SubblockInstance = {
-  instance_id: string;
-  responses: FormResponse;
-};
-
-export type FormSubblockResponses = {
-  [question_id: string]: {
-    [placeholder_key: string]: SubblockInstance[];
-  };
-};
-
 export type NavigationHistory = {
   from_block_id: string;
   from_question_id: string;
@@ -86,14 +64,7 @@ export type FormState = {
     question_id: string;
   };
   responses: FormResponse;
-  subblockResponses: FormSubblockResponses; // Aggiungiamo le risposte per i sottoblocchi
   answeredQuestions: Set<string>;
   isNavigating?: boolean;
-  navigationHistory: NavigationHistory[];
-  activeSubblock?: { // Stato attivo per un sottoblocco
-    question_id: string;
-    placeholder_key: string;
-    instance_id?: string; // Se è definito, stiamo modificando un'istanza esistente
-    isEditing: boolean;
-  } | null;
+  navigationHistory: NavigationHistory[]; // Aggiungiamo la cronologia di navigazione
 };
