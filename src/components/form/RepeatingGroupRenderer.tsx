@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { RepeatingGroupBlock, RepeatingGroupEntry } from '@/types/form';
 import { RepeatingGroupManager } from './RepeatingGroupManager';
-import { LinearRepeatingGroupWizard } from './LinearRepeatingGroupWizard';
+import { FormStyleRepeatingGroupWizard } from './FormStyleRepeatingGroupWizard';
 import { useRepeatingGroup } from '@/hooks/useRepeatingGroup';
 import { useForm } from '@/contexts/FormContext';
 import { toast } from '@/components/ui/use-toast';
@@ -46,6 +46,11 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
     if (repeating_id === 'secondary_income') {
       typeField = 'income_type';
       amountField = 'amount_input';
+      descriptionField = undefined;
+    } 
+    else if (repeating_id === 'secondary_income_cointestatario') {
+      typeField = 'income_type_coint';
+      amountField = 'amount_input_coint';
       descriptionField = undefined;
     }
     // Aggiungi qui altri casi quando crei nuovi gruppi ripetuti
@@ -145,7 +150,7 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
   
   if (mode === 'subflow') {
     return (
-      <LinearRepeatingGroupWizard
+      <FormStyleRepeatingGroupWizard
         questions={subflow}
         initialData={editingEntry?.data}
         onComplete={handleSubflowComplete}
