@@ -5,7 +5,7 @@ import {
   getQuestionTextWithResponses,
   getChainOfInlineQuestions
 } from "@/utils/formUtils";
-import { Question } from "@/types/form";
+import { Question, Block } from "@/types/form";
 
 /**
  * Extended hook for the form context with additional functionality
@@ -78,10 +78,21 @@ export const useFormExtended = () => {
     );
   };
   
+  /**
+   * Checks if a block is invisible
+   * @param blockId Block ID
+   * @returns True if the block is invisible, false otherwise
+   */
+  const isBlockInvisible = (blockId: string): boolean => {
+    const block = formContext.blocks.find(b => b.block_id === blockId);
+    return !!block?.invisible;
+  };
+  
   return {
     ...formContext,
     getPreviousQuestionText,
     getPreviousQuestion,
-    getInlineQuestionChain
+    getInlineQuestionChain,
+    isBlockInvisible
   };
 };

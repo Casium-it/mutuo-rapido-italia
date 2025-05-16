@@ -40,6 +40,7 @@ export type Block = {
   title: string;
   priority: number;
   default_active?: boolean;
+  invisible?: boolean; // New attribute to hide blocks from the sidebar
   questions: Question[];
 };
 
