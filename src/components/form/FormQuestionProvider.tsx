@@ -247,6 +247,7 @@ export function FormQuestionProvider({ question, children }: FormQuestionProvide
 
   // Funzione per renderizzare una singola domanda con le sue risposte cliccabili
   const renderQuestionWithResponses = (q: Question) => {
+    // Correzione qui: questa funzione mancava degli argomenti richiesti
     // Otteniamo le parti del testo con risposte cliccabili
     const { parts } = getQuestionTextWithClickableResponses(q, state.responses);
     
