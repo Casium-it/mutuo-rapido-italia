@@ -6,7 +6,7 @@ export interface QuestionContextValue {
   responses: Record<string, any>;
   validationErrors: Record<string, boolean>;
   visibleOptions: Record<string, boolean>;
-  handleValueChange: (key: string, value: string | string[]) => void;
+  handleValueChange: (key: string, value: any) => void; // Updated to accept any value type
   handlePlaceholderClick: (key: string) => void;
   handleNextStep: () => void;
   handlePreviousStep: () => void;

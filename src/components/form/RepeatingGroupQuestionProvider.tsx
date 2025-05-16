@@ -27,7 +27,7 @@ export function RepeatingGroupQuestionProvider({
   isLastQuestion,
   children
 }: RepeatingGroupQuestionProviderProps) {
-  const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({
+  const [responses, setResponses] = useState<{ [key: string]: any }>({
     ...initialData
   });
   const [validationErrors, setValidationErrors] = useState<{ [key: string]: boolean }>({});
@@ -63,7 +63,7 @@ export function RepeatingGroupQuestionProvider({
   }, [question, responses]);
 
   // Funzione per gestire il cambio di valore di un placeholder
-  const handleValueChange = (placeholderKey: string, value: string | number) => {
+  const handleValueChange = (placeholderKey: string, value: any) => {
     setResponses(prev => ({
       ...prev,
       [placeholderKey]: value

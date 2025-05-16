@@ -23,14 +23,14 @@ export function FormQuestionProvider({ question, children }: FormQuestionProvide
     goToQuestion 
   } = useFormExtended();
   
-  const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});
+  const [responses, setResponses] = useState<{ [key: string]: any }>({});
   const [isNavigating, setIsNavigating] = useState(false);
   const [visibleOptions, setVisibleOptions] = useState<{ [key: string]: boolean }>({});
   const [validationErrors, setValidationErrors] = useState<{ [key: string]: boolean }>({});
 
   // Effetto per caricare le risposte esistenti e impostare visibilità iniziale delle opzioni
   useEffect(() => {
-    const existingResponses: { [key: string]: string | string[] } = {};
+    const existingResponses: { [key: string]: any } = {};
     const initialVisibleOptions: { [key: string]: boolean } = {};
     const initialValidationErrors: { [key: string]: boolean } = {};
     
@@ -60,7 +60,7 @@ export function FormQuestionProvider({ question, children }: FormQuestionProvide
   }, [question.question_id, getResponse, question.placeholders]);
 
   // Funzione per gestire il cambio di risposta con validazione
-  const handleValueChange = (key: string, value: string | string[]) => {
+  const handleValueChange = (key: string, value: any) => {
     // Aggiorniamo sempre lo stato locale indipendentemente dalla validazione
     setResponses({
       ...responses,

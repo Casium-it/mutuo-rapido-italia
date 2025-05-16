@@ -192,7 +192,7 @@ export function RenderInputPlaceholder({
                 value={responses[placeholderKey] || ''}
                 onChange={(e) => {
                   const value = placeholder.input_type === "number" 
-                    ? e.target.value !== "" ? parseFloat(e.target.value) : ""
+                    ? e.target.value !== "" ? e.target.value : "" // Keep as string, don't convert to number
                     : e.target.value;
                   
                   handleValueChange(
