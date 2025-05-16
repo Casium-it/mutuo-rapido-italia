@@ -1,10 +1,10 @@
 
 import React, { useEffect, useState } from 'react';
-import { useForm } from '@/contexts/FormContext';
 import { FormQuestion } from './FormQuestion';
 import { Question, RepeatingGroupEntry } from '@/types/form';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { SelectPlaceholderBox } from './SelectPlaceholderBox';
 
 interface SubflowFormProps {
   questions: Question[];
@@ -134,6 +134,57 @@ export function SubflowForm({
     );
   }
   
+  // Renderizza il testo della domanda, sostituendo i placeholder con i componenti appropriati
+  const renderQuestionText = () => {
+    const questionText = currentQuestion.question_text;
+    const parts = [];
+    let lastIndex = 0;
+    const regex = /\{\{([^}]+)\}\}/g;
+    let match;
+    
+    while ((match = regex.exec(questionText)) !== null) {
+      // Aggiungi testo prima del placeholder
+      if (match.index > lastIndex) {
+        parts.push(<span key={`text-${lastIndex}`}>{questionText.slice(lastIndex, match.index)}</span>);
+      }
+      
+      const placeholderKey = match[1];
+      const placeholder = currentQuestion.placeholders[placeholderKey];
+      
+      if (placeholder && placeholder.type === "select") {
+        // Renderizza un SelectPlaceholderBox per i placeholder di tipo select
+        parts.push(
+          <SelectPlaceholderBox
+            key={`placeholder-${placeholderKey}`}
+            questionId={currentQuestion.question_id}
+            placeholderKey={placeholderKey}
+            options={placeholder.options}
+            value={responses[currentQuestion.question_id]?.[placeholderKey]}
+          />
+        );
+      } else {
+        // Renderizza un span semplice per gli altri tipi di placeholder
+        parts.push(
+          <span 
+            key={`placeholder-${placeholderKey}`}
+            className="inline-block bg-gray-100 px-2 py-1 rounded mx-1"
+          >
+            {responses[currentQuestion.question_id]?.[placeholderKey] || '___'}
+          </span>
+        );
+      }
+      
+      lastIndex = match.index + match[0].length;
+    }
+    
+    // Aggiungi il testo rimanente
+    if (lastIndex < questionText.length) {
+      parts.push(<span key={`text-${lastIndex}`}>{questionText.slice(lastIndex)}</span>);
+    }
+    
+    return <div className="text-xl font-medium mb-6">{parts}</div>;
+  };
+  
   // Determina il valore iniziale per la domanda corrente
   const getInitialValue = () => {
     const questionId = currentQuestion.question_id;
@@ -142,7 +193,7 @@ export function SubflowForm({
   
   return (
     <div className="space-y-6">
-      {/* Mostra la domanda corrente */}
+      {/* Mostra la domanda corrente con supporto per inline */}
       <FormQuestion
         question={currentQuestion}
         initialValue={getInitialValue()}

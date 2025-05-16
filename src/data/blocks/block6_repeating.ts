@@ -42,6 +42,7 @@ export const block6_repeating: RepeatingGroupBlock = {
       question_text: "Percepisco {{placeholder1}} mensilmente",
       question_notes: "Indica una media degli ultimi tre anni percepisci questo reddito da un po' di tempo",
       leads_to_placeholder_priority: "placeholder1",
+      inline: true,
       placeholders: {
         placeholder1: {
           type: "input",
@@ -57,7 +58,7 @@ export const block6_repeating: RepeatingGroupBlock = {
       question_number: "13.3",
       question_text: "Ricevo questo reddito da {{placeholder1}}, {{placeholder2}}",
       leads_to_placeholder_priority: "placeholder2",
-      inline: false,
+      inline: true,
       placeholders: {
         placeholder1: {
           type: "select",
@@ -90,7 +91,7 @@ export const block6_repeating: RepeatingGroupBlock = {
       question_number: "13.4",
       question_text: "Questa fonte di reddito è {{placeholder1}}, ",
       leads_to_placeholder_priority: "placeholder1",
-      inline: false,
+      inline: true,
       placeholders: {
         placeholder1: {
           type: "select",

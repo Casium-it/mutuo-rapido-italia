@@ -64,9 +64,43 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
   const handleSubflowComplete = (data: RepeatingGroupEntry) => {
     let success = false;
     
+    // Normalizza i dati prima di salvarli
+    // Questo assicura che i valori siano primitivi e non oggetti complessi
+    const normalizedData: RepeatingGroupEntry = {};
+    
+    // Mantiene l'ID se presente
+    if (data.id) {
+      normalizedData.id = data.id;
+    }
+    
+    // Normalizza i campi specifici
+    Object.keys(data).forEach(key => {
+      const value = data[key];
+      
+      // Gestisce i diversi tipi di campo
+      if (key === 'amount_input' && value) {
+        // Converte l'input di importo in numero
+        normalizedData[key] = typeof value === 'string' ? parseFloat(value) : value;
+      } 
+      else if (key === 'income_type' && value && typeof value === 'object' && 'id' in value) {
+        // Estrae l'ID dal valore di tipo selezionato
+        normalizedData[key] = value.id;
+      }
+      else if (value && typeof value === 'object' && 'id' in value) {
+        // Estrae l'ID da qualsiasi altro campo di tipo select
+        normalizedData[key] = value.id;
+      }
+      else {
+        // Utilizza il valore così com'è per altri tipi di campi
+        normalizedData[key] = value;
+      }
+    });
+    
+    console.log('Normalized data before save:', normalizedData);
+    
     if (editingEntry) {
       // Aggiorna un record esistente
-      success = updateEntry(data, editingEntry.index);
+      success = updateEntry(normalizedData, editingEntry.index);
       
       if (success) {
         toast({
@@ -76,7 +110,7 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
       }
     } else {
       // Aggiunge un nuovo record
-      success = addEntry(data);
+      success = addEntry(normalizedData);
       
       if (success) {
         toast({
@@ -114,6 +148,7 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
     navigateToNextQuestion(currentQuestionId, "next_block");
   };
   
+  // In modalità subflow, rendiamo solo il SubflowForm senza il FormReader principale
   if (mode === 'subflow') {
     return (
       <SubflowForm

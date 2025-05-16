@@ -7,6 +7,7 @@ interface SelectPlaceholderBoxProps {
   questionId: string;
   placeholderKey: string;
   options: Array<{ id: string; label: string; }>;
+  value?: string;  // Aggiungiamo questa prop per supportare i valori locali
   className?: string;
 }
 
@@ -14,10 +15,13 @@ export function SelectPlaceholderBox({
   questionId, 
   placeholderKey, 
   options,
+  value,
   className 
 }: SelectPlaceholderBoxProps) {
   const { getResponse } = useForm();
-  const selectedValue = getResponse(questionId, placeholderKey) as string;
+  
+  // Se viene fornito un value specifico, usalo, altrimenti prendi dal form context
+  const selectedValue = value || getResponse(questionId, placeholderKey) as string;
   
   // Trova l'opzione selezionata o usa la prima come default
   const selectedOption = options.find(opt => opt.id === selectedValue);
