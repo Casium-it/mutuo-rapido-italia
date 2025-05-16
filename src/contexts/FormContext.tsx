@@ -1,6 +1,5 @@
-
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback } from "react";
-import { Block, FormState, FormResponse, NavigationHistory, RepeatingGroupEntry } from "@/types/form";
+import { Block, FormState, FormResponse, NavigationHistory, RepeatingGroupEntry, Question } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 
@@ -525,7 +524,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return state.answeredQuestions.has(question_id);
   }, [state.answeredQuestions]);
 
-  const findQuestionById = useCallback((questionId: string): { block: Block; question: any } | null => {
+  const findQuestionById = useCallback((questionId: string): { block: Block; question: Question } | null => {
     for (const block of sortedBlocks) { // Usa blocchi ordinati
       for (const question of block.questions) {
         if (question.question_id === questionId) {
