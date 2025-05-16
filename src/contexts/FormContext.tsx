@@ -1,6 +1,8 @@
+
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback } from "react";
-import { Block, FormState, FormResponse, NavigationHistory } from "@/types/form";
+import { Block, FormState, FormResponse, NavigationHistory, RepeatingGroupEntry } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { v4 as uuidv4 } from "uuid";
 
 type FormContextType = {
   state: FormState;
@@ -14,6 +16,11 @@ type FormContextType = {
   getProgress: () => number;
   resetForm: () => void;
   getNavigationHistoryFor: (questionId: string) => NavigationHistory | undefined;
+  startLoopEntry: (loopId: string) => void;
+  editLoopEntry: (loopId: string, entryIndex: number) => void;
+  deleteLoopEntry: (loopId: string, entryIndex: number) => void;
+  saveCurrentLoopEntry: () => void;
+  cancelCurrentLoopEntry: () => void;
 };
 
 type Action =
@@ -24,7 +31,12 @@ type Action =
   | { type: "SET_FORM_STATE"; state: Partial<FormState> }
   | { type: "RESET_FORM" }
   | { type: "SET_NAVIGATING"; isNavigating: boolean }
-  | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory };
+  | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory }
+  | { type: "START_LOOP_ENTRY"; loopId: string }
+  | { type: "EDIT_LOOP_ENTRY"; loopId: string; entryIndex: number }
+  | { type: "DELETE_LOOP_ENTRY"; loopId: string; entryIndex: number }
+  | { type: "SAVE_LOOP_ENTRY" }
+  | { type: "CANCEL_LOOP_ENTRY" };
 
 const initialState: FormState = {
   activeBlocks: [],
@@ -35,7 +47,9 @@ const initialState: FormState = {
   responses: {},
   answeredQuestions: new Set(),
   isNavigating: false,
-  navigationHistory: []
+  navigationHistory: [],
+  repeatingGroups: {},
+  currentLoop: null
 };
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
@@ -50,17 +64,44 @@ function formReducer(state: FormState, action: Action): FormState {
           question_id: action.question_id
         }
       };
+      
     case "SET_RESPONSE": {
       const newResponses = { ...state.responses };
+      
+      // Se siamo in un loop, salviamo le risposte temporanee nel currentLoop
+      if (state.currentLoop) {
+        const tempResponses = { 
+          ...(state.currentLoop.tempResponses || {}) 
+        };
+        
+        if (!tempResponses[action.question_id]) {
+          tempResponses[action.question_id] = {};
+        }
+        
+        tempResponses[action.question_id][action.placeholder_key] = action.value;
+        
+        return {
+          ...state,
+          currentLoop: {
+            ...state.currentLoop,
+            tempResponses
+          }
+        };
+      }
+      
+      // Altrimenti, salviamo le risposte normalmente
       if (!newResponses[action.question_id]) {
         newResponses[action.question_id] = {};
       }
+      
       newResponses[action.question_id][action.placeholder_key] = action.value;
+      
       return {
         ...state,
         responses: newResponses
       };
     }
+    
     case "ADD_ACTIVE_BLOCK": {
       if (state.activeBlocks.includes(action.block_id)) {
         return state;
@@ -70,6 +111,7 @@ function formReducer(state: FormState, action: Action): FormState {
         activeBlocks: [...state.activeBlocks, action.block_id]
       };
     }
+    
     case "MARK_QUESTION_ANSWERED": {
       const answeredQuestions = new Set(state.answeredQuestions);
       answeredQuestions.add(action.question_id);
@@ -78,26 +120,31 @@ function formReducer(state: FormState, action: Action): FormState {
         answeredQuestions
       };
     }
+    
     case "SET_FORM_STATE": {
       return {
         ...state,
         ...action.state
       };
     }
+    
     case "RESET_FORM": {
       return {
         ...initialState,
         activeBlocks: state.activeBlocks.filter(blockId => 
           initialState.activeBlocks.includes(blockId)),
-        navigationHistory: [] // Reset anche la cronologia di navigazione
+        navigationHistory: [],
+        repeatingGroups: {} // Reset anche i repeating groups
       };
     }
+    
     case "SET_NAVIGATING": {
       return {
         ...state,
         isNavigating: action.isNavigating
       };
     }
+    
     case "ADD_NAVIGATION_HISTORY": {
       // Filtriamo la cronologia per rimuovere eventuali duplicati
       const filteredHistory = state.navigationHistory.filter(item => 
@@ -110,6 +157,142 @@ function formReducer(state: FormState, action: Action): FormState {
         navigationHistory: [...filteredHistory, action.history]
       };
     }
+    
+    case "START_LOOP_ENTRY": {
+      return {
+        ...state,
+        currentLoop: {
+          loop_id: action.loopId,
+          tempResponses: {}
+        }
+      };
+    }
+    
+    case "EDIT_LOOP_ENTRY": {
+      const loopId = action.loopId;
+      const entryIndex = action.entryIndex;
+      
+      // Se il gruppo di ripetizione non esiste o l'indice non è valido, non fare nulla
+      if (!state.repeatingGroups[loopId] || 
+          !state.repeatingGroups[loopId].entries || 
+          entryIndex >= state.repeatingGroups[loopId].entries.length) {
+        return state;
+      }
+      
+      // Ottieni l'elemento da modificare
+      const entry = state.repeatingGroups[loopId].entries[entryIndex];
+      
+      return {
+        ...state,
+        currentLoop: {
+          loop_id: loopId,
+          tempResponses: { ...entry.responses }
+        },
+        repeatingGroups: {
+          ...state.repeatingGroups,
+          [loopId]: {
+            ...state.repeatingGroups[loopId],
+            currentEditIndex: entryIndex
+          }
+        }
+      };
+    }
+    
+    case "DELETE_LOOP_ENTRY": {
+      const loopId = action.loopId;
+      const entryIndex = action.entryIndex;
+      
+      // Se il gruppo di ripetizione non esiste o l'indice non è valido, non fare nulla
+      if (!state.repeatingGroups[loopId] || 
+          !state.repeatingGroups[loopId].entries || 
+          entryIndex >= state.repeatingGroups[loopId].entries.length) {
+        return state;
+      }
+      
+      // Crea una nuova array di entries senza l'elemento rimosso
+      const newEntries = [
+        ...state.repeatingGroups[loopId].entries.slice(0, entryIndex),
+        ...state.repeatingGroups[loopId].entries.slice(entryIndex + 1)
+      ];
+      
+      return {
+        ...state,
+        repeatingGroups: {
+          ...state.repeatingGroups,
+          [loopId]: {
+            ...state.repeatingGroups[loopId],
+            entries: newEntries
+          }
+        }
+      };
+    }
+    
+    case "SAVE_LOOP_ENTRY": {
+      // Se non siamo in un loop, non fare nulla
+      if (!state.currentLoop) {
+        return state;
+      }
+      
+      const loopId = state.currentLoop.loop_id;
+      const tempResponses = state.currentLoop.tempResponses;
+      const currentEditIndex = state.repeatingGroups[loopId]?.currentEditIndex;
+      
+      // Inizializza il gruppo repeating se non esiste
+      const repeatingGroup = state.repeatingGroups[loopId] || { entries: [] };
+      let newEntries: RepeatingGroupEntry[];
+      
+      if (currentEditIndex !== undefined && currentEditIndex !== null) {
+        // Modifica un elemento esistente
+        newEntries = [...repeatingGroup.entries];
+        newEntries[currentEditIndex] = {
+          ...newEntries[currentEditIndex],
+          responses: { ...tempResponses }
+        };
+      } else {
+        // Aggiungi un nuovo elemento
+        newEntries = [
+          ...repeatingGroup.entries,
+          {
+            id: uuidv4(),
+            responses: { ...tempResponses }
+          }
+        ];
+      }
+      
+      return {
+        ...state,
+        currentLoop: null, // Esci dalla modalità loop
+        repeatingGroups: {
+          ...state.repeatingGroups,
+          [loopId]: {
+            entries: newEntries,
+            currentEditIndex: null // Resetta l'indice di modifica
+          }
+        }
+      };
+    }
+    
+    case "CANCEL_LOOP_ENTRY": {
+      // Se non siamo in un loop, non fare nulla
+      if (!state.currentLoop) {
+        return state;
+      }
+      
+      const loopId = state.currentLoop.loop_id;
+      
+      return {
+        ...state,
+        currentLoop: null, // Esci dalla modalità loop
+        repeatingGroups: {
+          ...state.repeatingGroups,
+          [loopId]: {
+            ...state.repeatingGroups[loopId],
+            currentEditIndex: null // Resetta l'indice di modifica
+          }
+        }
+      };
+    }
+    
     default:
       return state;
   }
@@ -125,7 +308,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   
   const [state, dispatch] = useReducer(formReducer, {
     ...initialState,
-    activeBlocks: sortedBlocks.filter(b => b.default_active).map(b => b.block_id)
+    activeBlocks: sortedBlocks.filter(b => b.default_active).map(b => b.block_id),
+    repeatingGroups: {}
   });
 
   // Inizializza o aggiorna i blocchi attivi dal JSON
@@ -323,9 +507,15 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   }, []);
 
   const getResponse = useCallback((question_id: string, placeholder_key: string) => {
+    // Se siamo in un loop, prendi la risposta dal currentLoop
+    if (state.currentLoop?.tempResponses && state.currentLoop.tempResponses[question_id]) {
+      return state.currentLoop.tempResponses[question_id][placeholder_key];
+    }
+    
+    // Altrimenti, prendi dalle risposte normali
     if (!state.responses[question_id]) return undefined;
     return state.responses[question_id][placeholder_key];
-  }, [state.responses]);
+  }, [state.responses, state.currentLoop]);
 
   const addActiveBlock = useCallback((block_id: string) => {
     dispatch({ type: "ADD_ACTIVE_BLOCK", block_id });
@@ -346,6 +536,51 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return null;
   }, [sortedBlocks]);
 
+  // Nuove funzioni per gestire i loop
+  const startLoopEntry = useCallback((loopId: string) => {
+    dispatch({ type: "START_LOOP_ENTRY", loopId });
+  }, []);
+
+  const editLoopEntry = useCallback((loopId: string, entryIndex: number) => {
+    dispatch({ type: "EDIT_LOOP_ENTRY", loopId, entryIndex });
+  }, []);
+
+  const deleteLoopEntry = useCallback((loopId: string, entryIndex: number) => {
+    dispatch({ type: "DELETE_LOOP_ENTRY", loopId, entryIndex });
+  }, []);
+
+  const saveCurrentLoopEntry = useCallback(() => {
+    dispatch({ type: "SAVE_LOOP_ENTRY" });
+  }, []);
+
+  const cancelCurrentLoopEntry = useCallback(() => {
+    dispatch({ type: "CANCEL_LOOP_ENTRY" });
+  }, []);
+
+  const isInLoop = useCallback((questionId: string): boolean => {
+    // Trova la domanda
+    const foundQuestion = findQuestionById(questionId)?.question;
+    
+    // Verifica se questa domanda fa parte di un loop
+    return !!foundQuestion?.loop;
+  }, [findQuestionById]);
+
+  const getLoopIdForQuestion = useCallback((questionId: string): string | undefined => {
+    const foundQuestion = findQuestionById(questionId)?.question;
+    return foundQuestion?.loop;
+  }, [findQuestionById]);
+
+  const findLoopManagerQuestion = useCallback((loopId: string): Question | undefined => {
+    for (const block of sortedBlocks) {
+      for (const question of block.questions) {
+        if (question.loop_manager && question.loop_id === loopId) {
+          return question;
+        }
+      }
+    }
+    return undefined;
+  }, [sortedBlocks]);
+
   const navigateToNextQuestion = useCallback((currentQuestionId: string, leadsTo: string) => {
     // Salva la domanda corrente prima di navigare
     const currentBlockId = state.activeQuestion.block_id;
@@ -353,6 +588,51 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     // Set navigating state when navigating
     dispatch({ type: "SET_NAVIGATING", isNavigating: true });
     
+    // Trova la domanda corrente
+    const currentQuestion = findQuestionById(currentQuestionId)?.question;
+    
+    // Verifica se la domanda corrente fa parte di un loop
+    const currentLoopId = currentQuestion?.loop;
+    let targetQuestion: Question | undefined;
+    
+    // Trova la domanda di destinazione se non è "next_block"
+    if (leadsTo !== "next_block") {
+      targetQuestion = findQuestionById(leadsTo)?.question;
+    }
+    
+    // Controlla se stiamo uscendo da un loop
+    if (currentLoopId && (!targetQuestion || !targetQuestion.loop || targetQuestion.loop !== currentLoopId)) {
+      // Stiamo uscendo dal loop, dobbiamo salvare l'entry corrente
+      saveCurrentLoopEntry();
+      
+      // Trova la domanda loop manager per tornare ad essa
+      const loopManagerQuestion = findLoopManagerQuestion(currentLoopId);
+      
+      if (loopManagerQuestion) {
+        // Naviga alla domanda loop manager
+        setTimeout(() => {
+          goToQuestion(
+            loopManagerQuestion.block_id || state.activeQuestion.block_id,
+            loopManagerQuestion.question_id
+          );
+          dispatch({ type: "SET_NAVIGATING", isNavigating: false });
+        }, 50);
+        return;
+      }
+    }
+    
+    // Controlla se la domanda corrente è un loop manager e stiamo aggiungendo un nuovo elemento
+    if (currentQuestion?.loop_manager) {
+      if (leadsTo === currentQuestion.add_leads_to) {
+        // Stiamo aggiungendo un nuovo elemento
+        // La funzione startNewLoopEntry è già stata chiamata dal componente LoopManager
+        // Non serve richiamarla qui
+      } else if (leadsTo === currentQuestion.next_leads_to || leadsTo === "next_block") {
+        // Continuiamo al prossimo blocco/domanda normalmente
+      }
+    }
+    
+    // Normale logica di navigazione...
     if (leadsTo === "next_block") {
       // Trova il blocco corrente
       let currentBlock = null;
@@ -445,7 +725,15 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     setTimeout(() => {
       dispatch({ type: "SET_NAVIGATING", isNavigating: false });
     }, 300);
-  }, [sortedBlocks, state.activeBlocks, goToQuestion, findQuestionById, state.activeQuestion.block_id]);
+  }, [
+    sortedBlocks, 
+    state.activeBlocks, 
+    goToQuestion, 
+    findQuestionById, 
+    state.activeQuestion.block_id, 
+    findLoopManagerQuestion,
+    saveCurrentLoopEntry
+  ]);
 
   // Calcola il progresso complessivo del form
   const getProgress = useCallback(() => {
@@ -493,7 +781,12 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         navigateToNextQuestion,
         getProgress,
         resetForm,
-        getNavigationHistoryFor
+        getNavigationHistoryFor,
+        startLoopEntry,
+        editLoopEntry,
+        deleteLoopEntry,
+        saveCurrentLoopEntry,
+        cancelCurrentLoopEntry
       }}
     >
       {children}

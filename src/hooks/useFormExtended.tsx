@@ -5,7 +5,8 @@ import {
   getQuestionTextWithResponses,
   getChainOfInlineQuestions
 } from "@/utils/formUtils";
-import { Question } from "@/types/form";
+import { Question, RepeatingGroupEntry } from "@/types/form";
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Extended hook for the form context with additional functionality
@@ -77,11 +78,86 @@ export const useFormExtended = () => {
       questionId
     );
   };
+
+  /**
+   * Get entries for a specific loop
+   * @param loopId ID of the loop
+   * @returns Array of entries or undefined
+   */
+  const getLoopEntries = (loopId: string): RepeatingGroupEntry[] | undefined => {
+    return formContext.state.repeatingGroups?.[loopId]?.entries;
+  };
+  
+  /**
+   * Start a new entry in a loop
+   * @param loopId ID of the loop
+   */
+  const startNewLoopEntry = (loopId: string) => {
+    formContext.startLoopEntry(loopId);
+  };
+  
+  /**
+   * Edit an existing entry in a loop
+   * @param loopId ID of the loop
+   * @param entryIndex Index of the entry to edit
+   */
+  const editLoopEntry = (loopId: string, entryIndex: number) => {
+    formContext.editLoopEntry(loopId, entryIndex);
+  };
+  
+  /**
+   * Delete an entry from a loop
+   * @param loopId ID of the loop
+   * @param entryIndex Index of the entry to delete
+   */
+  const deleteLoopEntry = (loopId: string, entryIndex: number) => {
+    formContext.deleteLoopEntry(loopId, entryIndex);
+  };
+  
+  /**
+   * Check if the current question is a loop manager
+   * @returns Boolean indicating if the current question is a loop manager
+   */
+  const isLoopManager = (): boolean => {
+    const { block_id, question_id } = formContext.state.activeQuestion;
+    const question = formContext.blocks
+      .find(b => b.block_id === block_id)
+      ?.questions.find(q => q.question_id === question_id);
+    
+    return !!question?.loop_manager;
+  };
+  
+  /**
+   * Get loop manager information for the current question
+   * @returns Object with loop manager info or null
+   */
+  const getLoopManagerInfo = () => {
+    const { block_id, question_id } = formContext.state.activeQuestion;
+    const question = formContext.blocks
+      .find(b => b.block_id === block_id)
+      ?.questions.find(q => q.question_id === question_id);
+    
+    if (question?.loop_manager) {
+      return {
+        loopId: question.loop_id || "",
+        addLeadsTo: question.add_leads_to || "",
+        nextLeadsTo: question.next_leads_to || ""
+      };
+    }
+    
+    return null;
+  };
   
   return {
     ...formContext,
     getPreviousQuestionText,
     getPreviousQuestion,
-    getInlineQuestionChain
+    getInlineQuestionChain,
+    getLoopEntries,
+    startNewLoopEntry,
+    editLoopEntry,
+    deleteLoopEntry,
+    isLoopManager,
+    getLoopManagerInfo
   };
 };

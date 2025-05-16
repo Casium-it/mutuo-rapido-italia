@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { Question, ValidationTypes } from "@/types/form";
@@ -11,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { getQuestionTextWithClickableResponses } from "@/utils/formUtils";
 import { validateInput } from "@/utils/validationUtils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { LoopManager } from "./LoopManager";
 
 interface FormQuestionProps {
   question: Question;
@@ -26,7 +28,9 @@ export function FormQuestion({ question }: FormQuestionProps) {
     getInlineQuestionChain,
     state, 
     addActiveBlock, 
-    goToQuestion 
+    goToQuestion,
+    isLoopManager,
+    getLoopManagerInfo
   } = useFormExtended();
   
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});
@@ -36,6 +40,9 @@ export function FormQuestion({ question }: FormQuestionProps) {
   // Nuovo stato per tenere traccia degli errori di validazione
   const [validationErrors, setValidationErrors] = useState<{ [key: string]: boolean }>({});
   const params = useParams();
+  
+  // Verifica se questa è una domanda di gestione loop
+  const loopManagerInfo = isLoopManager() ? getLoopManagerInfo() : null;
 
   // Effetto per caricare le risposte esistenti e impostare visibilità iniziale delle opzioni
   useEffect(() => {
@@ -495,6 +502,17 @@ export function FormQuestion({ question }: FormQuestionProps) {
   const hasValidResponses = Object.keys(question.placeholders).every(key => 
     responses[key] !== undefined || getResponse(question.question_id, key) !== undefined
   ) && allInputsHaveValidContent();
+
+  // Se questa è una domanda di gestione loop, mostra il componente LoopManager
+  if (loopManagerInfo) {
+    return (
+      <LoopManager 
+        loopId={loopManagerInfo.loopId}
+        addLeadsTo={loopManagerInfo.addLeadsTo}
+        nextLeadsTo={loopManagerInfo.nextLeadsTo}
+      />
+    );
+  }
 
   return (
     <div className="max-w-xl animate-fade-in">
