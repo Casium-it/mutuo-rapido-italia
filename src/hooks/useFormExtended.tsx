@@ -115,6 +115,13 @@ export const useFormExtended = () => {
   };
   
   /**
+   * Save the current loop entry
+   */
+  const saveCurrentLoopEntry = () => {
+    formContext.saveCurrentLoopEntry();
+  };
+  
+  /**
    * Check if the current question is a loop manager
    * @returns Boolean indicating if the current question is a loop manager
    */
@@ -157,6 +164,7 @@ export const useFormExtended = () => {
     startNewLoopEntry,
     editLoopEntry,
     deleteLoopEntry,
+    saveCurrentLoopEntry,
     isLoopManager,
     getLoopManagerInfo
   };

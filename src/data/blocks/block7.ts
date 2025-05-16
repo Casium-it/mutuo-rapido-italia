@@ -1,4 +1,3 @@
-
 import { Block } from "@/types/form";
 
 // Block 7 - Finanziamenti
@@ -208,17 +207,17 @@ export const block7: Block = {
             {
               id: "sempre",
               label: "sempre",
-              leads_to: "aggiungi_finanziamento" // Return to loop manager
+              leads_to: "aggiungi_finanziamento" // Torna esplicitamente al loop manager
             },
             {
               id: "quasi_sempre",
               label: "quasi sempre",
-              leads_to: "aggiungi_finanziamento" // Return to loop manager
+              leads_to: "aggiungi_finanziamento" // Torna esplicitamente al loop manager
             },
             {
               id: "poco",
               label: "poco",
-              leads_to: "aggiungi_finanziamento" // Return to loop manager
+              leads_to: "aggiungi_finanziamento" // Torna esplicitamente al loop manager
             }
           ]
         }

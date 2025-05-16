@@ -1,5 +1,4 @@
-
-import React from "react";
+import React, { useEffect } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { Button } from "@/components/ui/button";
 import { RepeatingGroupEntry } from "@/types/form";
@@ -19,11 +18,18 @@ export function LoopManager({ loopId, addLeadsTo, nextLeadsTo }: LoopManagerProp
     startNewLoopEntry, 
     editLoopEntry, 
     deleteLoopEntry,
-    getLoopEntries 
+    getLoopEntries,
+    saveCurrentLoopEntry
   } = useFormExtended();
   
   const entries = getLoopEntries(loopId) || [];
   
+  useEffect(() => {
+    // Log quando il componente viene montato o quando cambiano le entries
+    console.log(`[LoopManager] ${loopId} - Entries found:`, entries);
+    console.log(`[LoopManager] Current repeatingGroups state:`, state.repeatingGroups);
+  }, [loopId, entries, state.repeatingGroups]);
+
   // Funzione per creare un sommario leggibile di una voce
   const createEntrySummary = (entry: RepeatingGroupEntry): string => {
     let summary = "";
@@ -81,24 +87,51 @@ export function LoopManager({ loopId, addLeadsTo, nextLeadsTo }: LoopManagerProp
 
   // Aggiungi una nuova voce
   const handleAddEntry = () => {
+    console.log("[LoopManager] Starting new loop entry for", loopId);
     startNewLoopEntry(loopId);
     navigateToNextQuestion(state.activeQuestion.question_id, addLeadsTo);
   };
 
   // Modifica una voce esistente
   const handleEditEntry = (entryIndex: number) => {
+    console.log("[LoopManager] Editing loop entry", entryIndex, "for", loopId);
     editLoopEntry(loopId, entryIndex);
     navigateToNextQuestion(state.activeQuestion.question_id, addLeadsTo);
   };
 
   // Elimina una voce
   const handleDeleteEntry = (entryIndex: number) => {
+    console.log("[LoopManager] Deleting loop entry", entryIndex, "for", loopId);
     deleteLoopEntry(loopId, entryIndex);
   };
 
   // Continua al prossimo blocco
   const handleContinue = () => {
+    console.log("[LoopManager] Continuing to next block:", nextLeadsTo);
     navigateToNextQuestion(state.activeQuestion.question_id, nextLeadsTo);
+  };
+
+  // Componente di debug per visualizzare lo stato del loop (solo in sviluppo)
+  const DebugInfo = () => {
+    if (process.env.NODE_ENV !== 'development') return null;
+    
+    return (
+      <div className="mt-4 p-2 border border-dashed border-gray-300 rounded text-xs bg-gray-50">
+        <h5 className="font-bold text-gray-700">Debug - Loop: {loopId}</h5>
+        <div>{entries.length} entries in repeatingGroups</div>
+        <div>Current loop state: {state.currentLoop ? 'Active' : 'Inactive'}</div>
+        <div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="text-xs mt-1 h-6"
+            onClick={() => console.log('Current state:', state)}
+          >
+            Log state
+          </Button>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -162,6 +195,9 @@ export function LoopManager({ loopId, addLeadsTo, nextLeadsTo }: LoopManagerProp
           Prosegui
         </Button>
       </div>
+      
+      {/* Debug info */}
+      <DebugInfo />
     </div>
   );
 }

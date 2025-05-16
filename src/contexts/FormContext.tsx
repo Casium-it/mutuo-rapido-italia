@@ -427,8 +427,12 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       // Converti Set a array per JSON serialization
       const stateToSave = {
         ...state,
-        answeredQuestions: Array.from(state.answeredQuestions)
+        answeredQuestions: Array.from(state.answeredQuestions),
+        // Assicurati che repeatingGroups sia sempre incluso nel salvataggio
+        repeatingGroups: state.repeatingGroups
       };
+      
+      console.log("[FormContext] Saving state to localStorage:", stateToSave);
       localStorage.setItem(`form-state-${params.blockType}`, JSON.stringify(stateToSave));
     }
   }, [state, params.blockType]);
@@ -525,7 +529,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   }, [state.answeredQuestions]);
 
   const findQuestionById = useCallback((questionId: string): { block: Block; question: Question } | null => {
-    for (const block of sortedBlocks) { // Usa blocchi ordinati
+    for (const block of sortedBlocks) {
       for (const question of block.questions) {
         if (question.question_id === questionId) {
           return { block, question };
@@ -587,46 +591,60 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     // Set navigating state when navigating
     dispatch({ type: "SET_NAVIGATING", isNavigating: true });
     
+    // Debug
+    console.log(`[navigateToNextQuestion] From question ${currentQuestionId} to ${leadsTo}`);
+    
     // Trova la domanda corrente
     const currentQuestion = findQuestionById(currentQuestionId)?.question;
+    
+    // Debug
+    console.log("[navigateToNextQuestion] Current Question:", currentQuestion);
+    console.log("[navigateToNextQuestion] Current Loop State:", state.currentLoop);
     
     // Verifica se la domanda corrente fa parte di un loop
     const currentLoopId = currentQuestion?.loop;
     let targetQuestion: Question | undefined;
     
+    // Se c'è un currentLoopId, allora siamo in un loop
+    if (currentLoopId) {
+      console.log(`[navigateToNextQuestion] Current question is part of loop: ${currentLoopId}`);
+    }
+    
     // Trova la domanda di destinazione se non è "next_block"
     if (leadsTo !== "next_block") {
       targetQuestion = findQuestionById(leadsTo)?.question;
+      console.log("[navigateToNextQuestion] Target question:", targetQuestion);
     }
     
     // Controlla se stiamo uscendo da un loop
     if (currentLoopId && (!targetQuestion || !targetQuestion.loop || targetQuestion.loop !== currentLoopId)) {
-      // Stiamo uscendo dal loop, dobbiamo salvare l'entry corrente
-      saveCurrentLoopEntry();
+      console.log("[navigateToNextQuestion] Exiting loop:", currentLoopId);
+      console.log("[navigateToNextQuestion] Target has loop:", targetQuestion?.loop);
       
-      // Trova la domanda loop manager per tornare ad essa
+      // Verifica se stiamo tornando al loop manager
       const loopManagerQuestion = findLoopManagerQuestion(currentLoopId);
+      console.log("[navigateToNextQuestion] Loop manager question:", loopManagerQuestion);
       
-      if (loopManagerQuestion) {
-        // Naviga alla domanda loop manager
-        setTimeout(() => {
-          goToQuestion(
-            loopManagerQuestion.block_id || state.activeQuestion.block_id,
-            loopManagerQuestion.question_id
-          );
-          dispatch({ type: "SET_NAVIGATING", isNavigating: false });
-        }, 50);
-        return;
+      // Se la destinazione è il loop manager, dobbiamo salvare l'entry corrente
+      if (loopManagerQuestion && loopManagerQuestion.question_id === leadsTo) {
+        console.log("[navigateToNextQuestion] Returning to loop manager, saving entry");
+        saveCurrentLoopEntry();
+      } 
+      // Altrimenti verifica se è l'ultima domanda nel loop prima di uscire
+      else if (state.currentLoop) {
+        console.log("[navigateToNextQuestion] Potentially exiting loop from last question, saving entry");
+        saveCurrentLoopEntry();
       }
     }
     
     // Controlla se la domanda corrente è un loop manager e stiamo aggiungendo un nuovo elemento
     if (currentQuestion?.loop_manager) {
       if (leadsTo === currentQuestion.add_leads_to) {
-        // Stiamo aggiungendo un nuovo elemento
+        console.log("[navigateToNextQuestion] Starting new loop entry from loop manager");
         // La funzione startNewLoopEntry è già stata chiamata dal componente LoopManager
         // Non serve richiamarla qui
       } else if (leadsTo === currentQuestion.next_leads_to || leadsTo === "next_block") {
+        console.log("[navigateToNextQuestion] Continuing to next block from loop manager");
         // Continuiamo al prossimo blocco/domanda normalmente
       }
     }
@@ -731,7 +749,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     findQuestionById, 
     state.activeQuestion.block_id, 
     findLoopManagerQuestion,
-    saveCurrentLoopEntry
+    saveCurrentLoopEntry,
+    state.currentLoop
   ]);
 
   // Calcola il progresso complessivo del form
