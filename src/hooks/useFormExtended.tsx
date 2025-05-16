@@ -5,7 +5,21 @@ import {
   getQuestionTextWithResponses,
   getChainOfInlineQuestions
 } from "@/utils/formUtils";
-import { Question } from "@/types/form";
+import { Question, StandardBlock, Block, RepeatingGroupBlock } from "@/types/form";
+
+/**
+ * Funzione di utilità per verificare se un blocco è di tipo StandardBlock
+ */
+const isStandardBlock = (block: Block): block is StandardBlock => {
+  return !('type' in block) || block.type !== 'repeating_group';
+};
+
+/**
+ * Funzione di utilità per verificare se un blocco è di tipo RepeatingGroupBlock
+ */
+const isRepeatingGroupBlock = (block: Block): block is RepeatingGroupBlock => {
+  return 'type' in block && block.type === 'repeating_group';
+};
 
 /**
  * Extended hook for the form context with additional functionality
@@ -48,10 +62,16 @@ export const useFormExtended = () => {
    * @returns Array of previous questions in the chain, ordered from first to last
    */
   const getInlineQuestionChain = (blockId: string, questionId: string): Question[] => {
+    // Verifica prima che si tratti di un blocco standard
+    const block = formContext.blocks.find(b => b.block_id === blockId);
+    if (!block || isRepeatingGroupBlock(block)) {
+      return [];
+    }
+
+    const standardBlock = block;
+    
     // Se la domanda è inline, troviamo da dove viene l'utente attraverso la cronologia
-    const question = formContext.blocks
-      .find(b => b.block_id === blockId)
-      ?.questions.find(q => q.question_id === questionId);
+    const question = standardBlock.questions.find(q => q.question_id === questionId);
     
     if (question?.inline) {
       // Cerca nella cronologia di navigazione da dove l'utente è arrivato a questa domanda
@@ -59,13 +79,20 @@ export const useFormExtended = () => {
       
       if (navigationHistory) {
         // Trova la domanda da cui l'utente è arrivato
-        const sourceQuestion = formContext.blocks
-          .find(b => b.block_id === navigationHistory.from_block_id)
-          ?.questions.find(q => q.question_id === navigationHistory.from_question_id);
+        const sourceBlockId = navigationHistory.from_block_id;
+        const sourceBlock = formContext.blocks.find(b => b.block_id === sourceBlockId);
         
-        if (sourceQuestion) {
-          // Restituisci la catena formata dalla domanda di origine
-          return [sourceQuestion];
+        // Verifica che il blocco di origine sia un blocco standard
+        if (sourceBlock && isStandardBlock(sourceBlock)) {
+          const standardSourceBlock = sourceBlock;
+          const sourceQuestion = standardSourceBlock.questions.find(
+            q => q.question_id === navigationHistory.from_question_id
+          );
+          
+          if (sourceQuestion) {
+            // Restituisci la catena formata dalla domanda di origine
+            return [sourceQuestion];
+          }
         }
       }
     }

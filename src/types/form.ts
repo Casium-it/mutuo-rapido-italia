@@ -10,6 +10,7 @@ export type SelectPlaceholder = {
   type: "select";
   options: PlaceholderOption[];
   multiple?: boolean;
+  placeholder_label?: string; // Aggiungiamo questa proprietà
 };
 
 export type ValidationTypes = "euro" | "month" | "year" | "age" | "city" | "cap" | "free_text";
@@ -32,15 +33,51 @@ export type Question = {
   inline?: boolean;
   leads_to_placeholder_priority: string;
   placeholders: Record<string, Placeholder>;
+  question_notes?: string;
 };
 
-export type Block = {
+// Nuovo tipo per le domande del sottoflusso nei gruppi ripetuti
+export type SubflowQuestion = Question;
+
+// Definizione del blocco repeating_group
+export type RepeatingGroupBlock = {
+  block_number: string;
+  block_id: string;
+  title: string;
+  priority: number;
+  default_active?: boolean;
+  type: "repeating_group";
+  repeating_id: string;
+  subflow: SubflowQuestion[];
+  // New optional fields for customizable text elements
+  subtitle?: string;
+  empty_state_text?: string;
+  add_button_text?: string;
+  continue_button_text?: string;
+};
+
+// Definizione regolare del blocco standard
+export type StandardBlock = {
   block_number: string;
   block_id: string;
   title: string;
   priority: number;
   default_active?: boolean;
   questions: Question[];
+};
+
+// Union type per supportare sia blocchi standard che repeating_group
+export type Block = StandardBlock | RepeatingGroupBlock;
+
+// Tipo per un singolo record di entrata in un gruppo ripetuto
+export type RepeatingGroupEntry = {
+  id?: string;
+  [key: string]: any;
+};
+
+// Tipo per l'elenco di record in un gruppo ripetuto
+export type RepeatingGroupEntries = {
+  [repeating_id: string]: RepeatingGroupEntry[];
 };
 
 export type FormResponse = {
@@ -66,5 +103,6 @@ export type FormState = {
   responses: FormResponse;
   answeredQuestions: Set<string>;
   isNavigating?: boolean;
-  navigationHistory: NavigationHistory[]; // Aggiungiamo la cronologia di navigazione
+  navigationHistory: NavigationHistory[];
+  repeatingGroups?: RepeatingGroupEntries; // Aggiungiamo supporto per i gruppi ripetuti nello stato
 };

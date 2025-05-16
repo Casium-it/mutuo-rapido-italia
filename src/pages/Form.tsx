@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { RefreshCcw } from "lucide-react";
 import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
+import { RepeatingGroupRenderer } from "@/components/form/RepeatingGroupRenderer";
+import { RepeatingGroupBlock } from "@/types/form";
 
 export default function Form() {
   const { state, blocks, getProgress, resetForm } = useForm();
@@ -32,6 +34,19 @@ export default function Form() {
     // Questo effetto verrà eseguito ogni volta che cambia l'URL (location.pathname)
     // Poiché dipende da location.pathname, forza un ri-rendering del componente
   }, [location.pathname]);
+
+  // Determina quale contenuto mostrare in base al tipo di blocco attivo
+  const renderActiveContent = () => {
+    if (!activeBlock) return null;
+    
+    // Se è un gruppo ripetuto, usa il RepeatingGroupRenderer
+    if ('type' in activeBlock && activeBlock.type === 'repeating_group') {
+      return <RepeatingGroupRenderer block={activeBlock as RepeatingGroupBlock} />;
+    }
+    
+    // Altrimenti usa il QuestionView standard
+    return <QuestionView />;
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -83,9 +98,9 @@ export default function Form() {
               <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">{activeBlock?.title}</h1>
             </div>
 
-            {/* Question - con key per forzare il re-rendering quando cambia l'URL */}
+            {/* Question or RepeatingGroup - con key per forzare il re-rendering quando cambia l'URL */}
             <div key={location.pathname}>
-              <QuestionView />
+              {renderActiveContent()}
             </div>
           </div>
         </div>

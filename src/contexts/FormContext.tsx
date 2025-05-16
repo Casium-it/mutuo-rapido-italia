@@ -1,6 +1,23 @@
-import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback } from "react";
-import { Block, FormState, FormResponse, NavigationHistory } from "@/types/form";
+import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback, useRef } from "react";
+import { Block, FormState, FormResponse, NavigationHistory, StandardBlock, RepeatingGroupBlock, RepeatingGroupEntry } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
+import {
+  resetAllRepeatingGroups,
+  dispatchResetEvent,
+  hasRepeatingGroupData,
+  getAllRepeatingGroups,
+  saveRepeatingGroupEntries
+} from "@/utils/repeatingGroupUtils";
+
+// Funzione di utilità per verificare se un blocco è di tipo StandardBlock
+const isStandardBlock = (block: Block): block is StandardBlock => {
+  return !('type' in block) || block.type !== 'repeating_group';
+};
+
+// Funzione di utilità per verificare se un blocco è di tipo RepeatingGroupBlock
+const isRepeatingGroupBlock = (block: Block): block is RepeatingGroupBlock => {
+  return 'type' in block && block.type === 'repeating_group';
+};
 
 type FormContextType = {
   state: FormState;
@@ -14,6 +31,10 @@ type FormContextType = {
   getProgress: () => number;
   resetForm: () => void;
   getNavigationHistoryFor: (questionId: string) => NavigationHistory | undefined;
+  // Nuove funzioni per gestire i repeatingGroups direttamente dal FormContext
+  getRepeatingGroupEntries: (repeatingId: string) => RepeatingGroupEntry[];
+  saveRepeatingGroupEntry: (repeatingId: string, entry: RepeatingGroupEntry, index?: number) => boolean;
+  deleteRepeatingGroupEntry: (repeatingId: string, idOrIndex: string | number) => boolean;
 };
 
 type Action =
@@ -24,7 +45,9 @@ type Action =
   | { type: "SET_FORM_STATE"; state: Partial<FormState> }
   | { type: "RESET_FORM" }
   | { type: "SET_NAVIGATING"; isNavigating: boolean }
-  | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory };
+  | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory }
+  | { type: "RESET_NAVIGATION_STATE" }
+  | { type: "UPDATE_REPEATING_GROUP"; repeatingId: string; entries: RepeatingGroupEntry[] };
 
 const initialState: FormState = {
   activeBlocks: [],
@@ -35,10 +58,22 @@ const initialState: FormState = {
   responses: {},
   answeredQuestions: new Set(),
   isNavigating: false,
-  navigationHistory: []
+  navigationHistory: [],
+  repeatingGroups: {} // Inizializzato come oggetto vuoto
 };
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
+
+// Funzione per la rimozione di tutti i dati da localStorage per un tipo di blocco
+const clearLocalStorageForBlockType = (blockType?: string): void => {
+  if (!blockType) return;
+  
+  // Rimuovi i dati dello stato del form
+  localStorage.removeItem(`form-state-${blockType}`);
+  
+  // Log per debugging
+  console.log(`Cleared localStorage for block type: ${blockType}`);
+};
 
 function formReducer(state: FormState, action: Action): FormState {
   switch (action.type) {
@@ -84,12 +119,25 @@ function formReducer(state: FormState, action: Action): FormState {
         ...action.state
       };
     }
+    case "UPDATE_REPEATING_GROUP": {
+      return {
+        ...state,
+        repeatingGroups: {
+          ...state.repeatingGroups,
+          [action.repeatingId]: action.entries
+        }
+      };
+    }
     case "RESET_FORM": {
       return {
         ...initialState,
-        activeBlocks: state.activeBlocks.filter(blockId => 
-          initialState.activeBlocks.includes(blockId)),
-        navigationHistory: [] // Reset anche la cronologia di navigazione
+        activeBlocks: initialState.activeBlocks.length > 0 
+          ? [...initialState.activeBlocks] 
+          : state.activeBlocks.filter(blockId => 
+              initialState.activeBlocks.includes(blockId)),
+        navigationHistory: [],
+        isNavigating: false,
+        repeatingGroups: {} // Reset anche dei repeatingGroups
       };
     }
     case "SET_NAVIGATING": {
@@ -110,6 +158,12 @@ function formReducer(state: FormState, action: Action): FormState {
         navigationHistory: [...filteredHistory, action.history]
       };
     }
+    case "RESET_NAVIGATION_STATE": {
+      return {
+        ...state,
+        isNavigating: false
+      };
+    }
     default:
       return state;
   }
@@ -119,6 +173,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   const navigate = useNavigate();
   const params = useParams<{ blockType?: string; blockId?: string; questionId?: string }>();
   const location = useLocation();
+  const navigationTimeoutRef = useRef<number | null>(null);
+  const isResettingRef = useRef<boolean>(false);
   
   // Ordina i blocchi per priorità
   const sortedBlocks = [...blocks].sort((a, b) => a.priority - b.priority);
@@ -127,6 +183,16 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     ...initialState,
     activeBlocks: sortedBlocks.filter(b => b.default_active).map(b => b.block_id)
   });
+
+  // Pulizia dei timeout alla smontaggio del componente
+  useEffect(() => {
+    return () => {
+      // Cancella eventuali timeout di navigazione quando il componente viene smontato
+      if (navigationTimeoutRef.current !== null) {
+        clearTimeout(navigationTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Inizializza o aggiorna i blocchi attivi dal JSON
   useEffect(() => {
@@ -145,16 +211,39 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
 
   // Funzione per reimpostare il form
   const resetForm = useCallback(() => {
-    // Rimuovi i dati salvati dal localStorage
-    if (params.blockType) {
-      localStorage.removeItem(`form-state-${params.blockType}`);
+    console.log("Resetting form...");
+    
+    // Imposta il flag di reset
+    isResettingRef.current = true;
+    
+    try {
+      // Rimuovi i dati salvati dal localStorage
+      clearLocalStorageForBlockType(params.blockType);
+      
+      // Non è più necessario resettare separatamente i repeatingGroups
+      // poiché ora sono parte dello stato del form
+      
+      // Reimposta lo stato del form
+      dispatch({ type: "RESET_FORM" });
+      
+      // Reimposta lo stato di navigazione
+      dispatch({ type: "RESET_NAVIGATION_STATE" });
+      
+      // Forza un aggiornamento del contesto
+      dispatchResetEvent();
+      
+      // Torna alla prima domanda
+      navigate("/simulazione/pensando/introduzione/soggetto_acquisto", { replace: true });
+      
+      console.log("Form reset complete");
+    } catch (error) {
+      console.error("Error during form reset:", error);
+    } finally {
+      // Reimposta il flag di reset dopo un breve ritardo
+      setTimeout(() => {
+        isResettingRef.current = false;
+      }, 500);
     }
-    
-    // Reimposta lo stato del form
-    dispatch({ type: "RESET_FORM" });
-    
-    // Torna alla prima domanda (aggiornato per utilizzare introduzione/soggetto_acquisto)
-    navigate("/simulazione/pensando/introduzione/soggetto_acquisto", { replace: true });
   }, [params.blockType, navigate]);
 
   // Sincronizza lo stato del form con i parametri URL quando l'URL cambia
@@ -175,25 +264,40 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     } else if (blockId) {
       // Se solo blockId è specificato, trova la prima domanda nel blocco
       const block = blocks.find(b => b.block_id === blockId);
-      if (block && block.questions.length > 0) {
-        const firstQuestionId = block.questions[0].question_id;
-        dispatch({ 
-          type: "GO_TO_QUESTION", 
-          block_id: blockId, 
-          question_id: firstQuestionId 
-        });
-        
-        if (!state.activeBlocks.includes(blockId)) {
-          dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
+      
+      if (block) {
+        // Gestisci distintamente i blocchi standard e repeating_group
+        if (isStandardBlock(block) && block.questions.length > 0) {
+          const firstQuestionId = block.questions[0].question_id;
+          dispatch({ 
+            type: "GO_TO_QUESTION", 
+            block_id: blockId, 
+            question_id: firstQuestionId 
+          });
+          
+          if (!state.activeBlocks.includes(blockId)) {
+            dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
+          }
+          
+          // Aggiorna l'URL per includere anche l'ID della domanda
+          navigate(`/simulazione/${params.blockType}/${blockId}/${firstQuestionId}`, { replace: true });
+        } else {
+          // Per i blocchi repeating_group, naviga direttamente al blocco
+          dispatch({ 
+            type: "GO_TO_QUESTION", 
+            block_id: blockId, 
+            question_id: "manager_view" // Un ID fittizio per il manager_view
+          });
+          
+          if (!state.activeBlocks.includes(blockId)) {
+            dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
+          }
         }
-        
-        // Aggiorna l'URL per includere anche l'ID della domanda
-        navigate(`/simulazione/${params.blockType}/${blockId}/${firstQuestionId}`, { replace: true });
       }
     } else if (params.blockType) {
       // Se solo il tipo è specificato (pensando, cercando, ecc.), trova il blocco iniziale
       const entryBlock = blocks.find(b => b.block_id === "introduzione");
-      if (entryBlock && entryBlock.questions.length > 0) {
+      if (entryBlock && isStandardBlock(entryBlock) && entryBlock.questions.length > 0) {
         dispatch({ 
           type: "GO_TO_QUESTION", 
           block_id: "introduzione", 
@@ -213,6 +317,12 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
           parsedState.answeredQuestions = new Set(parsedState.answeredQuestions);
         } else {
           parsedState.answeredQuestions = new Set();
+        }
+        
+        // Leggi i repeating groups dallo stesso file di stato
+        if (parsedState.repeatingGroups) {
+          // Assicuriamo che repeatingGroups sia disponibile nello stato
+          parsedState.repeatingGroups = parsedState.repeatingGroups;
         }
         
         // Applica lo stato salvato
@@ -244,7 +354,9 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       // Converti Set a array per JSON serialization
       const stateToSave = {
         ...state,
-        answeredQuestions: Array.from(state.answeredQuestions)
+        answeredQuestions: Array.from(state.answeredQuestions),
+        // Salva i repeating groups direttamente nello stato del form
+        repeatingGroups: state.repeatingGroups
       };
       localStorage.setItem(`form-state-${params.blockType}`, JSON.stringify(stateToSave));
     }
@@ -255,22 +367,49 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     // Itera su tutte le domande per trovare opzioni che richiedono l'attivazione di blocchi
     for (const questionId of Object.keys(responses)) {
       for (const blockObj of blocks) {
-        const question = blockObj.questions.find(q => q.question_id === questionId);
-        if (!question) continue;
+        // Verifica se il blocco è di tipo StandardBlock prima di accedere a .questions
+        if (isStandardBlock(blockObj)) {
+          const question = blockObj.questions.find(q => q.question_id === questionId);
+          if (!question) continue;
 
-        for (const [placeholderKey, value] of Object.entries(responses[questionId])) {
-          if (question.placeholders[placeholderKey].type === "select") {
-            const options = (question.placeholders[placeholderKey] as any).options;
-            if (!Array.isArray(value)) { // Per selezione singola
-              const selectedOption = options.find((opt: any) => opt.id === value);
-              if (selectedOption?.add_block && !state.activeBlocks.includes(selectedOption.add_block)) {
-                dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: selectedOption.add_block });
-              }
-            } else { // Per selezione multipla
-              for (const optionId of value) {
-                const selectedOption = options.find((opt: any) => opt.id === optionId);
+          for (const [placeholderKey, value] of Object.entries(responses[questionId])) {
+            if (question.placeholders[placeholderKey].type === "select") {
+              const options = (question.placeholders[placeholderKey] as any).options;
+              if (!Array.isArray(value)) { // Per selezione singola
+                const selectedOption = options.find((opt: any) => opt.id === value);
                 if (selectedOption?.add_block && !state.activeBlocks.includes(selectedOption.add_block)) {
                   dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: selectedOption.add_block });
+                }
+              } else { // Per selezione multipla
+                for (const optionId of value) {
+                  const selectedOption = options.find((opt: any) => opt.id === optionId);
+                  if (selectedOption?.add_block && !state.activeBlocks.includes(selectedOption.add_block)) {
+                    dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: selectedOption.add_block });
+                  }
+                }
+              }
+            }
+          }
+        }
+        // Per i RepeatingGroupBlock, potremmo avere questionId nelle domande del subflow
+        else if (isRepeatingGroupBlock(blockObj)) {
+          const question = blockObj.subflow.find(q => q.question_id === questionId);
+          if (!question) continue;
+
+          for (const [placeholderKey, value] of Object.entries(responses[questionId])) {
+            if (question.placeholders[placeholderKey].type === "select") {
+              const options = (question.placeholders[placeholderKey] as any).options;
+              if (!Array.isArray(value)) { // Per selezione singola
+                const selectedOption = options.find((opt: any) => opt.id === value);
+                if (selectedOption?.add_block && !state.activeBlocks.includes(selectedOption.add_block)) {
+                  dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: selectedOption.add_block });
+                }
+              } else { // Per selezione multipla
+                for (const optionId of value) {
+                  const selectedOption = options.find((opt: any) => opt.id === optionId);
+                  if (selectedOption?.add_block && !state.activeBlocks.includes(selectedOption.add_block)) {
+                    dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: selectedOption.add_block });
+                  }
                 }
               }
             }
@@ -280,10 +419,23 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     }
   };
 
+  // Navigazione alle domande - migliorato per prevenire doppi click
   const goToQuestion = useCallback((block_id: string, question_id: string, replace = false) => {
+    // Previeni navigazione simultanea
+    if (state.isNavigating || isResettingRef.current) {
+      console.log(`Navigation prevented: already navigating or resetting`);
+      return; // Non permettere una nuova navigazione mentre è in corso una navigazione
+    }
+
+    console.log(`Navigating to ${block_id}/${question_id}`);
+    
     const previousBlockId = state.activeQuestion.block_id;
     const previousQuestionId = state.activeQuestion.question_id;
 
+    // Set navigating state when navigating
+    dispatch({ type: "SET_NAVIGATING", isNavigating: true });
+    
+    // Imposta il nuovo stato della domanda attiva
     dispatch({ type: "GO_TO_QUESTION", block_id, question_id });
     
     // Aggiungi la navigazione alla cronologia
@@ -298,24 +450,35 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       }
     });
     
-    // Set navigating state when navigating
-    dispatch({ type: "SET_NAVIGATING", isNavigating: true });
-    
     // Aggiorna l'URL per riflettere la nuova domanda
     const blockType = params.blockType || "funnel";
     const newPath = `/simulazione/${blockType}/${block_id}/${question_id}`;
     
-    if (replace) {
-      navigate(newPath, { replace: true });
-    } else {
-      navigate(newPath);
+    try {
+      if (replace) {
+        navigate(newPath, { replace: true });
+      } else {
+        navigate(newPath);
+      }
+    } catch (error) {
+      console.error("Navigation error:", error);
+      // Reset navigation state in case of error
+      dispatch({ type: "SET_NAVIGATING", isNavigating: false });
+      return;
     }
     
-    // Reset navigating state after a short delay
-    setTimeout(() => {
+    // Reset navigating state after a delay
+    if (navigationTimeoutRef.current !== null) {
+      clearTimeout(navigationTimeoutRef.current);
+    }
+    
+    // Aumentiamo il timeout a 1000ms per assicurare che la navigazione sia completata
+    navigationTimeoutRef.current = setTimeout(() => {
       dispatch({ type: "SET_NAVIGATING", isNavigating: false });
-    }, 300);
-  }, [params.blockType, navigate, state.activeQuestion]);
+      navigationTimeoutRef.current = null;
+      console.log(`Navigation to ${block_id}/${question_id} completed`);
+    }, 1000) as unknown as number;
+  }, [params.blockType, navigate, state.activeQuestion, state.isNavigating]);
 
   const setResponse = useCallback((question_id: string, placeholder_key: string, value: string | string[]) => {
     dispatch({ type: "SET_RESPONSE", question_id, placeholder_key, value });
@@ -336,10 +499,20 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   }, [state.answeredQuestions]);
 
   const findQuestionById = useCallback((questionId: string): { block: Block; question: any } | null => {
-    for (const block of sortedBlocks) { // Usa blocchi ordinati
-      for (const question of block.questions) {
-        if (question.question_id === questionId) {
-          return { block, question };
+    for (const block of sortedBlocks) {
+      // Gestisci blocchi standard e repeating_group distintamente
+      if (isStandardBlock(block)) {
+        for (const question of block.questions) {
+          if (question.question_id === questionId) {
+            return { block, question };
+          }
+        }
+      } else {
+        // Per i blocchi repeating_group, cerca nelle domande del subflow
+        for (const question of block.subflow) {
+          if (question.question_id === questionId) {
+            return { block, question };
+          }
         }
       }
     }
@@ -347,21 +520,44 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   }, [sortedBlocks]);
 
   const navigateToNextQuestion = useCallback((currentQuestionId: string, leadsTo: string) => {
+    // Previeni navigazione simultanea o durante reset
+    if (state.isNavigating || isResettingRef.current) {
+      console.log(`Next question navigation prevented: already navigating or resetting`);
+      return;
+    }
+    
+    console.log(`Starting navigation from question ${currentQuestionId} to ${leadsTo}`);
+    
+    // Set navigating state quando inizia la navigazione
+    dispatch({ type: "SET_NAVIGATING", isNavigating: true });
+    
     // Salva la domanda corrente prima di navigare
     const currentBlockId = state.activeQuestion.block_id;
-    
-    // Set navigating state when navigating
-    dispatch({ type: "SET_NAVIGATING", isNavigating: true });
     
     if (leadsTo === "next_block") {
       // Trova il blocco corrente
       let currentBlock = null;
       let currentBlockIndex = -1;
       
-      // Cerca quale blocco contiene la domanda corrente
-      for (let i = 0; i < sortedBlocks.length; i++) { // Usa blocchi ordinati
+      // Cerca quale blocco contiene la domanda corrente o è il blocco stesso (per repeating_group)
+      for (let i = 0; i < sortedBlocks.length; i++) {
         const block = sortedBlocks[i];
-        const hasQuestion = block.questions.some(q => q.question_id === currentQuestionId);
+        
+        // Caso speciale per i repeating_group quando siamo sulla vista manager
+        if (isRepeatingGroupBlock(block) && block.block_id === currentBlockId) {
+          currentBlockIndex = i;
+          currentBlock = block;
+          break;
+        }
+        
+        // Verifica se la domanda appartiene a questo blocco (standard o repeating_group)
+        let hasQuestion = false;
+        if (isStandardBlock(block)) {
+          hasQuestion = block.questions.some(q => q.question_id === currentQuestionId);
+        } else {
+          hasQuestion = block.subflow.some(q => q.question_id === currentQuestionId);
+        }
+        
         if (hasQuestion) {
           currentBlockIndex = i;
           currentBlock = block;
@@ -371,7 +567,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
 
       if (currentBlockIndex !== -1 && currentBlock) {
         console.log(`Navigating from block ${currentBlock.block_id} (index ${currentBlockIndex}) to next active block`);
-        console.log(`Active blocks: ${state.activeBlocks.join(', ')}`);
         
         // Trova il prossimo blocco attivo
         let foundNextActiveBlock = false;
@@ -383,23 +578,31 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
           .sort((a, b) => a!.priority - b!.priority);
         
         // Trova la posizione del blocco corrente nella lista di blocchi attivi ordinati per priorità
-        const currentActiveIndex = activeBlocksWithPriority.findIndex(b => b!.block_id === currentBlock.block_id);
+        const currentActiveIndex = activeBlocksWithPriority.findIndex(b => b!.block_id === currentBlock!.block_id);
         
         // Cerca il prossimo blocco attivo con priorità maggiore
         if (currentActiveIndex !== -1) {
           for (let i = currentActiveIndex + 1; i < activeBlocksWithPriority.length; i++) {
             const nextBlock = activeBlocksWithPriority[i];
-            if (nextBlock && nextBlock.questions.length > 0) {
-              console.log(`Found next active block: ${nextBlock.block_id}`);
-              foundNextActiveBlock = true;
-              goToQuestion(nextBlock.block_id, nextBlock.questions[0].question_id);
-              break;
+            if (nextBlock) {
+              // Gestisci blocchi standard e repeating_group distintamente
+              if (isStandardBlock(nextBlock) && nextBlock.questions.length > 0) {
+                console.log(`Found next active block (standard): ${nextBlock.block_id}`);
+                foundNextActiveBlock = true;
+                goToQuestion(nextBlock.block_id, nextBlock.questions[0].question_id);
+                return; // Importante uscire qui perché goToQuestion gestisce già il timeout
+              } else if (isRepeatingGroupBlock(nextBlock)) {
+                console.log(`Found next active block (repeating_group): ${nextBlock.block_id}`);
+                foundNextActiveBlock = true;
+                goToQuestion(nextBlock.block_id, "manager_view"); // ID fittizio per il manager_view
+                return; // Importante uscire qui perché goToQuestion gestisce già il timeout
+              }
             }
           }
         }
         
         // Se non è stato trovato un blocco attivo successivo, cerca se c'è qualche domanda successiva nello stesso blocco
-        if (!foundNextActiveBlock) {
+        if (!foundNextActiveBlock && isStandardBlock(currentBlock)) {
           console.log(`No next active block found after ${currentBlock.block_id}`);
           
           // Trova la posizione della domanda corrente nel blocco
@@ -410,7 +613,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
             const nextQuestion = currentBlock.questions[currentQuestionIndex + 1];
             console.log(`No next active block, but found next question in current block: ${nextQuestion.question_id}`);
             goToQuestion(currentBlock.block_id, nextQuestion.question_id);
-            return;
+            return; // Importante uscire qui perché goToQuestion gestisce già il timeout
           }
           
           // Se arriviamo qui, siamo all'ultima domanda dell'ultimo blocco attivo
@@ -436,40 +639,56 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         });
         
         goToQuestion(found.block.block_id, found.question.question_id);
+        return; // Importante: qui usciamo perché goToQuestion già gestisce il timeout
       } else {
         console.log(`Question ID ${leadsTo} not found`);
       }
     }
     
-    // Reset navigating state in case navigation fails
-    setTimeout(() => {
+    // Reset navigating state if navigation failed
+    if (navigationTimeoutRef.current !== null) {
+      clearTimeout(navigationTimeoutRef.current);
+    }
+    
+    navigationTimeoutRef.current = setTimeout(() => {
       dispatch({ type: "SET_NAVIGATING", isNavigating: false });
-    }, 300);
-  }, [sortedBlocks, state.activeBlocks, goToQuestion, findQuestionById, state.activeQuestion.block_id]);
+      navigationTimeoutRef.current = null;
+      console.log("Navigation reset - no valid target found");
+    }, 1000) as unknown as number;
+  }, [sortedBlocks, state.activeBlocks, goToQuestion, findQuestionById, state.activeQuestion.block_id, state.isNavigating]);
 
   // Calcola il progresso complessivo del form
   const getProgress = useCallback(() => {
-    // Conta tutte le domande nei blocchi attivi (senza distinzione per inline)
+    // Conta tutte le domande nei blocchi attivi
     let totalQuestions = 0;
     let answeredCount = 0;
     
     for (const blockId of state.activeBlocks) {
       const block = blocks.find(b => b.block_id === blockId);
       if (block) {
-        // Conta tutte le domande per il totale
-        totalQuestions += block.questions.length;
-        
-        // Conta le domande già risposte in questo blocco
-        block.questions.forEach(q => {
-          if (state.answeredQuestions.has(q.question_id)) {
-            answeredCount++;
+        if (isStandardBlock(block)) {
+          // Per blocchi standard, conta tutte le domande
+          totalQuestions += block.questions.length;
+          
+          // Conta le domande già risposte in questo blocco
+          block.questions.forEach(q => {
+            if (state.answeredQuestions.has(q.question_id)) {
+              answeredCount++;
+            }
+          });
+        } else {
+          // Per repeating_group, conta 1 se c'è almeno un'entrata
+          const repeatingGroupEntries = state.repeatingGroups?.[block.repeating_id] || [];
+          totalQuestions += 1;
+          if (repeatingGroupEntries.length > 0) {
+            answeredCount += 1;
           }
-        });
+        }
       }
     }
     
     return totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
-  }, [state.activeBlocks, state.answeredQuestions, blocks]);
+  }, [state.activeBlocks, state.answeredQuestions, blocks, state.repeatingGroups]);
 
   // Nuova funzione per ottenere la cronologia di navigazione per una domanda specifica
   const getNavigationHistoryFor = useCallback((questionId: string): NavigationHistory | undefined => {
@@ -479,6 +698,85 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     // Trova la voce più recente che ha navigato a questa domanda
     return sortedHistory.find(item => item.to_question_id === questionId);
   }, [state.navigationHistory]);
+
+  // Nuove funzioni per la gestione dei repeatingGroups direttamente dal FormContext
+  
+  // Ottiene le voci di un gruppo ripetuto
+  const getRepeatingGroupEntries = useCallback((repeatingId: string): RepeatingGroupEntry[] => {
+    return state.repeatingGroups?.[repeatingId] || [];
+  }, [state.repeatingGroups]);
+
+  // Salva una voce in un gruppo ripetuto
+  const saveRepeatingGroupEntry = useCallback((
+    repeatingId: string,
+    entry: RepeatingGroupEntry,
+    index?: number
+  ): boolean => {
+    try {
+      const entries = state.repeatingGroups?.[repeatingId] || [];
+      let updatedEntries: RepeatingGroupEntry[];
+      
+      // Se non abbiamo già un ID, generiamo un ID unico
+      if (!entry.id) {
+        entry.id = `${repeatingId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      }
+      
+      // Se è specificato un indice, aggiorniamo quell'elemento, altrimenti aggiungiamo
+      if (index !== undefined && index >= 0 && index < entries.length) {
+        updatedEntries = [...entries];
+        updatedEntries[index] = entry;
+      } else {
+        updatedEntries = [...entries, entry];
+      }
+      
+      // Aggiorna lo stato interno del form
+      dispatch({
+        type: "UPDATE_REPEATING_GROUP",
+        repeatingId,
+        entries: updatedEntries
+      });
+      
+      return true;
+    } catch (error) {
+      console.error(`Failed to save entry for ${repeatingId}:`, error);
+      return false;
+    }
+  }, [state.repeatingGroups]);
+
+  // Elimina una voce da un gruppo ripetuto
+  const deleteRepeatingGroupEntry = useCallback((
+    repeatingId: string,
+    idOrIndex: string | number
+  ): boolean => {
+    try {
+      const entries = state.repeatingGroups?.[repeatingId] || [];
+      let updatedEntries: RepeatingGroupEntry[];
+      
+      if (typeof idOrIndex === 'number') {
+        // Elimina per indice
+        if (idOrIndex < 0 || idOrIndex >= entries.length) {
+          console.error(`Index ${idOrIndex} out of bounds for ${repeatingId}`);
+          return false;
+        }
+        updatedEntries = entries.filter((_, i) => i !== idOrIndex);
+      } else {
+        // Elimina per ID
+        updatedEntries = entries.filter(entry => entry.id !== idOrIndex);
+      }
+      
+      // Aggiorna lo stato interno del form
+      dispatch({
+        type: "UPDATE_REPEATING_GROUP",
+        repeatingId,
+        entries: updatedEntries
+      });
+      
+      return true;
+    } catch (error) {
+      console.error(`Failed to delete entry from ${repeatingId}:`, error);
+      return false;
+    }
+  }, [state.repeatingGroups]);
 
   return (
     <FormContext.Provider
@@ -493,7 +791,11 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         navigateToNextQuestion,
         getProgress,
         resetForm,
-        getNavigationHistoryFor
+        getNavigationHistoryFor,
+        // Aggiungi le nuove funzioni per i repeating groups
+        getRepeatingGroupEntries,
+        saveRepeatingGroupEntry,
+        deleteRepeatingGroupEntry
       }}
     >
       {children}

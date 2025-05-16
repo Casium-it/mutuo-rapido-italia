@@ -1,5 +1,22 @@
+import { Block, Question, StandardBlock, RepeatingGroupBlock } from "@/types/form";
 
-import { Block, Question } from "@/types/form";
+/**
+ * Verifica se un blocco è di tipo StandardBlock
+ * @param block Blocco da verificare
+ * @returns true se è un StandardBlock, false altrimenti
+ */
+const isStandardBlock = (block: Block): block is StandardBlock => {
+  return !('type' in block) || block.type !== 'repeating_group';
+};
+
+/**
+ * Verifica se un blocco è di tipo RepeatingGroupBlock
+ * @param block Blocco da verificare
+ * @returns true se è un RepeatingGroupBlock, false altrimenti
+ */
+const isRepeatingGroupBlock = (block: Block): block is RepeatingGroupBlock => {
+  return 'type' in block && block.type === 'repeating_group';
+};
 
 /**
  * Gets the previous question of a given question in a block
@@ -14,7 +31,7 @@ export const getPreviousQuestion = (
   questionId: string
 ): Question | undefined => {
   const currentBlock = blocks.find(block => block.block_id === blockId);
-  if (!currentBlock) return undefined;
+  if (!currentBlock || !isStandardBlock(currentBlock)) return undefined;
 
   const questionIndex = currentBlock.questions.findIndex(q => q.question_id === questionId);
   if (questionIndex <= 0) return undefined;
@@ -41,7 +58,7 @@ export const getChainOfInlineQuestions = (
   includeCurrent: boolean = false
 ): Question[] => {
   const currentBlock = blocks.find(block => block.block_id === blockId);
-  if (!currentBlock) return [];
+  if (!currentBlock || !isStandardBlock(currentBlock)) return [];
 
   const questionIndex = currentBlock.questions.findIndex(q => q.question_id === questionId);
   if (questionIndex < 0) return [];
