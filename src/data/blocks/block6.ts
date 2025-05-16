@@ -36,7 +36,7 @@ export const block6: Block = {
           placeholder_label: "Redditi aggiuntivi",
           add_block_label: "Aggiungi un altro reddito",
           create_block_copy: "reddito_secondario_dettagli",
-          leads_to: "next_block"
+          leads_to: "next_block" // Porta al prossimo blocco non invisibile quando l'utente ha finito
         }
       }
     }

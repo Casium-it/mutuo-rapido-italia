@@ -14,6 +14,21 @@ interface SubBlocksPlaceholderProps {
   placeholderLabel?: string;
 }
 
+/**
+ * SubBlocksPlaceholder - Un componente che permette all'utente di aggiungere più istanze di un blocco
+ * 
+ * Questo componente gestisce la creazione dinamica di blocchi copiati da un blocco sorgente,
+ * consentendo all'utente di aggiungere più istanze dello stesso tipo di informazione (ad es. redditi secondari).
+ * 
+ * Quando l'utente fa clic sul pulsante "Aggiungi", viene creata una copia del blocco e l'utente
+ * viene automaticamente indirizzato alla prima domanda del nuovo blocco.
+ * 
+ * @param questionId - L'ID della domanda contenente questo placeholder
+ * @param placeholderKey - La chiave del placeholder all'interno della domanda
+ * @param sourceBlockId - L'ID del blocco sorgente da copiare
+ * @param addBlockLabel - Testo personalizzato per il pulsante di aggiunta
+ * @param placeholderLabel - Etichetta opzionale per il placeholder
+ */
 export function SubBlocksPlaceholder({
   questionId,
   placeholderKey,
@@ -36,9 +51,21 @@ export function SubBlocksPlaceholder({
     .map(blockId => blocks.find(b => b.block_id === blockId))
     .filter(Boolean);
 
-  // Gestisci la creazione di una nuova copia del blocco
+  // Gestisci la creazione di una nuova copia del blocco e naviga direttamente ad essa
   const handleAddBlockCopy = () => {
-    copyBlock(sourceBlockId);
+    // Crea una nuova copia del blocco
+    const newBlockId = copyBlock(sourceBlockId);
+    
+    // Se la creazione è riuscita, naviga automaticamente alla prima domanda del nuovo blocco
+    if (newBlockId) {
+      // Trova il blocco appena creato
+      const newBlock = blocks.find(b => b.block_id === newBlockId);
+      if (newBlock && newBlock.questions.length > 0) {
+        // Naviga alla prima domanda del nuovo blocco
+        const firstQuestionId = newBlock.questions[0].question_id;
+        goToQuestion(newBlockId, firstQuestionId);
+      }
+    }
   };
 
   // Gestisci la navigazione a un blocco copiato

@@ -140,7 +140,7 @@ export const block6ToCopy: Block = {
           type: "input",
           input_type: "text",
           placeholder_label: "Anno o 'non lo so'",
-          leads_to: "gestione_redditi_secondari", // Ritorna al gestore principale dei redditi
+          leads_to: "gestione_redditi_secondari", // Ritorna alla gestione dei redditi secondari
           input_validation: "free_text"
         }
       }
