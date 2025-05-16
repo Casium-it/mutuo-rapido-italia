@@ -19,7 +19,7 @@ export const block6_repeating: RepeatingGroupBlock = {
     {
       question_id: "income_type",
       question_number: "13.1",
-      question_text: "Che tipo di reddito aggiuntivo hai?",
+      question_text: "Che tipo di reddito aggiuntivo hai? {{placeholder1}}",
       leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
