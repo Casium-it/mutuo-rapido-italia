@@ -83,7 +83,7 @@ export const useFormExtended = () => {
    * @returns true se siamo in un sottoblocco, false altrimenti
    */
   const isInSubblock = () => {
-    return formContext.isInSubblock();
+    return formContext.state.activeSubblock !== null && formContext.state.activeSubblock !== undefined;
   };
   
   /**

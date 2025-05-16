@@ -508,9 +508,10 @@ export function FormQuestion({ question }: FormQuestionProps) {
     });
   };
   
-  // Renderizza i sottoblocchi
+  // Renderizza i sottoblocchi - MODIFICA: rimuoviamo la condizione visibleOptions[key]
   const renderSubblockPlaceholder = (key: string, placeholder: any) => {
-    if (placeholder.type === "subblock" && visibleOptions[key]) {
+    if (placeholder.type === "subblock") {
+      // Rimuoviamo la condizione che richiede visibleOptions[key]
       return (
         <SubblockPlaceholder
           key={`subblock-${key}`}
@@ -563,9 +564,11 @@ export function FormQuestion({ question }: FormQuestionProps) {
         })}
       </div>
       
-      {/* Pulsante Avanti - mostrato solo se ci sono risposte valide e tutti gli input hanno contenuto valido */}
+      {/* Pulsante Avanti - mostrato solo se ci sono risposte valide e non ci sono sottoblocchi visibili */}
       {hasValidResponses && !Object.keys(question.placeholders).some(key => 
-        question.placeholders[key].type === "subblock" && visibleOptions[key]
+        question.placeholders[key].type === "subblock" && 
+        state.activeSubblock?.question_id === question.question_id &&
+        state.activeSubblock?.placeholder_key === key
       ) && (
         <div className="mt-8">
           <Button

@@ -19,6 +19,8 @@ export function SubblockInstanceForm({
   onSave,
   onCancel
 }: SubblockInstanceFormProps) {
+  console.log("SubblockInstanceForm: rendering with questions", questions.length);
+  
   const [responses, setResponses] = useState<FormResponse>(initialResponses);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [validationErrors, setValidationErrors] = useState<Record<string, Record<string, boolean>>>({});
@@ -30,10 +32,14 @@ export function SubblockInstanceForm({
     if (Object.keys(initialResponses).length > 0) {
       setResponses(initialResponses);
     }
+    
+    console.log("SubblockInstanceForm: initialized with responses", initialResponses);
   }, [initialResponses]);
   
   // Gestisce il cambio di risposta
   const handleResponseChange = (questionId: string, placeholderKey: string, value: string | string[]) => {
+    console.log("SubblockInstanceForm: handleResponseChange", questionId, placeholderKey, value);
+    
     setResponses(prev => {
       const newResponses = { ...prev };
       if (!newResponses[questionId]) {
@@ -96,6 +102,7 @@ export function SubblockInstanceForm({
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else {
       // Se siamo all'ultima domanda, salviamo l'istanza
+      console.log("SubblockInstanceForm: saving instance with responses", responses);
       onSave(responses);
     }
   };
@@ -181,8 +188,11 @@ export function SubblockInstanceForm({
   };
   
   if (!currentQuestion) {
+    console.log("SubblockInstanceForm: no current question available");
     return null;
   }
+  
+  console.log("SubblockInstanceForm: rendering question", currentQuestion.question_id);
   
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4">

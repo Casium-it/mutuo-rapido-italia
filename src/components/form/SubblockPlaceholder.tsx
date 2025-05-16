@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { useForm } from "@/contexts/FormContext";
 import { SubblockInstanceCard } from "./SubblockInstanceCard";
 import { SubblockInstanceForm } from "./SubblockInstanceForm";
@@ -47,6 +47,7 @@ export function SubblockPlaceholder({ questionId, placeholderKey, placeholder, o
   
   // Gestisce l'aggiunta di una nuova istanza
   const handleAddInstance = () => {
+    console.log("SubblockPlaceholder: handleAddInstance called");
     startSubblockCreation(questionId, placeholderKey);
   };
   
