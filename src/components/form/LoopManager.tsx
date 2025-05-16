@@ -1,9 +1,17 @@
+
 import React, { useEffect } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { Button } from "@/components/ui/button";
 import { RepeatingGroupEntry } from "@/types/form";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+
+// Logger per debugging, visibile solo in ambiente di sviluppo
+const debugLog = (message: string, ...data: any[]) => {
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[LoopManager] ${message}`, ...data);
+  }
+};
 
 type LoopManagerProps = {
   loopId: string;
@@ -19,16 +27,21 @@ export function LoopManager({ loopId, addLeadsTo, nextLeadsTo }: LoopManagerProp
     editLoopEntry, 
     deleteLoopEntry,
     getLoopEntries,
-    saveCurrentLoopEntry
+    saveCurrentLoopEntry,
+    getCurrentLoopState
   } = useFormExtended();
   
+  // Ottieni lo stato corrente del loop e le voci
+  const currentLoopState = getCurrentLoopState();
   const entries = getLoopEntries(loopId) || [];
   
   useEffect(() => {
-    // Log quando il componente viene montato o quando cambiano le entries
-    console.log(`[LoopManager] ${loopId} - Entries found:`, entries);
-    console.log(`[LoopManager] Current repeatingGroups state:`, state.repeatingGroups);
-  }, [loopId, entries, state.repeatingGroups]);
+    // Registra lo stato del loop quando il componente viene montato o quando cambiano le entries
+    debugLog(`Componente montato per il loop ${loopId}`, {
+      entries: entries.length,
+      currentLoopState
+    });
+  }, [loopId, entries.length, currentLoopState]);
 
   // Funzione per creare un sommario leggibile di una voce
   const createEntrySummary = (entry: RepeatingGroupEntry): string => {
@@ -87,47 +100,66 @@ export function LoopManager({ loopId, addLeadsTo, nextLeadsTo }: LoopManagerProp
 
   // Aggiungi una nuova voce
   const handleAddEntry = () => {
-    console.log("[LoopManager] Starting new loop entry for", loopId);
+    debugLog("Avvio nuova voce del loop", loopId);
+    
+    // Assicurati che qualsiasi voce corrente sia salvata prima di iniziarne una nuova
+    if (currentLoopState) {
+      saveCurrentLoopEntry();
+    }
+    
+    // Avvia una nuova voce e naviga alla prima domanda del loop
     startNewLoopEntry(loopId);
     navigateToNextQuestion(state.activeQuestion.question_id, addLeadsTo);
   };
 
   // Modifica una voce esistente
   const handleEditEntry = (entryIndex: number) => {
-    console.log("[LoopManager] Editing loop entry", entryIndex, "for", loopId);
+    debugLog(`Modifica voce del loop ${entryIndex}`, loopId);
+    
+    // Assicurati che qualsiasi voce corrente sia salvata prima di modificarne un'altra
+    if (currentLoopState) {
+      saveCurrentLoopEntry();
+    }
+    
     editLoopEntry(loopId, entryIndex);
     navigateToNextQuestion(state.activeQuestion.question_id, addLeadsTo);
   };
 
   // Elimina una voce
   const handleDeleteEntry = (entryIndex: number) => {
-    console.log("[LoopManager] Deleting loop entry", entryIndex, "for", loopId);
+    debugLog(`Eliminazione voce del loop ${entryIndex}`, loopId);
     deleteLoopEntry(loopId, entryIndex);
   };
 
   // Continua al prossimo blocco
   const handleContinue = () => {
-    console.log("[LoopManager] Continuing to next block:", nextLeadsTo);
+    debugLog(`Prosecuzione al blocco successivo`, nextLeadsTo);
+    
+    // Assicurati che qualsiasi voce corrente sia salvata prima di continuare
+    if (currentLoopState) {
+      saveCurrentLoopEntry();
+    }
+    
     navigateToNextQuestion(state.activeQuestion.question_id, nextLeadsTo);
   };
 
-  // Componente di debug per visualizzare lo stato del loop (solo in sviluppo)
+  // Componente di debug visualizzabile solo in ambiente di sviluppo
   const DebugInfo = () => {
     if (process.env.NODE_ENV !== 'development') return null;
     
     return (
       <div className="mt-4 p-2 border border-dashed border-gray-300 rounded text-xs bg-gray-50">
-        <h5 className="font-bold text-gray-700">Debug - Loop: {loopId}</h5>
-        <div>{entries.length} entries in repeatingGroups</div>
-        <div>Current loop state: {state.currentLoop ? 'Active' : 'Inactive'}</div>
+        <h5 className="font-bold text-gray-700">Informazioni di debug - Loop: {loopId}</h5>
+        <div>{entries.length} voci in repeatingGroups</div>
+        <div>Stato del loop corrente: {currentLoopState ? 'Attivo' : 'Inattivo'}</div>
         <div>
           <Button 
             variant="outline" 
             size="sm" 
             className="text-xs mt-1 h-6"
-            onClick={() => console.log('Current state:', state)}
+            onClick={() => debugLog('Stato corrente:', state)}
           >
-            Log state
+            Mostra stato
           </Button>
         </div>
       </div>
@@ -196,7 +228,7 @@ export function LoopManager({ loopId, addLeadsTo, nextLeadsTo }: LoopManagerProp
         </Button>
       </div>
       
-      {/* Debug info */}
+      {/* Debug info solo in ambiente di sviluppo */}
       <DebugInfo />
     </div>
   );

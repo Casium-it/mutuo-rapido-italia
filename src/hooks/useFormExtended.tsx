@@ -8,17 +8,24 @@ import {
 import { Question, RepeatingGroupEntry } from "@/types/form";
 import { v4 as uuidv4 } from 'uuid';
 
+// Logger per debugging, visibile solo in ambiente di sviluppo
+const debugLog = (message: string, ...data: any[]) => {
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[useFormExtended] ${message}`, ...data);
+  }
+};
+
 /**
- * Extended hook for the form context with additional functionality
+ * Hook esteso per il contesto del form con funzionalità aggiuntive
  */
 export const useFormExtended = () => {
   const formContext = useOriginalForm();
   
   /**
-   * Gets the text of the previous question with responses filled in
-   * @param blockId Current block ID
-   * @param questionId Current question ID
-   * @returns The previous question's text with responses or empty string
+   * Ottiene il testo della domanda precedente con le risposte inserite
+   * @param blockId ID del blocco corrente
+   * @param questionId ID della domanda corrente
+   * @returns Il testo della domanda precedente con risposte o stringa vuota
    */
   const getPreviousQuestionText = (blockId: string, questionId: string): string => {
     const previousQuestion = getPreviousQuestionUtil(
@@ -33,20 +40,20 @@ export const useFormExtended = () => {
   };
   
   /**
-   * Gets the previous question object
-   * @param blockId Current block ID
-   * @param questionId Current question ID
-   * @returns The previous question object or undefined
+   * Ottiene l'oggetto della domanda precedente
+   * @param blockId ID del blocco corrente
+   * @param questionId ID della domanda corrente
+   * @returns L'oggetto della domanda precedente o undefined
    */
   const getPreviousQuestion = (blockId: string, questionId: string) => {
     return getPreviousQuestionUtil(formContext.blocks, blockId, questionId);
   };
 
   /**
-   * Gets all previous inline questions in a chain, starting from the current question
-   * @param blockId Current block ID
-   * @param questionId Current question ID
-   * @returns Array of previous questions in the chain, ordered from first to last
+   * Ottiene tutte le domande inline precedenti in una catena, a partire dalla domanda corrente
+   * @param blockId ID del blocco corrente
+   * @param questionId ID della domanda corrente
+   * @returns Array di domande precedenti nella catena, ordinate dalla prima all'ultima
    */
   const getInlineQuestionChain = (blockId: string, questionId: string): Question[] => {
     // Se la domanda è inline, troviamo da dove viene l'utente attraverso la cronologia
@@ -80,50 +87,59 @@ export const useFormExtended = () => {
   };
 
   /**
-   * Get entries for a specific loop
-   * @param loopId ID of the loop
-   * @returns Array of entries or undefined
+   * Ottiene le voci per un loop specifico
+   * @param loopId ID del loop
+   * @returns Array di voci o undefined
    */
   const getLoopEntries = (loopId: string): RepeatingGroupEntry[] | undefined => {
-    return formContext.state.repeatingGroups?.[loopId]?.entries;
+    try {
+      return formContext.state.repeatingGroups?.[loopId]?.entries || [];
+    } catch (error) {
+      debugLog(`Errore nell'ottenere le entries del loop ${loopId}`, error);
+      return [];
+    }
   };
   
   /**
-   * Start a new entry in a loop
-   * @param loopId ID of the loop
+   * Inizia una nuova voce in un loop
+   * @param loopId ID del loop
    */
   const startNewLoopEntry = (loopId: string) => {
+    debugLog(`Avvio nuova voce del loop per ${loopId}`);
     formContext.startLoopEntry(loopId);
   };
   
   /**
-   * Edit an existing entry in a loop
-   * @param loopId ID of the loop
-   * @param entryIndex Index of the entry to edit
+   * Modifica una voce esistente in un loop
+   * @param loopId ID del loop
+   * @param entryIndex Indice della voce da modificare
    */
   const editLoopEntry = (loopId: string, entryIndex: number) => {
+    debugLog(`Modifica voce del loop ${entryIndex} per ${loopId}`);
     formContext.editLoopEntry(loopId, entryIndex);
   };
   
   /**
-   * Delete an entry from a loop
-   * @param loopId ID of the loop
-   * @param entryIndex Index of the entry to delete
+   * Elimina una voce da un loop
+   * @param loopId ID del loop
+   * @param entryIndex Indice della voce da eliminare
    */
   const deleteLoopEntry = (loopId: string, entryIndex: number) => {
+    debugLog(`Eliminazione voce del loop ${entryIndex} per ${loopId}`);
     formContext.deleteLoopEntry(loopId, entryIndex);
   };
   
   /**
-   * Save the current loop entry
+   * Salva la voce corrente del loop
    */
   const saveCurrentLoopEntry = () => {
+    debugLog(`Salvataggio della voce corrente del loop`);
     formContext.saveCurrentLoopEntry();
   };
   
   /**
-   * Check if the current question is a loop manager
-   * @returns Boolean indicating if the current question is a loop manager
+   * Controlla se la domanda corrente è un gestore di loop
+   * @returns Booleano che indica se la domanda corrente è un gestore di loop
    */
   const isLoopManager = (): boolean => {
     const { block_id, question_id } = formContext.state.activeQuestion;
@@ -135,8 +151,8 @@ export const useFormExtended = () => {
   };
   
   /**
-   * Get loop manager information for the current question
-   * @returns Object with loop manager info or null
+   * Ottiene le informazioni del gestore di loop per la domanda corrente
+   * @returns Oggetto con le informazioni del gestore di loop o null
    */
   const getLoopManagerInfo = () => {
     const { block_id, question_id } = formContext.state.activeQuestion;
@@ -154,6 +170,37 @@ export const useFormExtended = () => {
     
     return null;
   };
+
+  /**
+   * Verifica se una domanda fa parte di un loop specifico
+   * @param questionId ID della domanda
+   * @param loopId ID del loop (opzionale)
+   * @returns Booleano che indica se la domanda fa parte del loop
+   */
+  const isQuestionInLoop = (questionId: string, loopId?: string): boolean => {
+    // Trova la domanda nei blocchi
+    for (const block of formContext.blocks) {
+      for (const question of block.questions) {
+        if (question.question_id === questionId) {
+          // Se loopId è specificato, controlla che corrisponda
+          if (loopId) {
+            return question.loop === loopId;
+          }
+          // Altrimenti controlla solo se fa parte di un qualsiasi loop
+          return !!question.loop;
+        }
+      }
+    }
+    return false;
+  };
+  
+  /**
+   * Ottiene lo stato corrente del loop
+   * @returns L'ID del loop corrente o null se non è attivo nessun loop
+   */
+  const getCurrentLoopState = () => {
+    return formContext.state.currentLoop;
+  };
   
   return {
     ...formContext,
@@ -166,6 +213,8 @@ export const useFormExtended = () => {
     deleteLoopEntry,
     saveCurrentLoopEntry,
     isLoopManager,
-    getLoopManagerInfo
+    getLoopManagerInfo,
+    isQuestionInLoop,
+    getCurrentLoopState
   };
 };
