@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback } from "react";
-import { Block, FormState, FormResponse, NavigationHistory, RepeatingGroupEntry, Question } from "@/types/form";
+import { Block, FormState, FormResponse, NavigationHistory } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { v4 as uuidv4 } from "uuid";
 
 type FormContextType = {
   state: FormState;
@@ -15,11 +14,6 @@ type FormContextType = {
   getProgress: () => number;
   resetForm: () => void;
   getNavigationHistoryFor: (questionId: string) => NavigationHistory | undefined;
-  startLoopEntry: (loopId: string) => void;
-  editLoopEntry: (loopId: string, entryIndex: number) => void;
-  deleteLoopEntry: (loopId: string, entryIndex: number) => void;
-  saveCurrentLoopEntry: () => void;
-  cancelCurrentLoopEntry: () => void;
 };
 
 type Action =
@@ -30,12 +24,7 @@ type Action =
   | { type: "SET_FORM_STATE"; state: Partial<FormState> }
   | { type: "RESET_FORM" }
   | { type: "SET_NAVIGATING"; isNavigating: boolean }
-  | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory }
-  | { type: "START_LOOP_ENTRY"; loopId: string }
-  | { type: "EDIT_LOOP_ENTRY"; loopId: string; entryIndex: number }
-  | { type: "DELETE_LOOP_ENTRY"; loopId: string; entryIndex: number }
-  | { type: "SAVE_LOOP_ENTRY" }
-  | { type: "CANCEL_LOOP_ENTRY" };
+  | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory };
 
 const initialState: FormState = {
   activeBlocks: [],
@@ -46,19 +35,10 @@ const initialState: FormState = {
   responses: {},
   answeredQuestions: new Set(),
   isNavigating: false,
-  navigationHistory: [],
-  repeatingGroups: {},
-  currentLoop: null
+  navigationHistory: []
 };
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
-
-// Logger per debugging, visibile solo in ambiente di sviluppo
-const debugLog = (message: string, ...data: any[]) => {
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`[FormContext] ${message}`, ...data);
-  }
-};
 
 function formReducer(state: FormState, action: Action): FormState {
   switch (action.type) {
@@ -70,57 +50,17 @@ function formReducer(state: FormState, action: Action): FormState {
           question_id: action.question_id
         }
       };
-      
     case "SET_RESPONSE": {
-      // Se siamo in un loop, salviamo le risposte temporanee nel currentLoop
-      if (state.currentLoop) {
-        debugLog("Salvataggio risposta nel currentLoop", {
-          loopId: state.currentLoop.loop_id,
-          question: action.question_id,
-          placeholder: action.placeholder_key,
-          value: action.value
-        });
-        
-        const tempResponses = { 
-          ...(state.currentLoop.tempResponses || {}) 
-        };
-        
-        if (!tempResponses[action.question_id]) {
-          tempResponses[action.question_id] = {};
-        }
-        
-        tempResponses[action.question_id][action.placeholder_key] = action.value;
-        
-        return {
-          ...state,
-          currentLoop: {
-            ...state.currentLoop,
-            tempResponses
-          }
-        };
-      }
-      
-      // Altrimenti, salviamo le risposte normalmente
-      debugLog("Salvataggio risposta normale", {
-        question: action.question_id,
-        placeholder: action.placeholder_key,
-        value: action.value
-      });
-      
       const newResponses = { ...state.responses };
-      
       if (!newResponses[action.question_id]) {
         newResponses[action.question_id] = {};
       }
-      
       newResponses[action.question_id][action.placeholder_key] = action.value;
-      
       return {
         ...state,
         responses: newResponses
       };
     }
-    
     case "ADD_ACTIVE_BLOCK": {
       if (state.activeBlocks.includes(action.block_id)) {
         return state;
@@ -130,7 +70,6 @@ function formReducer(state: FormState, action: Action): FormState {
         activeBlocks: [...state.activeBlocks, action.block_id]
       };
     }
-    
     case "MARK_QUESTION_ANSWERED": {
       const answeredQuestions = new Set(state.answeredQuestions);
       answeredQuestions.add(action.question_id);
@@ -139,31 +78,26 @@ function formReducer(state: FormState, action: Action): FormState {
         answeredQuestions
       };
     }
-    
     case "SET_FORM_STATE": {
       return {
         ...state,
         ...action.state
       };
     }
-    
     case "RESET_FORM": {
       return {
         ...initialState,
         activeBlocks: state.activeBlocks.filter(blockId => 
           initialState.activeBlocks.includes(blockId)),
-        navigationHistory: [],
-        repeatingGroups: {} // Reset anche i repeating groups
+        navigationHistory: [] // Reset anche la cronologia di navigazione
       };
     }
-    
     case "SET_NAVIGATING": {
       return {
         ...state,
         isNavigating: action.isNavigating
       };
     }
-    
     case "ADD_NAVIGATION_HISTORY": {
       // Filtriamo la cronologia per rimuovere eventuali duplicati
       const filteredHistory = state.navigationHistory.filter(item => 
@@ -176,161 +110,6 @@ function formReducer(state: FormState, action: Action): FormState {
         navigationHistory: [...filteredHistory, action.history]
       };
     }
-    
-    case "START_LOOP_ENTRY": {
-      debugLog(`Avvio nuovo loop entry per ${action.loopId}`);
-      
-      return {
-        ...state,
-        currentLoop: {
-          loop_id: action.loopId,
-          tempResponses: {}
-        }
-      };
-    }
-    
-    case "EDIT_LOOP_ENTRY": {
-      const loopId = action.loopId;
-      const entryIndex = action.entryIndex;
-      
-      // Se il gruppo di ripetizione non esiste o l'indice non è valido, non fare nulla
-      if (!state.repeatingGroups[loopId] || 
-          !state.repeatingGroups[loopId].entries || 
-          entryIndex >= state.repeatingGroups[loopId].entries.length) {
-        debugLog(`Tentativo di modifica di un'entry non valida`, { loopId, entryIndex });
-        return state;
-      }
-      
-      // Ottieni l'elemento da modificare
-      const entry = state.repeatingGroups[loopId].entries[entryIndex];
-      debugLog(`Modifica di entry esistente`, { loopId, entryIndex, entry });
-      
-      return {
-        ...state,
-        currentLoop: {
-          loop_id: loopId,
-          tempResponses: { ...entry.responses }
-        },
-        repeatingGroups: {
-          ...state.repeatingGroups,
-          [loopId]: {
-            ...state.repeatingGroups[loopId],
-            currentEditIndex: entryIndex
-          }
-        }
-      };
-    }
-    
-    case "DELETE_LOOP_ENTRY": {
-      const loopId = action.loopId;
-      const entryIndex = action.entryIndex;
-      
-      // Se il gruppo di ripetizione non esiste o l'indice non è valido, non fare nulla
-      if (!state.repeatingGroups[loopId] || 
-          !state.repeatingGroups[loopId].entries || 
-          entryIndex >= state.repeatingGroups[loopId].entries.length) {
-        debugLog(`Tentativo di eliminazione di un'entry non valida`, { loopId, entryIndex });
-        return state;
-      }
-      
-      debugLog(`Eliminazione di entry`, { loopId, entryIndex });
-      
-      // Crea una nuova array di entries senza l'elemento rimosso
-      const newEntries = [
-        ...state.repeatingGroups[loopId].entries.slice(0, entryIndex),
-        ...state.repeatingGroups[loopId].entries.slice(entryIndex + 1)
-      ];
-      
-      return {
-        ...state,
-        repeatingGroups: {
-          ...state.repeatingGroups,
-          [loopId]: {
-            ...state.repeatingGroups[loopId],
-            entries: newEntries
-          }
-        }
-      };
-    }
-    
-    case "SAVE_LOOP_ENTRY": {
-      // Se non siamo in un loop, non fare nulla
-      if (!state.currentLoop) {
-        debugLog(`Tentativo di salvare un'entry di loop, ma currentLoop è null`);
-        return state;
-      }
-      
-      const loopId = state.currentLoop.loop_id;
-      const tempResponses = state.currentLoop.tempResponses;
-      const currentEditIndex = state.repeatingGroups[loopId]?.currentEditIndex;
-      
-      debugLog(`Salvataggio entry di loop`, {
-        loopId,
-        tempResponses,
-        inModifica: currentEditIndex !== undefined && currentEditIndex !== null,
-        indiceModifica: currentEditIndex
-      });
-      
-      // Inizializza il gruppo repeating se non esiste
-      const repeatingGroup = state.repeatingGroups[loopId] || { entries: [] };
-      let newEntries: RepeatingGroupEntry[];
-      
-      if (currentEditIndex !== undefined && currentEditIndex !== null) {
-        // Modifica un elemento esistente
-        newEntries = [...repeatingGroup.entries];
-        newEntries[currentEditIndex] = {
-          ...newEntries[currentEditIndex],
-          responses: { ...tempResponses }
-        };
-        debugLog(`Modificata entry esistente in posizione ${currentEditIndex}`);
-      } else {
-        // Aggiungi un nuovo elemento
-        newEntries = [
-          ...repeatingGroup.entries,
-          {
-            id: uuidv4(),
-            responses: { ...tempResponses }
-          }
-        ];
-        debugLog(`Aggiunta nuova entry al loop`);
-      }
-      
-      return {
-        ...state,
-        currentLoop: null, // Esci dalla modalità loop
-        repeatingGroups: {
-          ...state.repeatingGroups,
-          [loopId]: {
-            entries: newEntries,
-            currentEditIndex: null // Resetta l'indice di modifica
-          }
-        }
-      };
-    }
-    
-    case "CANCEL_LOOP_ENTRY": {
-      // Se non siamo in un loop, non fare nulla
-      if (!state.currentLoop) {
-        debugLog(`Tentativo di cancellare un'entry di loop, ma currentLoop è null`);
-        return state;
-      }
-      
-      const loopId = state.currentLoop.loop_id;
-      debugLog(`Cancellazione entry di loop per ${loopId}`);
-      
-      return {
-        ...state,
-        currentLoop: null, // Esci dalla modalità loop
-        repeatingGroups: {
-          ...state.repeatingGroups,
-          [loopId]: {
-            ...state.repeatingGroups[loopId],
-            currentEditIndex: null // Resetta l'indice di modifica
-          }
-        }
-      };
-    }
-    
     default:
       return state;
   }
@@ -346,8 +125,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   
   const [state, dispatch] = useReducer(formReducer, {
     ...initialState,
-    activeBlocks: sortedBlocks.filter(b => b.default_active).map(b => b.block_id),
-    repeatingGroups: {}
+    activeBlocks: sortedBlocks.filter(b => b.default_active).map(b => b.block_id)
   });
 
   // Inizializza o aggiorna i blocchi attivi dal JSON
@@ -437,14 +215,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
           parsedState.answeredQuestions = new Set();
         }
         
-        // Assicurati che repeatingGroups esista
-        if (!parsedState.repeatingGroups) {
-          parsedState.repeatingGroups = {};
-        }
-        
-        // Resetta lo stato del currentLoop quando carichiamo dallo storage
-        parsedState.currentLoop = null;
-        
         // Applica lo stato salvato
         dispatch({ type: "SET_FORM_STATE", state: parsedState });
         
@@ -474,16 +244,9 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       // Converti Set a array per JSON serialization
       const stateToSave = {
         ...state,
-        answeredQuestions: Array.from(state.answeredQuestions),
-        // Assicurati che repeatingGroups sia sempre incluso nel salvataggio
-        repeatingGroups: state.repeatingGroups || {}
+        answeredQuestions: Array.from(state.answeredQuestions)
       };
-      
-      // Non salvare il currentLoop in localStorage, causerebbe problemi
-      const { currentLoop, ...stateWithoutCurrentLoop } = stateToSave;
-      
-      debugLog("Salvataggio stato nel localStorage", stateWithoutCurrentLoop);
-      localStorage.setItem(`form-state-${params.blockType}`, JSON.stringify(stateWithoutCurrentLoop));
+      localStorage.setItem(`form-state-${params.blockType}`, JSON.stringify(stateToSave));
     }
   }, [state, params.blockType]);
 
@@ -560,16 +323,9 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   }, []);
 
   const getResponse = useCallback((question_id: string, placeholder_key: string) => {
-    // Se siamo in un loop, prendi la risposta dal currentLoop
-    if (state.currentLoop?.tempResponses && state.currentLoop.tempResponses[question_id]) {
-      debugLog(`Ottenuta risposta da currentLoop per ${question_id}.${placeholder_key}`);
-      return state.currentLoop.tempResponses[question_id][placeholder_key];
-    }
-    
-    // Altrimenti, prendi dalle risposte normali
     if (!state.responses[question_id]) return undefined;
     return state.responses[question_id][placeholder_key];
-  }, [state.responses, state.currentLoop]);
+  }, [state.responses]);
 
   const addActiveBlock = useCallback((block_id: string) => {
     dispatch({ type: "ADD_ACTIVE_BLOCK", block_id });
@@ -579,8 +335,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return state.answeredQuestions.has(question_id);
   }, [state.answeredQuestions]);
 
-  const findQuestionById = useCallback((questionId: string): { block: Block; question: Question } | null => {
-    for (const block of sortedBlocks) {
+  const findQuestionById = useCallback((questionId: string): { block: Block; question: any } | null => {
+    for (const block of sortedBlocks) { // Usa blocchi ordinati
       for (const question of block.questions) {
         if (question.question_id === questionId) {
           return { block, question };
@@ -590,73 +346,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return null;
   }, [sortedBlocks]);
 
-  // Nuove funzioni per gestire i loop
-  const startLoopEntry = useCallback((loopId: string) => {
-    debugLog(`Avvio nuova voce del loop ${loopId}`);
-    dispatch({ type: "START_LOOP_ENTRY", loopId });
-  }, []);
-
-  const editLoopEntry = useCallback((loopId: string, entryIndex: number) => {
-    debugLog(`Modifica voce del loop ${loopId} all'indice ${entryIndex}`);
-    dispatch({ type: "EDIT_LOOP_ENTRY", loopId, entryIndex });
-  }, []);
-
-  const deleteLoopEntry = useCallback((loopId: string, entryIndex: number) => {
-    debugLog(`Eliminazione voce del loop ${loopId} all'indice ${entryIndex}`);
-    dispatch({ type: "DELETE_LOOP_ENTRY", loopId, entryIndex });
-  }, []);
-
-  const saveCurrentLoopEntry = useCallback(() => {
-    debugLog(`Salvataggio della voce corrente del loop`);
-    dispatch({ type: "SAVE_LOOP_ENTRY" });
-  }, []);
-
-  const cancelCurrentLoopEntry = useCallback(() => {
-    debugLog(`Annullamento della voce corrente del loop`);
-    dispatch({ type: "CANCEL_LOOP_ENTRY" });
-  }, []);
-
-  // Funzioni ausiliarie per i loop
-  const findLoopManagerQuestion = useCallback((loopId: string): Question | undefined => {
-    for (const block of sortedBlocks) {
-      for (const question of block.questions) {
-        if (question.loop_manager && question.loop_id === loopId) {
-          return question;
-        }
-      }
-    }
-    return undefined;
-  }, [sortedBlocks]);
-
-  // Funzione migliorata per determinare se una domanda è l'ultima in un loop
-  const isLastQuestionInLoop = useCallback((loopId: string, questionId: string): boolean => {
-    // Trova tutte le domande nel loop specificato
-    const questionsInLoop: Question[] = [];
-    
-    for (const block of sortedBlocks) {
-      for (const question of block.questions) {
-        if (question.loop === loopId) {
-          questionsInLoop.push(question);
-        }
-      }
-    }
-    
-    if (questionsInLoop.length === 0) {
-      return false;
-    }
-    
-    // Ordina le domande per numero
-    questionsInLoop.sort((a, b) => {
-      const aNum = parseFloat(a.question_number.replace(/[^0-9.]/g, ''));
-      const bNum = parseFloat(b.question_number.replace(/[^0-9.]/g, ''));
-      return aNum - bNum;
-    });
-    
-    // Verifica se la domanda specificata è l'ultima
-    const lastQuestion = questionsInLoop[questionsInLoop.length - 1];
-    return lastQuestion.question_id === questionId;
-  }, [sortedBlocks]);
-
   const navigateToNextQuestion = useCallback((currentQuestionId: string, leadsTo: string) => {
     // Salva la domanda corrente prima di navigare
     const currentBlockId = state.activeQuestion.block_id;
@@ -664,80 +353,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     // Set navigating state when navigating
     dispatch({ type: "SET_NAVIGATING", isNavigating: true });
     
-    // Debug
-    debugLog(`Navigazione da ${currentQuestionId} a ${leadsTo}`);
-    
-    // Trova la domanda corrente
-    const currentQuestionData = findQuestionById(currentQuestionId);
-    const currentQuestion = currentQuestionData?.question;
-    
-    // Debug
-    debugLog("Domanda corrente:", currentQuestion);
-    debugLog("Stato corrente del loop:", state.currentLoop);
-    
-    // Gestione speciale per i loop
-    if (currentQuestion) {
-      // Verifica se la domanda corrente fa parte di un loop
-      const currentLoopId = currentQuestion.loop;
-      
-      // Se siamo in un loop
-      if (currentLoopId && state.currentLoop) {
-        debugLog(`La domanda corrente fa parte del loop: ${currentLoopId}`);
-        
-        // Trova la domanda di destinazione
-        let targetQuestion: Question | undefined;
-        
-        if (leadsTo !== "next_block") {
-          const targetQuestionData = findQuestionById(leadsTo);
-          targetQuestion = targetQuestionData?.question;
-          debugLog("Domanda di destinazione:", targetQuestion);
-        }
-        
-        // Caso 1: Stiamo navigando all'ultima domanda del loop
-        if (targetQuestion && targetQuestion.loop === currentLoopId && isLastQuestionInLoop(currentLoopId, targetQuestion.question_id)) {
-          debugLog("Navigazione all'ultima domanda del loop");
-          // Continua normalmente alla domanda, l'eventuale ritorno al loop manager è gestito con la risposta all'ultima domanda
-        }
-        // Caso 2: Stiamo uscendo dal loop
-        else if (!targetQuestion || !targetQuestion.loop || targetQuestion.loop !== currentLoopId) {
-          debugLog(`Uscita dal loop ${currentLoopId}`);
-          
-          // Se stiamo tornando al loop manager, dobbiamo salvare l'entry
-          const loopManagerQuestion = findLoopManagerQuestion(currentLoopId);
-          
-          if (loopManagerQuestion && loopManagerQuestion.question_id === leadsTo) {
-            debugLog("Ritorno al loop manager, salvataggio entry");
-            saveCurrentLoopEntry();
-          } 
-          // Se stiamo uscendo definitivamente dal loop o andando a una domanda di un altro loop
-          else {
-            debugLog("Uscita definitiva dal loop o cambio loop");
-            saveCurrentLoopEntry();
-          }
-        }
-        // Caso 3: Stiamo navigando all'interno dello stesso loop
-        else {
-          debugLog("Navigazione all'interno dello stesso loop");
-          // Nessuna operazione speciale richiesta
-        }
-      }
-      // Se la domanda corrente è un loop manager
-      else if (currentQuestion.loop_manager) {
-        const loopId = currentQuestion.loop_id;
-        
-        if (loopId && leadsTo === currentQuestion.add_leads_to) {
-          debugLog("Avvio di una nuova voce del loop dal loop manager");
-          // La funzione startNewLoopEntry è già stata chiamata dal componente LoopManager
-          // Non serve richiamarla qui
-        }
-      }
-    }
-    
-    // Normale logica di navigazione
     if (leadsTo === "next_block") {
-      // Trova il prossimo blocco attivo
-      // ... keep existing code (next_block navigation)
-      
       // Trova il blocco corrente
       let currentBlock = null;
       let currentBlockIndex = -1;
@@ -805,7 +421,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       // Naviga a una domanda specifica
       const found = findQuestionById(leadsTo);
       if (found) {
-        debugLog(`Navigazione alla domanda ${found.question.question_id} nel blocco ${found.block.block_id}`);
+        console.log(`Navigating to specific question: ${found.question.question_id} in block ${found.block.block_id}`);
         
         // Aggiungi la navigazione alla cronologia
         dispatch({ 
@@ -819,10 +435,9 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
           }
         });
         
-        // Ora naviga alla domanda
         goToQuestion(found.block.block_id, found.question.question_id);
       } else {
-        debugLog(`Domanda con ID ${leadsTo} non trovata`);
+        console.log(`Question ID ${leadsTo} not found`);
       }
     }
     
@@ -830,17 +445,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     setTimeout(() => {
       dispatch({ type: "SET_NAVIGATING", isNavigating: false });
     }, 300);
-  }, [
-    sortedBlocks, 
-    state.activeBlocks, 
-    goToQuestion, 
-    findQuestionById, 
-    state.activeQuestion.block_id,
-    state.currentLoop,
-    findLoopManagerQuestion,
-    saveCurrentLoopEntry,
-    isLastQuestionInLoop
-  ]);
+  }, [sortedBlocks, state.activeBlocks, goToQuestion, findQuestionById, state.activeQuestion.block_id]);
 
   // Calcola il progresso complessivo del form
   const getProgress = useCallback(() => {
@@ -866,7 +471,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
   }, [state.activeBlocks, state.answeredQuestions, blocks]);
 
-  // Funzione per ottenere la cronologia di navigazione per una domanda specifica
+  // Nuova funzione per ottenere la cronologia di navigazione per una domanda specifica
   const getNavigationHistoryFor = useCallback((questionId: string): NavigationHistory | undefined => {
     // Ordina la cronologia dal più recente al meno recente
     const sortedHistory = [...state.navigationHistory].sort((a, b) => b.timestamp - a.timestamp);
@@ -888,12 +493,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         navigateToNextQuestion,
         getProgress,
         resetForm,
-        getNavigationHistoryFor,
-        startLoopEntry,
-        editLoopEntry,
-        deleteLoopEntry,
-        saveCurrentLoopEntry,
-        cancelCurrentLoopEntry
+        getNavigationHistoryFor
       }}
     >
       {children}

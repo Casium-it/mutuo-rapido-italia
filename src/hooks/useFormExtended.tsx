@@ -5,27 +5,19 @@ import {
   getQuestionTextWithResponses,
   getChainOfInlineQuestions
 } from "@/utils/formUtils";
-import { Question, RepeatingGroupEntry } from "@/types/form";
-import { v4 as uuidv4 } from 'uuid';
-
-// Logger per debugging, visibile solo in ambiente di sviluppo
-const debugLog = (message: string, ...data: any[]) => {
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`[useFormExtended] ${message}`, ...data);
-  }
-};
+import { Question } from "@/types/form";
 
 /**
- * Hook esteso per il contesto del form con funzionalità aggiuntive
+ * Extended hook for the form context with additional functionality
  */
 export const useFormExtended = () => {
   const formContext = useOriginalForm();
   
   /**
-   * Ottiene il testo della domanda precedente con le risposte inserite
-   * @param blockId ID del blocco corrente
-   * @param questionId ID della domanda corrente
-   * @returns Il testo della domanda precedente con risposte o stringa vuota
+   * Gets the text of the previous question with responses filled in
+   * @param blockId Current block ID
+   * @param questionId Current question ID
+   * @returns The previous question's text with responses or empty string
    */
   const getPreviousQuestionText = (blockId: string, questionId: string): string => {
     const previousQuestion = getPreviousQuestionUtil(
@@ -40,20 +32,20 @@ export const useFormExtended = () => {
   };
   
   /**
-   * Ottiene l'oggetto della domanda precedente
-   * @param blockId ID del blocco corrente
-   * @param questionId ID della domanda corrente
-   * @returns L'oggetto della domanda precedente o undefined
+   * Gets the previous question object
+   * @param blockId Current block ID
+   * @param questionId Current question ID
+   * @returns The previous question object or undefined
    */
   const getPreviousQuestion = (blockId: string, questionId: string) => {
     return getPreviousQuestionUtil(formContext.blocks, blockId, questionId);
   };
 
   /**
-   * Ottiene tutte le domande inline precedenti in una catena, a partire dalla domanda corrente
-   * @param blockId ID del blocco corrente
-   * @param questionId ID della domanda corrente
-   * @returns Array di domande precedenti nella catena, ordinate dalla prima all'ultima
+   * Gets all previous inline questions in a chain, starting from the current question
+   * @param blockId Current block ID
+   * @param questionId Current question ID
+   * @returns Array of previous questions in the chain, ordered from first to last
    */
   const getInlineQuestionChain = (blockId: string, questionId: string): Question[] => {
     // Se la domanda è inline, troviamo da dove viene l'utente attraverso la cronologia
@@ -85,183 +77,11 @@ export const useFormExtended = () => {
       questionId
     );
   };
-
-  /**
-   * Ottiene le voci per un loop specifico
-   * @param loopId ID del loop
-   * @returns Array di voci o undefined
-   */
-  const getLoopEntries = (loopId: string): RepeatingGroupEntry[] | undefined => {
-    try {
-      return formContext.state.repeatingGroups?.[loopId]?.entries || [];
-    } catch (error) {
-      debugLog(`Errore nell'ottenere le entries del loop ${loopId}`, error);
-      return [];
-    }
-  };
-  
-  /**
-   * Inizia una nuova voce in un loop
-   * @param loopId ID del loop
-   */
-  const startNewLoopEntry = (loopId: string) => {
-    debugLog(`Avvio nuova voce del loop per ${loopId}`);
-    formContext.startLoopEntry(loopId);
-  };
-  
-  /**
-   * Modifica una voce esistente in un loop
-   * @param loopId ID del loop
-   * @param entryIndex Indice della voce da modificare
-   */
-  const editLoopEntry = (loopId: string, entryIndex: number) => {
-    debugLog(`Modifica voce del loop ${entryIndex} per ${loopId}`);
-    formContext.editLoopEntry(loopId, entryIndex);
-  };
-  
-  /**
-   * Elimina una voce da un loop
-   * @param loopId ID del loop
-   * @param entryIndex Indice della voce da eliminare
-   */
-  const deleteLoopEntry = (loopId: string, entryIndex: number) => {
-    debugLog(`Eliminazione voce del loop ${entryIndex} per ${loopId}`);
-    formContext.deleteLoopEntry(loopId, entryIndex);
-  };
-  
-  /**
-   * Salva la voce corrente del loop
-   */
-  const saveCurrentLoopEntry = () => {
-    debugLog(`Salvataggio della voce corrente del loop`);
-    formContext.saveCurrentLoopEntry();
-  };
-  
-  /**
-   * Controlla se la domanda corrente è un gestore di loop
-   * @returns Booleano che indica se la domanda corrente è un gestore di loop
-   */
-  const isLoopManager = (): boolean => {
-    const { block_id, question_id } = formContext.state.activeQuestion;
-    const question = formContext.blocks
-      .find(b => b.block_id === block_id)
-      ?.questions.find(q => q.question_id === question_id);
-    
-    return !!question?.loop_manager;
-  };
-  
-  /**
-   * Ottiene le informazioni del gestore di loop per la domanda corrente
-   * @returns Oggetto con le informazioni del gestore di loop o null
-   */
-  const getLoopManagerInfo = () => {
-    const { block_id, question_id } = formContext.state.activeQuestion;
-    const question = formContext.blocks
-      .find(b => b.block_id === block_id)
-      ?.questions.find(q => q.question_id === question_id);
-    
-    if (question?.loop_manager) {
-      return {
-        loopId: question.loop_id || "",
-        addLeadsTo: question.add_leads_to || "",
-        nextLeadsTo: question.next_leads_to || ""
-      };
-    }
-    
-    return null;
-  };
-
-  /**
-   * Verifica se una domanda fa parte di un loop specifico
-   * @param questionId ID della domanda
-   * @param loopId ID del loop (opzionale)
-   * @returns Booleano che indica se la domanda fa parte del loop
-   */
-  const isQuestionInLoop = (questionId: string, loopId?: string): boolean => {
-    // Trova la domanda nei blocchi
-    for (const block of formContext.blocks) {
-      for (const question of block.questions) {
-        if (question.question_id === questionId) {
-          // Se loopId è specificato, controlla che corrisponda
-          if (loopId) {
-            return question.loop === loopId;
-          }
-          // Altrimenti controlla solo se fa parte di un qualsiasi loop
-          return !!question.loop;
-        }
-      }
-    }
-    return false;
-  };
-  
-  /**
-   * Ottiene lo stato corrente del loop
-   * @returns L'ID del loop corrente o null se non è attivo nessun loop
-   */
-  const getCurrentLoopState = () => {
-    return formContext.state.currentLoop;
-  };
-  
-  /**
-   * Ottiene il gestore di loop associato a un loopId specifico
-   * @param loopId ID del loop
-   * @returns La domanda di gestione del loop o undefined
-   */
-  const getLoopManagerQuestion = (loopId: string): Question | undefined => {
-    for (const block of formContext.blocks) {
-      for (const question of block.questions) {
-        if (question.loop_manager && question.loop_id === loopId) {
-          return question;
-        }
-      }
-    }
-    return undefined;
-  };
-  
-  /**
-   * Verifica se la domanda corrente è l'ultima in un loop specifico
-   * @param loopId ID del loop
-   * @param questionId ID della domanda
-   * @returns Booleano che indica se la domanda è l'ultima nel loop
-   */
-  const isLastQuestionInLoop = (loopId: string, questionId: string): boolean => {
-    // Trova tutte le domande nel loop corrente
-    const questionsInLoop: Question[] = [];
-    for (const block of formContext.blocks) {
-      for (const question of block.questions) {
-        if (question.loop === loopId) {
-          questionsInLoop.push(question);
-        }
-      }
-    }
-    
-    // Ordina le domande in base ai loro question_number
-    questionsInLoop.sort((a, b) => {
-      const aNum = parseFloat(a.question_number.replace(/[^0-9.]/g, ''));
-      const bNum = parseFloat(b.question_number.replace(/[^0-9.]/g, ''));
-      return aNum - bNum;
-    });
-    
-    // Verifica se la domanda corrente è l'ultima nel loop
-    const lastQuestionInLoop = questionsInLoop[questionsInLoop.length - 1];
-    return lastQuestionInLoop && lastQuestionInLoop.question_id === questionId;
-  };
   
   return {
     ...formContext,
     getPreviousQuestionText,
     getPreviousQuestion,
-    getInlineQuestionChain,
-    getLoopEntries,
-    startNewLoopEntry,
-    editLoopEntry,
-    deleteLoopEntry,
-    saveCurrentLoopEntry,
-    isLoopManager,
-    getLoopManagerInfo,
-    isQuestionInLoop,
-    getCurrentLoopState,
-    getLoopManagerQuestion,
-    isLastQuestionInLoop
+    getInlineQuestionChain
   };
 };

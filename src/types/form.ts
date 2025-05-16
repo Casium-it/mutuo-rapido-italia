@@ -32,12 +32,6 @@ export type Question = {
   inline?: boolean;
   leads_to_placeholder_priority: string;
   placeholders: Record<string, Placeholder>;
-  // Loop related attributes
-  loop_manager?: boolean;
-  loop_id?: string;
-  add_leads_to?: string;
-  next_leads_to?: string;
-  loop?: string; // Reference to a loop_id indicating this question is part of a loop
 };
 
 export type Block = {
@@ -52,20 +46,6 @@ export type Block = {
 export type FormResponse = {
   [question_id: string]: {
     [placeholder_key: string]: string | string[];
-  };
-};
-
-// Entry in a repeating group
-export type RepeatingGroupEntry = {
-  id: string;
-  responses: FormResponse;
-};
-
-// Structure for repeating groups in form state
-export type RepeatingGroups = {
-  [loop_id: string]: {
-    entries: RepeatingGroupEntry[];
-    currentEditIndex?: number | null; // If editing an existing entry
   };
 };
 
@@ -87,9 +67,4 @@ export type FormState = {
   answeredQuestions: Set<string>;
   isNavigating?: boolean;
   navigationHistory: NavigationHistory[]; // Aggiungiamo la cronologia di navigazione
-  repeatingGroups: RepeatingGroups; // Added repeating groups to form state
-  currentLoop?: {
-    loop_id: string;
-    tempResponses: FormResponse;
-  } | null; // Track current active loop
 };

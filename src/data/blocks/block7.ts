@@ -1,4 +1,3 @@
-
 import { Block } from "@/types/form";
 
 // Block 7 - Finanziamenti
@@ -6,7 +5,7 @@ export const block7: Block = {
   block_number: "7",
   block_id: "finanziamenti",
   title: "I tuoi finanziamenti",
-  priority: 70,
+  priority: 70, // Priorità aggiunta
   default_active: true,
   questions: [
     {
@@ -21,7 +20,7 @@ export const block7: Block = {
             {
               id: "ho",
               label: "ho",
-              leads_to: "aggiungi_finanziamento"
+              leads_to: "tipo_finanziamento"
             },
             {
               id: "non_ho",
@@ -34,37 +33,9 @@ export const block7: Block = {
     },
     {
       question_number: "7.2",
-      question_id: "aggiungi_finanziamento",
-      question_text: "I tuoi finanziamenti attuali",
-      leads_to_placeholder_priority: "placeholder1",
-      loop_manager: true,
-      loop_id: "finanziamenti_loop",
-      add_leads_to: "tipo_finanziamento",
-      next_leads_to: "next_block",
-      placeholders: {
-        placeholder1: {
-          type: "select",
-          options: [
-            {
-              id: "ho_altri",
-              label: "Aggiungi finanziamento",
-              leads_to: "tipo_finanziamento"
-            },
-            {
-              id: "non_ho_altri",
-              label: "Prosegui",
-              leads_to: "next_block"
-            }
-          ]
-        }
-      }
-    },
-    {
-      question_number: "7.3",
       question_id: "tipo_finanziamento",
       question_text: "Ho un finanziamento per {{placeholder1}}",
       leads_to_placeholder_priority: "placeholder1",
-      loop: "finanziamenti_loop",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -72,13 +43,26 @@ export const block7: Block = {
             {
               id: "mutuo",
               label: "un altro mutuo",
-              leads_to: "importo_finanziamento"
+              leads_to: "oggetto_finanziamento"
             },
             {
               id: "prestito_personale",
               label: "un prestito personale",
-              leads_to: "importo_finanziamento"
-            },
+              leads_to: "oggetto_finanziamento"
+            }
+          ]
+        }
+      }
+    },
+    {
+      question_number: "7.3",
+      question_id: "oggetto_finanziamento",
+      question_text: "Per questo finanziamento ho dei pagamenti per {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
+      placeholders: {
+        placeholder1: {
+          type: "select",
+          options: [
             {
               id: "macchina",
               label: "la macchina",
@@ -103,7 +87,6 @@ export const block7: Block = {
       question_id: "oggetto_finanziamento_altro",
       question_text: "Specifica la destinazione del finanziamento",
       leads_to_placeholder_priority: "placeholder1",
-      loop: "finanziamenti_loop",
       placeholders: {
         placeholder1: {
           type: "input",
@@ -120,7 +103,6 @@ export const block7: Block = {
       question_text: "di {{placeholder1}} euro",
       inline: true,
       leads_to_placeholder_priority: "placeholder1",
-      loop: "finanziamenti_loop",
       placeholders: {
         placeholder1: {
           type: "input",
@@ -137,7 +119,6 @@ export const block7: Block = {
       question_text: "{{placeholder1}}",
       inline: true,
       leads_to_placeholder_priority: "placeholder1",
-      loop: "finanziamenti_loop",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -177,7 +158,6 @@ export const block7: Block = {
       question_text: "che finiranno a {{placeholder1}} / {{placeholder2}}",
       inline: true,
       leads_to_placeholder_priority: "placeholder2",
-      loop: "finanziamenti_loop",
       placeholders: {
         placeholder1: {
           type: "input",
@@ -200,7 +180,6 @@ export const block7: Block = {
       question_id: "storico_pagamento",
       question_text: "Per questo finanziamento ho pagato {{placeholder1}} regolarmente",
       leads_to_placeholder_priority: "placeholder1",
-      loop: "finanziamenti_loop",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -208,17 +187,17 @@ export const block7: Block = {
             {
               id: "sempre",
               label: "sempre",
-              leads_to: "aggiungi_finanziamento"
+              leads_to: "tipo_finanziamento"
             },
             {
               id: "quasi_sempre",
               label: "quasi sempre",
-              leads_to: "aggiungi_finanziamento"
+              leads_to: "tipo_finanziamento"
             },
             {
               id: "poco",
               label: "poco",
-              leads_to: "aggiungi_finanziamento"
+              leads_to: "tipo_finanziamento"
             }
           ]
         }
