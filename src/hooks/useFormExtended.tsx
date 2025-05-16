@@ -82,6 +82,6 @@ export const useFormExtended = () => {
     ...formContext,
     getPreviousQuestionText,
     getPreviousQuestion,
-    getInlineQuestionChain,
+    getInlineQuestionChain
   };
 };

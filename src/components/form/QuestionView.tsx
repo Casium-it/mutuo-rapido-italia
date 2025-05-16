@@ -5,7 +5,7 @@ import { FormQuestion } from "./FormQuestion";
 import { useLocation, useParams } from "react-router-dom";
 
 export function QuestionView() {
-  const { state, blocks, goToQuestion, isQuestionRepeatable, getCurrentIterationId } = useFormExtended();
+  const { state, blocks, goToQuestion } = useFormExtended();
   const location = useLocation();
   const params = useParams<{ blockId?: string, questionId?: string }>();
   
@@ -34,24 +34,10 @@ export function QuestionView() {
       </div>
     );
   }
-  
-  // Verifica se la domanda è ripetibile
-  const isRepeatable = isQuestionRepeatable(activeQuestion.question_id);
-  
-  // Ottieni l'ID dell'iterazione corrente se la domanda è ripetibile
-  const iterationId = isRepeatable ? getCurrentIterationId(activeQuestion.question_id) : 1;
 
   return (
     <div className="max-w-2xl">
       <div className="space-y-4">
-        {/* Se la domanda è ripetibile, mostra l'indicazione dell'iterazione corrente */}
-        {isRepeatable && iterationId > 1 && (
-          <div className="flex items-center justify-center mb-2">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-              Elemento {iterationId}
-            </span>
-          </div>
-        )}
         <FormQuestion question={activeQuestion} />
       </div>
     </div>
