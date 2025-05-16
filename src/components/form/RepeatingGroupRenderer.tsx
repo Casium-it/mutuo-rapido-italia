@@ -10,66 +10,101 @@ import { dispatchResetEvent } from '@/utils/repeatingGroupUtils';
 
 interface RepeatingGroupRendererProps {
   block: RepeatingGroupBlock;
+  isIsolatedSubflow?: boolean;
+  initialEditingIndex?: number | null;
+  onSubflowComplete?: () => void;
+  onSubflowCancel?: () => void;
+  onEnterSubflow?: (block: RepeatingGroupBlock, index: number | null) => void;
 }
 
-export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
+export function RepeatingGroupRenderer({
+  block,
+  isIsolatedSubflow = false,
+  initialEditingIndex = null,
+  onSubflowComplete,
+  onSubflowCancel,
+  onEnterSubflow
+}: RepeatingGroupRendererProps) {
   const { repeating_id, subflow, summary_id, summary_template } = block;
   const { navigateToNextQuestion, state } = useForm();
   const { addEntry, updateEntry, refreshEntries, entries, deleteEntry } = useRepeatingGroup(repeating_id);
-  
+
   // Stato per la modalità di visualizzazione (manager o subflow)
-  const [mode, setMode] = useState<'manager' | 'subflow'>('manager');
-  
+  // Se isIsolatedSubflow è true, inizializzalo già in modalità subflow
+  const [mode, setMode] = useState<'manager' | 'subflow'>(
+    isIsolatedSubflow ? 'subflow' : 'manager'
+  );
+
   // Stato per il record in corso di modifica
   const [editingEntry, setEditingEntry] = useState<{
     data: RepeatingGroupEntry;
     index: number;
-  } | null>(null);
-  
+  } | null>(
+    initialEditingIndex !== null
+      ? { data: entries[initialEditingIndex] || {}, index: initialEditingIndex }
+      : null
+  );
+
   // Effetto per aggiornare i dati quando il form cambia modalità o blocco
   useEffect(() => {
-    // Reset mode e stati quando cambia il blocco attivo
-    setMode('manager');
-    setEditingEntry(null);
-    
     // Forza un refresh dei dati per assicurarsi che siano aggiornati
     refreshEntries();
-    
+
+    // Se siamo in modalità isolata e c'è un initialEditingIndex, impostiamo l'editing entry
+    if (isIsolatedSubflow && initialEditingIndex !== null && entries[initialEditingIndex]) {
+      setEditingEntry({
+        data: entries[initialEditingIndex],
+        index: initialEditingIndex
+      });
+    }
+
     // Controllo quando la pagina viene ricaricata o quando si naviga
     const handleBeforeUnload = () => {
       // Dispara un evento di reset quando la pagina viene ricaricata
       dispatchResetEvent();
     };
-    
+
     window.addEventListener('beforeunload', handleBeforeUnload);
-    
+
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [block.block_id, state.activeQuestion.block_id, refreshEntries]);
-  
+  }, [block.block_id, refreshEntries, isIsolatedSubflow, initialEditingIndex, entries]);
+
   // Gestisce l'aggiunta di un nuovo record
   const handleAdd = () => {
+    if (onEnterSubflow) {
+      // Se abbiamo un handler per entrare in subflow, usiamo quello
+      onEnterSubflow(block, null);
+      return;
+    }
+
     setEditingEntry(null); // Non stiamo modificando, stiamo aggiungendo
     setMode('subflow');
   };
-  
+
   // Gestisce la modifica di un record esistente
   const handleEdit = (entry: RepeatingGroupEntry, index: number) => {
+    if (onEnterSubflow) {
+      // Se abbiamo un handler per entrare in subflow, usiamo quello
+      onEnterSubflow(block, index);
+      return;
+    }
+
     setEditingEntry({ data: entry, index });
     setMode('subflow');
   };
-  
+
   // Gestisce il completamento del subflow
   const handleSubflowComplete = (data: RepeatingGroupEntry) => {
     let success = false;
-    
+
     console.log('Normalized data before save:', data);
-    
+
     if (editingEntry) {
       // Aggiorna un record esistente
       success = updateEntry(data, editingEntry.index);
-      
+
       if (success) {
         toast({
           title: "Dati aggiornati",
@@ -79,7 +114,7 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
     } else {
       // Aggiunge un nuovo record
       success = addEntry(data);
-      
+
       if (success) {
         toast({
           title: "Dati aggiunti",
@@ -87,7 +122,7 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
         });
       }
     }
-    
+
     if (!success) {
       toast({
         title: "Errore",
@@ -95,28 +130,41 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
         variant: "destructive"
       });
     }
-    
+
     // Forza un aggiornamento dei dati
     refreshEntries();
-    
-    // Torna alla vista manager
+
+    // Se siamo in modalità isolata e abbiamo un handler per il completamento, lo chiamiamo
+    if (isIsolatedSubflow && onSubflowComplete) {
+      onSubflowComplete();
+      return;
+    }
+
+    // Altrimenti, torna alla vista manager
     setMode('manager');
   };
-  
+
   // Gestisce l'annullamento del subflow
   const handleSubflowCancel = () => {
+    // Se siamo in modalità isolata e abbiamo un handler per l'annullamento, lo chiamiamo
+    if (isIsolatedSubflow && onSubflowCancel) {
+      onSubflowCancel();
+      return;
+    }
+
+    // Altrimenti, torna alla vista manager
     setMode('manager');
     setEditingEntry(null);
   };
-  
+
   // Gestisce la pressione del pulsante continua
   const handleContinue = () => {
     // Usa l'ID della domanda attiva corrente invece del block_id
     const currentQuestionId = state.activeQuestion.question_id;
     navigateToNextQuestion(currentQuestionId, "next_block");
   };
-  
-  // In modalità subflow, rendiamo solo il SubflowForm senza il FormReader principale
+
+  // In modalità subflow, rendiamo solo il SubflowForm
   if (mode === 'subflow') {
     return (
       <div className="w-full">
@@ -130,7 +178,8 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
       </div>
     );
   }
-  
+
+  // Altrimenti, rendiamo la vista manager
   return (
     <IncomeManagerView
       repeatingId={repeating_id}

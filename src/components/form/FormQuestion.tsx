@@ -41,13 +41,12 @@ export function FormQuestion({ question, initialValue, onAnswer, inline }: FormQ
   const params = useParams();
 
   // Effetto per caricare le risposte esistenti e impostare visibilità iniziale delle opzioni
-  // MODIFICATO: aggiunto array di dipendenze per evitare l'infinite loop
   useEffect(() => {
     const existingResponses: { [key: string]: string | string[] } = {};
     const initialVisibleOptions: { [key: string]: boolean } = {};
     const initialValidationErrors: { [key: string]: boolean } = {};
     
-    Object.keys(question.placeholders).forEach(key => {
+    Object.keys(question.placeholders || {}).forEach(key => {
       // First check initialValue from props (for subflow mode)
       let existingResponse;
       if (initialValue && initialValue[question.question_id] && initialValue[question.question_id][key]) {
@@ -78,7 +77,12 @@ export function FormQuestion({ question, initialValue, onAnswer, inline }: FormQ
     setVisibleOptions(initialVisibleOptions);
     setValidationErrors(initialValidationErrors);
     setIsNavigating(false);
-  }, [question.question_id, getResponse, question.placeholders, initialValue]);
+  }, [
+    question.question_id, 
+    getResponse, 
+    question.placeholders, 
+    initialValue
+  ]);
 
   // Funzione per gestire il cambio di risposta con validazione
   const handleResponseChange = (key: string, value: string | string[]) => {
