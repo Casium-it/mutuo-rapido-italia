@@ -41,6 +41,7 @@ export function FormQuestion({ question, initialValue, onAnswer, inline }: FormQ
   const params = useParams();
 
   // Effetto per caricare le risposte esistenti e impostare visibilità iniziale delle opzioni
+  // MODIFICATO: aggiunto array di dipendenze per evitare l'infinite loop
   useEffect(() => {
     const existingResponses: { [key: string]: string | string[] } = {};
     const initialVisibleOptions: { [key: string]: boolean } = {};

@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Question, RepeatingGroupEntry } from '@/types/form';
 import { FormContext } from '@/contexts/FormContext';
 import { QuestionView } from './QuestionView';
@@ -22,6 +22,12 @@ export function SubflowForm({
   // Stato per tenere traccia dei dati del form
   const [initialized, setInitialized] = useState(false);
   const [formState, setFormState] = useState<any>(null);
+  
+  // Riferimenti per evitare navigazioni multiple o durante il reset
+  const isNavigatingRef = useRef(false);
+  const navigationTimeoutRef = useRef<number | null>(null);
+  // Reference locale per i subscriber agli eventi di navigazione - IMPORTANTE: isolato dall'emettitore principale
+  const navigationSubscribersRef = useRef<Array<(data: any) => void>>([]);
   
   // Crea un blocco sintetico contenente tutte le domande del subflow
   const syntheticBlock = useMemo(() => {
@@ -78,16 +84,30 @@ export function SubflowForm({
       responses: initialFormResponses,
       answeredQuestions: new Set<string>(),
       navigationHistory: [],
+      // Garantisce che non ci siano stati di navigazione conflittuali
+      isNavigating: false
     };
   }, [initialData, questions]);
   
   useEffect(() => {
     setFormState(initialFormState);
     setInitialized(true);
+    
+    // Cleanup quando il componente viene smontato
+    return () => {
+      // Cancella eventuali timeout di navigazione
+      if (navigationTimeoutRef.current !== null) {
+        clearTimeout(navigationTimeoutRef.current);
+        navigationTimeoutRef.current = null;
+      }
+      
+      // Rimuovi i subscriber
+      navigationSubscribersRef.current = [];
+    };
   }, [initialFormState]);
 
   // Funzione per normalizzare i dati prima di completare il subflow
-  const normalizeData = (formResponses: Record<string, Record<string, any>>): RepeatingGroupEntry => {
+  const normalizeData = useCallback((formResponses: Record<string, Record<string, any>>): RepeatingGroupEntry => {
     const normalizedData: RepeatingGroupEntry = { ...initialData };
     
     // Estrai i valori primitivi dalle risposte del form
@@ -124,7 +144,7 @@ export function SubflowForm({
     });
     
     return normalizedData;
-  };
+  }, [initialData, questions]);
   
   // Implementazione effettiva delle funzioni di FormContext
   const setResponse = useCallback((questionId: string, placeholderKey: string, value: any) => {
@@ -158,20 +178,72 @@ export function SubflowForm({
   }, [formState]);
 
   const goToQuestion = useCallback((blockId: string, questionId: string) => {
-    setFormState(prevState => ({
-      ...prevState,
-      activeQuestion: { block_id: blockId, question_id: questionId }
-    }));
+    // Prevenzione di navigazione simultanea
+    if (isNavigatingRef.current) {
+      console.log("Navigazione prevenuta: già in navigazione");
+      return;
+    }
+    
+    isNavigatingRef.current = true;
+    
+    setFormState(prevState => {
+      // Registra la navigazione nella cronologia
+      const navigationData = {
+        from_block_id: prevState.activeQuestion.block_id,
+        from_question_id: prevState.activeQuestion.question_id,
+        to_block_id: blockId,
+        to_question_id: questionId,
+        timestamp: Date.now()
+      };
+      
+      return {
+        ...prevState,
+        activeQuestion: { block_id: blockId, question_id: questionId },
+        navigationHistory: [...prevState.navigationHistory, navigationData]
+      };
+    });
+    
+    // Reset dello stato di navigazione dopo un breve ritardo
+    setTimeout(() => {
+      isNavigatingRef.current = false;
+    }, 300);
   }, []);
 
   // Handler per la navigazione nel FormContext isolato
   const navigateToNextQuestion = useCallback((fromQuestionId: string, toQuestionOrSignal: string) => {
+    // Prevenzione di navigazione simultanea
+    if (isNavigatingRef.current) {
+      console.log("Navigazione 'next' prevenuta: già in navigazione");
+      return;
+    }
+    
+    isNavigatingRef.current = true;
+    console.log(`[Subflow] Navigazione da ${fromQuestionId} a ${toQuestionOrSignal}`);
+    
+    // Notifica i subscriber della navigazione - IMPORTANTE: solo quelli locali
+    navigationSubscribersRef.current.forEach(callback => {
+      callback({
+        fromQuestionId,
+        toQuestionId: toQuestionOrSignal,
+        fromBlockId: "subflow_synthetic_block",
+        toBlockId: "subflow_synthetic_block",
+        leadsToDest: toQuestionOrSignal
+      });
+    });
+    
     // Se è stato specificato end_of_subflow, completa il subflow
     if (toQuestionOrSignal === endSignal) {
+      console.log(`[Subflow] Rilevato segnale di fine ${endSignal}, completamento subflow`);
       // Normalizza i dati prima di completare
       if (formState && formState.responses) {
         const normalizedData = normalizeData(formState.responses);
-        onComplete(normalizedData);
+        // Lasciamo un po' di tempo prima di chiamare onComplete per evitare problemi di race condition
+        setTimeout(() => {
+          isNavigatingRef.current = false;
+          onComplete(normalizedData);
+        }, 50);
+      } else {
+        isNavigatingRef.current = false;
       }
       return;
     }
@@ -182,54 +254,78 @@ export function SubflowForm({
     if (currentQuestionIndex >= 0 && currentQuestionIndex < questions.length - 1) {
       // Se c'è una prossima domanda nel blocco, vai a quella
       const nextQuestion = questions[currentQuestionIndex + 1];
-      setFormState(prevState => ({
-        ...prevState,
-        activeQuestion: { 
-          block_id: "subflow_synthetic_block", 
-          question_id: nextQuestion.question_id 
-        },
-        navigationHistory: [
-          ...prevState.navigationHistory,
-          {
-            from_block_id: "subflow_synthetic_block",
-            from_question_id: fromQuestionId,
-            to_block_id: "subflow_synthetic_block",
-            to_question_id: nextQuestion.question_id,
-            timestamp: Date.now()
-          }
-        ]
-      }));
+      setFormState(prevState => {
+        const navigationData = {
+          from_block_id: "subflow_synthetic_block",
+          from_question_id: fromQuestionId,
+          to_block_id: "subflow_synthetic_block",
+          to_question_id: nextQuestion.question_id,
+          timestamp: Date.now()
+        };
+        
+        return {
+          ...prevState,
+          activeQuestion: { 
+            block_id: "subflow_synthetic_block", 
+            question_id: nextQuestion.question_id 
+          },
+          navigationHistory: [...prevState.navigationHistory, navigationData]
+        };
+      });
+      
+      // Reset dello stato di navigazione dopo un breve ritardo
+      setTimeout(() => {
+        isNavigatingRef.current = false;
+      }, 300);
     } else if (toQuestionOrSignal !== "next_block") {
       // Se è stato specificato un ID di domanda specifico, vai a quella
       const targetQuestion = questions.find(q => q.question_id === toQuestionOrSignal);
       if (targetQuestion) {
-        setFormState(prevState => ({
-          ...prevState,
-          activeQuestion: { 
-            block_id: "subflow_synthetic_block", 
-            question_id: targetQuestion.question_id 
-          },
-          navigationHistory: [
-            ...prevState.navigationHistory,
-            {
-              from_block_id: "subflow_synthetic_block",
-              from_question_id: fromQuestionId,
-              to_block_id: "subflow_synthetic_block",
-              to_question_id: targetQuestion.question_id,
-              timestamp: Date.now()
-            }
-          ]
-        }));
+        setFormState(prevState => {
+          const navigationData = {
+            from_block_id: "subflow_synthetic_block",
+            from_question_id: fromQuestionId,
+            to_block_id: "subflow_synthetic_block",
+            to_question_id: targetQuestion.question_id,
+            timestamp: Date.now()
+          };
+          
+          return {
+            ...prevState,
+            activeQuestion: { 
+              block_id: "subflow_synthetic_block", 
+              question_id: targetQuestion.question_id 
+            },
+            navigationHistory: [...prevState.navigationHistory, navigationData]
+          };
+        });
+        
+        // Reset dello stato di navigazione dopo un breve ritardo
+        setTimeout(() => {
+          isNavigatingRef.current = false;
+        }, 300);
       } else {
         // Se non è stato trovato un target, considera che siamo alla fine
-        const normalizedData = normalizeData(formState.responses);
-        onComplete(normalizedData);
+        if (formState && formState.responses) {
+          const normalizedData = normalizeData(formState.responses);
+          setTimeout(() => {
+            isNavigatingRef.current = false;
+            onComplete(normalizedData);
+          }, 50);
+        } else {
+          isNavigatingRef.current = false;
+        }
       }
     } else {
       // Se siamo all'ultima domanda o è stato specificato next_block, completa il subflow
       if (formState && formState.responses) {
         const normalizedData = normalizeData(formState.responses);
-        onComplete(normalizedData);
+        setTimeout(() => {
+          isNavigatingRef.current = false;
+          onComplete(normalizedData);
+        }, 50);
+      } else {
+        isNavigatingRef.current = false;
       }
     }
   }, [questions, formState, endSignal, onComplete, normalizeData]);
@@ -242,11 +338,21 @@ export function SubflowForm({
     // Se siamo alla prima domanda e si preme indietro, annulla il subflow
     const isFirstQuestion = questions[0]?.question_id === fromQuestionId;
     if (isFirstQuestion) {
+      console.log("[Subflow] Annullamento su richiesta dell'utente (back dalla prima domanda)");
       onCancel();
       return true; // Indica che abbiamo gestito l'evento
     }
+    
+    // Se non siamo alla prima domanda, naviga alla domanda precedente
+    const currentIndex = questions.findIndex(q => q.question_id === fromQuestionId);
+    if (currentIndex > 0) {
+      const prevQuestion = questions[currentIndex - 1];
+      goToQuestion("subflow_synthetic_block", prevQuestion.question_id);
+      return true;
+    }
+    
     return false; // Lascia che il FormContext gestisca la navigazione normale
-  }, [questions, onCancel]);
+  }, [questions, onCancel, goToQuestion]);
 
   // Handler per la navigazione
   const handleNavigation = useCallback((
@@ -258,18 +364,22 @@ export function SubflowForm({
   ) => {
     // Controlla se siamo arrivati al segnale di fine
     if (toQuestionId === endSignal) {
+      console.log(`[Subflow] handleNavigation: rilevato segnale di fine ${endSignal}`);
       // Normalizza i dati prima di completare
       const normalizedData = normalizeData(formResponses);
       onComplete(normalizedData);
     }
   }, [endSignal, onComplete, normalizeData]);
 
-  // Sottoscrizione agli eventi di navigazione
+  // Sottoscrizione agli eventi di navigazione - ISOLATA dal contesto principale
   const subscribeToNavigation = useCallback((callback: any) => {
-    // Implementa la logica per intercettare eventi di navigazione
+    navigationSubscribersRef.current.push(callback);
+    
+    // Funzione di cleanup per la sottoscrizione
     const unsubscribe = () => {
-      // Funzione di cleanup
+      navigationSubscribersRef.current = navigationSubscribersRef.current.filter(cb => cb !== callback);
     };
+    
     return unsubscribe;
   }, []);
 

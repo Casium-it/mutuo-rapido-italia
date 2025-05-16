@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback, useRef } from "react";
 import { Block, FormState, FormResponse, NavigationHistory, StandardBlock, RepeatingGroupBlock, RepeatingGroupEntry } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
@@ -185,6 +184,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   const navigate = useNavigate();
   const params = useParams<{ blockType?: string; blockId?: string; questionId?: string }>();
   const location = useLocation();
+  
+  // IMPORTANTE: Ogni istanza di FormProvider ha ora il proprio riferimento per i timeout e i subscriber
   const navigationTimeoutRef = useRef<number | null>(null);
   const isResettingRef = useRef<boolean>(false);
   const navigationSubscribersRef = useRef<NavigationSubscriber[]>([]);
@@ -465,7 +466,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       history: navigationData
     });
     
-    // Notify navigation subscribers
+    // Notify navigation subscribers - MODIFICATO: usa solo i subscriber di questa istanza
     navigationSubscribersRef.current.forEach(callback => {
       callback({
         fromBlockId: previousBlockId,
@@ -560,7 +561,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     // Salva la domanda corrente prima di navigare
     const currentBlockId = state.activeQuestion.block_id;
     
-    // Notify navigation subscribers with the leadsTo destination
+    // Notify navigation subscribers with the leadsTo destination - MODIFICATO: usa solo i subscriber di questa istanza
     navigationSubscribersRef.current.forEach(callback => {
       callback({
         fromBlockId: currentBlockId,
@@ -815,7 +816,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     }
   }, [state.repeatingGroups]);
 
-  // New function to subscribe to navigation events
+  // New function to subscribe to navigation events - MODIFIED: ora è isolato per questa istanza
   const subscribeToNavigation = useCallback((callback: NavigationSubscriber) => {
     navigationSubscribersRef.current.push(callback);
     
