@@ -8,11 +8,12 @@ import { RepeatingGroupEntry } from "@/types/form";
 
 interface IncomeEntryCardProps {
   entry: RepeatingGroupEntry;
+  summary?: string;  // Rendiamo questa proprietà opzionale
   onEdit: () => void;
   onDelete: () => void;
 }
 
-export function IncomeEntryCard({ entry, onEdit, onDelete }: IncomeEntryCardProps) {
+export function IncomeEntryCard({ entry, summary, onEdit, onDelete }: IncomeEntryCardProps) {
   const { income_type, amount_input, income_description } = entry;
   
   return (
@@ -27,6 +28,11 @@ export function IncomeEntryCard({ entry, onEdit, onDelete }: IncomeEntryCardProp
               {formatCurrency(amount_input)}
               <span className="text-sm font-normal text-gray-600 ml-1">/mese</span>
             </p>
+            {summary && (
+              <p className="text-sm text-gray-600">
+                {summary}
+              </p>
+            )}
             {income_description && (
               <p className="text-sm text-gray-600 mt-1 max-w-md">
                 {income_description}
