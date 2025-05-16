@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback } from "react";
 import { Block, FormState, FormResponse, NavigationHistory } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
@@ -14,6 +15,11 @@ type FormContextType = {
   getProgress: () => number;
   resetForm: () => void;
   getNavigationHistoryFor: (questionId: string) => NavigationHistory | undefined;
+  // Nuove funzioni per gestire domande ripetibili
+  isQuestionRepeatable: (question_id: string) => boolean;
+  getCurrentIterationId: (question_id: string) => number;
+  startNewIteration: (question_id: string) => void;
+  getAllIterationResponses: (question_id: string) => Array<{iteration_id: number; responses: any}> | undefined;
 };
 
 type Action =
@@ -24,7 +30,10 @@ type Action =
   | { type: "SET_FORM_STATE"; state: Partial<FormState> }
   | { type: "RESET_FORM" }
   | { type: "SET_NAVIGATING"; isNavigating: boolean }
-  | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory };
+  | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory }
+  // Nuove azioni per gestire iterazioni
+  | { type: "START_NEW_ITERATION"; question_id: string }
+  | { type: "SET_CURRENT_ITERATION"; question_id: string; iteration_id: number };
 
 const initialState: FormState = {
   activeBlocks: [],
@@ -35,7 +44,8 @@ const initialState: FormState = {
   responses: {},
   answeredQuestions: new Set(),
   isNavigating: false,
-  navigationHistory: []
+  navigationHistory: [],
+  currentIterations: {} // Inizializzato come vuoto
 };
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
@@ -51,11 +61,37 @@ function formReducer(state: FormState, action: Action): FormState {
         }
       };
     case "SET_RESPONSE": {
+      const { question_id, placeholder_key, value } = action;
       const newResponses = { ...state.responses };
-      if (!newResponses[action.question_id]) {
-        newResponses[action.question_id] = {};
+      
+      // Inizializza la struttura delle risposte se non esiste
+      if (!newResponses[question_id]) {
+        newResponses[question_id] = { iterations: [] };
       }
-      newResponses[action.question_id][action.placeholder_key] = action.value;
+      
+      // Ottieni l'ID dell'iterazione corrente o usa 1 come default
+      const currentIterationId = state.currentIterations[question_id] || 1;
+      
+      // Cerca l'iterazione corrente
+      let iteration = newResponses[question_id].iterations?.find(
+        it => it.iteration_id === currentIterationId
+      );
+      
+      // Se l'iterazione non esiste, creala
+      if (!iteration) {
+        if (!Array.isArray(newResponses[question_id].iterations)) {
+          newResponses[question_id].iterations = [];
+        }
+        iteration = { iteration_id: currentIterationId, responses: {} };
+        newResponses[question_id].iterations.push(iteration);
+      }
+      
+      // Salva la risposta nell'iterazione corrente
+      iteration.responses[placeholder_key] = value;
+      
+      // Mantieni anche la risposta al livello principale per retrocompatibilità
+      newResponses[question_id][placeholder_key] = value;
+      
       return {
         ...state,
         responses: newResponses
@@ -89,7 +125,8 @@ function formReducer(state: FormState, action: Action): FormState {
         ...initialState,
         activeBlocks: state.activeBlocks.filter(blockId => 
           initialState.activeBlocks.includes(blockId)),
-        navigationHistory: [] // Reset anche la cronologia di navigazione
+        navigationHistory: [],
+        currentIterations: {} // Reset delle iterazioni correnti
       };
     }
     case "SET_NAVIGATING": {
@@ -108,6 +145,25 @@ function formReducer(state: FormState, action: Action): FormState {
       return {
         ...state,
         navigationHistory: [...filteredHistory, action.history]
+      };
+    }
+    case "START_NEW_ITERATION": {
+      const currentIterations = { ...state.currentIterations };
+      const currentIteration = currentIterations[action.question_id] || 0;
+      currentIterations[action.question_id] = currentIteration + 1;
+      
+      return {
+        ...state,
+        currentIterations
+      };
+    }
+    case "SET_CURRENT_ITERATION": {
+      const currentIterations = { ...state.currentIterations };
+      currentIterations[action.question_id] = action.iteration_id;
+      
+      return {
+        ...state,
+        currentIterations
       };
     }
     default:
@@ -157,6 +213,30 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     navigate("/simulazione/pensando/introduzione/soggetto_acquisto", { replace: true });
   }, [params.blockType, navigate]);
 
+  // Funzione per verificare se una domanda è in un flusso ripetibile
+  const isInRepeatableFlow = useCallback((questionId: string): boolean => {
+    // Cerca la domanda negli array di domande di tutti i blocchi
+    for (const block of sortedBlocks) {
+      const question = block.questions.find(q => q.question_id === questionId);
+      if (question) {
+        // Se la domanda è ripetibile o il blocco è ripetibile, è in un flusso ripetibile
+        return question.repeatable === true || block.repeatable === true;
+      }
+    }
+    return false;
+  }, [sortedBlocks]);
+
+  // Funzione per trovare una domanda dato il suo ID
+  const findQuestionById = useCallback((questionId: string) => {
+    for (const block of sortedBlocks) {
+      const question = block.questions.find(q => q.question_id === questionId);
+      if (question) {
+        return { block, question };
+      }
+    }
+    return null;
+  }, [sortedBlocks]);
+
   // Sincronizza lo stato del form con i parametri URL quando l'URL cambia
   useEffect(() => {
     const { blockId, questionId } = params;
@@ -171,6 +251,32 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       
       if (!state.activeBlocks.includes(blockId)) {
         dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
+      }
+      
+      // Controlla se la domanda è ripetibile
+      const questionInfo = findQuestionById(questionId);
+      const isQuestionOrBlockRepeatable = 
+        (questionInfo?.question.repeatable === true) || 
+        (questionInfo?.block.repeatable === true);
+        
+      // Se la domanda è ripetibile e non abbiamo un'iterazione corrente, iniziamone una nuova
+      if (isQuestionOrBlockRepeatable && !state.currentIterations[questionId]) {
+        dispatch({ type: "START_NEW_ITERATION", question_id: questionId });
+      }
+      
+      // Se stiamo tornando a una domanda ripetibile dall'inizio del ciclo, potrebbe essere una nuova iterazione
+      if (isQuestionOrBlockRepeatable) {
+        // Cerca nella storia di navigazione
+        const latestHistory = [...state.navigationHistory].sort((a, b) => b.timestamp - a.timestamp)[0];
+        
+        // Se c'è una storia recente e stiamo tornando all'inizio di un ciclo ripetibile
+        if (latestHistory && isInRepeatableFlow(latestHistory.from_question_id)) {
+          // Controlla se è una transizione che indica l'inizio di una nuova iterazione
+          // Ad esempio, per block7 potrebbe essere quando torniamo da storico_pagamento a tipo_finanziamento
+          if (latestHistory.from_question_id === "storico_pagamento" && questionId === "tipo_finanziamento") {
+            dispatch({ type: "START_NEW_ITERATION", question_id: questionId });
+          }
+        }
       }
     } else if (blockId) {
       // Se solo blockId è specificato, trova la prima domanda nel blocco
@@ -215,6 +321,33 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
           parsedState.answeredQuestions = new Set();
         }
         
+        // Assicurati che currentIterations esista
+        if (!parsedState.currentIterations) {
+          parsedState.currentIterations = {};
+        }
+        
+        // Migrazione delle risposte al nuovo formato con iterazioni
+        if (parsedState.responses) {
+          Object.keys(parsedState.responses).forEach(questionId => {
+            const questionResponse = parsedState.responses[questionId];
+            
+            // Se non ha la struttura delle iterazioni, creala
+            if (!questionResponse.iterations) {
+              questionResponse.iterations = [{
+                iteration_id: 1,
+                responses: {}
+              }];
+              
+              // Copia tutte le risposte esistenti nella prima iterazione
+              Object.keys(questionResponse).forEach(key => {
+                if (key !== 'iterations') {
+                  questionResponse.iterations[0].responses[key] = questionResponse[key];
+                }
+              });
+            }
+          });
+        }
+        
         // Applica lo stato salvato
         dispatch({ type: "SET_FORM_STATE", state: parsedState });
         
@@ -236,7 +369,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         console.error("Errore nel caricamento dello stato salvato:", e);
       }
     }
-  }, [params.blockId, params.questionId, params.blockType, blocks, navigate]);
+  }, [params.blockId, params.questionId, params.blockType, blocks, navigate, state.activeBlocks, 
+      state.navigationHistory, findQuestionById, isInRepeatableFlow]);
 
   // Salva lo stato in localStorage quando cambia
   useEffect(() => {
@@ -294,7 +428,9 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         from_question_id: previousQuestionId,
         to_block_id: block_id,
         to_question_id: question_id,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        // Aggiungi l'ID dell'iterazione corrente se la domanda è ripetibile
+        iteration_id: state.currentIterations[question_id] || 1
       }
     });
     
@@ -315,7 +451,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     setTimeout(() => {
       dispatch({ type: "SET_NAVIGATING", isNavigating: false });
     }, 300);
-  }, [params.blockType, navigate, state.activeQuestion]);
+  }, [params.blockType, navigate, state.activeQuestion, state.currentIterations]);
 
   const setResponse = useCallback((question_id: string, placeholder_key: string, value: string | string[]) => {
     dispatch({ type: "SET_RESPONSE", question_id, placeholder_key, value });
@@ -324,8 +460,23 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
 
   const getResponse = useCallback((question_id: string, placeholder_key: string) => {
     if (!state.responses[question_id]) return undefined;
+    
+    // Ottieni l'iterazione corrente
+    const currentIterationId = state.currentIterations[question_id] || 1;
+    
+    // Cerca nell'iterazione corrente
+    const currentIteration = state.responses[question_id].iterations?.find(
+      it => it.iteration_id === currentIterationId
+    );
+    
+    // Se trovata, restituisci la risposta dall'iterazione corrente
+    if (currentIteration && currentIteration.responses[placeholder_key] !== undefined) {
+      return currentIteration.responses[placeholder_key];
+    }
+    
+    // Fallback alla risposta a livello principale per retrocompatibilità
     return state.responses[question_id][placeholder_key];
-  }, [state.responses]);
+  }, [state.responses, state.currentIterations]);
 
   const addActiveBlock = useCallback((block_id: string) => {
     dispatch({ type: "ADD_ACTIVE_BLOCK", block_id });
@@ -471,7 +622,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
   }, [state.activeBlocks, state.answeredQuestions, blocks]);
 
-  // Nuova funzione per ottenere la cronologia di navigazione per una domanda specifica
+  // Funzione per ottenere la cronologia di navigazione per una domanda specifica
   const getNavigationHistoryFor = useCallback((questionId: string): NavigationHistory | undefined => {
     // Ordina la cronologia dal più recente al meno recente
     const sortedHistory = [...state.navigationHistory].sort((a, b) => b.timestamp - a.timestamp);
@@ -480,11 +631,38 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return sortedHistory.find(item => item.to_question_id === questionId);
   }, [state.navigationHistory]);
 
+  // Nuove funzioni per gestire le domande ripetibili
+  
+  // Verifica se una domanda è ripetibile
+  const isQuestionRepeatable = useCallback((question_id: string): boolean => {
+    const questionInfo = findQuestionById(question_id);
+    return (questionInfo?.question.repeatable === true) || 
+           (questionInfo?.block.repeatable === true);
+  }, [findQuestionById]);
+  
+  // Ottieni l'ID dell'iterazione corrente per una domanda
+  const getCurrentIterationId = useCallback((question_id: string): number => {
+    return state.currentIterations[question_id] || 1;
+  }, [state.currentIterations]);
+  
+  // Avvia una nuova iterazione per una domanda
+  const startNewIteration = useCallback((question_id: string) => {
+    dispatch({ type: "START_NEW_ITERATION", question_id });
+  }, []);
+  
+  // Ottieni tutte le iterazioni di risposte per una domanda
+  const getAllIterationResponses = useCallback((question_id: string) => {
+    if (!state.responses[question_id] || !state.responses[question_id].iterations) {
+      return undefined;
+    }
+    return state.responses[question_id].iterations;
+  }, [state.responses]);
+
   return (
     <FormContext.Provider
       value={{
         state,
-        blocks: sortedBlocks, // Restituisci i blocchi ordinati per priorità
+        blocks: sortedBlocks,
         goToQuestion,
         setResponse,
         getResponse,
@@ -493,7 +671,12 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         navigateToNextQuestion,
         getProgress,
         resetForm,
-        getNavigationHistoryFor
+        getNavigationHistoryFor,
+        // Nuove funzioni esposte
+        isQuestionRepeatable,
+        getCurrentIterationId,
+        startNewIteration,
+        getAllIterationResponses
       }}
     >
       {children}

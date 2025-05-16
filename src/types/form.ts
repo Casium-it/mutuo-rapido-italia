@@ -19,7 +19,7 @@ export type InputPlaceholder = {
   input_type: "text" | "number" | "date";
   placeholder_label: string;
   leads_to?: string;
-  input_validation: ValidationTypes; // Now required
+  input_validation: ValidationTypes;
 };
 
 export type Placeholder = SelectPlaceholder | InputPlaceholder;
@@ -32,6 +32,7 @@ export type Question = {
   inline?: boolean;
   leads_to_placeholder_priority: string;
   placeholders: Record<string, Placeholder>;
+  repeatable?: boolean; // Nuovo attributo per domande ripetibili
 };
 
 export type Block = {
@@ -41,11 +42,21 @@ export type Block = {
   priority: number;
   default_active?: boolean;
   questions: Question[];
+  repeatable?: boolean; // Nuovo attributo per blocchi ripetibili
 };
 
+// Modifica alla struttura per supportare più iterazioni della stessa domanda
 export type FormResponse = {
   [question_id: string]: {
-    [placeholder_key: string]: string | string[];
+    // Le iterazioni delle risposte per questa domanda
+    iterations: Array<{
+      iteration_id: number;
+      responses: {
+        [placeholder_key: string]: string | string[];
+      };
+    }>;
+    // Manteniamo anche le risposte dirette per retrocompatibilità
+    [placeholder_key: string]: string | string[] | any;
   };
 };
 
@@ -55,6 +66,7 @@ export type NavigationHistory = {
   to_block_id: string;
   to_question_id: string;
   timestamp: number;
+  iteration_id?: number; // Nuovo campo per tracciare l'iterazione
 };
 
 export type FormState = {
@@ -66,5 +78,8 @@ export type FormState = {
   responses: FormResponse;
   answeredQuestions: Set<string>;
   isNavigating?: boolean;
-  navigationHistory: NavigationHistory[]; // Aggiungiamo la cronologia di navigazione
+  navigationHistory: NavigationHistory[];
+  currentIterations: {  // Nuovo campo per tenere traccia delle iterazioni correnti
+    [question_id: string]: number;
+  };
 };

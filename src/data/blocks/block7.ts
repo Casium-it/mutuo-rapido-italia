@@ -1,3 +1,4 @@
+
 import { Block } from "@/types/form";
 
 // Block 7 - Finanziamenti
@@ -5,8 +6,9 @@ export const block7: Block = {
   block_number: "7",
   block_id: "finanziamenti",
   title: "I tuoi finanziamenti",
-  priority: 70, // Priorità aggiunta
+  priority: 70,
   default_active: true,
+  repeatable: true, // Questo blocco può essere ripetuto più volte
   questions: [
     {
       question_number: "7.1",
@@ -36,6 +38,7 @@ export const block7: Block = {
       question_id: "tipo_finanziamento",
       question_text: "Ho un finanziamento per {{placeholder1}}",
       leads_to_placeholder_priority: "placeholder1",
+      repeatable: true, // Questa domanda è l'inizio di un ciclo ripetibile
       placeholders: {
         placeholder1: {
           type: "select",
@@ -187,17 +190,17 @@ export const block7: Block = {
             {
               id: "sempre",
               label: "sempre",
-              leads_to: "tipo_finanziamento"
+              leads_to: "tipo_finanziamento" // Torna a tipo_finanziamento per iniziare un nuovo ciclo
             },
             {
               id: "quasi_sempre",
               label: "quasi sempre",
-              leads_to: "tipo_finanziamento"
+              leads_to: "tipo_finanziamento" // Torna a tipo_finanziamento per iniziare un nuovo ciclo
             },
             {
               id: "poco",
               label: "poco",
-              leads_to: "tipo_finanziamento"
+              leads_to: "tipo_finanziamento" // Torna a tipo_finanziamento per iniziare un nuovo ciclo
             }
           ]
         }

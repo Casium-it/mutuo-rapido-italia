@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { getQuestionTextWithClickableResponses } from "@/utils/formUtils";
 import { validateInput } from "@/utils/validationUtils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { IterationSummary } from "./IterationSummary";
 
 interface FormQuestionProps {
   question: Question;
@@ -26,7 +27,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
     getInlineQuestionChain,
     state, 
     addActiveBlock, 
-    goToQuestion 
+    goToQuestion,
+    isQuestionRepeatable
   } = useFormExtended();
   
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});
@@ -36,6 +38,9 @@ export function FormQuestion({ question }: FormQuestionProps) {
   // Nuovo stato per tenere traccia degli errori di validazione
   const [validationErrors, setValidationErrors] = useState<{ [key: string]: boolean }>({});
   const params = useParams();
+
+  // Verifichiamo se la domanda corrente è ripetibile
+  const isRepeatable = isQuestionRepeatable(question.question_id);
 
   // Effetto per caricare le risposte esistenti e impostare visibilità iniziale delle opzioni
   useEffect(() => {
@@ -498,6 +503,9 @@ export function FormQuestion({ question }: FormQuestionProps) {
 
   return (
     <div className="max-w-xl animate-fade-in">
+      {/* Se la domanda è ripetibile, mostro il riepilogo delle iterazioni precedenti */}
+      {isRepeatable && <IterationSummary questionId={question.question_id} />}
+      
       {/* Testo della domanda semplificato */}
       <div className="text-[16px] font-normal text-gray-900 mb-5 leading-relaxed">
         {renderQuestionText()}
@@ -511,7 +519,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
         {Object.keys(question.placeholders).map(key => renderVisibleSelectOptions(key, question.placeholders[key]))}
       </div>
       
-      {/* Pulsante Avanti - mostrato solo se ci sono risposte valide e tutti gli input hanno contenuto valido */}
+      {/* Pulsante Avanti - mostrato solo se ci sono risposte valide */}
       {hasValidResponses && (
         <div className="mt-8">
           <Button
