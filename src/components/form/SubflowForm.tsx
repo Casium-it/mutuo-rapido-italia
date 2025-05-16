@@ -25,57 +25,96 @@ export function SubflowForm({
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [responses, setResponses] = useState<RepeatingGroupEntry>(initialData);
   
-  // Ottenere la domanda corrente
+  // Otteniamo la domanda corrente
   const currentQuestion = questions[currentQuestionIndex];
   
-  // Gestione dell'avanzamento
+  // Effetto per inizializzare i dati se ci sono dati iniziali
+  useEffect(() => {
+    if (initialData && Object.keys(initialData).length > 0) {
+      setResponses({...initialData});
+    }
+  }, [initialData]);
+  
+  // Funzione per gestire la risposta a una domanda
   const handleAnswer = (questionId: string, value: any) => {
-    // Salva la risposta
-    setResponses(prev => ({ 
-      ...prev, 
-      [questionId]: value 
+    // Salva la risposta localmente
+    setResponses(prev => ({
+      ...prev,
+      [questionId]: value
     }));
+  };
+  
+  // Funzione per navigare alla domanda successiva
+  const handleNext = () => {
+    const question = currentQuestion;
+    const questionId = question.question_id;
+    const value = responses[questionId];
     
-    // Controlla se c'è un _leads_to nel valore (passato da FormQuestion)
-    if (value._leads_to) {
-      const leadsTo = value._leads_to;
+    if (!value) {
+      // Non procedere se non c'è un valore
+      return;
+    }
+    
+    // Determina il prossimo passo in base alla priorità del placeholder
+    let nextDestination: string | undefined;
+    
+    // Se è specificata una priorità per il placeholder, usa quella
+    if (question.leads_to_placeholder_priority) {
+      const priorityPlaceholder = question.leads_to_placeholder_priority;
+      const placeholder = question.placeholders[priorityPlaceholder];
       
-      // Rimuovi il campo _leads_to prima di salvare la risposta
-      delete value._leads_to;
-      
-      // Controlla se è il segnale di fine
-      if (leadsTo === endSignal) {
-        // Finito il subflow, ritorna i dati
-        onComplete(responses);
-        return;
+      if (placeholder.type === "select") {
+        // Per i select, trova l'opzione selezionata
+        const selectedOption = placeholder.options.find(opt => opt.id === value[priorityPlaceholder]);
+        if (selectedOption) {
+          nextDestination = selectedOption.leads_to;
+        }
+      } else if (placeholder.type === "input") {
+        // Per gli input, usa leads_to del placeholder direttamente
+        nextDestination = placeholder.leads_to;
       }
-      
-      // Trova l'indice della domanda successiva
-      const nextIndex = questions.findIndex(q => q.question_id === leadsTo);
+    } else {
+      // Se non c'è priorità specificata, cerca il primo placeholder con leads_to
+      for (const [key, placeholder] of Object.entries(question.placeholders)) {
+        if (placeholder.type === "select") {
+          const selectedOption = placeholder.options.find(opt => opt.id === value[key]);
+          if (selectedOption) {
+            nextDestination = selectedOption.leads_to;
+            break;
+          }
+        } else if (placeholder.type === "input" && placeholder.leads_to) {
+          nextDestination = placeholder.leads_to;
+          break;
+        }
+      }
+    }
+    
+    // Verifica se abbiamo raggiunto il segnale di fine
+    if (nextDestination === endSignal) {
+      onComplete(responses);
+      return;
+    }
+    
+    // Altrimenti, vai alla prossima domanda
+    if (nextDestination) {
+      // Cerca l'indice della domanda con l'ID corrispondente
+      const nextIndex = questions.findIndex(q => q.question_id === nextDestination);
       if (nextIndex !== -1) {
         setCurrentQuestionIndex(nextIndex);
         return;
       }
-      
-      // Se non trovata, vai alla domanda successiva
-      if (currentQuestionIndex < questions.length - 1) {
-        setCurrentQuestionIndex(currentQuestionIndex + 1);
-      } else {
-        // Se siamo all'ultima domanda, considera completato il subflow
-        onComplete(responses);
-      }
+    }
+    
+    // Se non c'è un destination specifico o non è stato trovato, passa alla domanda successiva
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else {
-      // Comportamento predefinito: vai alla domanda successiva
-      if (currentQuestionIndex < questions.length - 1) {
-        setCurrentQuestionIndex(currentQuestionIndex + 1);
-      } else {
-        // Se siamo all'ultima domanda, considera completato il subflow
-        onComplete(responses);
-      }
+      // Se siamo all'ultima domanda, completa il subflow
+      onComplete(responses);
     }
   };
   
-  // Gestione del ritorno alla domanda precedente
+  // Funzione per tornare alla domanda precedente
   const handlePrevious = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
@@ -84,7 +123,7 @@ export function SubflowForm({
       onCancel();
     }
   };
-  
+
   // Se non ci sono domande, mostra un messaggio
   if (!questions.length) {
     return (
@@ -95,14 +134,10 @@ export function SubflowForm({
     );
   }
   
-  // Calcola initialValue per FormQuestion
-  const getQuestionInitialValue = (questionId: string) => {
-    // Se la risposta è già presente nello stato, restituiscila
-    if (responses[questionId]) {
-      return { [questionId]: responses[questionId] };
-    }
-    // Altrimenti, restituisci undefined
-    return undefined;
+  // Determina il valore iniziale per la domanda corrente
+  const getInitialValue = () => {
+    const questionId = currentQuestion.question_id;
+    return responses[questionId] ? { [questionId]: responses[questionId] } : undefined;
   };
   
   return (
@@ -110,7 +145,7 @@ export function SubflowForm({
       {/* Mostra la domanda corrente */}
       <FormQuestion
         question={currentQuestion}
-        initialValue={getQuestionInitialValue(currentQuestion.question_id)}
+        initialValue={getInitialValue()}
         onAnswer={handleAnswer}
         inline={currentQuestion.inline}
       />
@@ -126,23 +161,15 @@ export function SubflowForm({
           Indietro
         </Button>
         
-        {currentQuestionIndex < questions.length - 1 && (
-          <Button
-            variant="default"
-            onClick={() => {
-              // Prova ad avanzare automaticamente se c'è già una risposta
-              const value = responses[currentQuestion.question_id];
-              if (value !== undefined) {
-                handleAnswer(currentQuestion.question_id, value);
-              }
-            }}
-            className="flex items-center"
-            disabled={!responses[currentQuestion.question_id]}
-          >
-            Avanti
-            <ChevronRight className="ml-2 h-4 w-4" />
-          </Button>
-        )}
+        <Button
+          variant="default"
+          onClick={handleNext}
+          className="flex items-center"
+          disabled={!responses[currentQuestion.question_id]}
+        >
+          Avanti
+          <ChevronRight className="ml-2 h-4 w-4" />
+        </Button>
       </div>
     </div>
   );

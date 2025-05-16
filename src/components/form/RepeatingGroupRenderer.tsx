@@ -13,7 +13,7 @@ interface RepeatingGroupRendererProps {
 }
 
 export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
-  const { repeating_id, subflow } = block;
+  const { repeating_id, subflow, summary_id, summary_template } = block;
   const { navigateToNextQuestion, state } = useForm();
   const { addEntry, updateEntry, refreshEntries, entries, deleteEntry } = useRepeatingGroup(repeating_id);
   
@@ -136,7 +136,11 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
       continueButtonText={block.continue_button_text || "Continua"}
       onAdd={handleAdd}
       onEdit={handleEdit}
+      onDelete={deleteEntry}
       onContinue={handleContinue}
+      entries={entries}
+      summaryId={summary_id}
+      summaryTemplate={summary_template}
     />
   );
 }

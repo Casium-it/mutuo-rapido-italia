@@ -2,7 +2,6 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { IncomeEntryCard } from "./IncomeEntryCard";
-import { useRepeatingGroup } from "@/hooks/useRepeatingGroup";
 import { RepeatingGroupEntry } from "@/types/form";
 import { Plus } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
@@ -14,9 +13,13 @@ interface IncomeManagerViewProps {
   emptyStateText: string;
   addButtonText: string;
   continueButtonText: string;
+  entries: RepeatingGroupEntry[];
   onAdd: () => void;
   onEdit: (entry: RepeatingGroupEntry, index: number) => void;
+  onDelete: (index: number) => boolean;
   onContinue: () => void;
+  summaryId?: string;
+  summaryTemplate?: string;
 }
 
 export function IncomeManagerView({ 
@@ -26,15 +29,19 @@ export function IncomeManagerView({
   emptyStateText,
   addButtonText,
   continueButtonText,
+  entries,
   onAdd, 
   onEdit,
-  onContinue 
+  onDelete,
+  onContinue,
+  summaryId,
+  summaryTemplate
 }: IncomeManagerViewProps) {
-  const { entries, loading, hasEntries, deleteEntry } = useRepeatingGroup(repeatingId);
+  const hasEntries = entries.length > 0;
 
   const handleDelete = (index: number) => {
     if (window.confirm("Sei sicuro di voler eliminare questa fonte di reddito?")) {
-      const success = deleteEntry(index);
+      const success = onDelete(index);
       if (success) {
         toast({
           title: "Fonte di reddito eliminata",
@@ -50,18 +57,32 @@ export function IncomeManagerView({
     }
   };
 
+  // Funzione per formattare il riepilogo usando il template
+  const formatSummary = (entry: RepeatingGroupEntry): string => {
+    if (!summaryTemplate) {
+      // Fallback se non c'è un template
+      return `Reddito: ${entry[summaryId || 'amount_input'] || '0'}€`;
+    }
+    
+    // Sostituisce i segnaposti {{field_name}} con i valori effettivi
+    return summaryTemplate.replace(/\{\{([^}]+)\}\}/g, (match, field) => {
+      const value = entry[field];
+      
+      // Se il campo è amount_input, formatta come valuta
+      if (field === 'amount_input' && !isNaN(Number(value))) {
+        return Number(value).toLocaleString('it-IT');
+      }
+      
+      // Gestione dei valori null/undefined
+      return value !== undefined && value !== null ? String(value) : '';
+    });
+  };
+
+  // Calcola il reddito totale mensile
   const totalMonthlyIncome = entries.reduce((sum, entry) => {
     const amount = parseFloat(String(entry.amount_input));
     return sum + (isNaN(amount) ? 0 : amount);
   }, 0);
-
-  if (loading) {
-    return (
-      <div className="p-6 text-center">
-        <p>Caricamento in corso...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -88,6 +109,7 @@ export function IncomeManagerView({
               <IncomeEntryCard
                 key={entry.id || index}
                 entry={entry}
+                summary={formatSummary(entry)}
                 onEdit={() => onEdit(entry, index)}
                 onDelete={() => handleDelete(index)}
               />
