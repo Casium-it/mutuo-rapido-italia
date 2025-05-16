@@ -13,7 +13,6 @@ import { RepeatingGroupBlock } from "@/types/form";
 
 export default function Form() {
   const { state, blocks, getProgress, resetForm } = useForm();
-  const params = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -36,14 +35,16 @@ export default function Form() {
     navigate("/");
   };
 
-  // Assicuriamoci che il componente si ri-renderizzi quando cambia l'URL
+  // Reset dello stato subflow quando cambia l'URL
   useEffect(() => {
-    // Reset dello stato subflow quando cambia l'URL
-    setIsInSubflow(false);
-    setCurrentSubflowBlock(null);
-    setEditingIndex(null);
+    const isRepeatingGroupView = location.pathname.includes('manager_view');
     
-    // Questo effetto verrà eseguito ogni volta che cambia l'URL (location.pathname)
+    // Solo se non siamo in una vista di gestione di un gruppo ripetuto, resettiamo il subflow
+    if (!isRepeatingGroupView) {
+      setIsInSubflow(false);
+      setCurrentSubflowBlock(null);
+      setEditingIndex(null);
+    }
   }, [location.pathname]);
 
   // Handler per entrare in modalità subflow
@@ -113,17 +114,19 @@ export default function Form() {
         </div>
       </header>
 
-      {/* Progress bar */}
-      <div className="bg-white px-4 py-1">
-        <div className="max-w-4xl mx-auto flex items-center gap-3">
-          <Progress 
-            value={progress} 
-            className="h-1 bg-gray-100 rounded-full" 
-            indicatorClassName="bg-black" 
-          />
-          <span className="text-xs font-medium text-gray-500">{progress}%</span>
+      {/* Progress bar - visibile solo quando non siamo in modalità subflow */}
+      {!isInSubflow && (
+        <div className="bg-white px-4 py-1">
+          <div className="max-w-4xl mx-auto flex items-center gap-3">
+            <Progress 
+              value={progress} 
+              className="h-1 bg-gray-100 rounded-full" 
+              indicatorClassName="bg-black" 
+            />
+            <span className="text-xs font-medium text-gray-500">{progress}%</span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden">
@@ -146,7 +149,7 @@ export default function Form() {
                   {editingIndex !== null ? "Modifica fonte di reddito" : "Aggiungi nuova fonte di reddito"}
                 </h1>
               ) : (
-                <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">{activeBlock?.title}</h1>
+                activeBlock && <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">{activeBlock.title}</h1>
               )}
             </div>
 

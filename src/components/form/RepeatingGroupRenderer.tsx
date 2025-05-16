@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { RepeatingGroupBlock, RepeatingGroupEntry } from '@/types/form';
 import { useRepeatingGroup } from '@/hooks/useRepeatingGroup';
 import { useForm } from '@/contexts/FormContext';
@@ -29,6 +29,9 @@ export function RepeatingGroupRenderer({
   const { navigateToNextQuestion, state } = useForm();
   const { addEntry, updateEntry, refreshEntries, entries, deleteEntry } = useRepeatingGroup(repeating_id);
 
+  // Impedisce aggiornamenti durante le transizioni di navigazione
+  const isNavigatingRef = useRef(false);
+  
   // Stato per la modalità di visualizzazione (manager o subflow)
   // Se isIsolatedSubflow è true, inizializzalo già in modalità subflow
   const [mode, setMode] = useState<'manager' | 'subflow'>(
@@ -45,11 +48,8 @@ export function RepeatingGroupRenderer({
       : null
   );
 
-  // Effetto per aggiornare i dati quando il form cambia modalità o blocco
+  // Effetto per aggiornare i dati quando il componente si monta
   useEffect(() => {
-    // Forza un refresh dei dati per assicurarsi che siano aggiornati
-    refreshEntries();
-
     // Se siamo in modalità isolata e c'è un initialEditingIndex, impostiamo l'editing entry
     if (isIsolatedSubflow && initialEditingIndex !== null && entries[initialEditingIndex]) {
       setEditingEntry({
@@ -57,19 +57,7 @@ export function RepeatingGroupRenderer({
         index: initialEditingIndex
       });
     }
-
-    // Controllo quando la pagina viene ricaricata o quando si naviga
-    const handleBeforeUnload = () => {
-      // Dispara un evento di reset quando la pagina viene ricaricata
-      dispatchResetEvent();
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, [block.block_id, refreshEntries, isIsolatedSubflow, initialEditingIndex, entries]);
+  }, [isIsolatedSubflow, initialEditingIndex, entries]);
 
   // Gestisce l'aggiunta di un nuovo record
   const handleAdd = () => {
@@ -97,6 +85,9 @@ export function RepeatingGroupRenderer({
 
   // Gestisce il completamento del subflow
   const handleSubflowComplete = (data: RepeatingGroupEntry) => {
+    if (isNavigatingRef.current) return;
+    isNavigatingRef.current = true;
+    
     let success = false;
 
     console.log('Normalized data before save:', data);
@@ -136,32 +127,54 @@ export function RepeatingGroupRenderer({
 
     // Se siamo in modalità isolata e abbiamo un handler per il completamento, lo chiamiamo
     if (isIsolatedSubflow && onSubflowComplete) {
-      onSubflowComplete();
+      setTimeout(() => {
+        onSubflowComplete();
+        isNavigatingRef.current = false;
+      }, 100);
       return;
     }
 
     // Altrimenti, torna alla vista manager
-    setMode('manager');
+    setTimeout(() => {
+      setMode('manager');
+      isNavigatingRef.current = false;
+    }, 100);
   };
 
   // Gestisce l'annullamento del subflow
   const handleSubflowCancel = () => {
+    if (isNavigatingRef.current) return;
+    isNavigatingRef.current = true;
+    
     // Se siamo in modalità isolata e abbiamo un handler per l'annullamento, lo chiamiamo
     if (isIsolatedSubflow && onSubflowCancel) {
-      onSubflowCancel();
+      setTimeout(() => {
+        onSubflowCancel();
+        isNavigatingRef.current = false;
+      }, 100);
       return;
     }
 
     // Altrimenti, torna alla vista manager
-    setMode('manager');
-    setEditingEntry(null);
+    setTimeout(() => {
+      setMode('manager');
+      setEditingEntry(null);
+      isNavigatingRef.current = false;
+    }, 100);
   };
 
   // Gestisce la pressione del pulsante continua
   const handleContinue = () => {
+    if (isNavigatingRef.current) return;
+    isNavigatingRef.current = true;
+    
     // Usa l'ID della domanda attiva corrente invece del block_id
     const currentQuestionId = state.activeQuestion.question_id;
-    navigateToNextQuestion(currentQuestionId, "next_block");
+    
+    setTimeout(() => {
+      navigateToNextQuestion(currentQuestionId, "next_block");
+      isNavigatingRef.current = false;
+    }, 100);
   };
 
   // In modalità subflow, rendiamo solo il SubflowForm

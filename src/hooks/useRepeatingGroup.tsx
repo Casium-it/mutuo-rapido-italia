@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { RepeatingGroupEntry } from "@/types/form";
 import { useForm } from "@/contexts/FormContext";
 import { addResetListener } from "@/utils/repeatingGroupUtils";
@@ -23,6 +23,9 @@ export function useRepeatingGroup(repeatingId: string): UseRepeatingGroupReturn 
   const [entries, setEntries] = useState<RepeatingGroupEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [forceUpdate, setForceUpdate] = useState(0);
+  
+  // Riferimento per evitare caricamenti ripetuti
+  const loadedRef = useRef(false);
 
   // Funzione per caricare le voci dal FormContext
   const loadEntries = useCallback(() => {
@@ -41,13 +44,20 @@ export function useRepeatingGroup(repeatingId: string): UseRepeatingGroupReturn 
 
   // Carica le voci quando il componente si monta o quando cambia repeatingId o forceUpdate
   useEffect(() => {
+    // Se è già stato caricato e non è un aggiornamento forzato, salta il caricamento
+    if (loadedRef.current && forceUpdate === 0) {
+      return;
+    }
+    
     loadEntries();
+    loadedRef.current = true;
     
     // Aggiungi un listener per l'evento di reset specifico per il repeating group
     const removeResetListener = addResetListener(() => {
       console.log(`Reset listener triggered for ${repeatingId}, reloading entries`);
       setEntries([]);
       loadEntries();
+      loadedRef.current = false;
       // Forza un aggiornamento anche se loadEntries non trova modifiche
       setForceUpdate(prev => prev + 1);
     });
@@ -103,6 +113,7 @@ export function useRepeatingGroup(repeatingId: string): UseRepeatingGroupReturn 
     const success = saveRepeatingGroupEntry(repeatingId, [] as any);
     if (success) {
       setEntries([]);
+      loadedRef.current = false;
       // Forza un aggiornamento del componente
       setForceUpdate(prev => prev + 1);
     }
