@@ -92,6 +92,24 @@ export function QuestionRenderer({
     return null;
   };
 
+  // Renderizza gli input placeholder
+  const renderInputPlaceholders = () => {
+    const placeholderKeys = Object.keys(question.placeholders || {});
+    
+    return placeholderKeys
+      .filter(key => question.placeholders[key].type === "input")
+      .map(key => <RenderInputPlaceholder key={key} placeholderKey={key} placeholder={question.placeholders[key]} />);
+  };
+  
+  // Renderizza i select placeholder
+  const renderSelectPlaceholders = () => {
+    const placeholderKeys = Object.keys(question.placeholders || {});
+    
+    return placeholderKeys
+      .filter(key => question.placeholders[key].type === "select" && !visibleOptions[key])
+      .map(key => <RenderSelectPlaceholder key={key} placeholderKey={key} placeholder={question.placeholders[key]} />);
+  };
+
   return (
     <div className="max-w-xl animate-fade-in">
       {/* Banner note della domanda */}
@@ -105,6 +123,16 @@ export function QuestionRenderer({
       {/* Linea separatrice beige */}
       <Separator className="h-[1px] bg-[#F0EAE0] mb-5" />
       
+      {/* Input placeholders */}
+      <div className="space-y-5">
+        {renderInputPlaceholders()}
+      </div>
+      
+      {/* Select placeholders */}
+      <div className="space-y-5 mt-5">
+        {renderSelectPlaceholders()}
+      </div>
+      
       {/* Contenitore per i select options visibili */}
       <div className="space-y-5">
         {question.placeholders && Object.keys(question.placeholders).map(key => 
@@ -116,7 +144,7 @@ export function QuestionRenderer({
       </div>
       
       {/* Pulsanti di navigazione */}
-      {showNavigationButtons && isCurrentStepValid() && (
+      {showNavigationButtons && (
         <div className="flex justify-between pt-4 mt-8">
           <button
             type="button"
@@ -127,27 +155,29 @@ export function QuestionRenderer({
             {prevButtonText}
           </button>
           
-          <button
-            type="button"
-            onClick={handleNextStep}
-            disabled={isNavigating}
-            className={cn(
-              "bg-[#245C4F] hover:bg-[#1A453A] text-white px-[18px] py-[12px] rounded-[10px] text-[16px] font-medium inline-flex items-center",
-              isNavigating && "opacity-50 cursor-not-allowed"
-            )}
-          >
-            {!isLastQuestion ? (
-              <>
-                {nextButtonText}
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </>
-            ) : (
-              <>
-                <Check className="mr-2 h-4 w-4" />
-                {completeButtonText}
-              </>
-            )}
-          </button>
+          {isCurrentStepValid() && (
+            <button
+              type="button"
+              onClick={handleNextStep}
+              disabled={isNavigating}
+              className={cn(
+                "bg-[#245C4F] hover:bg-[#1A453A] text-white px-[18px] py-[12px] rounded-[10px] text-[16px] font-medium inline-flex items-center",
+                isNavigating && "opacity-50 cursor-not-allowed"
+              )}
+            >
+              {!isLastQuestion ? (
+                <>
+                  {nextButtonText}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </>
+              ) : (
+                <>
+                  <Check className="mr-2 h-4 w-4" />
+                  {completeButtonText}
+                </>
+              )}
+            </button>
+          )}
         </div>
       )}
     </div>

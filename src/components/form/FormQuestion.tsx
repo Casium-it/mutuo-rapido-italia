@@ -2,9 +2,10 @@
 import React from "react";
 import { Question } from "@/types/form";
 import { FormQuestionProvider } from "./FormQuestionProvider";
-import { QuestionRenderer } from "./QuestionRenderer";
+import { QuestionRenderer, RenderInputPlaceholder, RenderSelectPlaceholder } from "./QuestionRenderer";
 import { getQuestionTextWithClickableResponses } from "@/utils/formUtils";
 import { useFormExtended } from "@/hooks/useFormExtended";
+import { useQuestionContext } from "@/contexts/QuestionContext";
 
 interface FormQuestionProps {
   question: Question;
@@ -59,11 +60,21 @@ export function FormQuestion({ question }: FormQuestionProps) {
     return question.question_text;
   };
 
+  // Funzione per renderizzare parti specifiche della domanda
+  const renderQuestionParts = () => {
+    return (
+      <div className="space-y-5">
+        {/* Qui possono essere aggiunti componenti specifici per questo tipo di domanda */}
+      </div>
+    );
+  };
+
   return (
     <FormQuestionProvider question={question}>
       <QuestionRenderer 
         question={question}
         questionText={renderQuestionText()}
+        renderQuestionParts={renderQuestionParts}
         showNavigationButtons={true}
         nextButtonText="Avanti"
         prevButtonText="Indietro"
