@@ -32,7 +32,7 @@ export type Question = {
   inline?: boolean;
   leads_to_placeholder_priority: string;
   placeholders: Record<string, Placeholder>;
-  repeatable?: boolean; // Nuovo attributo per domande ripetibili
+  repeatable?: boolean; // Attributo per domande ripetibili
 };
 
 export type Block = {
@@ -42,10 +42,9 @@ export type Block = {
   priority: number;
   default_active?: boolean;
   questions: Question[];
-  repeatable?: boolean; // Nuovo attributo per blocchi ripetibili
 };
 
-// Modifica alla struttura per supportare più iterazioni della stessa domanda
+// Struttura per supportare più iterazioni della stessa domanda
 export type FormResponse = {
   [question_id: string]: {
     // Le iterazioni delle risposte per questa domanda
@@ -66,7 +65,7 @@ export type NavigationHistory = {
   to_block_id: string;
   to_question_id: string;
   timestamp: number;
-  iteration_id?: number; // Nuovo campo per tracciare l'iterazione
+  iteration_id?: number; // Campo per tracciare l'iterazione
 };
 
 export type FormState = {
@@ -79,7 +78,7 @@ export type FormState = {
   answeredQuestions: Set<string>;
   isNavigating?: boolean;
   navigationHistory: NavigationHistory[];
-  currentIterations: {  // Nuovo campo per tenere traccia delle iterazioni correnti
+  currentIterations: {  // Campo per tenere traccia delle iterazioni correnti
     [question_id: string]: number;
   };
 };

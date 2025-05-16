@@ -1,4 +1,3 @@
-
 import { Block } from "@/types/form";
 
 // Block 7 - Finanziamenti
@@ -8,7 +7,6 @@ export const block7: Block = {
   title: "I tuoi finanziamenti",
   priority: 70,
   default_active: true,
-  repeatable: true, // Questo blocco può essere ripetuto più volte
   questions: [
     {
       question_number: "7.1",

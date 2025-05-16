@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback } from "react";
 import { Block, FormState, FormResponse, NavigationHistory } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
@@ -15,7 +14,7 @@ type FormContextType = {
   getProgress: () => number;
   resetForm: () => void;
   getNavigationHistoryFor: (questionId: string) => NavigationHistory | undefined;
-  // Nuove funzioni per gestire domande ripetibili
+  // Funzioni per gestire domande ripetibili
   isQuestionRepeatable: (question_id: string) => boolean;
   getCurrentIterationId: (question_id: string) => number;
   startNewIteration: (question_id: string) => void;
@@ -31,7 +30,7 @@ type Action =
   | { type: "RESET_FORM" }
   | { type: "SET_NAVIGATING"; isNavigating: boolean }
   | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory }
-  // Nuove azioni per gestire iterazioni
+  // Azioni per gestire iterazioni
   | { type: "START_NEW_ITERATION"; question_id: string }
   | { type: "SET_CURRENT_ITERATION"; question_id: string; iteration_id: number };
 
@@ -213,20 +212,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     navigate("/simulazione/pensando/introduzione/soggetto_acquisto", { replace: true });
   }, [params.blockType, navigate]);
 
-  // Funzione per verificare se una domanda è in un flusso ripetibile
-  const isInRepeatableFlow = useCallback((questionId: string): boolean => {
-    // Cerca la domanda negli array di domande di tutti i blocchi
-    for (const block of sortedBlocks) {
-      const question = block.questions.find(q => q.question_id === questionId);
-      if (question) {
-        // Se la domanda è ripetibile o il blocco è ripetibile, è in un flusso ripetibile
-        return question.repeatable === true || block.repeatable === true;
-      }
-    }
-    return false;
-  }, [sortedBlocks]);
-
-  // Funzione per trovare una domanda dato il suo ID
+  // IMPORTANTE: Funzione helper che viene utilizzata in più punti
   const findQuestionById = useCallback((questionId: string) => {
     for (const block of sortedBlocks) {
       const question = block.questions.find(q => q.question_id === questionId);
@@ -236,6 +222,17 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     }
     return null;
   }, [sortedBlocks]);
+
+  // Funzione per verificare se una domanda è ripetibile
+  const isInRepeatableFlow = useCallback((questionId: string): boolean => {
+    // Cerca la domanda negli array di domande di tutti i blocchi
+    const questionInfo = findQuestionById(questionId);
+    if (questionInfo) {
+      // Verifica solo se la domanda è ripetibile (non più il blocco)
+      return questionInfo.question.repeatable === true;
+    }
+    return false;
+  }, [findQuestionById]);
 
   // Sincronizza lo stato del form con i parametri URL quando l'URL cambia
   useEffect(() => {
@@ -255,17 +252,15 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       
       // Controlla se la domanda è ripetibile
       const questionInfo = findQuestionById(questionId);
-      const isQuestionOrBlockRepeatable = 
-        (questionInfo?.question.repeatable === true) || 
-        (questionInfo?.block.repeatable === true);
+      const isQuestionRepeatable = questionInfo?.question.repeatable === true;
         
       // Se la domanda è ripetibile e non abbiamo un'iterazione corrente, iniziamone una nuova
-      if (isQuestionOrBlockRepeatable && !state.currentIterations[questionId]) {
+      if (isQuestionRepeatable && !state.currentIterations[questionId]) {
         dispatch({ type: "START_NEW_ITERATION", question_id: questionId });
       }
       
       // Se stiamo tornando a una domanda ripetibile dall'inizio del ciclo, potrebbe essere una nuova iterazione
-      if (isQuestionOrBlockRepeatable) {
+      if (isQuestionRepeatable) {
         // Cerca nella storia di navigazione
         const latestHistory = [...state.navigationHistory].sort((a, b) => b.timestamp - a.timestamp)[0];
         
@@ -486,17 +481,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return state.answeredQuestions.has(question_id);
   }, [state.answeredQuestions]);
 
-  const findQuestionById = useCallback((questionId: string): { block: Block; question: any } | null => {
-    for (const block of sortedBlocks) { // Usa blocchi ordinati
-      for (const question of block.questions) {
-        if (question.question_id === questionId) {
-          return { block, question };
-        }
-      }
-    }
-    return null;
-  }, [sortedBlocks]);
-
   const navigateToNextQuestion = useCallback((currentQuestionId: string, leadsTo: string) => {
     // Salva la domanda corrente prima di navigare
     const currentBlockId = state.activeQuestion.block_id;
@@ -631,13 +615,11 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return sortedHistory.find(item => item.to_question_id === questionId);
   }, [state.navigationHistory]);
 
-  // Nuove funzioni per gestire le domande ripetibili
-  
   // Verifica se una domanda è ripetibile
   const isQuestionRepeatable = useCallback((question_id: string): boolean => {
     const questionInfo = findQuestionById(question_id);
-    return (questionInfo?.question.repeatable === true) || 
-           (questionInfo?.block.repeatable === true);
+    // Verifica solo se la domanda è ripetibile (non più il blocco)
+    return questionInfo?.question.repeatable === true;
   }, [findQuestionById]);
   
   // Ottieni l'ID dell'iterazione corrente per una domanda
@@ -672,7 +654,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         getProgress,
         resetForm,
         getNavigationHistoryFor,
-        // Nuove funzioni esposte
+        // Funzioni esposte per gestire domande ripetibili
         isQuestionRepeatable,
         getCurrentIterationId,
         startNewIteration,
