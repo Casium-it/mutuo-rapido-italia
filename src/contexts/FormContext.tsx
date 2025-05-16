@@ -387,9 +387,18 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         const question = blockObj.questions.find(q => q.question_id === questionId);
         if (!question) continue;
 
-        for (const [placeholderKey, value] of Object.entries(responses[questionId])) {
-          if (question.placeholders[placeholderKey].type === "select") {
-            const options = (question.placeholders[placeholderKey] as any).options;
+        for (const placeholderKey in responses[questionId]) {
+          // Verifica che sia una chiave valida e non una proprietà come 'iterations'
+          if (placeholderKey === 'iterations') continue;
+          
+          // Verifica che il placeholder esista nella domanda
+          if (!question.placeholders[placeholderKey]) continue;
+          
+          const placeholder = question.placeholders[placeholderKey];
+          const value = responses[questionId][placeholderKey];
+          
+          if (placeholder.type === "select") {
+            const options = (placeholder as any).options;
             if (!Array.isArray(value)) { // Per selezione singola
               const selectedOption = options.find((opt: any) => opt.id === value);
               if (selectedOption?.add_block && !state.activeBlocks.includes(selectedOption.add_block)) {
