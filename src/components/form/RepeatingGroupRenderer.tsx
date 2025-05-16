@@ -77,21 +77,36 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
     Object.keys(data).forEach(key => {
       const value = data[key];
       
+      // DEBUG
+      // console.log(`Normalizing field ${key}:`, value, typeof value);
+      
       // Gestisce i diversi tipi di campo
-      if (key === 'amount_input' && value) {
-        // Converte l'input di importo in numero
-        normalizedData[key] = typeof value === 'string' ? parseFloat(value) : value;
-      } 
-      else if (key === 'income_type' && value && typeof value === 'object' && 'id' in value) {
-        // Estrae l'ID dal valore di tipo selezionato
-        normalizedData[key] = value.id;
+      if (key === 'amount_input') {
+        // Assicurati che l'importo sia salvato come numero
+        normalizedData[key] = typeof value === 'string' 
+          ? parseFloat(value) 
+          : (typeof value === 'number' ? value : 0);
       }
-      else if (value && typeof value === 'object' && 'id' in value) {
-        // Estrae l'ID da qualsiasi altro campo di tipo select
-        normalizedData[key] = value.id;
+      else if (key === 'income_type') {
+        // Estrae l'ID dal tipo di reddito
+        normalizedData[key] = typeof value === 'object' && value !== null && 'id' in value
+          ? value.id
+          : value; // Se è già una stringa, usala così com'è
+      }
+      else if (typeof value === 'object' && value !== null) {
+        // Per gli oggetti complessi, salva solo l'id o un valore primitivo
+        if ('id' in value) {
+          normalizedData[key] = value.id;
+        } else {
+          // Se non c'è un id, usa il primo valore primitivo trovato
+          const firstPrimitive = Object.values(value).find(v => 
+            typeof v !== 'object' || v === null
+          );
+          normalizedData[key] = firstPrimitive !== undefined ? firstPrimitive : JSON.stringify(value);
+        }
       }
       else {
-        // Utilizza il valore così com'è per altri tipi di campi
+        // Utilizza il valore così com'è per tipi primitivi
         normalizedData[key] = value;
       }
     });
@@ -151,13 +166,15 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
   // In modalità subflow, rendiamo solo il SubflowForm senza il FormReader principale
   if (mode === 'subflow') {
     return (
-      <SubflowForm
-        questions={subflow}
-        initialData={editingEntry?.data}
-        onComplete={handleSubflowComplete}
-        onCancel={handleSubflowCancel}
-        endSignal="end_of_subflow"
-      />
+      <div className="w-full">
+        <SubflowForm
+          questions={subflow}
+          initialData={editingEntry?.data}
+          onComplete={handleSubflowComplete}
+          onCancel={handleSubflowCancel}
+          endSignal="end_of_subflow"
+        />
+      </div>
     );
   }
   

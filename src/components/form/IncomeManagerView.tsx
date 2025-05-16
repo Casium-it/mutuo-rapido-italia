@@ -68,13 +68,28 @@ export function IncomeManagerView({
     return summaryTemplate.replace(/\{\{([^}]+)\}\}/g, (match, field) => {
       const value = entry[field];
       
+      // Debug
+      // console.log(`Formatting field ${field}:`, value, typeof value);
+      
+      // Se il valore è undefined o null
+      if (value === undefined || value === null) {
+        return '';
+      }
+      
       // Se il campo è amount_input, formatta come valuta
       if (field === 'amount_input' && !isNaN(Number(value))) {
         return Number(value).toLocaleString('it-IT');
       }
       
-      // Gestione dei valori null/undefined
-      return value !== undefined && value !== null ? String(value) : '';
+      // Gestisce oggetti (non dovrebbe accadere dopo la normalizzazione)
+      if (typeof value === 'object') {
+        if ('id' in value) return value.id;
+        if ('label' in value) return value.label;
+        return JSON.stringify(value);
+      }
+      
+      // Valori primitivi
+      return String(value);
     });
   };
 

@@ -42,6 +42,9 @@ export function SubflowForm({
       ...prev,
       [questionId]: value
     }));
+    
+    // Per debug
+    // console.log('SubflowForm handleAnswer:', { questionId, value });
   };
   
   // Funzione per navigare alla domanda successiva
@@ -50,7 +53,10 @@ export function SubflowForm({
     const questionId = question.question_id;
     const value = responses[questionId];
     
-    if (!value) {
+    // Per debug
+    // console.log('handleNext:', { questionId, value, question });
+    
+    if (!value && value !== 0) {
       // Non procedere se non c'è un valore
       return;
     }
@@ -65,7 +71,13 @@ export function SubflowForm({
       
       if (placeholder.type === "select") {
         // Per i select, trova l'opzione selezionata
-        const selectedOption = placeholder.options.find(opt => opt.id === value[priorityPlaceholder]);
+        const selectedOption = placeholder.options.find(opt => {
+          if (typeof value === 'object' && value !== null) {
+            return opt.id === value[priorityPlaceholder];
+          }
+          return opt.id === value;
+        });
+        
         if (selectedOption) {
           nextDestination = selectedOption.leads_to;
         }
@@ -77,7 +89,8 @@ export function SubflowForm({
       // Se non c'è priorità specificata, cerca il primo placeholder con leads_to
       for (const [key, placeholder] of Object.entries(question.placeholders)) {
         if (placeholder.type === "select") {
-          const selectedOption = placeholder.options.find(opt => opt.id === value[key]);
+          const selectedValue = typeof value === 'object' ? value[key] : value;
+          const selectedOption = placeholder.options.find(opt => opt.id === selectedValue);
           if (selectedOption) {
             nextDestination = selectedOption.leads_to;
             break;
@@ -134,6 +147,12 @@ export function SubflowForm({
     );
   }
   
+  // Determina il valore iniziale per la domanda corrente
+  const getInitialValue = () => {
+    const questionId = currentQuestion.question_id;
+    return responses[questionId] ? responses[questionId] : undefined;
+  };
+  
   // Renderizza il testo della domanda, sostituendo i placeholder con i componenti appropriati
   const renderQuestionText = () => {
     const questionText = currentQuestion.question_text;
@@ -152,6 +171,11 @@ export function SubflowForm({
       const placeholder = currentQuestion.placeholders[placeholderKey];
       
       if (placeholder && placeholder.type === "select") {
+        // Ottieni il valore corrente per questo placeholder
+        const value = typeof responses[currentQuestion.question_id] === 'object' 
+          ? responses[currentQuestion.question_id]?.[placeholderKey] 
+          : responses[currentQuestion.question_id];
+          
         // Renderizza un SelectPlaceholderBox per i placeholder di tipo select
         parts.push(
           <SelectPlaceholderBox
@@ -159,17 +183,21 @@ export function SubflowForm({
             questionId={currentQuestion.question_id}
             placeholderKey={placeholderKey}
             options={placeholder.options}
-            value={responses[currentQuestion.question_id]?.[placeholderKey]}
+            value={value}
           />
         );
       } else {
         // Renderizza un span semplice per gli altri tipi di placeholder
+        const value = typeof responses[currentQuestion.question_id] === 'object'
+          ? responses[currentQuestion.question_id]?.[placeholderKey]
+          : responses[currentQuestion.question_id];
+        
         parts.push(
           <span 
             key={`placeholder-${placeholderKey}`}
             className="inline-block bg-gray-100 px-2 py-1 rounded mx-1"
           >
-            {responses[currentQuestion.question_id]?.[placeholderKey] || '___'}
+            {value || '___'}
           </span>
         );
       }
@@ -183,12 +211,6 @@ export function SubflowForm({
     }
     
     return <div className="text-xl font-medium mb-6">{parts}</div>;
-  };
-  
-  // Determina il valore iniziale per la domanda corrente
-  const getInitialValue = () => {
-    const questionId = currentQuestion.question_id;
-    return responses[questionId] ? { [questionId]: responses[questionId] } : undefined;
   };
   
   return (
@@ -216,7 +238,7 @@ export function SubflowForm({
           variant="default"
           onClick={handleNext}
           className="flex items-center"
-          disabled={!responses[currentQuestion.question_id]}
+          disabled={!responses[currentQuestion.question_id] && responses[currentQuestion.question_id] !== 0}
         >
           Avanti
           <ChevronRight className="ml-2 h-4 w-4" />
