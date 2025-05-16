@@ -8,8 +8,6 @@ import { Button } from "@/components/ui/button";
 import { RefreshCcw } from "lucide-react";
 import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
-import { RepeatingGroupRenderer } from "@/components/form/RepeatingGroupRenderer";
-import { RepeatingGroupBlock } from "@/types/form";
 
 export default function Form() {
   const { state, blocks, getProgress, resetForm } = useForm();
@@ -34,19 +32,6 @@ export default function Form() {
     // Questo effetto verrà eseguito ogni volta che cambia l'URL (location.pathname)
     // Poiché dipende da location.pathname, forza un ri-rendering del componente
   }, [location.pathname]);
-
-  // Determina quale contenuto mostrare in base al tipo di blocco attivo
-  const renderActiveContent = () => {
-    if (!activeBlock) return null;
-    
-    // Se è un gruppo ripetuto, usa il RepeatingGroupRenderer
-    if ('type' in activeBlock && activeBlock.type === 'repeating_group') {
-      return <RepeatingGroupRenderer block={activeBlock as RepeatingGroupBlock} />;
-    }
-    
-    // Altrimenti usa il QuestionView standard
-    return <QuestionView />;
-  };
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -98,20 +83,20 @@ export default function Form() {
               <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">{activeBlock?.title}</h1>
             </div>
 
-            {/* Question or RepeatingGroup - con key per forzare il re-rendering quando cambia l'URL */}
+            {/* Question - con key per forzare il re-rendering quando cambia l'URL */}
             <div key={location.pathname}>
-              {renderActiveContent()}
+              <QuestionView />
             </div>
           </div>
         </div>
       </div>
       
-      {/* Reset button - modificato stile */}
+      {/* Reset button */}
       <div className="absolute bottom-4 left-4 z-10">
         <Button 
           variant="outline" 
           size="sm" 
-          className="bg-[#F8F5F1] text-[#245C4F] border-[#E7E1D9] hover:bg-[#E7E1D9] text-xs"
+          className="bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200 text-xs"
           onClick={resetForm}
         >
           <RefreshCcw className="h-3 w-3 mr-1" />

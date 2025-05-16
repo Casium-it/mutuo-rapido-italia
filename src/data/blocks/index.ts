@@ -6,7 +6,6 @@ import { block3 } from "./block3";
 import { block4 } from "./block4";
 import { block5 } from "./block5";
 import { block6 } from "./block6";
-import { block6_repeating } from "./block6_repeating";
 import { block7 } from "./block7";
 import { block8 } from "./block8";
 import { block9 } from "./block9";
@@ -27,7 +26,6 @@ export {
   block4,
   block5,
   block6,
-  block6_repeating,
   block7,
   block8,
   block9,
@@ -48,7 +46,7 @@ export const allBlocks: Block[] = [
   block3,
   block4,
   block5,
-  block6_repeating, // Utilizziamo la versione repeating invece del block6 originale
+  block6,
   block7,
   block8,
   block9,

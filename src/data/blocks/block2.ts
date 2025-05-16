@@ -1,4 +1,3 @@
-
 import { Block } from "@/types/form";
 
 // Block 2 - La tua situazione
@@ -13,7 +12,6 @@ export const block2: Block = {
       question_number: "2.1",
       question_id: "eta_e_citta",
       question_text: "Io ho {{placeholder1}} anni e vivo a {{placeholder2}}, {{placeholder3}}",
-      question_notes: "Queste informazioni sono importanti per verificare l'ubicazione dell'immobile e la tua idoneità al mutuo.",
       leads_to_placeholder_priority: "placeholder3", // Specifica quale placeholder ha priorità per la navigazione
       placeholders: {
         placeholder1: {
@@ -59,7 +57,6 @@ export const block2: Block = {
       question_number: "2.3",
       question_id: "tipo_abitazione",
       question_text: "Attualmente vivo in {{placeholder1}}",
-      question_notes: "La tua situazione abitativa attuale può influire sulla valutazione del tuo profilo per il nuovo mutuo.",
       leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
