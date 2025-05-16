@@ -5,7 +5,16 @@ import { FormQuestion } from "./FormQuestion";
 import { useLocation, useParams } from "react-router-dom";
 
 export function QuestionView() {
-  const { state, blocks, goToQuestion } = useFormExtended();
+  const { 
+    state, 
+    blocks, 
+    goToQuestion, 
+    saveCurrentLoopEntry, 
+    isQuestionInLoop, 
+    getCurrentLoopState,
+    isLastQuestionInLoop,
+    getLoopManagerQuestion
+  } = useFormExtended();
   const location = useLocation();
   const params = useParams<{ blockId?: string, questionId?: string }>();
   
@@ -20,6 +29,35 @@ export function QuestionView() {
       }
     }
   }, [location.pathname, params.blockId, params.questionId, state.activeQuestion, goToQuestion]);
+  
+  // Effetto per gestire l'uscita da un loop
+  useEffect(() => {
+    // Controlla se la domanda corrente non fa parte del loop attivo (uscita dal loop)
+    const currentLoop = getCurrentLoopState();
+    if (currentLoop && state.activeQuestion.question_id) {
+      const currentQuestionInLoop = isQuestionInLoop(state.activeQuestion.question_id, currentLoop.loop_id);
+      
+      // Se siamo usciti dal loop ma abbiamo ancora currentLoop attivo
+      if (!currentQuestionInLoop) {
+        // Controlla se la domanda corrente è un loop manager per lo stesso loop
+        const loopManagerQuestion = getLoopManagerQuestion(currentLoop.loop_id);
+        const isCurrentLoopManager = loopManagerQuestion && 
+          loopManagerQuestion.question_id === state.activeQuestion.question_id;
+          
+        // Se non siamo al loop manager, salviamo l'entry e usciamo dal loop
+        if (!isCurrentLoopManager) {
+          console.log("[QuestionView] Rilevata uscita dal loop, salvataggio automatico");
+          saveCurrentLoopEntry();
+        }
+      }
+    }
+  }, [
+    state.activeQuestion, 
+    getCurrentLoopState, 
+    isQuestionInLoop, 
+    saveCurrentLoopEntry,
+    getLoopManagerQuestion
+  ]);
   
   // Find the current active block and question
   const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);

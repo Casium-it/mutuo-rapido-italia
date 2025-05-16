@@ -202,6 +202,51 @@ export const useFormExtended = () => {
     return formContext.state.currentLoop;
   };
   
+  /**
+   * Ottiene il gestore di loop associato a un loopId specifico
+   * @param loopId ID del loop
+   * @returns La domanda di gestione del loop o undefined
+   */
+  const getLoopManagerQuestion = (loopId: string): Question | undefined => {
+    for (const block of formContext.blocks) {
+      for (const question of block.questions) {
+        if (question.loop_manager && question.loop_id === loopId) {
+          return question;
+        }
+      }
+    }
+    return undefined;
+  };
+  
+  /**
+   * Verifica se la domanda corrente è l'ultima in un loop specifico
+   * @param loopId ID del loop
+   * @param questionId ID della domanda
+   * @returns Booleano che indica se la domanda è l'ultima nel loop
+   */
+  const isLastQuestionInLoop = (loopId: string, questionId: string): boolean => {
+    // Trova tutte le domande nel loop corrente
+    const questionsInLoop: Question[] = [];
+    for (const block of formContext.blocks) {
+      for (const question of block.questions) {
+        if (question.loop === loopId) {
+          questionsInLoop.push(question);
+        }
+      }
+    }
+    
+    // Ordina le domande in base ai loro question_number
+    questionsInLoop.sort((a, b) => {
+      const aNum = parseFloat(a.question_number.replace(/[^0-9.]/g, ''));
+      const bNum = parseFloat(b.question_number.replace(/[^0-9.]/g, ''));
+      return aNum - bNum;
+    });
+    
+    // Verifica se la domanda corrente è l'ultima nel loop
+    const lastQuestionInLoop = questionsInLoop[questionsInLoop.length - 1];
+    return lastQuestionInLoop && lastQuestionInLoop.question_id === questionId;
+  };
+  
   return {
     ...formContext,
     getPreviousQuestionText,
@@ -215,6 +260,8 @@ export const useFormExtended = () => {
     isLoopManager,
     getLoopManagerInfo,
     isQuestionInLoop,
-    getCurrentLoopState
+    getCurrentLoopState,
+    getLoopManagerQuestion,
+    isLastQuestionInLoop
   };
 };

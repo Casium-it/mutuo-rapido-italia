@@ -616,19 +616,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     dispatch({ type: "CANCEL_LOOP_ENTRY" });
   }, []);
 
-  const isInLoop = useCallback((questionId: string): boolean => {
-    // Trova la domanda
-    const foundQuestion = findQuestionById(questionId)?.question;
-    
-    // Verifica se questa domanda fa parte di un loop
-    return !!foundQuestion?.loop;
-  }, [findQuestionById]);
-
-  const getLoopIdForQuestion = useCallback((questionId: string): string | undefined => {
-    const foundQuestion = findQuestionById(questionId)?.question;
-    return foundQuestion?.loop;
-  }, [findQuestionById]);
-
+  // Funzioni ausiliarie per i loop
   const findLoopManagerQuestion = useCallback((loopId: string): Question | undefined => {
     for (const block of sortedBlocks) {
       for (const question of block.questions) {
@@ -638,6 +626,35 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       }
     }
     return undefined;
+  }, [sortedBlocks]);
+
+  // Funzione migliorata per determinare se una domanda è l'ultima in un loop
+  const isLastQuestionInLoop = useCallback((loopId: string, questionId: string): boolean => {
+    // Trova tutte le domande nel loop specificato
+    const questionsInLoop: Question[] = [];
+    
+    for (const block of sortedBlocks) {
+      for (const question of block.questions) {
+        if (question.loop === loopId) {
+          questionsInLoop.push(question);
+        }
+      }
+    }
+    
+    if (questionsInLoop.length === 0) {
+      return false;
+    }
+    
+    // Ordina le domande per numero
+    questionsInLoop.sort((a, b) => {
+      const aNum = parseFloat(a.question_number.replace(/[^0-9.]/g, ''));
+      const bNum = parseFloat(b.question_number.replace(/[^0-9.]/g, ''));
+      return aNum - bNum;
+    });
+    
+    // Verifica se la domanda specificata è l'ultima
+    const lastQuestion = questionsInLoop[questionsInLoop.length - 1];
+    return lastQuestion.question_id === questionId;
   }, [sortedBlocks]);
 
   const navigateToNextQuestion = useCallback((currentQuestionId: string, leadsTo: string) => {
@@ -651,96 +668,76 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     debugLog(`Navigazione da ${currentQuestionId} a ${leadsTo}`);
     
     // Trova la domanda corrente
-    const currentQuestion = findQuestionById(currentQuestionId)?.question;
+    const currentQuestionData = findQuestionById(currentQuestionId);
+    const currentQuestion = currentQuestionData?.question;
     
     // Debug
     debugLog("Domanda corrente:", currentQuestion);
     debugLog("Stato corrente del loop:", state.currentLoop);
     
-    // Verifica se la domanda corrente fa parte di un loop
-    const currentLoopId = currentQuestion?.loop;
-    
-    // Se c'è un currentLoopId, allora siamo in un loop
-    if (currentLoopId) {
-      debugLog(`La domanda corrente fa parte del loop: ${currentLoopId}`);
-    }
-    
-    // Trova la domanda di destinazione se non è "next_block"
-    let targetQuestion: Question | undefined;
-    
-    if (leadsTo !== "next_block") {
-      targetQuestion = findQuestionById(leadsTo)?.question;
-      debugLog("Domanda di destinazione:", targetQuestion);
-    }
-    
-    // Controlla se stiamo uscendo da un loop
-    const isExitingLoop = currentLoopId && (!targetQuestion || !targetQuestion.loop || targetQuestion.loop !== currentLoopId);
-    
-    if (isExitingLoop) {
-      debugLog(`Uscita dal loop ${currentLoopId}`, {
-        daLoop: currentLoopId,
-        aLoop: targetQuestion?.loop
-      });
+    // Gestione speciale per i loop
+    if (currentQuestion) {
+      // Verifica se la domanda corrente fa parte di un loop
+      const currentLoopId = currentQuestion.loop;
       
-      // Verifica se stiamo tornando al loop manager
-      const loopManagerQuestion = findLoopManagerQuestion(currentLoopId);
-      debugLog("Domanda loop manager:", loopManagerQuestion);
-      
-      // Se la destinazione è il loop manager, dobbiamo salvare l'entry corrente
-      if (loopManagerQuestion && loopManagerQuestion.question_id === leadsTo) {
-        debugLog("Ritorno al loop manager, salvataggio entry");
-        saveCurrentLoopEntry();
-      } 
-      // Altrimenti verifica se è l'ultima domanda nel loop prima di uscire
-      else if (state.currentLoop) {
-        // Trova tutte le domande nel loop corrente
-        const questionsInLoop: Question[] = [];
-        for (const block of blocks) {
-          for (const question of block.questions) {
-            if (question.loop === currentLoopId) {
-              questionsInLoop.push(question);
-            }
+      // Se siamo in un loop
+      if (currentLoopId && state.currentLoop) {
+        debugLog(`La domanda corrente fa parte del loop: ${currentLoopId}`);
+        
+        // Trova la domanda di destinazione
+        let targetQuestion: Question | undefined;
+        
+        if (leadsTo !== "next_block") {
+          const targetQuestionData = findQuestionById(leadsTo);
+          targetQuestion = targetQuestionData?.question;
+          debugLog("Domanda di destinazione:", targetQuestion);
+        }
+        
+        // Caso 1: Stiamo navigando all'ultima domanda del loop
+        if (targetQuestion && targetQuestion.loop === currentLoopId && isLastQuestionInLoop(currentLoopId, targetQuestion.question_id)) {
+          debugLog("Navigazione all'ultima domanda del loop");
+          // Continua normalmente alla domanda, l'eventuale ritorno al loop manager è gestito con la risposta all'ultima domanda
+        }
+        // Caso 2: Stiamo uscendo dal loop
+        else if (!targetQuestion || !targetQuestion.loop || targetQuestion.loop !== currentLoopId) {
+          debugLog(`Uscita dal loop ${currentLoopId}`);
+          
+          // Se stiamo tornando al loop manager, dobbiamo salvare l'entry
+          const loopManagerQuestion = findLoopManagerQuestion(currentLoopId);
+          
+          if (loopManagerQuestion && loopManagerQuestion.question_id === leadsTo) {
+            debugLog("Ritorno al loop manager, salvataggio entry");
+            saveCurrentLoopEntry();
+          } 
+          // Se stiamo uscendo definitivamente dal loop o andando a una domanda di un altro loop
+          else {
+            debugLog("Uscita definitiva dal loop o cambio loop");
+            saveCurrentLoopEntry();
           }
         }
+        // Caso 3: Stiamo navigando all'interno dello stesso loop
+        else {
+          debugLog("Navigazione all'interno dello stesso loop");
+          // Nessuna operazione speciale richiesta
+        }
+      }
+      // Se la domanda corrente è un loop manager
+      else if (currentQuestion.loop_manager) {
+        const loopId = currentQuestion.loop_id;
         
-        // Ordina le domande in base ai loro question_number
-        questionsInLoop.sort((a, b) => {
-          const aNum = parseFloat(a.question_number.replace(/[^0-9.]/g, ''));
-          const bNum = parseFloat(b.question_number.replace(/[^0-9.]/g, ''));
-          return aNum - bNum;
-        });
-        
-        // Verifica se la domanda corrente è l'ultima nel loop
-        const lastQuestionInLoop = questionsInLoop[questionsInLoop.length - 1];
-        const isLastQuestionInLoop = lastQuestionInLoop && lastQuestionInLoop.question_id === currentQuestionId;
-        
-        debugLog("Verifica se è l'ultima domanda nel loop", {
-          questionId: currentQuestionId,
-          ultimaDomandaLoop: lastQuestionInLoop?.question_id,
-          èUltimaDomanda: isLastQuestionInLoop
-        });
-        
-        if (isLastQuestionInLoop) {
-          debugLog("Uscita dall'ultima domanda nel loop, salvataggio entry");
-          saveCurrentLoopEntry();
+        if (loopId && leadsTo === currentQuestion.add_leads_to) {
+          debugLog("Avvio di una nuova voce del loop dal loop manager");
+          // La funzione startNewLoopEntry è già stata chiamata dal componente LoopManager
+          // Non serve richiamarla qui
         }
       }
     }
     
-    // Controlla se la domanda corrente è un loop manager e stiamo aggiungendo un nuovo elemento
-    if (currentQuestion?.loop_manager) {
-      if (leadsTo === currentQuestion.add_leads_to) {
-        debugLog("Avvio di una nuova voce del loop dal loop manager");
-        // La funzione startNewLoopEntry è già stata chiamata dal componente LoopManager
-        // Non serve richiamarla qui
-      } else if (leadsTo === currentQuestion.next_leads_to || leadsTo === "next_block") {
-        debugLog("Continuazione al blocco successivo dal loop manager");
-        // Continuiamo al prossimo blocco/domanda normalmente
-      }
-    }
-    
-    // Normale logica di navigazione...
+    // Normale logica di navigazione
     if (leadsTo === "next_block") {
+      // Trova il prossimo blocco attivo
+      // ... keep existing code (next_block navigation)
+      
       // Trova il blocco corrente
       let currentBlock = null;
       let currentBlockIndex = -1;
@@ -822,15 +819,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
           }
         });
         
-        // Verifica se la domanda di destinazione fa parte di un loop e se abbiamo un currentLoop attivo
-        const targetInLoop = found.question.loop;
-        
-        // Se stiamo navigando a una domanda in un loop diverso, salviamo prima la voce corrente
-        if (state.currentLoop && targetInLoop && targetInLoop !== state.currentLoop.loop_id) {
-          debugLog("Navigazione a un loop diverso, salvataggio entry corrente");
-          saveCurrentLoopEntry();
-        }
-        
         // Ora naviga alla domanda
         goToQuestion(found.block.block_id, found.question.question_id);
       } else {
@@ -847,10 +835,11 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     state.activeBlocks, 
     goToQuestion, 
     findQuestionById, 
-    state.activeQuestion.block_id, 
+    state.activeQuestion.block_id,
+    state.currentLoop,
     findLoopManagerQuestion,
     saveCurrentLoopEntry,
-    state.currentLoop
+    isLastQuestionInLoop
   ]);
 
   // Calcola il progresso complessivo del form
@@ -877,7 +866,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
   }, [state.activeBlocks, state.answeredQuestions, blocks]);
 
-  // Nuova funzione per ottenere la cronologia di navigazione per una domanda specifica
+  // Funzione per ottenere la cronologia di navigazione per una domanda specifica
   const getNavigationHistoryFor = useCallback((questionId: string): NavigationHistory | undefined => {
     // Ordina la cronologia dal più recente al meno recente
     const sortedHistory = [...state.navigationHistory].sort((a, b) => b.timestamp - a.timestamp);

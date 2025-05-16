@@ -41,7 +41,14 @@ export function LoopManager({ loopId, addLeadsTo, nextLeadsTo }: LoopManagerProp
       entries: entries.length,
       currentLoopState
     });
-  }, [loopId, entries.length, currentLoopState]);
+    
+    // Se c'è un'entry di loop attiva quando arriviamo al manager, la salviamo
+    // Questo gestisce il caso in cui l'utente ha completato una entry e torna automaticamente al manager
+    if (currentLoopState && currentLoopState.loop_id === loopId) {
+      debugLog("Entry di loop attiva rilevata all'avvio del manager, salvataggio automatico");
+      saveCurrentLoopEntry();
+    }
+  }, [loopId, entries.length, currentLoopState, saveCurrentLoopEntry]);
 
   // Funzione per creare un sommario leggibile di una voce
   const createEntrySummary = (entry: RepeatingGroupEntry): string => {
