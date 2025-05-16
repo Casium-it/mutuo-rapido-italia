@@ -106,12 +106,12 @@ export default function Form() {
         </div>
       </div>
       
-      {/* Reset button */}
+      {/* Reset button - modificato stile */}
       <div className="absolute bottom-4 left-4 z-10">
         <Button 
           variant="outline" 
           size="sm" 
-          className="bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200 text-xs"
+          className="bg-[#F8F5F1] text-[#245C4F] border-[#E7E1D9] hover:bg-[#E7E1D9] text-xs"
           onClick={resetForm}
         >
           <RefreshCcw className="h-3 w-3 mr-1" />
