@@ -14,12 +14,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 interface FormQuestionProps {
   question: Question;
-  initialValue?: any;
-  onAnswer?: (questionId: string, value: any) => void;
-  inline?: boolean;
 }
 
-export function FormQuestion({ question, initialValue, onAnswer, inline }: FormQuestionProps) {
+export function FormQuestion({ question }: FormQuestionProps) {
   const { 
     getResponse, 
     setResponse, 
@@ -46,16 +43,8 @@ export function FormQuestion({ question, initialValue, onAnswer, inline }: FormQ
     const initialVisibleOptions: { [key: string]: boolean } = {};
     const initialValidationErrors: { [key: string]: boolean } = {};
     
-    Object.keys(question.placeholders || {}).forEach(key => {
-      // First check initialValue from props (for subflow mode)
-      let existingResponse;
-      if (initialValue && initialValue[question.question_id] && initialValue[question.question_id][key]) {
-        existingResponse = initialValue[question.question_id][key];
-      } else {
-        // Otherwise check the form context (for normal flow)
-        existingResponse = getResponse(question.question_id, key);
-      }
-
+    Object.keys(question.placeholders).forEach(key => {
+      const existingResponse = getResponse(question.question_id, key);
       if (existingResponse) {
         existingResponses[key] = existingResponse;
         initialVisibleOptions[key] = false;
@@ -77,12 +66,7 @@ export function FormQuestion({ question, initialValue, onAnswer, inline }: FormQ
     setVisibleOptions(initialVisibleOptions);
     setValidationErrors(initialValidationErrors);
     setIsNavigating(false);
-  }, [
-    question.question_id, 
-    getResponse, 
-    question.placeholders, 
-    initialValue
-  ]);
+  }, [question.question_id, getResponse, question.placeholders]);
 
   // Funzione per gestire il cambio di risposta con validazione
   const handleResponseChange = (key: string, value: string | string[]) => {
@@ -108,12 +92,7 @@ export function FormQuestion({ question, initialValue, onAnswer, inline }: FormQ
       
       // Salviamo nel contesto del form SOLO se l'input è valido
       if (isValid) {
-        // Use onAnswer prop in subflow mode, or setResponse in normal flow
-        if (onAnswer) {
-          onAnswer(question.question_id, { [key]: value });
-        } else {
-          setResponse(question.question_id, key, value);
-        }
+        setResponse(question.question_id, key, value);
         
         // Nascondi le opzioni se valido
         setVisibleOptions(prev => ({
@@ -123,11 +102,7 @@ export function FormQuestion({ question, initialValue, onAnswer, inline }: FormQ
       }
     } else {
       // Per i select o altri tipi, salviamo sempre nel contesto
-      if (onAnswer) {
-        onAnswer(question.question_id, { [key]: value });
-      } else {
-        setResponse(question.question_id, key, value);
-      }
+      setResponse(question.question_id, key, value);
       
       setVisibleOptions(prev => ({
         ...prev,
@@ -167,58 +142,6 @@ export function FormQuestion({ question, initialValue, onAnswer, inline }: FormQ
   const handleNextQuestion = () => {
     if (isNavigating) return;
     setIsNavigating(true);
-    
-    // If we have an onAnswer prop (subflow mode), use it
-    if (onAnswer) {
-      // Find which placeholder has priority
-      if (question.leads_to_placeholder_priority && 
-          question.placeholders[question.leads_to_placeholder_priority]) {
-        
-        // Get the priority placeholder
-        const priorityPlaceholder = question.placeholders[question.leads_to_placeholder_priority];
-        const priorityResponse = responses[question.leads_to_placeholder_priority];
-        
-        // If the priority placeholder is a select
-        if (priorityResponse && priorityPlaceholder.type === "select" && !Array.isArray(priorityResponse)) {
-          const selectedOption = (priorityPlaceholder as any).options.find(
-            (opt: any) => opt.id === priorityResponse
-          );
-          
-          if (selectedOption?.leads_to) {
-            // Signal that we should navigate to this destination
-            setTimeout(() => {
-              onAnswer(question.question_id, { 
-                ...responses, 
-                _leads_to: selectedOption.leads_to 
-              });
-              setIsNavigating(false);
-            }, 50);
-            return;
-          }
-        } 
-        // If the priority placeholder is an input
-        else if (priorityResponse && priorityPlaceholder.type === "input" && (priorityPlaceholder as any).leads_to) {
-          setTimeout(() => {
-            onAnswer(question.question_id, { 
-              ...responses, 
-              _leads_to: (priorityPlaceholder as any).leads_to 
-            });
-            setIsNavigating(false);
-          }, 50);
-          return;
-        }
-      }
-      
-      // Default: trigger navigation with current responses
-      setTimeout(() => {
-        onAnswer(question.question_id, { ...responses, _leads_to: "next_question" });
-        setIsNavigating(false);
-      }, 50);
-      return;
-    }
-    
-    // Normal flow navigation (existing code)
-    // ... keep existing code (regular form navigation)
     
     // Verifica se è stata specificata una priorità per i placeholder
     if (question.leads_to_placeholder_priority && 
@@ -306,19 +229,6 @@ export function FormQuestion({ question, initialValue, onAnswer, inline }: FormQ
     
     // Altrimenti, restituisci la catena di domande + la domanda attuale
     return question.question_text;
-  };
-
-  // Funzione per renderizzare la nota informativa sopra la domanda (NUOVO)
-  const renderQuestionNotes = () => {
-    if (!question.question_notes) {
-      return null;
-    }
-
-    return (
-      <div className="mb-5 p-4 bg-[#F8F4EF] border-l-4 border-[#245C4F] rounded-md">
-        <p className="text-[14px] text-gray-700">{question.question_notes}</p>
-      </div>
-    );
   };
 
   // Funzione per renderizzare il testo della domanda con placeholders
@@ -549,26 +459,26 @@ export function FormQuestion({ question, initialValue, onAnswer, inline }: FormQ
       key => question.placeholders[key].type === "input"
     );
     
-    // If not input placeholders, consider valid (for select and other types)
+    // Se non ci sono input, consideriamo valido (per gestire select e altri tipi)
     if (inputPlaceholders.length === 0) {
       return true;
     }
     
-    // Verify if all inputs have a value and are valid
+    // Verifica se tutti gli input hanno un valore e sono validi
     return inputPlaceholders.every(key => {
       const value = responses[key] || getResponse(question.question_id, key);
       
-      // Verify if the value exists
+      // Verifica se il valore esiste
       if (value === undefined || value === "") {
         return false;
       }
       
-      // Verify if there's a validation error
+      // Verifica se c'è un errore di validazione
       if (validationErrors[key]) {
         return false;
       }
       
-      // Verify validation for existing values in context
+      // Verifica validazione per i valori esistenti nel contesto
       const placeholder = question.placeholders[key];
       if (placeholder.type === "input") {
         const validationType = (placeholder as any).input_validation;
@@ -581,16 +491,13 @@ export function FormQuestion({ question, initialValue, onAnswer, inline }: FormQ
     });
   };
   
-  // Determine if there are valid responses - MODIFIED to require ALL responses
+  // Determina se ci sono risposte valide - MODIFICATO per richiedere TUTTE le risposte
   const hasValidResponses = Object.keys(question.placeholders).every(key => 
     responses[key] !== undefined || getResponse(question.question_id, key) !== undefined
   ) && allInputsHaveValidContent();
 
   return (
     <div className="max-w-xl animate-fade-in">
-      {/* Banner note della domanda - NUOVO COMPONENTE */}
-      {renderQuestionNotes()}
-      
       {/* Testo della domanda semplificato */}
       <div className="text-[16px] font-normal text-gray-900 mb-5 leading-relaxed">
         {renderQuestionText()}
