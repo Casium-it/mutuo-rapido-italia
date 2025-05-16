@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { RepeatingGroupBlock, RepeatingGroupEntry } from '@/types/form';
 import { RepeatingGroupManager } from './RepeatingGroupManager';
-import { FormStyleRepeatingGroupWizard } from './FormStyleRepeatingGroupWizard';
+import { LinearRepeatingGroupWizard } from './LinearRepeatingGroupWizard';
 import { useRepeatingGroup } from '@/hooks/useRepeatingGroup';
 import { useForm } from '@/contexts/FormContext';
 import { toast } from '@/components/ui/use-toast';
@@ -145,7 +145,7 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
   
   if (mode === 'subflow') {
     return (
-      <FormStyleRepeatingGroupWizard
+      <LinearRepeatingGroupWizard
         questions={subflow}
         initialData={editingEntry?.data}
         onComplete={handleSubflowComplete}
