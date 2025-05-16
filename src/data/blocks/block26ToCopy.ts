@@ -140,7 +140,7 @@ export const block26ToCopy: Block = {
           type: "input",
           input_type: "text",
           placeholder_label: "Anno o 'non lo sa'",
-          leads_to: "gestione_redditi_secondari_coint", // Ritorna alla gestione dei redditi secondari del cointestatario
+          leads_to: "gestione_redditi_secondari_coint", // Modificato per puntare alla domanda gestione_redditi_secondari_coint
           input_validation: "free_text"
         }
       }
