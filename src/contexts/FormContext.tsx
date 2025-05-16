@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback } from "react";
-import { Block, FormState, FormResponse, NavigationHistory } from "@/types/form";
+import { Block, FormState, FormResponse, NavigationHistory, SubblockInstance, FormSubblockResponses } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { generateInstanceId } from "@/utils/subblockUtils";
 
 type FormContextType = {
   state: FormState;
@@ -14,6 +15,15 @@ type FormContextType = {
   getProgress: () => number;
   resetForm: () => void;
   getNavigationHistoryFor: (questionId: string) => NavigationHistory | undefined;
+  
+  // Nuovi metodi per i sottoblocchi
+  startSubblockCreation: (question_id: string, placeholder_key: string) => void;
+  startSubblockEditing: (question_id: string, placeholder_key: string, instance_id: string) => void;
+  cancelSubblockEditing: () => void;
+  saveSubblockInstance: (responses: FormResponse) => void;
+  deleteSubblockInstance: (question_id: string, placeholder_key: string, instance_id: string) => void;
+  getSubblockInstances: (question_id: string, placeholder_key: string) => SubblockInstance[];
+  isInSubblock: () => boolean;
 };
 
 type Action =
@@ -24,7 +34,13 @@ type Action =
   | { type: "SET_FORM_STATE"; state: Partial<FormState> }
   | { type: "RESET_FORM" }
   | { type: "SET_NAVIGATING"; isNavigating: boolean }
-  | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory };
+  | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory }
+  // Azioni per i sottoblocchi
+  | { type: "START_SUBBLOCK_CREATION"; question_id: string; placeholder_key: string }
+  | { type: "START_SUBBLOCK_EDITING"; question_id: string; placeholder_key: string; instance_id: string }
+  | { type: "CANCEL_SUBBLOCK_EDITING" }
+  | { type: "SAVE_SUBBLOCK_INSTANCE"; responses: FormResponse }
+  | { type: "DELETE_SUBBLOCK_INSTANCE"; question_id: string; placeholder_key: string; instance_id: string };
 
 const initialState: FormState = {
   activeBlocks: [],
@@ -33,9 +49,11 @@ const initialState: FormState = {
     question_id: "soggetto_acquisto"
   },
   responses: {},
+  subblockResponses: {}, // Inizializziamo l'oggetto per le risposte dei sottoblocchi
   answeredQuestions: new Set(),
   isNavigating: false,
-  navigationHistory: []
+  navigationHistory: [],
+  activeSubblock: null
 };
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
@@ -108,6 +126,107 @@ function formReducer(state: FormState, action: Action): FormState {
       return {
         ...state,
         navigationHistory: [...filteredHistory, action.history]
+      };
+    }
+    // Gestori per i sottoblocchi
+    case "START_SUBBLOCK_CREATION": {
+      return {
+        ...state,
+        activeSubblock: {
+          question_id: action.question_id,
+          placeholder_key: action.placeholder_key,
+          isEditing: false
+        }
+      };
+    }
+    case "START_SUBBLOCK_EDITING": {
+      return {
+        ...state,
+        activeSubblock: {
+          question_id: action.question_id,
+          placeholder_key: action.placeholder_key,
+          instance_id: action.instance_id,
+          isEditing: true
+        }
+      };
+    }
+    case "CANCEL_SUBBLOCK_EDITING": {
+      return {
+        ...state,
+        activeSubblock: null
+      };
+    }
+    case "SAVE_SUBBLOCK_INSTANCE": {
+      const newSubblockResponses = { ...state.subblockResponses };
+      
+      // Se non c'è un sottoblocco attivo, non facciamo nulla
+      if (!state.activeSubblock) {
+        return state;
+      }
+      
+      const { question_id, placeholder_key, instance_id } = state.activeSubblock;
+      
+      // Inizializza l'array delle istanze se non esiste
+      if (!newSubblockResponses[question_id]) {
+        newSubblockResponses[question_id] = {};
+      }
+      if (!newSubblockResponses[question_id][placeholder_key]) {
+        newSubblockResponses[question_id][placeholder_key] = [];
+      }
+      
+      const instances = [...newSubblockResponses[question_id][placeholder_key]];
+      
+      // Se stiamo modificando un'istanza esistente
+      if (instance_id) {
+        const instanceIndex = instances.findIndex(inst => inst.instance_id === instance_id);
+        if (instanceIndex !== -1) {
+          instances[instanceIndex] = {
+            ...instances[instanceIndex],
+            responses: action.responses
+          };
+        }
+      } else {
+        // Altrimenti aggiungiamo una nuova istanza
+        instances.push({
+          instance_id: generateInstanceId(),
+          responses: action.responses
+        });
+      }
+      
+      newSubblockResponses[question_id][placeholder_key] = instances;
+      
+      return {
+        ...state,
+        subblockResponses: newSubblockResponses,
+        activeSubblock: null, // Esci dalla modalità sottoblocco
+        answeredQuestions: new Set([...state.answeredQuestions, question_id]) // Segna la domanda come risposta
+      };
+    }
+    case "DELETE_SUBBLOCK_INSTANCE": {
+      const newSubblockResponses = { ...state.subblockResponses };
+      
+      // Se non esistono risposte per questa domanda/placeholder, non facciamo nulla
+      if (!newSubblockResponses[action.question_id] || 
+          !newSubblockResponses[action.question_id][action.placeholder_key]) {
+        return state;
+      }
+      
+      // Filtra le istanze per rimuovere quella con l'ID specificato
+      const instances = newSubblockResponses[action.question_id][action.placeholder_key]
+        .filter(instance => instance.instance_id !== action.instance_id);
+      
+      newSubblockResponses[action.question_id][action.placeholder_key] = instances;
+      
+      // Se non ci sono più istanze e rimuoviamo l'ultima, rimuoviamo anche la domanda dall'elenco delle risposte
+      let updatedAnsweredQuestions = new Set(state.answeredQuestions);
+      if (instances.length === 0) {
+        updatedAnsweredQuestions.delete(action.question_id);
+      }
+      
+      return {
+        ...state,
+        subblockResponses: newSubblockResponses,
+        answeredQuestions: updatedAnsweredQuestions
       };
     }
     default:
@@ -244,7 +363,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       // Converti Set a array per JSON serialization
       const stateToSave = {
         ...state,
-        answeredQuestions: Array.from(state.answeredQuestions)
+        answeredQuestions: Array.from(state.answeredQuestions),
+        activeSubblock: null // Non salvare lo stato attivo del sottoblocco in localStorage
       };
       localStorage.setItem(`form-state-${params.blockType}`, JSON.stringify(stateToSave));
     }
@@ -480,6 +600,39 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return sortedHistory.find(item => item.to_question_id === questionId);
   }, [state.navigationHistory]);
 
+  // Funzioni per i sottoblocchi
+  const startSubblockCreation = useCallback((question_id: string, placeholder_key: string) => {
+    dispatch({ type: "START_SUBBLOCK_CREATION", question_id, placeholder_key });
+  }, []);
+  
+  const startSubblockEditing = useCallback((question_id: string, placeholder_key: string, instance_id: string) => {
+    dispatch({ type: "START_SUBBLOCK_EDITING", question_id, placeholder_key, instance_id });
+  }, []);
+  
+  const cancelSubblockEditing = useCallback(() => {
+    dispatch({ type: "CANCEL_SUBBLOCK_EDITING" });
+  }, []);
+  
+  const saveSubblockInstance = useCallback((responses: FormResponse) => {
+    dispatch({ type: "SAVE_SUBBLOCK_INSTANCE", responses });
+  }, []);
+  
+  const deleteSubblockInstance = useCallback((question_id: string, placeholder_key: string, instance_id: string) => {
+    dispatch({ type: "DELETE_SUBBLOCK_INSTANCE", question_id, placeholder_key, instance_id });
+  }, []);
+  
+  const getSubblockInstances = useCallback((question_id: string, placeholder_key: string) => {
+    if (!state.subblockResponses[question_id] || 
+        !state.subblockResponses[question_id][placeholder_key]) {
+      return [];
+    }
+    return state.subblockResponses[question_id][placeholder_key];
+  }, [state.subblockResponses]);
+  
+  const isInSubblock = useCallback(() => {
+    return state.activeSubblock !== null;
+  }, [state.activeSubblock]);
+
   return (
     <FormContext.Provider
       value={{
@@ -493,7 +646,15 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         navigateToNextQuestion,
         getProgress,
         resetForm,
-        getNavigationHistoryFor
+        getNavigationHistoryFor,
+        // Aggiungiamo i nuovi metodi per i sottoblocchi
+        startSubblockCreation,
+        startSubblockEditing,
+        cancelSubblockEditing,
+        saveSubblockInstance,
+        deleteSubblockInstance,
+        getSubblockInstances,
+        isInSubblock
       }}
     >
       {children}
