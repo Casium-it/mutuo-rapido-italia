@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { RepeatingGroupBlock, RepeatingGroupEntry } from '@/types/form';
-import { IncomeManagerView } from './IncomeManagerView';
-import { IncomeSubflowWizard } from './IncomeSubflowWizard';
+import { RepeatingGroupManager } from './RepeatingGroupManager';
+import { RepeatingGroupWizard } from './RepeatingGroupWizard';
 import { useRepeatingGroup } from '@/hooks/useRepeatingGroup';
 import { useForm } from '@/contexts/FormContext';
 import { toast } from '@/components/ui/use-toast';
@@ -17,14 +17,14 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
     repeating_id, 
     subflow, 
     title, 
-    subtitle = "Gestisci qui tutti i tuoi redditi aggiuntivi. Puoi aggiungere, modificare o eliminare fonti di reddito.",
-    empty_state_text = "Non hai ancora aggiunto nessuna fonte di reddito aggiuntiva.",
-    add_button_text = "Aggiungi fonte di reddito",
-    continue_button_text = "Avanti"
+    subtitle = "Gestisci qui tutti gli elementi. Puoi aggiungere, modificare o eliminare elementi.",
+    empty_state_text = "Non hai ancora aggiunto nessun elemento.",
+    add_button_text = "Aggiungi elemento",
+    continue_button_text = "Continua"
   } = block;
   
   const { navigateToNextQuestion, state } = useForm();
-  const { addEntry, updateEntry, refreshEntries, entries } = useRepeatingGroup(repeating_id);
+  const { addEntry, updateEntry, refreshEntries } = useRepeatingGroup(repeating_id);
   
   // Stato per la modalità di visualizzazione (manager o subflow)
   const [mode, setMode] = useState<'manager' | 'subflow'>('manager');
@@ -34,6 +34,26 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
     data: RepeatingGroupEntry;
     index: number;
   } | null>(null);
+  
+  // Determina i campi chiave in base al tipo di repeating group
+  const determineKeyFields = () => {
+    // Default per redditi aggiuntivi
+    let typeField = 'income_type';
+    let amountField = 'amount_input';
+    let descriptionField = 'income_description';
+
+    // Qui puoi personalizzare i campi in base all'ID del gruppo ripetuto
+    if (repeating_id === 'secondary_income') {
+      typeField = 'income_type';
+      amountField = 'amount_input';
+      descriptionField = undefined;
+    }
+    // Aggiungi qui altri casi quando crei nuovi gruppi ripetuti
+
+    return { typeField, amountField, descriptionField };
+  };
+
+  const { typeField, amountField, descriptionField } = determineKeyFields();
   
   // Effetto per aggiornare i dati quando il form cambia modalità o blocco
   useEffect(() => {
@@ -79,8 +99,8 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
       
       if (success) {
         toast({
-          title: "Reddito aggiornato",
-          description: "Le modifiche alla fonte di reddito sono state salvate con successo."
+          title: "Elemento aggiornato",
+          description: "Le modifiche sono state salvate con successo."
         });
       }
     } else {
@@ -89,8 +109,8 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
       
       if (success) {
         toast({
-          title: "Reddito aggiunto",
-          description: "La nuova fonte di reddito è stata aggiunta con successo."
+          title: "Elemento aggiunto",
+          description: "Il nuovo elemento è stato aggiunto con successo."
         });
       }
     }
@@ -125,23 +145,28 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
   
   if (mode === 'subflow') {
     return (
-      <IncomeSubflowWizard
+      <RepeatingGroupWizard
         questions={subflow}
         initialData={editingEntry?.data}
         onComplete={handleSubflowComplete}
         onCancel={handleSubflowCancel}
+        completeButtonText={editingEntry ? "Salva modifiche" : add_button_text}
+        cancelButtonText="Annulla"
       />
     );
   }
   
   return (
-    <IncomeManagerView
+    <RepeatingGroupManager
       repeatingId={repeating_id}
       title={title}
       subtitle={subtitle}
       emptyStateText={empty_state_text}
       addButtonText={add_button_text}
       continueButtonText={continue_button_text}
+      typeField={typeField}
+      amountField={amountField}
+      descriptionField={descriptionField}
       onAdd={handleAdd}
       onEdit={handleEdit}
       onContinue={handleContinue}

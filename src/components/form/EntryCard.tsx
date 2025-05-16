@@ -6,14 +6,32 @@ import { formatCurrency, getIncomeTypeLabel } from "@/utils/repeatingGroupUtils"
 import { Edit, Trash2 } from "lucide-react";
 import { RepeatingGroupEntry } from "@/types/form";
 
-interface IncomeEntryCardProps {
+interface EntryCardProps {
   entry: RepeatingGroupEntry;
+  typeField: string;
+  amountField: string;
+  descriptionField?: string;
   onEdit: () => void;
   onDelete: () => void;
+  formatValue?: (value: any) => string;
+  getTypeLabel?: (type: string) => string;
+  valueLabel?: string;
 }
 
-export function IncomeEntryCard({ entry, onEdit, onDelete }: IncomeEntryCardProps) {
-  const { income_type, amount_input, income_description } = entry;
+export function EntryCard({ 
+  entry, 
+  typeField, 
+  amountField, 
+  descriptionField, 
+  onEdit, 
+  onDelete,
+  formatValue = (value) => formatCurrency(value),
+  getTypeLabel = (type) => getIncomeTypeLabel(type),
+  valueLabel = "/mese"
+}: EntryCardProps) {
+  const typeValue = entry[typeField];
+  const amountValue = entry[amountField];
+  const descriptionValue = descriptionField ? entry[descriptionField] : null;
   
   return (
     <Card className="w-full mb-4 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
@@ -21,15 +39,15 @@ export function IncomeEntryCard({ entry, onEdit, onDelete }: IncomeEntryCardProp
         <div className="flex justify-between items-start">
           <div className="space-y-1">
             <h3 className="font-medium text-gray-900">
-              {getIncomeTypeLabel(income_type)}
+              {getTypeLabel(typeValue)}
             </h3>
             <p className="text-xl font-semibold text-gray-900">
-              {formatCurrency(amount_input)}
-              <span className="text-sm font-normal text-gray-600 ml-1">/mese</span>
+              {formatValue(amountValue)}
+              {valueLabel && <span className="text-sm font-normal text-gray-600 ml-1">{valueLabel}</span>}
             </p>
-            {income_description && (
+            {descriptionValue && (
               <p className="text-sm text-gray-600 mt-1 max-w-md">
-                {income_description}
+                {descriptionValue}
               </p>
             )}
           </div>

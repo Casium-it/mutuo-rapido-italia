@@ -1,6 +1,5 @@
 
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,19 +11,23 @@ import { cn } from "@/lib/utils";
 import { validateInput } from "@/utils/validationUtils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-interface IncomeSubflowWizardProps {
+interface RepeatingGroupWizardProps {
   questions: SubflowQuestion[];
   initialData?: RepeatingGroupEntry;
   onComplete: (data: RepeatingGroupEntry) => void;
   onCancel: () => void;
+  completeButtonText?: string;
+  cancelButtonText?: string;
 }
 
-export function IncomeSubflowWizard({
+export function RepeatingGroupWizard({
   questions,
   initialData = {},
   onComplete,
-  onCancel
-}: IncomeSubflowWizardProps) {
+  onCancel,
+  completeButtonText = "Aggiungi elemento",
+  cancelButtonText = "Annulla"
+}: RepeatingGroupWizardProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<RepeatingGroupEntry>({
     ...initialData,
@@ -343,7 +346,7 @@ export function IncomeSubflowWizard({
           className="border border-gray-300 text-gray-700 hover:bg-gray-50 px-[18px] py-[12px] rounded-[10px] text-[16px] font-medium inline-flex items-center"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          {currentStep === 0 ? 'Annulla' : 'Indietro'}
+          {currentStep === 0 ? cancelButtonText : 'Indietro'}
         </button>
         
         <button
@@ -358,12 +361,12 @@ export function IncomeSubflowWizard({
           {currentStep < questions.length - 1 ? (
             <>
               Avanti
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-4 w-4 ml-2" />
             </>
           ) : (
             <>
-              <Check className="h-4 w-4" />
-              {initialData.id ? 'Salva modifiche' : 'Aggiungi reddito'}
+              <Check className="h-4 w-4 mr-2" />
+              {initialData.id ? 'Salva modifiche' : completeButtonText}
             </>
           )}
         </button>
