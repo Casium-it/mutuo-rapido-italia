@@ -32,9 +32,6 @@ export function SelectPlaceholderBox({
   // Determina se c'è una selezione valida
   const isSelected = Boolean(selectedValue);
   
-  // Per debug
-  // console.log('SelectPlaceholderBox:', { questionId, placeholderKey, value, selectedValue, displayOption });
-  
   return (
     <span 
       className={cn(

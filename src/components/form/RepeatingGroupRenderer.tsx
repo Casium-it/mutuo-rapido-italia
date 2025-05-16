@@ -64,58 +64,11 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
   const handleSubflowComplete = (data: RepeatingGroupEntry) => {
     let success = false;
     
-    // Normalizza i dati prima di salvarli
-    // Questo assicura che i valori siano primitivi e non oggetti complessi
-    const normalizedData: RepeatingGroupEntry = {};
-    
-    // Mantiene l'ID se presente
-    if (data.id) {
-      normalizedData.id = data.id;
-    }
-    
-    // Normalizza i campi specifici
-    Object.keys(data).forEach(key => {
-      const value = data[key];
-      
-      // DEBUG
-      // console.log(`Normalizing field ${key}:`, value, typeof value);
-      
-      // Gestisce i diversi tipi di campo
-      if (key === 'amount_input') {
-        // Assicurati che l'importo sia salvato come numero
-        normalizedData[key] = typeof value === 'string' 
-          ? parseFloat(value) 
-          : (typeof value === 'number' ? value : 0);
-      }
-      else if (key === 'income_type') {
-        // Estrae l'ID dal tipo di reddito
-        normalizedData[key] = typeof value === 'object' && value !== null && 'id' in value
-          ? value.id
-          : value; // Se è già una stringa, usala così com'è
-      }
-      else if (typeof value === 'object' && value !== null) {
-        // Per gli oggetti complessi, salva solo l'id o un valore primitivo
-        if ('id' in value) {
-          normalizedData[key] = value.id;
-        } else {
-          // Se non c'è un id, usa il primo valore primitivo trovato
-          const firstPrimitive = Object.values(value).find(v => 
-            typeof v !== 'object' || v === null
-          );
-          normalizedData[key] = firstPrimitive !== undefined ? firstPrimitive : JSON.stringify(value);
-        }
-      }
-      else {
-        // Utilizza il valore così com'è per tipi primitivi
-        normalizedData[key] = value;
-      }
-    });
-    
-    console.log('Normalized data before save:', normalizedData);
+    console.log('Normalized data before save:', data);
     
     if (editingEntry) {
       // Aggiorna un record esistente
-      success = updateEntry(normalizedData, editingEntry.index);
+      success = updateEntry(data, editingEntry.index);
       
       if (success) {
         toast({
@@ -125,7 +78,7 @@ export function RepeatingGroupRenderer({ block }: RepeatingGroupRendererProps) {
       }
     } else {
       // Aggiunge un nuovo record
-      success = addEntry(normalizedData);
+      success = addEntry(data);
       
       if (success) {
         toast({

@@ -1,10 +1,8 @@
 
-import React, { useEffect, useState } from 'react';
-import { FormQuestion } from './FormQuestion';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Question, RepeatingGroupEntry } from '@/types/form';
-import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { SelectPlaceholderBox } from './SelectPlaceholderBox';
+import { FormContext, useForm } from '@/contexts/FormContext';
+import { QuestionView } from './QuestionView';
 
 interface SubflowFormProps {
   questions: Question[];
@@ -21,229 +19,161 @@ export function SubflowForm({
   onCancel,
   endSignal = "end_of_subflow" 
 }: SubflowFormProps) {
-  // Stato locale per il form
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  // Stato per tenere traccia dei dati del form
   const [responses, setResponses] = useState<RepeatingGroupEntry>(initialData);
+  const [initialized, setInitialized] = useState(false);
   
-  // Otteniamo la domanda corrente
-  const currentQuestion = questions[currentQuestionIndex];
+  // Crea un blocco sintetico contenente tutte le domande del subflow
+  const syntheticBlock = useMemo(() => {
+    return {
+      block_id: "subflow_synthetic_block",
+      block_number: "S1",
+      title: "Subflow",
+      priority: 0,
+      default_active: true,
+      require_next_click: true,
+      questions: questions.map(q => ({
+        ...q,
+        block_id: "subflow_synthetic_block"
+      }))
+    };
+  }, [questions]);
+
+  // Inizializza lo stato del form
+  const initialFormState = useMemo(() => {
+    // Determina la prima domanda attiva
+    const firstQuestionId = questions[0]?.question_id || "";
+    
+    // Converte i dati iniziali nel formato del FormContext
+    const initialFormResponses: Record<string, Record<string, any>> = {};
+    
+    // Inizializza le risposte con i dati iniziali
+    Object.entries(initialData).forEach(([key, value]) => {
+      // Trova la domanda corrispondente
+      const question = questions.find(q => {
+        return Object.keys(q.placeholders).some(placeholderKey => placeholderKey === key);
+      });
+      
+      if (question) {
+        const questionId = question.question_id;
+        if (!initialFormResponses[questionId]) {
+          initialFormResponses[questionId] = {};
+        }
+        
+        // Imposta il valore per il placeholder corretto
+        Object.keys(question.placeholders).forEach(placeholderKey => {
+          if (placeholderKey === key) {
+            initialFormResponses[questionId][placeholderKey] = value;
+          }
+        });
+      }
+    });
+    
+    return {
+      activeBlocks: ["subflow_synthetic_block"],
+      activeQuestion: {
+        block_id: "subflow_synthetic_block",
+        question_id: firstQuestionId
+      },
+      responses: initialFormResponses,
+      answeredQuestions: new Set(),
+      navigationHistory: [],
+    };
+  }, [initialData, questions]);
   
-  // Effetto per inizializzare i dati se ci sono dati iniziali
   useEffect(() => {
-    if (initialData && Object.keys(initialData).length > 0) {
-      setResponses({...initialData});
-    }
-  }, [initialData]);
+    setInitialized(true);
+  }, []);
+
+  // Funzione per normalizzare i dati prima di completare il subflow
+  const normalizeData = (formResponses: Record<string, Record<string, any>>): RepeatingGroupEntry => {
+    const normalizedData: RepeatingGroupEntry = { ...initialData };
+    
+    // Estrai i valori primitivi dalle risposte del form
+    Object.entries(formResponses).forEach(([questionId, placeholders]) => {
+      // Trova la domanda corrispondente per accedere ai placeholders
+      const question = questions.find(q => q.question_id === questionId);
+      
+      if (question) {
+        Object.entries(placeholders).forEach(([placeholderKey, value]) => {
+          // Gestisce i diversi tipi di campo
+          if (placeholderKey === 'amount_input') {
+            // Assicurati che l'importo sia salvato come numero
+            normalizedData[placeholderKey] = typeof value === 'string' 
+              ? parseFloat(value) 
+              : (typeof value === 'number' ? value : 0);
+          }
+          else if (typeof value === 'object' && value !== null) {
+            // Per gli oggetti complessi, salva solo l'id o un valore primitivo
+            if ('id' in value) {
+              normalizedData[placeholderKey] = value.id;
+            } else {
+              const firstPrimitive = Object.values(value).find(v => 
+                typeof v !== 'object' || v === null
+              );
+              normalizedData[placeholderKey] = firstPrimitive !== undefined ? firstPrimitive : String(value);
+            }
+          }
+          else {
+            // Utilizza il valore così com'è per tipi primitivi
+            normalizedData[placeholderKey] = value;
+          }
+        });
+      }
+    });
+    
+    return normalizedData;
+  };
   
-  // Funzione per gestire la risposta a una domanda
-  const handleAnswer = (questionId: string, value: any) => {
-    // Salva la risposta localmente
+  // Handler per la navigazione nel FormContext isolato
+  const handleNavigation = (
+    fromBlockId: string, 
+    fromQuestionId: string, 
+    toBlockId: string, 
+    toQuestionId: string,
+    formResponses: Record<string, Record<string, any>>
+  ) => {
+    // Aggiorna le risposte locali per successivo completamento
     setResponses(prev => ({
       ...prev,
-      [questionId]: value
+      ...normalizeData(formResponses)
     }));
     
-    // Per debug
-    // console.log('SubflowForm handleAnswer:', { questionId, value });
-  };
-  
-  // Funzione per navigare alla domanda successiva
-  const handleNext = () => {
-    const question = currentQuestion;
-    const questionId = question.question_id;
-    const value = responses[questionId];
-    
-    // Per debug
-    // console.log('handleNext:', { questionId, value, question });
-    
-    if (!value && value !== 0) {
-      // Non procedere se non c'è un valore
-      return;
-    }
-    
-    // Determina il prossimo passo in base alla priorità del placeholder
-    let nextDestination: string | undefined;
-    
-    // Se è specificata una priorità per il placeholder, usa quella
-    if (question.leads_to_placeholder_priority) {
-      const priorityPlaceholder = question.leads_to_placeholder_priority;
-      const placeholder = question.placeholders[priorityPlaceholder];
-      
-      if (placeholder.type === "select") {
-        // Per i select, trova l'opzione selezionata
-        const selectedOption = placeholder.options.find(opt => {
-          if (typeof value === 'object' && value !== null) {
-            return opt.id === value[priorityPlaceholder];
-          }
-          return opt.id === value;
-        });
-        
-        if (selectedOption) {
-          nextDestination = selectedOption.leads_to;
-        }
-      } else if (placeholder.type === "input") {
-        // Per gli input, usa leads_to del placeholder direttamente
-        nextDestination = placeholder.leads_to;
-      }
-    } else {
-      // Se non c'è priorità specificata, cerca il primo placeholder con leads_to
-      for (const [key, placeholder] of Object.entries(question.placeholders)) {
-        if (placeholder.type === "select") {
-          const selectedValue = typeof value === 'object' ? value[key] : value;
-          const selectedOption = placeholder.options.find(opt => opt.id === selectedValue);
-          if (selectedOption) {
-            nextDestination = selectedOption.leads_to;
-            break;
-          }
-        } else if (placeholder.type === "input" && placeholder.leads_to) {
-          nextDestination = placeholder.leads_to;
-          break;
-        }
-      }
-    }
-    
-    // Verifica se abbiamo raggiunto il segnale di fine
-    if (nextDestination === endSignal) {
-      onComplete(responses);
-      return;
-    }
-    
-    // Altrimenti, vai alla prossima domanda
-    if (nextDestination) {
-      // Cerca l'indice della domanda con l'ID corrispondente
-      const nextIndex = questions.findIndex(q => q.question_id === nextDestination);
-      if (nextIndex !== -1) {
-        setCurrentQuestionIndex(nextIndex);
-        return;
-      }
-    }
-    
-    // Se non c'è un destination specifico o non è stato trovato, passa alla domanda successiva
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-    } else {
-      // Se siamo all'ultima domanda, completa il subflow
-      onComplete(responses);
+    // Controlla se siamo arrivati al segnale di fine
+    if (toQuestionId === endSignal) {
+      // Normalizza i dati prima di completare
+      const normalizedData = normalizeData(formResponses);
+      onComplete(normalizedData);
     }
   };
   
-  // Funzione per tornare alla domanda precedente
-  const handlePrevious = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
-    } else {
-      // Se siamo alla prima domanda, annulla l'intero subflow
+  // Handler per il tasto indietro che porta all'annullamento del subflow
+  const handleBack = (
+    fromBlockId: string, 
+    fromQuestionId: string
+  ) => {
+    // Se siamo alla prima domanda e si preme indietro, annulla il subflow
+    const isFirstQuestion = questions[0]?.question_id === fromQuestionId;
+    if (isFirstQuestion) {
       onCancel();
+      return true; // Indica che abbiamo gestito l'evento
     }
+    return false; // Lascia che il FormContext gestisca la navigazione normale
   };
 
-  // Se non ci sono domande, mostra un messaggio
-  if (!questions.length) {
-    return (
-      <div className="text-center p-6">
-        <p className="text-gray-500">Nessuna domanda da mostrare.</p>
-        <Button onClick={onCancel} className="mt-4">Torna indietro</Button>
-      </div>
-    );
+  // Se non siamo stati ancora inizializzati, mostra un loader
+  if (!initialized) {
+    return <div className="p-4 text-center">Caricamento...</div>;
   }
-  
-  // Determina il valore iniziale per la domanda corrente
-  const getInitialValue = () => {
-    const questionId = currentQuestion.question_id;
-    return responses[questionId] ? responses[questionId] : undefined;
-  };
-  
-  // Renderizza il testo della domanda, sostituendo i placeholder con i componenti appropriati
-  const renderQuestionText = () => {
-    const questionText = currentQuestion.question_text;
-    const parts = [];
-    let lastIndex = 0;
-    const regex = /\{\{([^}]+)\}\}/g;
-    let match;
-    
-    while ((match = regex.exec(questionText)) !== null) {
-      // Aggiungi testo prima del placeholder
-      if (match.index > lastIndex) {
-        parts.push(<span key={`text-${lastIndex}`}>{questionText.slice(lastIndex, match.index)}</span>);
-      }
-      
-      const placeholderKey = match[1];
-      const placeholder = currentQuestion.placeholders[placeholderKey];
-      
-      if (placeholder && placeholder.type === "select") {
-        // Ottieni il valore corrente per questo placeholder
-        const value = typeof responses[currentQuestion.question_id] === 'object' 
-          ? responses[currentQuestion.question_id]?.[placeholderKey] 
-          : responses[currentQuestion.question_id];
-          
-        // Renderizza un SelectPlaceholderBox per i placeholder di tipo select
-        parts.push(
-          <SelectPlaceholderBox
-            key={`placeholder-${placeholderKey}`}
-            questionId={currentQuestion.question_id}
-            placeholderKey={placeholderKey}
-            options={placeholder.options}
-            value={value}
-          />
-        );
-      } else {
-        // Renderizza un span semplice per gli altri tipi di placeholder
-        const value = typeof responses[currentQuestion.question_id] === 'object'
-          ? responses[currentQuestion.question_id]?.[placeholderKey]
-          : responses[currentQuestion.question_id];
-        
-        parts.push(
-          <span 
-            key={`placeholder-${placeholderKey}`}
-            className="inline-block bg-gray-100 px-2 py-1 rounded mx-1"
-          >
-            {value || '___'}
-          </span>
-        );
-      }
-      
-      lastIndex = match.index + match[0].length;
-    }
-    
-    // Aggiungi il testo rimanente
-    if (lastIndex < questionText.length) {
-      parts.push(<span key={`text-${lastIndex}`}>{questionText.slice(lastIndex)}</span>);
-    }
-    
-    return <div className="text-xl font-medium mb-6">{parts}</div>;
-  };
-  
+
   return (
-    <div className="space-y-6">
-      {/* Mostra la domanda corrente con supporto per inline */}
-      <FormQuestion
-        question={currentQuestion}
-        initialValue={getInitialValue()}
-        onAnswer={handleAnswer}
-        inline={currentQuestion.inline}
-      />
-      
-      {/* Pulsanti di navigazione */}
-      <div className="flex justify-between mt-8">
-        <Button
-          variant="outline"
-          onClick={handlePrevious}
-          className="flex items-center"
-        >
-          <ChevronLeft className="mr-2 h-4 w-4" />
-          Indietro
-        </Button>
-        
-        <Button
-          variant="default"
-          onClick={handleNext}
-          className="flex items-center"
-          disabled={!responses[currentQuestion.question_id] && responses[currentQuestion.question_id] !== 0}
-        >
-          Avanti
-          <ChevronRight className="ml-2 h-4 w-4" />
-        </Button>
-      </div>
-    </div>
+    <FormContext 
+      initialState={initialFormState} 
+      formBlocks={[syntheticBlock]}
+      onNavigate={handleNavigation}
+      onBackNavigation={handleBack}
+    >
+      <QuestionView />
+    </FormContext>
   );
 }
