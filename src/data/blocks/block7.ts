@@ -20,7 +20,7 @@ export const block7: Block = {
             {
               id: "ho",
               label: "ho",
-              leads_to: "tipo_finanziamento"
+              leads_to: "aggiungi_finanziamento"
             },
             {
               id: "non_ho",
@@ -33,6 +33,29 @@ export const block7: Block = {
     },
     {
       question_number: "7.2",
+      question_id: "aggiungi_finanziamento",
+      question_text: "{{placeholder1}} finanziamenti da aggiungere",
+      leads_to_placeholder_priority: "placeholder1",
+      placeholders: {
+        placeholder1: {
+          type: "select",
+          options: [
+            {
+              id: "ho_altri",
+              label: "Ho altri",
+              leads_to: "tipo_finanziamento"
+            },
+            {
+              id: "non_ho_altri",
+              label: "Non ho altri",
+              leads_to: "next_block"
+            }
+          ]
+        }
+      }
+    },
+    {
+      question_number: "7.3",
       question_id: "tipo_finanziamento",
       question_text: "Ho un finanziamento per {{placeholder1}}",
       leads_to_placeholder_priority: "placeholder1",
@@ -43,26 +66,13 @@ export const block7: Block = {
             {
               id: "mutuo",
               label: "un altro mutuo",
-              leads_to: "oggetto_finanziamento"
+              leads_to: "importo_finanziamento"
             },
             {
               id: "prestito_personale",
               label: "un prestito personale",
-              leads_to: "oggetto_finanziamento"
-            }
-          ]
-        }
-      }
-    },
-    {
-      question_number: "7.3",
-      question_id: "oggetto_finanziamento",
-      question_text: "Per questo finanziamento ho dei pagamenti per {{placeholder1}}",
-      leads_to_placeholder_priority: "placeholder1",
-      placeholders: {
-        placeholder1: {
-          type: "select",
-          options: [
+              leads_to: "importo_finanziamento"
+            },
             {
               id: "macchina",
               label: "la macchina",
