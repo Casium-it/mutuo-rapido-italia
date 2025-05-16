@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Question, RepeatingGroupEntry } from '@/types/form';
 import { FormContext, useForm } from '@/contexts/FormContext';
 import { QuestionView } from './QuestionView';
@@ -75,7 +75,7 @@ export function SubflowForm({
         question_id: firstQuestionId
       },
       responses: initialFormResponses,
-      answeredQuestions: new Set(),
+      answeredQuestions: new Set<string>(), // Specifichiamo esplicitamente il tipo Set<string>
       navigationHistory: [],
     };
   }, [initialData, questions]);
@@ -158,6 +158,16 @@ export function SubflowForm({
   if (!initialized) {
     return <div className="p-4 text-center">Caricamento...</div>;
   }
+
+  // Crea un handler per sottoscriversi agli eventi di navigazione
+  const subscribeToNavigation = useCallback((callback: any) => {
+    // Implementa la logica per intercettare eventi di navigazione
+    // e chiamare il callback con i dati di navigazione appropriati
+    const unsubscribe = () => {
+      // Implementazione della funzione di pulizia
+    };
+    return unsubscribe;
+  }, []);
 
   return (
     <FormContext.Provider 
