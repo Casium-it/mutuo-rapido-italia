@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback, useRef } from "react";
 import { Block, FormState, FormResponse, NavigationHistory, StandardBlock, RepeatingGroupBlock, RepeatingGroupEntry } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
@@ -72,7 +73,8 @@ const initialState: FormState = {
   repeatingGroups: {} // Inizializzato come oggetto vuoto
 };
 
-const FormContext = createContext<FormContextType | undefined>(undefined);
+// Esporta il FormContext così può essere importato in altri file
+export const FormContext = createContext<FormContextType | undefined>(undefined);
 
 // Funzione per la rimozione di tutti i dati da localStorage per un tipo di blocco
 const clearLocalStorageForBlockType = (blockType?: string): void => {

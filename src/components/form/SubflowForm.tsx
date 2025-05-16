@@ -20,7 +20,6 @@ export function SubflowForm({
   endSignal = "end_of_subflow" 
 }: SubflowFormProps) {
   // Stato per tenere traccia dei dati del form
-  const [responses, setResponses] = useState<RepeatingGroupEntry>(initialData);
   const [initialized, setInitialized] = useState(false);
   
   // Crea un blocco sintetico contenente tutte le domande del subflow
@@ -133,12 +132,6 @@ export function SubflowForm({
     toQuestionId: string,
     formResponses: Record<string, Record<string, any>>
   ) => {
-    // Aggiorna le risposte locali per successivo completamento
-    setResponses(prev => ({
-      ...prev,
-      ...normalizeData(formResponses)
-    }));
-    
     // Controlla se siamo arrivati al segnale di fine
     if (toQuestionId === endSignal) {
       // Normalizza i dati prima di completare
@@ -167,13 +160,26 @@ export function SubflowForm({
   }
 
   return (
-    <FormContext 
-      initialState={initialFormState} 
-      formBlocks={[syntheticBlock]}
-      onNavigate={handleNavigation}
-      onBackNavigation={handleBack}
+    <FormContext.Provider 
+      value={{
+        state: initialFormState,
+        blocks: [syntheticBlock],
+        goToQuestion: () => {},
+        setResponse: () => {},
+        getResponse: () => undefined,
+        addActiveBlock: () => {},
+        isQuestionAnswered: () => false,
+        navigateToNextQuestion: () => {},
+        getProgress: () => 0,
+        resetForm: () => {},
+        getNavigationHistoryFor: () => undefined,
+        getRepeatingGroupEntries: () => [],
+        saveRepeatingGroupEntry: () => false,
+        deleteRepeatingGroupEntry: () => false,
+        subscribeToNavigation: () => (() => {})
+      }}
     >
       <QuestionView />
-    </FormContext>
+    </FormContext.Provider>
   );
 }
