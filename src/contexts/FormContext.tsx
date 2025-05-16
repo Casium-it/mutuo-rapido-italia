@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback } from "react";
-import { Block, FormState, FormResponse, NavigationHistory } from "@/types/form";
+import { Block, FormState, FormResponse, NavigationHistory, BlockCopyRegistry } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { deepCloneBlock } from "@/utils/blockUtils"; // Aggiungeremo questa utility
 
 type FormContextType = {
   state: FormState;
@@ -14,6 +15,8 @@ type FormContextType = {
   getProgress: () => number;
   resetForm: () => void;
   getNavigationHistoryFor: (questionId: string) => NavigationHistory | undefined;
+  copyBlock: (sourceBlockId: string) => string | undefined;
+  getBlockCopiesForSource: (sourceBlockId: string) => string[];
 };
 
 type Action =
@@ -24,7 +27,8 @@ type Action =
   | { type: "SET_FORM_STATE"; state: Partial<FormState> }
   | { type: "RESET_FORM" }
   | { type: "SET_NAVIGATING"; isNavigating: boolean }
-  | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory };
+  | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory }
+  | { type: "ADD_BLOCK_COPY"; newBlock: Block; sourceBlockId: string };
 
 const initialState: FormState = {
   activeBlocks: [],
@@ -35,7 +39,8 @@ const initialState: FormState = {
   responses: {},
   answeredQuestions: new Set(),
   isNavigating: false,
-  navigationHistory: []
+  navigationHistory: [],
+  blockCopyRegistry: {} // Inizializza il registro dei blocchi copiati
 };
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
@@ -89,7 +94,8 @@ function formReducer(state: FormState, action: Action): FormState {
         ...initialState,
         activeBlocks: state.activeBlocks.filter(blockId => 
           initialState.activeBlocks.includes(blockId)),
-        navigationHistory: [] // Reset anche la cronologia di navigazione
+        navigationHistory: [],
+        blockCopyRegistry: {} // Reset anche il registro dei blocchi copiati
       };
     }
     case "SET_NAVIGATING": {
@@ -110,15 +116,41 @@ function formReducer(state: FormState, action: Action): FormState {
         navigationHistory: [...filteredHistory, action.history]
       };
     }
+    case "ADD_BLOCK_COPY": {
+      // Aggiungi il nuovo blocco al registro delle copie
+      const updatedRegistry = { ...state.blockCopyRegistry };
+      const sourceBlockId = action.sourceBlockId;
+      
+      if (!updatedRegistry[sourceBlockId]) {
+        updatedRegistry[sourceBlockId] = [];
+      }
+      
+      updatedRegistry[sourceBlockId].push(action.newBlock.block_id);
+      
+      // Attiviamo anche il nuovo blocco
+      const updatedActiveBlocks = [...state.activeBlocks];
+      if (!updatedActiveBlocks.includes(action.newBlock.block_id)) {
+        updatedActiveBlocks.push(action.newBlock.block_id);
+      }
+      
+      return {
+        ...state,
+        blockCopyRegistry: updatedRegistry,
+        activeBlocks: updatedActiveBlocks
+      };
+    }
     default:
       return state;
   }
 }
 
-export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = ({ children, blocks }) => {
+export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = ({ children, blocks: initialBlocks }) => {
   const navigate = useNavigate();
   const params = useParams<{ blockType?: string; blockId?: string; questionId?: string }>();
   const location = useLocation();
+  
+  // State per mantenere i blocchi, inclusi quelli creati dinamicamente
+  const [blocks, setBlocks] = React.useState<Block[]>(initialBlocks);
   
   // Ordina i blocchi per priorità
   const sortedBlocks = [...blocks].sort((a, b) => a.priority - b.priority);
@@ -480,6 +512,37 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return sortedHistory.find(item => item.to_question_id === questionId);
   }, [state.navigationHistory]);
 
+  // Funzione per creare una copia di un blocco
+  const copyBlock = useCallback((sourceBlockId: string): string | undefined => {
+    // Trova il blocco sorgente
+    const sourceBlock = blocks.find(b => b.block_id === sourceBlockId);
+    if (!sourceBlock) return undefined;
+    
+    // Determina l'indice del nuovo blocco
+    const existingCopies = state.blockCopyRegistry[sourceBlockId]?.length || 0;
+    const copyIndex = existingCopies + 1;
+    
+    // Crea una copia profonda del blocco
+    const newBlock = deepCloneBlock(sourceBlock, copyIndex);
+    
+    // Aggiorna la lista dei blocchi
+    setBlocks(prevBlocks => [...prevBlocks, newBlock]);
+    
+    // Aggiorna il registry dei blocchi copiati
+    dispatch({
+      type: "ADD_BLOCK_COPY",
+      newBlock,
+      sourceBlockId
+    });
+    
+    return newBlock.block_id;
+  }, [blocks, state.blockCopyRegistry]);
+  
+  // Funzione per ottenere tutti i blocchi copiati da un blocco sorgente
+  const getBlockCopiesForSource = useCallback((sourceBlockId: string): string[] => {
+    return state.blockCopyRegistry[sourceBlockId] || [];
+  }, [state.blockCopyRegistry]);
+
   return (
     <FormContext.Provider
       value={{
@@ -493,7 +556,9 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         navigateToNextQuestion,
         getProgress,
         resetForm,
-        getNavigationHistoryFor
+        getNavigationHistoryFor,
+        copyBlock,
+        getBlockCopiesForSource
       }}
     >
       {children}

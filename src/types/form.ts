@@ -19,10 +19,18 @@ export type InputPlaceholder = {
   input_type: "text" | "number" | "date";
   placeholder_label: string;
   leads_to?: string;
-  input_validation: ValidationTypes; // Now required
+  input_validation: ValidationTypes;
 };
 
-export type Placeholder = SelectPlaceholder | InputPlaceholder;
+export type SubBlocksPlaceholder = {
+  type: "sub-blocks";
+  placeholder_label?: string;
+  add_block_label?: string;
+  create_block_copy: string;
+  leads_to?: string;
+};
+
+export type Placeholder = SelectPlaceholder | InputPlaceholder | SubBlocksPlaceholder;
 
 export type Question = {
   question_id: string;
@@ -41,6 +49,8 @@ export type Block = {
   priority: number;
   default_active?: boolean;
   invisible?: boolean; // New attribute to hide blocks from the sidebar
+  is_copy_of?: string; // Nuovo campo per tracciare il blocco originale
+  copy_index?: number; // Indice di copia del blocco
   questions: Question[];
 };
 
@@ -58,6 +68,10 @@ export type NavigationHistory = {
   timestamp: number;
 };
 
+export type BlockCopyRegistry = {
+  [sourceBlockId: string]: string[]; // Array of copied block IDs
+};
+
 export type FormState = {
   activeBlocks: string[];
   activeQuestion: {
@@ -67,5 +81,6 @@ export type FormState = {
   responses: FormResponse;
   answeredQuestions: Set<string>;
   isNavigating?: boolean;
-  navigationHistory: NavigationHistory[]; // Aggiungiamo la cronologia di navigazione
+  navigationHistory: NavigationHistory[];
+  blockCopyRegistry: BlockCopyRegistry; // Registro dei blocchi copiati
 };
