@@ -1,56 +1,41 @@
 
-import { Block, Question } from "@/types/form";
+import { Block } from "@/types/form";
 
 /**
- * Creates a deep clone of a block with unique IDs
- * @param sourceBlock The source block to clone
- * @param copyIndex The index of the copy, used for ID generation
- * @returns A new Block object with unique IDs
+ * Crea una copia profonda di un blocco modificando gli ID per evitare conflitti
+ * @param sourceBlock Il blocco sorgente da copiare
+ * @param copyIndex Indice di copia per generare nuovi ID unici
+ * @returns Una nuova istanza del blocco con ID unici
  */
 export function deepCloneBlock(sourceBlock: Block, copyIndex: number): Block {
-  const blockIdSuffix = `_copy_${copyIndex}`;
+  // Crea un nuovo ID basato sul blocco sorgente e sull'indice di copia
+  const newBlockId = `${sourceBlock.block_id}_copy_${copyIndex}`;
   
-  // Create new questions with unique IDs
-  const clonedQuestions: Question[] = sourceBlock.questions.map(question => {
-    // Create a unique question ID
-    const newQuestionId = `${question.question_id}${blockIdSuffix}`;
+  // Crea una copia profonda del blocco
+  const newBlock: Block = {
+    ...JSON.parse(JSON.stringify(sourceBlock)),
+    block_id: newBlockId,
+    // Aggiungiamo metadati per tracciare l'origine della copia
+    is_copy_of: sourceBlock.block_id,
+    copy_index: copyIndex,
+  };
+  
+  // Aggiorna gli ID delle domande per includervi il nuovo block_id
+  // Questo assicura che tutte le domande abbiano ID unici nel form
+  newBlock.questions = newBlock.questions.map(question => {
+    // Assicuriamo che il question_id sia unico aggiungendo il prefisso del blocco
+    // Però manteniamo la parte finale dell'ID originale per leggibilità
+    const originalQuestionIdParts = question.question_id.split('_');
+    const questionBase = originalQuestionIdParts.length > 1 
+      ? originalQuestionIdParts.slice(1).join('_') 
+      : originalQuestionIdParts[0];
     
-    // Deep clone the question
     return {
       ...question,
-      question_id: newQuestionId,
-      block_id: `${sourceBlock.block_id}${blockIdSuffix}`,
-      // Deep clone placeholders to avoid reference issues
-      placeholders: { ...question.placeholders }
+      block_id: newBlockId, // Aggiorniamo il riferimento al blocco
+      question_id: `${newBlockId}_${questionBase}` // Creiamo un nuovo ID univoco
     };
   });
   
-  // Create the clone with a priority slightly higher than the source
-  return {
-    ...sourceBlock,
-    block_id: `${sourceBlock.block_id}${blockIdSuffix}`,
-    title: sourceBlock.title, // We'll show the index from the UI
-    priority: sourceBlock.priority + (copyIndex * 0.01), // Slight increase in priority for proper ordering
-    is_copy_of: sourceBlock.block_id,
-    copy_index: copyIndex,
-    questions: clonedQuestions,
-  };
-}
-
-/**
- * Verifica se un blocco è una copia di un altro blocco
- * @param block Il blocco da verificare
- * @returns True se il blocco è una copia, false altrimenti
- */
-export function isBlockCopy(block: Block): boolean {
-  return !!block.is_copy_of;
-}
-
-/**
- * Ottiene l'ID del blocco originale
- * @param block Il blocco da verificare
- * @returns L'ID del blocco originale o l'ID del blocco stesso se non è una copia
- */
-export function getOriginalBlockId(block: Block): string {
-  return block.is_copy_of || block.block_id;
+  return newBlock;
 }

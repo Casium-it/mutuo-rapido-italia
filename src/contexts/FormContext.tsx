@@ -17,6 +17,7 @@ type FormContextType = {
   getNavigationHistoryFor: (questionId: string) => NavigationHistory | undefined;
   copyBlock: (sourceBlockId: string) => string | undefined;
   getBlockCopiesForSource: (sourceBlockId: string) => string[];
+  removeBlock: (blockId: string) => void; // Nuova funzione per rimuovere un blocco
 };
 
 type Action =
@@ -28,7 +29,8 @@ type Action =
   | { type: "RESET_FORM" }
   | { type: "SET_NAVIGATING"; isNavigating: boolean }
   | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory }
-  | { type: "ADD_BLOCK_COPY"; newBlock: Block; sourceBlockId: string };
+  | { type: "ADD_BLOCK_COPY"; newBlock: Block; sourceBlockId: string }
+  | { type: "REMOVE_BLOCK"; blockId: string }; // Nuovo tipo di azione
 
 const initialState: FormState = {
   activeBlocks: [],
@@ -137,6 +139,42 @@ function formReducer(state: FormState, action: Action): FormState {
         ...state,
         blockCopyRegistry: updatedRegistry,
         activeBlocks: updatedActiveBlocks
+      };
+    }
+    case "REMOVE_BLOCK": {
+      // Rimuovi il blocco dal registro delle copie
+      const updatedRegistry = { ...state.blockCopyRegistry };
+      
+      // Cerca in quale fonte è presente questo blockId
+      for (const [sourceId, copiedBlocks] of Object.entries(updatedRegistry)) {
+        if (copiedBlocks.includes(action.blockId)) {
+          // Rimuovi il blockId dalla lista delle copie
+          updatedRegistry[sourceId] = copiedBlocks.filter(id => id !== action.blockId);
+        }
+      }
+      
+      // Rimuovi il blocco dalla lista dei blocchi attivi
+      const updatedActiveBlocks = state.activeBlocks.filter(id => id !== action.blockId);
+      
+      // Rimuovi anche le risposte associate a questo blocco
+      const updatedResponses = { ...state.responses };
+      const answeredQuestionsToKeep = new Set(state.answeredQuestions);
+      
+      // Itera su tutte le risposte e rimuovi quelle relative al blocco rimosso
+      Object.keys(updatedResponses).forEach(questionId => {
+        // Se il questionId appartiene al blocco rimosso, eliminalo
+        if (questionId.startsWith(`${action.blockId}_`)) {
+          delete updatedResponses[questionId];
+          answeredQuestionsToKeep.delete(questionId);
+        }
+      });
+      
+      return {
+        ...state,
+        blockCopyRegistry: updatedRegistry,
+        activeBlocks: updatedActiveBlocks,
+        responses: updatedResponses,
+        answeredQuestions: answeredQuestionsToKeep
       };
     }
     default:
@@ -543,6 +581,57 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return state.blockCopyRegistry[sourceBlockId] || [];
   }, [state.blockCopyRegistry]);
 
+  // Nuova funzione per rimuovere un blocco
+  const removeBlock = useCallback((blockId: string) => {
+    // Trova il blocco corrente
+    const currentBlock = blocks.find(b => b.block_id === blockId);
+    if (!currentBlock) return;
+    
+    // Rimuovi il blocco dal registro e dai blocchi attivi
+    dispatch({ type: "REMOVE_BLOCK", blockId });
+    
+    // Rimuovi il blocco dalla lista dei blocchi
+    setBlocks(prevBlocks => prevBlocks.filter(b => b.block_id !== blockId));
+    
+    // Se l'utente è attualmente su questo blocco, naviga a un altro blocco
+    if (state.activeQuestion.block_id === blockId) {
+      // Trova il blocco source utilizzando il campo is_copy_of
+      const sourceBlockId = currentBlock.is_copy_of;
+      
+      if (sourceBlockId) {
+        // Torna al blocco che gestisce i sub-blocks
+        const sourceBlock = blocks.find(b => b.block_id === sourceBlockId);
+        if (sourceBlock) {
+          // Trova la domanda che ha il sub-blocks placeholder
+          const subBlockQuestion = sourceBlock.questions.find(q => {
+            for (const [_, placeholder] of Object.entries(q.placeholders)) {
+              if (placeholder.type === "sub-blocks") {
+                return true;
+              }
+            }
+            return false;
+          });
+          
+          if (subBlockQuestion) {
+            // Naviga alla domanda del sub-blocks placeholder
+            goToQuestion(sourceBlockId, subBlockQuestion.question_id, true);
+          } else {
+            // Fallback alla prima domanda del sourceBlock
+            if (sourceBlock.questions.length > 0) {
+              goToQuestion(sourceBlockId, sourceBlock.questions[0].question_id, true);
+            }
+          }
+        }
+      } else {
+        // Se non c'è un sourceBlock, naviga al primo blocco attivo
+        const firstActiveBlock = blocks.find(b => state.activeBlocks.includes(b.block_id) && b.block_id !== blockId);
+        if (firstActiveBlock && firstActiveBlock.questions.length > 0) {
+          goToQuestion(firstActiveBlock.block_id, firstActiveBlock.questions[0].question_id, true);
+        }
+      }
+    }
+  }, [blocks, state.activeBlocks, state.activeQuestion, goToQuestion]);
+
   return (
     <FormContext.Provider
       value={{
@@ -558,7 +647,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         resetForm,
         getNavigationHistoryFor,
         copyBlock,
-        getBlockCopiesForSource
+        getBlockCopiesForSource,
+        removeBlock // Aggiungi la nuova funzione al context
       }}
     >
       {children}
