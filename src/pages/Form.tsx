@@ -10,7 +10,7 @@ import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 
 export default function Form() {
-  const { state, blocks, getProgress, resetForm } = useForm();
+  const { state, blocks, getProgress, resetForm, goToQuestion } = useForm();
   const params = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -25,6 +25,16 @@ export default function Form() {
   const handleSaveAndExit = () => {
     // Lo stato è già salvato in localStorage grazie al FormContext
     navigate("/");
+  };
+
+  // Gestisci il test per la professione
+  const handleTestProfessione = () => {
+    // Naviga al blocco "la_tua_professione" e alla sua prima domanda
+    const professioneBlock = blocks.find(block => block.block_id === "la_tua_professione");
+    if (professioneBlock && professioneBlock.questions.length > 0) {
+      const firstQuestionId = professioneBlock.questions[0].question_id;
+      goToQuestion("la_tua_professione", firstQuestionId);
+    }
   };
 
   // Assicuriamoci che il componente si ri-renderizzi quando cambia l'URL
@@ -91,16 +101,16 @@ export default function Form() {
         </div>
       </div>
       
-      {/* Reset button */}
+      {/* Test professione button */}
       <div className="absolute bottom-4 left-4 z-10">
         <Button 
           variant="outline" 
           size="sm" 
           className="bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200 text-xs"
-          onClick={resetForm}
+          onClick={handleTestProfessione}
         >
           <RefreshCcw className="h-3 w-3 mr-1" />
-          Reimposta form
+          Test la tua professione
         </Button>
       </div>
     </div>

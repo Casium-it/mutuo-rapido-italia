@@ -13,7 +13,7 @@ const SimulazioneAvanzata = () => {
   const navigate = useNavigate();
   
   // Funzione per gestire l'avvio di un nuovo form
-  const startNewForm = (path: string, addHouseBlock: boolean = false) => {
+  const startNewForm = (path: string, additionalBlocks: string[] = []) => {
     // Rimuoviamo qualsiasi dato salvato in localStorage per i vari tipi di form
     const pathSegments = path.split('/');
     const formType = pathSegments[pathSegments.length - 3]; // Estrai il tipo (pensando, cercando, offerta, ecc.)
@@ -26,9 +26,9 @@ const SimulazioneAvanzata = () => {
       .filter(block => block.default_active)
       .map(block => block.block_id);
     
-    // Crea uno stato iniziale con i blocchi di default attivi
+    // Crea uno stato iniziale con i blocchi di default attivi e i blocchi aggiuntivi
     const initialState = {
-      activeBlocks: [...defaultActiveBlocks],
+      activeBlocks: [...defaultActiveBlocks, ...additionalBlocks],
       activeQuestion: {
         block_id: "introduzione", // Usiamo introduzione come blocco iniziale
         question_id: "soggetto_acquisto" // Prima domanda del blocco introduzione
@@ -36,11 +36,6 @@ const SimulazioneAvanzata = () => {
       responses: {},
       answeredQuestions: []
     };
-    
-    // Se dobbiamo aggiungere il blocco della casa, aggiungiamolo allo stato iniziale
-    if (addHouseBlock && !initialState.activeBlocks.includes("la_tua_casa")) {
-      initialState.activeBlocks.push("la_tua_casa");
-    }
     
     // Salva questo stato iniziale nel localStorage
     localStorage.setItem(`form-state-${formType}`, JSON.stringify(initialState));
@@ -69,10 +64,10 @@ const SimulazioneAvanzata = () => {
         <div className="space-y-4">
           <OptionCard
             icon={LightbulbIcon}
-            title="Sto pensando di acquistare"
+            title="Mi sto guardando intorno"
             description="Non ho ancora iniziato le visite"
             href="/simulazione/pensando/introduzione/soggetto_acquisto"
-            onClick={() => startNewForm("/simulazione/pensando/introduzione/soggetto_acquisto")}
+            onClick={() => startNewForm("/simulazione/pensando/introduzione/soggetto_acquisto", ["la_tua_ricerca_casa"])}
           />
           
           <OptionCard
@@ -80,23 +75,31 @@ const SimulazioneAvanzata = () => {
             title="Sto cercando attivamente"
             description="Ho già iniziato o pianificato le visite"
             href="/simulazione/cercando/introduzione/soggetto_acquisto"
-            onClick={() => startNewForm("/simulazione/cercando/introduzione/soggetto_acquisto")}
+            onClick={() => startNewForm("/simulazione/cercando/introduzione/soggetto_acquisto", ["la_tua_ricerca_casa"])}
           />
           
           <OptionCard
             icon={Home}
-            title="Ho fatto un'offerta"
+            title="Ho individuato una casa"
             description="Ho trovato l'immobile ideale"
-            href="/simulazione/offerta/introduzione/soggetto_acquisto"
-            onClick={() => startNewForm("/simulazione/offerta/introduzione/soggetto_acquisto", true)}
+            href="/simulazione/individuata/introduzione/soggetto_acquisto"
+            onClick={() => startNewForm("/simulazione/individuata/introduzione/soggetto_acquisto", ["la_casa_individuata"])}
           />
           
           <OptionCard
             icon={Check}
+            title="Ho fatto un'offerta"
+            description="Sono in attesa che l'offerta venga accettata"
+            href="/simulazione/offerta/introduzione/soggetto_acquisto"
+            onClick={() => startNewForm("/simulazione/offerta/introduzione/soggetto_acquisto", ["la_tua_offerta"])}
+          />
+          
+          <OptionCard
+            icon={Badge}
             title="Ho un'offerta accettata"
             description="Sono sicuro dell'immobile"
             href="/simulazione/accettata/introduzione/soggetto_acquisto"
-            onClick={() => startNewForm("/simulazione/accettata/introduzione/soggetto_acquisto", true)}
+            onClick={() => startNewForm("/simulazione/accettata/introduzione/soggetto_acquisto", ["la_tua_offerta"])}
           />
           
           <OptionCard
