@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback } from "react";
 import { Block, FormState, FormResponse, NavigationHistory, BlockCopyRegistry } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
@@ -217,7 +216,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     
     return true;
   }, []);
-
+  
   // Inizializza o aggiorna i blocchi attivi dal JSON
   useEffect(() => {
     // Prima attiva tutti i blocchi che dovrebbero essere attivi per default
