@@ -191,8 +191,38 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     activeBlocks: initialBlocks.filter(b => b.default_active).map(b => b.block_id)
   });
 
-  // Funzione per la navigazione tra le domande
+  // Aggiunta: stato per limitare la frequenza delle navigazioni
+  const [lastNavigationTime, setLastNavigationTime] = React.useState<number>(0);
+  const [navigationCount, setNavigationCount] = React.useState<number>(0);
+  const navigationTimeWindow = 10000; // 10 secondi in millisecondi
+  const maxNavigationsPerWindow = 90; // Limite leggermente inferiore al limite del browser di 100
+
+  // Funzione per la navigazione tra le domande con protezione contro troppi aggiornamenti
   const goToQuestion = useCallback((block_id: string, question_id: string, replace = false) => {
+    // Protezione contro troppi aggiornamenti in un breve periodo
+    const now = Date.now();
+    const timeElapsed = now - lastNavigationTime;
+    
+    // Se siamo ancora nella stessa finestra temporale, incrementa il contatore
+    // Altrimenti, reimposta il contatore e aggiorna l'ultimo timestamp
+    if (timeElapsed < navigationTimeWindow) {
+      if (navigationCount >= maxNavigationsPerWindow) {
+        console.warn("Troppe navigazioni in un breve periodo. Limitazione applicata.");
+        return; // Interrompe la navigazione se si supera il limite
+      }
+      setNavigationCount(count => count + 1);
+    } else {
+      // Reset del contatore all'inizio di una nuova finestra temporale
+      setLastNavigationTime(now);
+      setNavigationCount(1);
+    }
+    
+    // Verifica che il target non sia uguale alla posizione attuale
+    if (state.activeQuestion.block_id === block_id && 
+        state.activeQuestion.question_id === question_id) {
+      return; // Evita navigazioni ridondanti allo stesso punto
+    }
+    
     const previousBlockId = state.activeQuestion.block_id;
     const previousQuestionId = state.activeQuestion.question_id;
 
@@ -239,7 +269,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     setTimeout(() => {
       dispatch({ type: "SET_NAVIGATING", isNavigating: false });
     }, 300);
-  }, [params.blockType, navigate, state.activeQuestion, blocks]);
+  }, [params.blockType, navigate, state.activeQuestion, blocks, lastNavigationTime, navigationCount]);
 
   // Funzione per aggiungere blocchi all'elenco
   const addBlocks = useCallback((newBlocks: Block[]) => {
@@ -300,7 +330,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     const existingCopies = getBlockCopiesForSource(sourceBlockId);
     console.log(`Copie esistenti per ${sourceBlockId}:`, existingCopies);
     
-    // Genera un indice univoco per il nuovo blocco
+    // Genera un indice unico per il nuovo blocco
     const copyIndex = generateUniqueBlockIndex(sourceBlockId, existingCopies);
     console.log(`Indice generato per la nuova copia: ${copyIndex}`);
     
