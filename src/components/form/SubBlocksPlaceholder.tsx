@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+
+import React from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, ArrowRight } from "lucide-react";
@@ -15,6 +16,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useToast } from "@/components/ui/use-toast";
 
 interface SubBlocksPlaceholderProps {
   questionId: string;
@@ -35,7 +37,7 @@ export function SubBlocksPlaceholder({
   placeholderLabel
 }: SubBlocksPlaceholderProps) {
   const { 
-    copyBlock, 
+    createAndNavigateToBlock,
     getBlockCopiesForSource, 
     goToQuestion, 
     blocks,
@@ -44,14 +46,14 @@ export function SubBlocksPlaceholder({
     state
   } = useFormExtended();
   
-  const [isAddingBlock, setIsAddingBlock] = useState(false);
-  const [copiedBlocks, setCopiedBlocks] = useState<any[]>([]);
+  const { toast } = useToast();
+  const [isCreatingBlock, setIsCreatingBlock] = React.useState(false);
+  const [copiedBlocks, setCopiedBlocks] = React.useState<any[]>([]);
 
-  // Recupera tutti i blocchi copiati dal sorgente specificato
-  useEffect(() => {
+  // Funzione per ottenere le copie dei blocchi
+  const fetchCopiedBlocks = React.useCallback(() => {
     // Recupera gli ID dei blocchi copiati
     const copiedBlockIds = getBlockCopiesForSource(sourceBlockId);
-    console.log(`SubBlocksPlaceholder: Blocchi copiati per ${sourceBlockId}:`, copiedBlockIds);
     
     if (copiedBlockIds.length === 0) {
       setCopiedBlocks([]);
@@ -61,10 +63,10 @@ export function SubBlocksPlaceholder({
     // Trova i blocchi completi usando gli ID
     const foundBlocks = blocks
       .filter(block => copiedBlockIds.includes(block.block_id))
-      // Ordina per ID numerico ascendente (id1, id2, ecc.)
+      // Ordina per ID numerico ascendente (copy1, copy2, ecc.)
       .sort((a, b) => {
-        const indexA = a.block_id.match(/_id(\d+)$/);
-        const indexB = b.block_id.match(/_id(\d+)$/);
+        const indexA = a.block_id.match(/_copy(\d+)$/);
+        const indexB = b.block_id.match(/_copy(\d+)$/);
         
         if (indexA && indexB) {
           return parseInt(indexA[1], 10) - parseInt(indexB[1], 10);
@@ -72,12 +74,16 @@ export function SubBlocksPlaceholder({
         return 0;
       });
     
-    console.log("SubBlocksPlaceholder: Blocchi trovati e ordinati:", foundBlocks.map(b => b.block_id));
     setCopiedBlocks(foundBlocks);
-  }, [sourceBlockId, blocks, getBlockCopiesForSource, state.blockCopyRegistry]);
+  }, [sourceBlockId, blocks, getBlockCopiesForSource]);
+  
+  // Recupera tutti i blocchi copiati dal sorgente specificato
+  React.useEffect(() => {
+    fetchCopiedBlocks();
+  }, [fetchCopiedBlocks, state.blockCopyRegistry]);
 
   // Funzione per ottenere un riassunto dinamico delle risposte del blocco
-  const getBlockSummary = (blockId: string) => {
+  const getBlockSummary = React.useCallback((blockId: string) => {
     const block = blocks.find(b => b.block_id === blockId);
     if (!block) return { summaryItems: [] };
 
@@ -134,10 +140,7 @@ export function SubBlocksPlaceholder({
             let questionText = question.question_text;
             
             // Rimuovi tutti i placeholder dal testo della domanda per l'etichetta
-            questionText = questionText.replace(/\{\{[^}]+\}\}/g, "");
-            
-            // Pulisci il testo da spazi eccessivi e rimuovi eventuali spazi a fine testo
-            questionText = questionText.trim();
+            questionText = questionText.replace(/\{\{[^}]+\}\}/g, "").trim();
             
             // Aggiungi al sommario solo se c'è un valore da mostrare
             if (displayValue) {
@@ -152,46 +155,40 @@ export function SubBlocksPlaceholder({
     });
     
     return { summaryItems };
-  };
+  }, [blocks, state.responses]);
 
   // Gestisci la creazione di una nuova copia del blocco e naviga direttamente ad essa
   const handleAddBlockCopy = () => {
     // Previeni doppi clic
-    if (isAddingBlock) return;
+    if (isCreatingBlock) return;
     
-    setIsAddingBlock(true);
-    console.log("Creazione di una nuova copia del blocco:", sourceBlockId);
+    setIsCreatingBlock(true);
     
     try {
-      // Crea una nuova copia del blocco
-      const newBlockId = copyBlock(sourceBlockId);
-      console.log("Nuovo blocco creato con ID:", newBlockId);
+      // Crea il blocco e naviga ad esso in un'unica operazione
+      const success = createAndNavigateToBlock(sourceBlockId);
       
-      // Se la creazione è riuscita, naviga automaticamente alla prima domanda del nuovo blocco
-      if (newBlockId) {
-        // Aumentato il timeout per garantire che il blocco sia completamente aggiunto
-        setTimeout(() => {
-          // Verifica che il blocco sia stato effettivamente aggiunto all'elenco dei blocchi
-          const newBlock = blocks.find(b => b.block_id === newBlockId);
-          console.log("Trovato blocco dopo creazione:", newBlock);
-          
-          if (newBlock && newBlock.questions.length > 0) {
-            // Naviga alla prima domanda del nuovo blocco
-            const firstQuestionId = newBlock.questions[0].question_id;
-            console.log(`Navigazione a ${newBlockId}/${firstQuestionId}`);
-            goToQuestion(newBlockId, firstQuestionId);
-          } else {
-            console.error("Blocco creato ma non trovato nell'elenco dei blocchi o senza domande");
-          }
-          setIsAddingBlock(false);
-        }, 2000); // Aumentato a 2000ms per garantire che il blocco sia completamente registrato
+      if (success) {
+        toast({
+          title: "Elemento aggiunto",
+          description: "Compila i dettagli per completare",
+        });
       } else {
-        console.error("Impossibile creare un nuovo blocco");
-        setIsAddingBlock(false);
+        toast({
+          title: "Errore",
+          description: "Non è stato possibile creare il nuovo elemento",
+          variant: "destructive"
+        });
       }
     } catch (e) {
       console.error("Errore nella creazione del blocco:", e);
-      setIsAddingBlock(false);
+      toast({
+        title: "Errore",
+        description: "Si è verificato un errore durante la creazione",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCreatingBlock(false);
     }
   };
 
@@ -201,7 +198,6 @@ export function SubBlocksPlaceholder({
     const block = blocks.find(b => b.block_id === blockId);
     if (block && block.questions.length > 0) {
       const firstQuestionId = block.questions[0].question_id;
-      console.log(`Navigazione diretta a ${blockId}/${firstQuestionId}`);
       goToQuestion(blockId, firstQuestionId);
     }
   };
@@ -209,6 +205,13 @@ export function SubBlocksPlaceholder({
   // Gestisci l'eliminazione di un blocco copiato
   const handleRemoveBlock = (blockId: string) => {
     removeBlock(blockId);
+    toast({
+      title: "Elemento eliminato",
+      description: "L'elemento è stato rimosso correttamente",
+    });
+    
+    // Aggiorna la lista dopo la rimozione
+    fetchCopiedBlocks();
   };
   
   // Gestisci la navigazione al prossimo blocco (saltando i blocchi invisibili)
@@ -304,7 +307,7 @@ export function SubBlocksPlaceholder({
           type="button"
           onClick={handleAddBlockCopy}
           variant="outline"
-          disabled={isAddingBlock}
+          disabled={isCreatingBlock}
           className={cn(
             "border-[1.5px] border-dashed border-[#BEB8AE] text-[#245C4F] bg-transparent",
             "hover:bg-[#F8F4EF] hover:border-[#245C4F]",
@@ -312,7 +315,7 @@ export function SubBlocksPlaceholder({
           )}
         >
           <Plus className="h-4 w-4" />
-          {isAddingBlock ? "Creazione..." : addBlockLabel}
+          {isCreatingBlock ? "Creazione..." : addBlockLabel}
         </Button>
         
         {/* Pulsante per passare al prossimo blocco */}

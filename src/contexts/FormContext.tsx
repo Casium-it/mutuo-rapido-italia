@@ -1,7 +1,12 @@
+
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback } from "react";
 import { Block, FormState, FormResponse, NavigationHistory, BlockCopyRegistry } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { deepCloneBlock } from "@/utils/blockUtils"; // Aggiungeremo questa utility
+import { 
+  deepCloneBlock, 
+  generateUniqueBlockIndex,
+  validateBlockCopyRegistry
+} from "@/utils/blockUtils";
 
 type FormContextType = {
   state: FormState;
@@ -15,9 +20,9 @@ type FormContextType = {
   getProgress: () => number;
   resetForm: () => void;
   getNavigationHistoryFor: (questionId: string) => NavigationHistory | undefined;
-  copyBlock: (sourceBlockId: string) => string | undefined;
+  createAndNavigateToBlock: (sourceBlockId: string) => boolean;
   getBlockCopiesForSource: (sourceBlockId: string) => string[];
-  removeBlock: (blockId: string) => void; // Nuova funzione per rimuovere un blocco
+  removeBlock: (blockId: string) => void;
 };
 
 type Action =
@@ -29,8 +34,9 @@ type Action =
   | { type: "RESET_FORM" }
   | { type: "SET_NAVIGATING"; isNavigating: boolean }
   | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory }
-  | { type: "ADD_BLOCK_COPY"; newBlock: Block; sourceBlockId: string }
-  | { type: "REMOVE_BLOCK"; blockId: string }; // Nuovo tipo di azione
+  | { type: "ADD_BLOCKS"; blocks: Block[] }
+  | { type: "REMOVE_BLOCK"; blockId: string }
+  | { type: "UPDATE_BLOCK_COPY_REGISTRY"; registry: BlockCopyRegistry };
 
 const initialState: FormState = {
   activeBlocks: [],
@@ -42,7 +48,7 @@ const initialState: FormState = {
   answeredQuestions: new Set(),
   isNavigating: false,
   navigationHistory: [],
-  blockCopyRegistry: {} // Inizializza il registro dei blocchi copiati
+  blockCopyRegistry: {}
 };
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
@@ -97,7 +103,7 @@ function formReducer(state: FormState, action: Action): FormState {
         activeBlocks: state.activeBlocks.filter(blockId => 
           initialState.activeBlocks.includes(blockId)),
         navigationHistory: [],
-        blockCopyRegistry: {} // Reset anche il registro dei blocchi copiati
+        blockCopyRegistry: {}
       };
     }
     case "SET_NAVIGATING": {
@@ -107,7 +113,6 @@ function formReducer(state: FormState, action: Action): FormState {
       };
     }
     case "ADD_NAVIGATION_HISTORY": {
-      // Filtriamo la cronologia per rimuovere eventuali duplicati
       const filteredHistory = state.navigationHistory.filter(item => 
         !(item.from_question_id === action.history.from_question_id && 
           item.to_question_id === action.history.to_question_id)
@@ -118,33 +123,13 @@ function formReducer(state: FormState, action: Action): FormState {
         navigationHistory: [...filteredHistory, action.history]
       };
     }
-    case "ADD_BLOCK_COPY": {
-      // Aggiungi il nuovo blocco al registro delle copie, assicurandosi di non creare duplicati
-      const updatedRegistry = { ...state.blockCopyRegistry };
-      const sourceBlockId = action.sourceBlockId;
-      
-      if (!updatedRegistry[sourceBlockId]) {
-        updatedRegistry[sourceBlockId] = [];
-      }
-      
-      // Verifica se l'ID del nuovo blocco è già presente prima di aggiungerlo
-      if (!updatedRegistry[sourceBlockId].includes(action.newBlock.block_id)) {
-        updatedRegistry[sourceBlockId] = [...updatedRegistry[sourceBlockId], action.newBlock.block_id];
-        console.log(`Aggiunto blocco ${action.newBlock.block_id} al registro di ${sourceBlockId}`, updatedRegistry);
-      } else {
-        console.log(`Blocco ${action.newBlock.block_id} già presente nel registro di ${sourceBlockId}`);
-      }
-      
-      // Attiviamo anche il nuovo blocco
-      const updatedActiveBlocks = [...state.activeBlocks];
-      if (!updatedActiveBlocks.includes(action.newBlock.block_id)) {
-        updatedActiveBlocks.push(action.newBlock.block_id);
-      }
-      
+    case "ADD_BLOCKS": {
+      return state; // Non modifichiamo lo stato qui, i blocchi sono gestiti separatamente
+    }
+    case "UPDATE_BLOCK_COPY_REGISTRY": {
       return {
         ...state,
-        blockCopyRegistry: updatedRegistry,
-        activeBlocks: updatedActiveBlocks
+        blockCopyRegistry: action.registry
       };
     }
     case "REMOVE_BLOCK": {
@@ -197,12 +182,41 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   const [blocks, setBlocks] = React.useState<Block[]>(initialBlocks);
   
   // Ordina i blocchi per priorità
-  const sortedBlocks = [...blocks].sort((a, b) => a.priority - b.priority);
+  const sortedBlocks = React.useMemo(() => 
+    [...blocks].sort((a, b) => a.priority - b.priority), 
+    [blocks]
+  );
   
   const [state, dispatch] = useReducer(formReducer, {
     ...initialState,
-    activeBlocks: sortedBlocks.filter(b => b.default_active).map(b => b.block_id)
+    activeBlocks: initialBlocks.filter(b => b.default_active).map(b => b.block_id)
   });
+
+  // Funzione per aggiungere blocchi all'elenco
+  const addBlocks = useCallback((newBlocks: Block[]) => {
+    setBlocks(prevBlocks => {
+      // Filtra i blocchi che non sono già presenti
+      const blocksToAdd = newBlocks.filter(
+        newBlock => !prevBlocks.some(existingBlock => 
+          existingBlock.block_id === newBlock.block_id
+        )
+      );
+      
+      if (blocksToAdd.length === 0) {
+        return prevBlocks;
+      }
+      
+      console.log(`Aggiunta di ${blocksToAdd.length} nuovi blocchi:`, 
+        blocksToAdd.map(b => b.block_id));
+      
+      return [...prevBlocks, ...blocksToAdd];
+    });
+    
+    // Dispatch action per informare il reducer dell'aggiunta di nuovi blocchi
+    dispatch({ type: "ADD_BLOCKS", blocks: newBlocks });
+    
+    return true;
+  }, []);
 
   // Inizializza o aggiorna i blocchi attivi dal JSON
   useEffect(() => {
@@ -211,7 +225,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       .filter(b => b.default_active)
       .map(b => b.block_id);
     
-    // Aggiungi tutti i blocchi default_active che non sono gi�� attivi
+    // Aggiungi tutti i blocchi default_active che non sono già attivi
     defaultActiveBlockIds.forEach(blockId => {
       if (!state.activeBlocks.includes(blockId)) {
         dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
@@ -229,7 +243,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     // Reimposta lo stato del form
     dispatch({ type: "RESET_FORM" });
     
-    // Torna alla prima domanda (aggiornato per utilizzare introduzione/soggetto_acquisto)
+    // Torna alla prima domanda
     navigate("/simulazione/pensando/introduzione/soggetto_acquisto", { replace: true });
   }, [params.blockType, navigate]);
 
@@ -298,56 +312,63 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         
         console.log("Caricato stato da localStorage:", parsedState);
         
-        // Aggiungi i blocchi dal registro al nostro elenco di blocchi
+        // Ripristina i blocchi dal registro
+        const copiedBlocks: Block[] = [];
+        
+        // Per ogni fonte nel registro
         if (parsedState.blockCopyRegistry) {
-          const allCopiedBlockIds = Object.values(parsedState.blockCopyRegistry).flat() as string[];
-          console.log("ID blocchi copiati trovati nel localStorage:", allCopiedBlockIds);
-          
-          // Per ogni ID di blocco copiato, verifica se è già presente nell'elenco dei blocchi
-          allCopiedBlockIds.forEach((copiedBlockId: string) => {
-            if (!blocks.some(b => b.block_id === copiedBlockId)) {
-              // Trova il blocco sorgente analizzando l'ID
-              const sourceBlockIdMatch = copiedBlockId.match(/^(.+)_id\d+$/);
-              if (sourceBlockIdMatch) {
-                const sourceBlockId = sourceBlockIdMatch[1];
-                const sourceBlock = blocks.find(b => b.block_id === sourceBlockId);
-                
-                if (sourceBlock) {
-                  // Estrai l'indice di copia dal copiedBlockId
-                  const indexMatch = copiedBlockId.match(/_id(\d+)$/);
-                  if (indexMatch) {
-                    const copyIndex = parseInt(indexMatch[1], 10);
-                    console.log(`Ricreando blocco ${copiedBlockId} dalla fonte ${sourceBlockId} con indice ${copyIndex}`);
-                    
-                    // Ricrea una copia del blocco con lo stesso ID
-                    const newBlock = deepCloneBlock(sourceBlock, copyIndex);
-                    
-                    // Verifica che l'ID corrisponda a quello che ci aspettiamo
-                    if (newBlock.block_id === copiedBlockId) {
-                      // Aggiungi il blocco ricreato all'elenco dei blocchi
-                      setBlocks(prevBlocks => [...prevBlocks, newBlock]);
-                    } else {
-                      console.error(`ID blocco ricreato non corrisponde: previsto ${copiedBlockId}, ottenuto ${newBlock.block_id}`);
-                    }
+          Object.entries(parsedState.blockCopyRegistry).forEach(([sourceBlockId, blockIds]) => {
+            if (!Array.isArray(blockIds)) return;
+            
+            // Trova il blocco sorgente
+            const sourceBlock = blocks.find(b => b.block_id === sourceBlockId);
+            if (!sourceBlock) return;
+            
+            // Ricrea ogni blocco copiato che non è già nell'elenco
+            blockIds.forEach((blockId: string) => {
+              // Verifica se il blocco esiste già
+              if (!blocks.some(b => b.block_id === blockId)) {
+                // Estrai l'indice dal blockId
+                const match = blockId.match(/_copy(\d+)$/);
+                if (match) {
+                  const copyIndex = parseInt(match[1], 10);
+                  
+                  // Ricrea il blocco con lo stesso ID
+                  const newBlock = deepCloneBlock(sourceBlock, copyIndex);
+                  
+                  // Se l'ID corrisponde, aggiungi alla lista dei blocchi da aggiungere
+                  if (newBlock.block_id === blockId) {
+                    copiedBlocks.push(newBlock);
                   }
                 }
               }
-            }
+            });
           });
         }
         
-        // Applica lo stato salvato
-        dispatch({ type: "SET_FORM_STATE", state: parsedState });
+        // Aggiungi tutti i blocchi ricreati all'elenco dei blocchi
+        if (copiedBlocks.length > 0) {
+          console.log(`Ricreazione di ${copiedBlocks.length} blocchi copiati dal localStorage`);
+          addBlocks(copiedBlocks);
+        }
         
-        // Assicurati che tutti i blocchi necessari siano attivati in base alle risposte
+        // Attiva tutti i blocchi che erano attivi nel savedState
         if (parsedState.activeBlocks) {
-          // Attiva tutti i blocchi che erano attivi nel savedState
           parsedState.activeBlocks.forEach((blockId: string) => {
             if (!state.activeBlocks.includes(blockId)) {
               dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
             }
           });
         }
+        
+        // Convalida e ripara il blockCopyRegistry
+        if (parsedState.blockCopyRegistry) {
+          const validatedRegistry = validateBlockCopyRegistry(parsedState.blockCopyRegistry, [...blocks, ...copiedBlocks]);
+          parsedState.blockCopyRegistry = validatedRegistry;
+        }
+        
+        // Applica lo stato salvato
+        dispatch({ type: "SET_FORM_STATE", state: parsedState });
         
         // Anche se non ci sono blocchi attivi salvati, verifica le risposte
         if (parsedState.responses) {
@@ -357,23 +378,29 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         console.error("Errore nel caricamento dello stato salvato:", e);
       }
     }
-  }, [params.blockId, params.questionId, params.blockType, blocks, navigate]);
+  }, [params.blockId, params.questionId, params.blockType, blocks, navigate, addBlocks, state.activeBlocks]);
 
   // Salva lo stato in localStorage quando cambia
   useEffect(() => {
     if (params.blockType) {
-      // Converti Set a array per JSON serialization
-      const stateToSave = {
-        ...state,
-        answeredQuestions: Array.from(state.answeredQuestions)
-      };
-      
-      // Assicurati che blockCopyRegistry sia incluso correttamente
-      console.log("Salvataggio stato in localStorage, blockCopyRegistry:", state.blockCopyRegistry);
-      
-      localStorage.setItem(`form-state-${params.blockType}`, JSON.stringify(stateToSave));
+      try {
+        // Prima di salvare, verifica che il blockCopyRegistry sia coerente con i blocchi esistenti
+        const validatedRegistry = validateBlockCopyRegistry(state.blockCopyRegistry, blocks);
+        
+        // Converti Set a array per JSON serialization
+        const stateToSave = {
+          ...state,
+          answeredQuestions: Array.from(state.answeredQuestions),
+          blockCopyRegistry: validatedRegistry
+        };
+        
+        localStorage.setItem(`form-state-${params.blockType}`, JSON.stringify(stateToSave));
+        console.log("Stato salvato in localStorage con blockCopyRegistry:", validatedRegistry);
+      } catch (e) {
+        console.error("Errore nel salvataggio dello stato:", e);
+      }
     }
-  }, [state, params.blockType]);
+  }, [state, params.blockType, blocks]);
 
   // Attiva i blocchi necessari in base alle risposte salvate
   const activateRequiredBlocksBasedOnResponses = (responses: FormResponse) => {
@@ -409,6 +436,18 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     const previousBlockId = state.activeQuestion.block_id;
     const previousQuestionId = state.activeQuestion.question_id;
 
+    // Verifica che il blocco e la domanda esistano
+    const targetBlock = blocks.find(b => b.block_id === block_id);
+    const targetQuestion = targetBlock?.questions.find(q => q.question_id === question_id);
+    
+    if (!targetBlock || !targetQuestion) {
+      console.error(`Errore di navigazione: blocco ${block_id} o domanda ${question_id} non trovati`);
+      return;
+    }
+
+    console.log(`Navigazione a ${block_id}/${question_id}`);
+    
+    // Aggiorna lo stato attivo
     dispatch({ type: "GO_TO_QUESTION", block_id, question_id });
     
     // Aggiungi la navigazione alla cronologia
@@ -440,7 +479,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     setTimeout(() => {
       dispatch({ type: "SET_NAVIGATING", isNavigating: false });
     }, 300);
-  }, [params.blockType, navigate, state.activeQuestion]);
+  }, [params.blockType, navigate, state.activeQuestion, blocks]);
 
   const setResponse = useCallback((question_id: string, placeholder_key: string, value: string | string[]) => {
     dispatch({ type: "SET_RESPONSE", question_id, placeholder_key, value });
@@ -495,8 +534,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       }
 
       if (currentBlockIndex !== -1 && currentBlock) {
-        console.log(`Navigating from block ${currentBlock.block_id} (index ${currentBlockIndex}) to next active block`);
-        console.log(`Active blocks: ${state.activeBlocks.join(', ')}`);
+        console.log(`Navigando dal blocco ${currentBlock.block_id} (indice ${currentBlockIndex}) al prossimo blocco attivo`);
+        console.log(`Blocchi attivi: ${state.activeBlocks.join(', ')}`);
         
         // Trova il prossimo blocco attivo
         let foundNextActiveBlock = false;
@@ -514,8 +553,12 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         if (currentActiveIndex !== -1) {
           for (let i = currentActiveIndex + 1; i < activeBlocksWithPriority.length; i++) {
             const nextBlock = activeBlocksWithPriority[i];
+            
+            // Salta i blocchi invisibili
+            if (nextBlock?.invisible) continue;
+            
             if (nextBlock && nextBlock.questions.length > 0) {
-              console.log(`Found next active block: ${nextBlock.block_id}`);
+              console.log(`Trovato prossimo blocco attivo: ${nextBlock.block_id}`);
               foundNextActiveBlock = true;
               goToQuestion(nextBlock.block_id, nextBlock.questions[0].question_id);
               break;
@@ -525,7 +568,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         
         // Se non è stato trovato un blocco attivo successivo, cerca se c'è qualche domanda successiva nello stesso blocco
         if (!foundNextActiveBlock) {
-          console.log(`No next active block found after ${currentBlock.block_id}`);
+          console.log(`Nessun prossimo blocco attivo trovato dopo ${currentBlock.block_id}`);
           
           // Trova la posizione della domanda corrente nel blocco
           const currentQuestionIndex = currentBlock.questions.findIndex(q => q.question_id === currentQuestionId);
@@ -533,20 +576,20 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
           // Cerca la prossima domanda nel blocco corrente (senza distinguere inline o non)
           if (currentQuestionIndex < currentBlock.questions.length - 1) {
             const nextQuestion = currentBlock.questions[currentQuestionIndex + 1];
-            console.log(`No next active block, but found next question in current block: ${nextQuestion.question_id}`);
+            console.log(`Nessun prossimo blocco attivo, ma trovata prossima domanda nel blocco corrente: ${nextQuestion.question_id}`);
             goToQuestion(currentBlock.block_id, nextQuestion.question_id);
             return;
           }
           
           // Se arriviamo qui, siamo all'ultima domanda dell'ultimo blocco attivo
-          console.log("Reached end of active blocks");
+          console.log("Raggiunta la fine dei blocchi attivi");
         }
       }
     } else {
       // Naviga a una domanda specifica
       const found = findQuestionById(leadsTo);
       if (found) {
-        console.log(`Navigating to specific question: ${found.question.question_id} in block ${found.block.block_id}`);
+        console.log(`Navigazione a domanda specifica: ${found.question.question_id} nel blocco ${found.block.block_id}`);
         
         // Aggiungi la navigazione alla cronologia
         dispatch({ 
@@ -562,7 +605,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         
         goToQuestion(found.block.block_id, found.question.question_id);
       } else {
-        console.log(`Question ID ${leadsTo} not found`);
+        console.log(`ID domanda ${leadsTo} non trovato`);
       }
     }
     
@@ -605,68 +648,56 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return sortedHistory.find(item => item.to_question_id === questionId);
   }, [state.navigationHistory]);
 
-  // Funzione per creare una copia di un blocco
-  const copyBlock = useCallback((sourceBlockId: string): string | undefined => {
+  // Funzione unificata per creare e navigare a un blocco
+  const createAndNavigateToBlock = useCallback((sourceBlockId: string): boolean => {
+    console.log(`createAndNavigateToBlock: Creazione blocco da ${sourceBlockId}`);
+    
     // Trova il blocco sorgente
     const sourceBlock = blocks.find(b => b.block_id === sourceBlockId);
     if (!sourceBlock) {
       console.error(`Blocco sorgente ${sourceBlockId} non trovato`);
-      return undefined;
+      return false;
     }
     
-    // Determina l'indice del nuovo blocco
-    // Considera sia i blocchi nel registro che quelli con is_copy_of appropriata
-    let maxIndex = 0;
+    // Ottieni tutti i blocchi copiati per questo sourceBlockId
+    const existingCopies = getBlockCopiesForSource(sourceBlockId);
+    console.log(`Copie esistenti per ${sourceBlockId}:`, existingCopies);
     
-    // Controlla i blocchi nel registro
-    if (state.blockCopyRegistry[sourceBlockId]) {
-      state.blockCopyRegistry[sourceBlockId].forEach(blockId => {
-        const indexMatch = blockId.match(/_id(\d+)$/);
-        if (indexMatch) {
-          const index = parseInt(indexMatch[1], 10);
-          if (index > maxIndex) maxIndex = index;
-        }
-      });
-    }
-    
-    // Controlla anche i blocchi con is_copy_of
-    blocks.forEach(block => {
-      if (block.is_copy_of === sourceBlockId) {
-        const indexMatch = block.block_id.match(/_id(\d+)$/);
-        if (indexMatch) {
-          const index = parseInt(indexMatch[1], 10);
-          if (index > maxIndex) maxIndex = index;
-        }
-      }
-    });
-    
-    // Usa maxIndex + 1 per il nuovo indice
-    const copyIndex = maxIndex + 1;
-    console.log(`Creando blocco con indice ${copyIndex} (massimo indice trovato: ${maxIndex})`);
+    // Genera un indice univoco per il nuovo blocco
+    const copyIndex = generateUniqueBlockIndex(sourceBlockId, existingCopies);
+    console.log(`Indice generato per la nuova copia: ${copyIndex}`);
     
     // Crea una copia profonda del blocco con un indice unico
     const newBlock = deepCloneBlock(sourceBlock, copyIndex);
-    console.log(`Nuovo blocco creato: ${newBlock.block_id} (copia di ${sourceBlockId})`);
     
-    // Aggiorna la lista dei blocchi
-    setBlocks(prevBlocks => {
-      // Verifica che il blocco non esista già
-      if (prevBlocks.some(b => b.block_id === newBlock.block_id)) {
-        console.error(`Blocco con ID ${newBlock.block_id} già esistente!`);
-        return prevBlocks;
-      }
-      return [...prevBlocks, newBlock];
-    });
+    // Aggiungi il nuovo blocco all'elenco dei blocchi
+    const success = addBlocks([newBlock]);
+    if (!success) {
+      console.error(`Impossibile aggiungere il blocco ${newBlock.block_id}`);
+      return false;
+    }
     
-    // Aggiorna il registry dei blocchi copiati
-    dispatch({
-      type: "ADD_BLOCK_COPY",
-      newBlock,
-      sourceBlockId
-    });
+    // Aggiorna il registro dei blocchi copiati
+    let updatedRegistry = { ...state.blockCopyRegistry };
+    if (!updatedRegistry[sourceBlockId]) {
+      updatedRegistry[sourceBlockId] = [];
+    }
     
-    return newBlock.block_id;
-  }, [blocks, state.blockCopyRegistry, dispatch]);
+    updatedRegistry[sourceBlockId] = [...updatedRegistry[sourceBlockId], newBlock.block_id];
+    dispatch({ type: "UPDATE_BLOCK_COPY_REGISTRY", registry: updatedRegistry });
+    
+    // Aggiungi il nuovo blocco ai blocchi attivi
+    dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: newBlock.block_id });
+    
+    // Naviga alla prima domanda del nuovo blocco
+    if (newBlock.questions.length > 0) {
+      const firstQuestionId = newBlock.questions[0].question_id;
+      goToQuestion(newBlock.block_id, firstQuestionId);
+      return true;
+    }
+    
+    return false;
+  }, [blocks, goToQuestion, state.blockCopyRegistry, addBlocks, getBlockCopiesForSource]);
   
   // Funzione per ottenere tutti i blocchi copiati da un blocco sorgente
   const getBlockCopiesForSource = useCallback((sourceBlockId: string): string[] => {
@@ -683,27 +714,30 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     const allBlockIds = [...registryBlocks, ...additionalBlockIds];
     const uniqueBlockIds = Array.from(new Set(allBlockIds));
     
-    console.log(`getBlockCopiesForSource: Dal registry: ${registryBlocks.length}, Da is_copy_of: ${additionalBlockIds.length}, Totali unici: ${uniqueBlockIds.length}`);
-    
     return uniqueBlockIds;
   }, [state.blockCopyRegistry, blocks]);
 
-  // Nuova funzione per rimuovere un blocco
+  // Funzione per rimuovere un blocco
   const removeBlock = useCallback((blockId: string) => {
-    // Trova il blocco corrente
-    const currentBlock = blocks.find(b => b.block_id === blockId);
-    if (!currentBlock) return;
+    // Trova il blocco da rimuovere
+    const blockToRemove = blocks.find(b => b.block_id === blockId);
+    if (!blockToRemove) {
+      console.error(`Blocco da rimuovere non trovato: ${blockId}`);
+      return;
+    }
+    
+    console.log(`Rimozione blocco ${blockId}`);
     
     // Rimuovi il blocco dal registro e dai blocchi attivi
     dispatch({ type: "REMOVE_BLOCK", blockId });
     
-    // Rimuovi il blocco dalla lista dei blocchi
+    // Rimuovi il blocco dall'elenco dei blocchi
     setBlocks(prevBlocks => prevBlocks.filter(b => b.block_id !== blockId));
     
     // Se l'utente è attualmente su questo blocco, naviga a un altro blocco
     if (state.activeQuestion.block_id === blockId) {
       // Trova il blocco source utilizzando il campo is_copy_of
-      const sourceBlockId = currentBlock.is_copy_of;
+      const sourceBlockId = blockToRemove.is_copy_of;
       
       if (sourceBlockId) {
         // Torna al blocco che gestisce i sub-blocks
@@ -737,7 +771,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         }
       }
     }
-  }, [blocks, state.activeBlocks, state.activeQuestion, goToQuestion]);
+  }, [blocks, state.activeQuestion, goToQuestion]);
 
   return (
     <FormContext.Provider
@@ -753,7 +787,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         getProgress,
         resetForm,
         getNavigationHistoryFor,
-        copyBlock,
+        createAndNavigateToBlock,
         getBlockCopiesForSource,
         removeBlock
       }}

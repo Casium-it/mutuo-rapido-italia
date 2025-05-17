@@ -18,12 +18,12 @@ export const block26ToCopy: Block = {
         placeholder1: {
           type: "select",
           options: [
-            {"id": "affitti", "label": "affitti", "leads_to": "media_reddito_secondario_coint"},
-            {"id": "lavoro_autonomo", "label": "lavoro autonomo", "leads_to": "media_reddito_secondario_coint"},
-            {"id": "assegno_minori", "label": "assegno minori", "leads_to": "media_reddito_secondario_coint"},
-            {"id": "supporto_familiari", "label": "supporto familiari", "leads_to": "media_reddito_secondario_coint"},
-            {"id": "dividendi_diritti", "label": "dividendi e diritti", "leads_to": "media_reddito_secondario_coint"},
-            {"id": "altro", "label": "altro", "leads_to": "altro_descrizione_coint"}
+            { id: "affitti", label: "affitti", leads_to: "media_reddito_secondario_coint" },
+            { id: "lavoro_autonomo", label: "lavoro autonomo", leads_to: "media_reddito_secondario_coint" },
+            { id: "assegno_minori", label: "assegno minori", leads_to: "media_reddito_secondario_coint" },
+            { id: "supporto_familiari", label: "supporto familiari", leads_to: "media_reddito_secondario_coint" },
+            { id: "dividendi_diritti", label: "dividendi e diritti", leads_to: "media_reddito_secondario_coint" },
+            { id: "altro", label: "altro", leads_to: "altro_descrizione_coint" }
           ]
         }
       }
@@ -46,7 +46,7 @@ export const block26ToCopy: Block = {
     {
       question_number: "26.3",
       question_id: "media_reddito_secondario_coint",
-      question_text: "Negli ultimi 3 anni di media ha ricevuto {{placeholder1}} euro",
+      question_text: "Negli ultimi 3 anni ha ricevuto in media {{placeholder1}} euro",
       inline: true,
       leads_to_placeholder_priority: "placeholder1",
       placeholders: {
@@ -69,8 +69,8 @@ export const block26ToCopy: Block = {
         placeholder1: {
           type: "select",
           options: [
-            {"id": "mensile", "label": "mensilmente", "leads_to": "lordo_netto_reddito_secondario_coint"},
-            {"id": "annuale", "label": "annualmente", "leads_to": "lordo_netto_reddito_secondario_coint"}
+            { id: "mensile", label: "mensilmente", leads_to: "lordo_netto_reddito_secondario_coint" },
+            { id: "annuale", label: "annualmente", leads_to: "lordo_netto_reddito_secondario_coint" }
           ]
         }
       }
@@ -85,8 +85,8 @@ export const block26ToCopy: Block = {
         placeholder1: {
           type: "select",
           options: [
-            {"id": "netto", "label": "netti", "leads_to": "stabilita_reddito_secondario_coint"},
-            {"id": "lordo", "label": "lordi", "leads_to": "stabilita_reddito_secondario_coint"}
+            { id: "netto", label: "netti", leads_to: "stabilita_reddito_secondario_coint" },
+            { id: "lordo", label: "lordi", leads_to: "stabilita_reddito_secondario_coint" }
           ]
         }
       }
@@ -100,10 +100,10 @@ export const block26ToCopy: Block = {
         placeholder1: {
           type: "select",
           options: [
-            {"id": "volatile", "label": "volatile", "leads_to": "data_inizio_reddito_coint"},
-            {"id": "abbastanza_stabile", "label": "abbastanza stabile", "leads_to": "data_inizio_reddito_coint"},
-            {"id": "quasi_garantita", "label": "quasi garantita", "leads_to": "data_inizio_reddito_coint"},
-            {"id": "vincolata", "label": "vincolata e sicura", "leads_to": "data_inizio_reddito_coint"}
+            { id: "volatile", label: "volatile", leads_to: "data_inizio_reddito_coint" },
+            { id: "abbastanza_stabile", label: "abbastanza stabile", leads_to: "data_inizio_reddito_coint" },
+            { id: "quasi_garantita", label: "quasi garantita", leads_to: "data_inizio_reddito_coint" },
+            { id: "vincolata", label: "vincolata e sicura", leads_to: "data_inizio_reddito_coint" }
           ]
         }
       }
@@ -139,7 +139,7 @@ export const block26ToCopy: Block = {
         placeholder1: {
           type: "input",
           input_type: "text",
-          placeholder_label: "Anno o 'non lo sa'",
+          placeholder_label: "Anno o 'non lo so'",
           leads_to: "[[PARENT:gestione_redditi_secondari_coint]]", // Usa marcatore speciale per il parent
           input_validation: "free_text"
         }
