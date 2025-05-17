@@ -697,7 +697,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     
     return false;
   }, [blocks, goToQuestion, state.blockCopyRegistry, addBlocks, getBlockCopiesForSource]);
-  
+
   // Funzione per ottenere tutti i blocchi copiati da un blocco sorgente
   const getBlockCopiesForSource = useCallback((sourceBlockId: string): string[] => {
     const registryBlocks = state.blockCopyRegistry[sourceBlockId] || [];
