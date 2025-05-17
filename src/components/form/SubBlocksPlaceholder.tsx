@@ -27,18 +27,6 @@ interface SubBlocksPlaceholderProps {
 
 /**
  * SubBlocksPlaceholder - Un componente che permette all'utente di aggiungere più istanze di un blocco
- * 
- * Questo componente gestisce la creazione dinamica di blocchi copiati da un blocco sorgente,
- * consentendo all'utente di aggiungere più istanze dello stesso tipo di informazione (ad es. redditi secondari).
- * 
- * Quando l'utente fa clic sul pulsante "Aggiungi", viene creata una copia del blocco e l'utente
- * viene automaticamente indirizzato alla prima domanda del nuovo blocco.
- * 
- * @param questionId - L'ID della domanda contenente questo placeholder
- * @param placeholderKey - La chiave del placeholder all'interno della domanda
- * @param sourceBlockId - L'ID del blocco sorgente da copiare
- * @param addBlockLabel - Testo personalizzato per il pulsante di aggiunta
- * @param placeholderLabel - Etichetta opzionale per il placeholder
  */
 export function SubBlocksPlaceholder({
   questionId,
@@ -53,7 +41,8 @@ export function SubBlocksPlaceholder({
     goToQuestion, 
     blocks,
     removeBlock,
-    navigateToNextQuestion
+    navigateToNextQuestion,
+    state
   } = useFormExtended();
   
   const [isAddingBlock, setIsAddingBlock] = useState(false);
@@ -65,6 +54,62 @@ export function SubBlocksPlaceholder({
   const copiedBlocks = copiedBlockIds
     .map(blockId => blocks.find(b => b.block_id === blockId))
     .filter(Boolean);
+
+  // Funzione per ottenere un riassunto delle risposte del blocco
+  const getBlockSummary = (blockId: string) => {
+    // Cerca tutte le domande di questo blocco
+    const block = blocks.find(b => b.block_id === blockId);
+    if (!block) return { tipoReddito: "Non specificato", importo: "N/A", frequenza: "", };
+
+    // Estrai le risposte rilevanti dal blocco
+    const responses = state.responses;
+    
+    // Trova la risposta per il tipo di reddito (domanda 1)
+    const tipoRedditoQuestionId = block.questions[0]?.question_id;
+    const tipoRedditoRisposta = tipoRedditoQuestionId && responses[tipoRedditoQuestionId]?.placeholder1;
+    
+    // Se è "altro", cerca la descrizione personalizzata
+    let tipoReddito = "";
+    if (tipoRedditoRisposta === "altro" && block.questions[1]) {
+      const altroDescrizioneId = block.questions[1].question_id;
+      tipoReddito = (responses[altroDescrizioneId]?.placeholder1 as string) || "Altro";
+    } else {
+      // Mappa l'ID alla label leggibile
+      const tipoMap: Record<string, string> = {
+        "affitti": "Affitti",
+        "lavoro_autonomo": "Lavoro autonomo",
+        "assegno_minori": "Assegno minori",
+        "supporto_familiari": "Supporto familiari",
+        "dividendi_diritti": "Dividendi e diritti",
+        "altro": "Altro"
+      };
+      tipoReddito = tipoRedditoRisposta ? tipoMap[tipoRedditoRisposta as string] || tipoRedditoRisposta as string : "Non specificato";
+    }
+
+    // Trova l'importo del reddito (domanda 3)
+    const importoQuestionId = block.questions.find(q => q.question_id.includes("media_reddito"))?.question_id;
+    const importo = importoQuestionId ? responses[importoQuestionId]?.placeholder1 as string : "N/A";
+
+    // Trova la frequenza del reddito (domanda 4) 
+    const frequenzaQuestionId = block.questions.find(q => q.question_id.includes("frequenza_reddito"))?.question_id;
+    const frequenzaRisposta = frequenzaQuestionId ? responses[frequenzaQuestionId]?.placeholder1 as string : "";
+    const frequenzaMap: Record<string, string> = {
+      "mensile": "mensili",
+      "annuale": "annui"
+    };
+    const frequenza = frequenzaRisposta ? frequenzaMap[frequenzaRisposta] || "" : "";
+
+    // Trova se lordo o netto (domanda 5)
+    const lordoNettoQuestionId = block.questions.find(q => q.question_id.includes("lordo_netto"))?.question_id;
+    const lordoNetto = lordoNettoQuestionId ? responses[lordoNettoQuestionId]?.placeholder1 as string : "";
+
+    return {
+      tipoReddito,
+      importo,
+      frequenza,
+      lordoNetto
+    };
+  };
 
   // Gestisci la creazione di una nuova copia del blocco e naviga direttamente ad essa
   const handleAddBlockCopy = () => {
@@ -88,7 +133,7 @@ export function SubBlocksPlaceholder({
             goToQuestion(newBlockId, firstQuestionId);
           }
           setIsAddingBlock(false);
-        }, 500); // Aumentato il ritardo a 500ms per garantire che il blocco sia stato aggiunto correttamente
+        }, 750); // Aumentato ulteriormente il ritardo per garantire che il blocco sia aggiunto correttamente
       } else {
         setIsAddingBlock(false);
       }
@@ -118,6 +163,18 @@ export function SubBlocksPlaceholder({
     navigateToNextQuestion(questionId, "next_block");
   };
 
+  // Formatta l'importo con separatori delle migliaia e simbolo €
+  const formatCurrency = (value: string) => {
+    if (!value || isNaN(Number(value))) return "€ N/A";
+    
+    const numValue = Number(value);
+    return new Intl.NumberFormat('it-IT', { 
+      style: 'currency', 
+      currency: 'EUR',
+      maximumFractionDigits: 0
+    }).format(numValue);
+  };
+
   return (
     <div className="w-full my-4">
       {placeholderLabel && (
@@ -126,53 +183,75 @@ export function SubBlocksPlaceholder({
         </div>
       )}
       
-      {/* Lista dei blocchi copiati */}
+      {/* Lista dei blocchi copiati con il riepilogo */}
       {copiedBlocks.length > 0 && (
         <div className="space-y-3 mb-4">
-          {copiedBlocks.map((block, index) => (
-            <Card 
-              key={block?.block_id} 
-              className="border border-[#E7E1D9] hover:border-[#245C4F] transition-colors"
-            >
-              <CardContent className="p-4 flex justify-between items-center">
-                <div 
-                  className="font-medium flex-1 cursor-pointer"
-                  onClick={() => block && handleNavigateToBlock(block.block_id)}
-                >
-                  {block?.title} {index + 1}
-                </div>
-                
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-gray-500 hover:text-red-500"
+          {copiedBlocks.map((block, index) => {
+            const summary = getBlockSummary(block?.block_id || "");
+            
+            return (
+              <Card 
+                key={block?.block_id} 
+                className="border border-[#E7E1D9] hover:border-[#245C4F] transition-colors"
+              >
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-start">
+                    {/* Titolo e riepilogo */}
+                    <div 
+                      className="flex-1 cursor-pointer" 
+                      onClick={() => block && handleNavigateToBlock(block.block_id)}
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Conferma eliminazione</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Sei sicuro di voler eliminare questo {block?.title.toLowerCase()}? Questa azione non può essere annullata.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Annulla</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => block && handleRemoveBlock(block.block_id)}
-                        className="bg-red-500 hover:bg-red-600"
-                      >
-                        Elimina
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </CardContent>
-            </Card>
-          ))}
+                      <h4 className="font-medium text-[#245C4F] mb-1">
+                        {block?.title} {index + 1}
+                      </h4>
+                      
+                      {/* Visualizza il riepilogo delle risposte */}
+                      <div className="text-sm text-gray-700">
+                        <p><span className="font-medium">Tipo:</span> {summary.tipoReddito}</p>
+                        {summary.importo !== "N/A" && (
+                          <p>
+                            <span className="font-medium">Importo:</span> {formatCurrency(summary.importo)}
+                            {summary.frequenza && ` ${summary.frequenza}`}
+                            {summary.lordoNetto && ` ${summary.lordoNetto === "netto" ? "netti" : "lordi"}`}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Pulsante elimina */}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-gray-500 hover:text-red-500 mt-1"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Conferma eliminazione</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Sei sicuro di voler eliminare questo {block?.title.toLowerCase()}? Questa azione non può essere annullata.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Annulla</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => block && handleRemoveBlock(block.block_id)}
+                            className="bg-red-500 hover:bg-red-600"
+                          >
+                            Elimina
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
       
