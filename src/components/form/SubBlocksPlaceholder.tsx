@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, ArrowRight } from "lucide-react";
@@ -46,15 +46,25 @@ export function SubBlocksPlaceholder({
   } = useFormExtended();
   
   const [isAddingBlock, setIsAddingBlock] = useState(false);
+  const [copiedBlocks, setCopiedBlocks] = useState<any[]>([]);
 
-  // Ottieni tutti i blocchi copiati da questo sourceBlockId
-  const copiedBlockIds = getBlockCopiesForSource(sourceBlockId);
-  console.log(`Blocchi copiati per ${sourceBlockId}:`, copiedBlockIds);
-  
-  // Trova i blocchi effettivi dai loro ID
-  const copiedBlocks = copiedBlockIds
-    .map(blockId => blocks.find(b => b.block_id === blockId))
-    .filter(Boolean);
+  // Recupera tutti i blocchi copiati dal sorgente specificato
+  useEffect(() => {
+    // Recupera gli ID dei blocchi copiati
+    const copiedBlockIds = getBlockCopiesForSource(sourceBlockId);
+    console.log(`Blocchi copiati per ${sourceBlockId}:`, copiedBlockIds);
+    
+    // Cerca tutti i blocchi che sono copie del blocco sorgente, sia dal registry che dal campo is_copy_of
+    const foundBlocks = blocks
+      .filter(block => {
+        // Include sia i blocchi dal registry che quelli con is_copy_of corrispondente
+        return copiedBlockIds.includes(block.block_id) || 
+               (block.is_copy_of === sourceBlockId);
+      });
+    
+    console.log("Blocchi trovati che sono copie:", foundBlocks.map(b => b.block_id));
+    setCopiedBlocks(foundBlocks);
+  }, [sourceBlockId, blocks, getBlockCopiesForSource, state.blockCopyRegistry]);
 
   // Funzione per ottenere un riassunto dinamico delle risposte del blocco
   const getBlockSummary = (blockId: string) => {
@@ -162,7 +172,7 @@ export function SubBlocksPlaceholder({
             goToQuestion(newBlockId, firstQuestionId);
           }
           setIsAddingBlock(false);
-        }, 1000); // Aumentato a 1000ms per garantire che il blocco sia completamente registrato
+        }, 1000); // Mantenuto a 1000ms per garantire che il blocco sia registrato
       } else {
         console.error("Impossibile creare un nuovo blocco");
         setIsAddingBlock(false);
@@ -206,11 +216,12 @@ export function SubBlocksPlaceholder({
       {copiedBlocks.length > 0 && (
         <div className="space-y-3 mb-4">
           {copiedBlocks.map((block, index) => {
-            const summary = getBlockSummary(block?.block_id || "");
+            if (!block) return null;
+            const summary = getBlockSummary(block.block_id);
             
             return (
               <Card 
-                key={block?.block_id} 
+                key={block.block_id} 
                 className="border border-[#E7E1D9] hover:border-[#245C4F] transition-colors"
               >
                 <CardContent className="p-4">
@@ -218,10 +229,10 @@ export function SubBlocksPlaceholder({
                     {/* Titolo e riepilogo */}
                     <div 
                       className="flex-1 cursor-pointer" 
-                      onClick={() => block && handleNavigateToBlock(block.block_id)}
+                      onClick={() => handleNavigateToBlock(block.block_id)}
                     >
                       <h4 className="font-medium text-[#245C4F] mb-1">
-                        {block?.title} {index + 1}
+                        {block.title} {index + 1}
                       </h4>
                       
                       {/* Visualizza il riepilogo dinamico delle risposte */}
@@ -253,13 +264,13 @@ export function SubBlocksPlaceholder({
                         <AlertDialogHeader>
                           <AlertDialogTitle>Conferma eliminazione</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Sei sicuro di voler eliminare questo {block?.title.toLowerCase()}? Questa azione non può essere annullata.
+                            Sei sicuro di voler eliminare questo {block.title.toLowerCase()}? Questa azione non può essere annullata.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Annulla</AlertDialogCancel>
                           <AlertDialogAction
-                            onClick={() => block && handleRemoveBlock(block.block_id)}
+                            onClick={() => handleRemoveBlock(block.block_id)}
                             className="bg-red-500 hover:bg-red-600"
                           >
                             Elimina
