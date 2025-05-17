@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { Button } from "@/components/ui/button";
@@ -50,32 +49,30 @@ export function SubBlocksPlaceholder({
 
   // Recupera tutti i blocchi copiati dal sorgente specificato
   useEffect(() => {
-    // Recupera gli ID dei blocchi copiati dal registro
+    // Recupera gli ID dei blocchi copiati
     const copiedBlockIds = getBlockCopiesForSource(sourceBlockId);
-    console.log(`Blocchi copiati per ${sourceBlockId} (dal registry):`, copiedBlockIds);
+    console.log(`SubBlocksPlaceholder: Blocchi copiati per ${sourceBlockId}:`, copiedBlockIds);
     
-    // Usa un Set per garantire ID unici e prevenire duplicati
-    const uniqueBlockIds = new Set<string>();
+    if (copiedBlockIds.length === 0) {
+      setCopiedBlocks([]);
+      return;
+    }
     
-    // Aggiungi prima gli ID dal registry
-    copiedBlockIds.forEach(id => uniqueBlockIds.add(id));
-    
-    // Trova tutti i blocchi con is_copy_of corrispondente al sourceBlockId
-    const blocksWithCopyOf = blocks.filter(b => b.is_copy_of === sourceBlockId);
-    console.log(`Blocchi con is_copy_of=${sourceBlockId}:`, blocksWithCopyOf.map(b => b.block_id));
-    
-    // Aggiungi questi ID al Set per garantire unicità
-    blocksWithCopyOf.forEach(b => uniqueBlockIds.add(b.block_id));
-    
-    // Converti il Set in un array di ID unici
-    const allUniqueIds = Array.from(uniqueBlockIds);
-    console.log("ID unici combinati:", allUniqueIds);
-    
-    // Recupera i blocchi completi usando gli ID unici
+    // Trova i blocchi completi usando gli ID
     const foundBlocks = blocks
-      .filter(block => allUniqueIds.includes(block.block_id));
+      .filter(block => copiedBlockIds.includes(block.block_id))
+      // Ordina per ID numerico ascendente (id1, id2, ecc.)
+      .sort((a, b) => {
+        const indexA = a.block_id.match(/_id(\d+)$/);
+        const indexB = b.block_id.match(/_id(\d+)$/);
+        
+        if (indexA && indexB) {
+          return parseInt(indexA[1], 10) - parseInt(indexB[1], 10);
+        }
+        return 0;
+      });
     
-    console.log("Blocchi trovati dopo deduplicazione:", foundBlocks.map(b => b.block_id));
+    console.log("SubBlocksPlaceholder: Blocchi trovati e ordinati:", foundBlocks.map(b => b.block_id));
     setCopiedBlocks(foundBlocks);
   }, [sourceBlockId, blocks, getBlockCopiesForSource, state.blockCopyRegistry]);
 
@@ -176,7 +173,7 @@ export function SubBlocksPlaceholder({
         setTimeout(() => {
           // Verifica che il blocco sia stato effettivamente aggiunto all'elenco dei blocchi
           const newBlock = blocks.find(b => b.block_id === newBlockId);
-          console.log("Trovato blocco:", newBlock);
+          console.log("Trovato blocco dopo creazione:", newBlock);
           
           if (newBlock && newBlock.questions.length > 0) {
             // Naviga alla prima domanda del nuovo blocco
@@ -187,7 +184,7 @@ export function SubBlocksPlaceholder({
             console.error("Blocco creato ma non trovato nell'elenco dei blocchi o senza domande");
           }
           setIsAddingBlock(false);
-        }, 1500); // Aumentato a 1500ms per garantire che il blocco sia completamente registrato
+        }, 2000); // Aumentato a 2000ms per garantire che il blocco sia completamente registrato
       } else {
         console.error("Impossibile creare un nuovo blocco");
         setIsAddingBlock(false);

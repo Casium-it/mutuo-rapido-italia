@@ -10,6 +10,7 @@ import { Block } from "@/types/form";
 export function deepCloneBlock(sourceBlock: Block, copyIndex: number): Block {
   // Crea un nuovo ID basato sul blocco sorgente e sull'indice di copia
   const newBlockId = `${sourceBlock.block_id}_id${copyIndex}`;
+  console.log(`deepCloneBlock: Creando blocco ${newBlockId} con indice ${copyIndex}`);
   
   // Crea una copia profonda del blocco
   const newBlock: Block = {

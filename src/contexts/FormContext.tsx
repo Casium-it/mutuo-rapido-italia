@@ -130,6 +130,7 @@ function formReducer(state: FormState, action: Action): FormState {
       // Verifica se l'ID del nuovo blocco è già presente prima di aggiungerlo
       if (!updatedRegistry[sourceBlockId].includes(action.newBlock.block_id)) {
         updatedRegistry[sourceBlockId] = [...updatedRegistry[sourceBlockId], action.newBlock.block_id];
+        console.log(`Aggiunto blocco ${action.newBlock.block_id} al registro di ${sourceBlockId}`, updatedRegistry);
       } else {
         console.log(`Blocco ${action.newBlock.block_id} già presente nel registro di ${sourceBlockId}`);
       }
@@ -290,6 +291,51 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
           parsedState.answeredQuestions = new Set();
         }
         
+        // Assicurati che blockCopyRegistry sia un oggetto valido
+        if (!parsedState.blockCopyRegistry) {
+          parsedState.blockCopyRegistry = {};
+        }
+        
+        console.log("Caricato stato da localStorage:", parsedState);
+        
+        // Aggiungi i blocchi dal registro al nostro elenco di blocchi
+        if (parsedState.blockCopyRegistry) {
+          const allCopiedBlockIds = Object.values(parsedState.blockCopyRegistry).flat() as string[];
+          console.log("ID blocchi copiati trovati nel localStorage:", allCopiedBlockIds);
+          
+          // Per ogni ID di blocco copiato, verifica se è già presente nell'elenco dei blocchi
+          allCopiedBlockIds.forEach((copiedBlockId: string) => {
+            if (!blocks.some(b => b.block_id === copiedBlockId)) {
+              // Trova il blocco sorgente analizzando l'ID
+              const sourceBlockIdMatch = copiedBlockId.match(/^(.+)_id\d+$/);
+              if (sourceBlockIdMatch) {
+                const sourceBlockId = sourceBlockIdMatch[1];
+                const sourceBlock = blocks.find(b => b.block_id === sourceBlockId);
+                
+                if (sourceBlock) {
+                  // Estrai l'indice di copia dal copiedBlockId
+                  const indexMatch = copiedBlockId.match(/_id(\d+)$/);
+                  if (indexMatch) {
+                    const copyIndex = parseInt(indexMatch[1], 10);
+                    console.log(`Ricreando blocco ${copiedBlockId} dalla fonte ${sourceBlockId} con indice ${copyIndex}`);
+                    
+                    // Ricrea una copia del blocco con lo stesso ID
+                    const newBlock = deepCloneBlock(sourceBlock, copyIndex);
+                    
+                    // Verifica che l'ID corrisponda a quello che ci aspettiamo
+                    if (newBlock.block_id === copiedBlockId) {
+                      // Aggiungi il blocco ricreato all'elenco dei blocchi
+                      setBlocks(prevBlocks => [...prevBlocks, newBlock]);
+                    } else {
+                      console.error(`ID blocco ricreato non corrisponde: previsto ${copiedBlockId}, ottenuto ${newBlock.block_id}`);
+                    }
+                  }
+                }
+              }
+            }
+          });
+        }
+        
         // Applica lo stato salvato
         dispatch({ type: "SET_FORM_STATE", state: parsedState });
         
@@ -321,6 +367,10 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         ...state,
         answeredQuestions: Array.from(state.answeredQuestions)
       };
+      
+      // Assicurati che blockCopyRegistry sia incluso correttamente
+      console.log("Salvataggio stato in localStorage, blockCopyRegistry:", state.blockCopyRegistry);
+      
       localStorage.setItem(`form-state-${params.blockType}`, JSON.stringify(stateToSave));
     }
   }, [state, params.blockType]);
@@ -565,15 +615,34 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     }
     
     // Determina l'indice del nuovo blocco
-    const existingCopies = state.blockCopyRegistry[sourceBlockId]?.length || 0;
+    // Considera sia i blocchi nel registro che quelli con is_copy_of appropriata
+    let maxIndex = 0;
     
-    // Conta anche i blocchi che hanno is_copy_of impostato a sourceBlockId
-    // ma potrebbero non essere nel registro
-    const additionalCopies = blocks.filter(b => b.is_copy_of === sourceBlockId && 
-      (!state.blockCopyRegistry[sourceBlockId] || !state.blockCopyRegistry[sourceBlockId].includes(b.block_id))).length;
+    // Controlla i blocchi nel registro
+    if (state.blockCopyRegistry[sourceBlockId]) {
+      state.blockCopyRegistry[sourceBlockId].forEach(blockId => {
+        const indexMatch = blockId.match(/_id(\d+)$/);
+        if (indexMatch) {
+          const index = parseInt(indexMatch[1], 10);
+          if (index > maxIndex) maxIndex = index;
+        }
+      });
+    }
     
-    const copyIndex = existingCopies + additionalCopies + 1;
-    console.log(`Creando blocco con indice ${copyIndex} (${existingCopies} nel registry + ${additionalCopies} aggiuntivi)`);
+    // Controlla anche i blocchi con is_copy_of
+    blocks.forEach(block => {
+      if (block.is_copy_of === sourceBlockId) {
+        const indexMatch = block.block_id.match(/_id(\d+)$/);
+        if (indexMatch) {
+          const index = parseInt(indexMatch[1], 10);
+          if (index > maxIndex) maxIndex = index;
+        }
+      }
+    });
+    
+    // Usa maxIndex + 1 per il nuovo indice
+    const copyIndex = maxIndex + 1;
+    console.log(`Creando blocco con indice ${copyIndex} (massimo indice trovato: ${maxIndex})`);
     
     // Crea una copia profonda del blocco con un indice unico
     const newBlock = deepCloneBlock(sourceBlock, copyIndex);
@@ -604,7 +673,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     const registryBlocks = state.blockCopyRegistry[sourceBlockId] || [];
     
     // Cerca anche blocchi che hanno is_copy_of impostato a sourceBlockId ma potrebbero
-    // non essere nel registry
+    // non essere nel registro
     const additionalBlockIds = blocks
       .filter(b => b.is_copy_of === sourceBlockId)
       .map(b => b.block_id)
@@ -686,7 +755,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         getNavigationHistoryFor,
         copyBlock,
         getBlockCopiesForSource,
-        removeBlock // Aggiungi la nuova funzione al context
+        removeBlock
       }}
     >
       {children}
