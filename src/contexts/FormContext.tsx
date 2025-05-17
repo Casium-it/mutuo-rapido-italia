@@ -191,6 +191,75 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     activeBlocks: initialBlocks.filter(b => b.default_active).map(b => b.block_id)
   });
 
+  // Funzione per ottenere tutti i blocchi copiati da un blocco sorgente
+  const getBlockCopiesForSource = useCallback((sourceBlockId: string): string[] => {
+    const registryBlocks = state.blockCopyRegistry[sourceBlockId] || [];
+    
+    // Cerca anche blocchi che hanno is_copy_of impostato a sourceBlockId ma potrebbero
+    // non essere nel registro
+    const additionalBlockIds = blocks
+      .filter(b => b.is_copy_of === sourceBlockId)
+      .map(b => b.block_id)
+      .filter(id => !registryBlocks.includes(id));
+    
+    // Combina gli ID e deduplica
+    const allBlockIds = [...registryBlocks, ...additionalBlockIds];
+    const uniqueBlockIds = Array.from(new Set(allBlockIds));
+    
+    return uniqueBlockIds;
+  }, [state.blockCopyRegistry, blocks]);
+
+  // Funzione unificata per creare e navigare a un blocco
+  const createAndNavigateToBlock = useCallback((sourceBlockId: string): boolean => {
+    console.log(`createAndNavigateToBlock: Creazione blocco da ${sourceBlockId}`);
+    
+    // Trova il blocco sorgente
+    const sourceBlock = blocks.find(b => b.block_id === sourceBlockId);
+    if (!sourceBlock) {
+      console.error(`Blocco sorgente ${sourceBlockId} non trovato`);
+      return false;
+    }
+    
+    // Ottieni tutti i blocchi copiati per questo sourceBlockId
+    const existingCopies = getBlockCopiesForSource(sourceBlockId);
+    console.log(`Copie esistenti per ${sourceBlockId}:`, existingCopies);
+    
+    // Genera un indice univoco per il nuovo blocco
+    const copyIndex = generateUniqueBlockIndex(sourceBlockId, existingCopies);
+    console.log(`Indice generato per la nuova copia: ${copyIndex}`);
+    
+    // Crea una copia profonda del blocco con un indice unico
+    const newBlock = deepCloneBlock(sourceBlock, copyIndex);
+    
+    // Aggiungi il nuovo blocco all'elenco dei blocchi
+    const success = addBlocks([newBlock]);
+    if (!success) {
+      console.error(`Impossibile aggiungere il blocco ${newBlock.block_id}`);
+      return false;
+    }
+    
+    // Aggiorna il registro dei blocchi copiati
+    let updatedRegistry = { ...state.blockCopyRegistry };
+    if (!updatedRegistry[sourceBlockId]) {
+      updatedRegistry[sourceBlockId] = [];
+    }
+    
+    updatedRegistry[sourceBlockId] = [...updatedRegistry[sourceBlockId], newBlock.block_id];
+    dispatch({ type: "UPDATE_BLOCK_COPY_REGISTRY", registry: updatedRegistry });
+    
+    // Aggiungi il nuovo blocco ai blocchi attivi
+    dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: newBlock.block_id });
+    
+    // Naviga alla prima domanda del nuovo blocco
+    if (newBlock.questions.length > 0) {
+      const firstQuestionId = newBlock.questions[0].question_id;
+      goToQuestion(newBlock.block_id, firstQuestionId);
+      return true;
+    }
+    
+    return false;
+  }, [blocks, goToQuestion, state.blockCopyRegistry, addBlocks]);
+
   // Funzione per aggiungere blocchi all'elenco
   const addBlocks = useCallback((newBlocks: Block[]) => {
     setBlocks(prevBlocks => {
@@ -646,75 +715,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     // Trova la voce più recente che ha navigato a questa domanda
     return sortedHistory.find(item => item.to_question_id === questionId);
   }, [state.navigationHistory]);
-
-  // Funzione unificata per creare e navigare a un blocco
-  const createAndNavigateToBlock = useCallback((sourceBlockId: string): boolean => {
-    console.log(`createAndNavigateToBlock: Creazione blocco da ${sourceBlockId}`);
-    
-    // Trova il blocco sorgente
-    const sourceBlock = blocks.find(b => b.block_id === sourceBlockId);
-    if (!sourceBlock) {
-      console.error(`Blocco sorgente ${sourceBlockId} non trovato`);
-      return false;
-    }
-    
-    // Ottieni tutti i blocchi copiati per questo sourceBlockId
-    const existingCopies = getBlockCopiesForSource(sourceBlockId);
-    console.log(`Copie esistenti per ${sourceBlockId}:`, existingCopies);
-    
-    // Genera un indice univoco per il nuovo blocco
-    const copyIndex = generateUniqueBlockIndex(sourceBlockId, existingCopies);
-    console.log(`Indice generato per la nuova copia: ${copyIndex}`);
-    
-    // Crea una copia profonda del blocco con un indice unico
-    const newBlock = deepCloneBlock(sourceBlock, copyIndex);
-    
-    // Aggiungi il nuovo blocco all'elenco dei blocchi
-    const success = addBlocks([newBlock]);
-    if (!success) {
-      console.error(`Impossibile aggiungere il blocco ${newBlock.block_id}`);
-      return false;
-    }
-    
-    // Aggiorna il registro dei blocchi copiati
-    let updatedRegistry = { ...state.blockCopyRegistry };
-    if (!updatedRegistry[sourceBlockId]) {
-      updatedRegistry[sourceBlockId] = [];
-    }
-    
-    updatedRegistry[sourceBlockId] = [...updatedRegistry[sourceBlockId], newBlock.block_id];
-    dispatch({ type: "UPDATE_BLOCK_COPY_REGISTRY", registry: updatedRegistry });
-    
-    // Aggiungi il nuovo blocco ai blocchi attivi
-    dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: newBlock.block_id });
-    
-    // Naviga alla prima domanda del nuovo blocco
-    if (newBlock.questions.length > 0) {
-      const firstQuestionId = newBlock.questions[0].question_id;
-      goToQuestion(newBlock.block_id, firstQuestionId);
-      return true;
-    }
-    
-    return false;
-  }, [blocks, goToQuestion, state.blockCopyRegistry, addBlocks, getBlockCopiesForSource]);
-
-  // Funzione per ottenere tutti i blocchi copiati da un blocco sorgente
-  const getBlockCopiesForSource = useCallback((sourceBlockId: string): string[] => {
-    const registryBlocks = state.blockCopyRegistry[sourceBlockId] || [];
-    
-    // Cerca anche blocchi che hanno is_copy_of impostato a sourceBlockId ma potrebbero
-    // non essere nel registro
-    const additionalBlockIds = blocks
-      .filter(b => b.is_copy_of === sourceBlockId)
-      .map(b => b.block_id)
-      .filter(id => !registryBlocks.includes(id));
-    
-    // Combina gli ID e deduplica
-    const allBlockIds = [...registryBlocks, ...additionalBlockIds];
-    const uniqueBlockIds = Array.from(new Set(allBlockIds));
-    
-    return uniqueBlockIds;
-  }, [state.blockCopyRegistry, blocks]);
 
   // Funzione per rimuovere un blocco
   const removeBlock = useCallback((blockId: string) => {
