@@ -49,66 +49,89 @@ export function SubBlocksPlaceholder({
 
   // Ottieni tutti i blocchi copiati da questo sourceBlockId
   const copiedBlockIds = getBlockCopiesForSource(sourceBlockId);
+  console.log(`Blocchi copiati per ${sourceBlockId}:`, copiedBlockIds);
   
   // Trova i blocchi effettivi dai loro ID
   const copiedBlocks = copiedBlockIds
     .map(blockId => blocks.find(b => b.block_id === blockId))
     .filter(Boolean);
 
-  // Funzione per ottenere un riassunto delle risposte del blocco
+  // Funzione per ottenere un riassunto dinamico delle risposte del blocco
   const getBlockSummary = (blockId: string) => {
-    // Cerca tutte le domande di questo blocco
     const block = blocks.find(b => b.block_id === blockId);
-    if (!block) return { tipoReddito: "Non specificato", importo: "N/A", frequenza: "", };
+    if (!block) return { summaryItems: [] };
 
-    // Estrai le risposte rilevanti dal blocco
     const responses = state.responses;
+    const summaryItems: Array<{ label: string; value: string }> = [];
     
-    // Trova la risposta per il tipo di reddito (domanda 1)
-    const tipoRedditoQuestionId = block.questions[0]?.question_id;
-    const tipoRedditoRisposta = tipoRedditoQuestionId && responses[tipoRedditoQuestionId]?.placeholder1;
+    // Itera su tutte le domande del blocco per generare un sommario dinamico
+    block.questions.forEach(question => {
+      const questionId = question.question_id;
+      
+      // Verifica se esiste una risposta per questa domanda
+      if (responses[questionId]) {
+        // Per ogni placeholder nella domanda
+        Object.entries(question.placeholders).forEach(([placeholderKey, placeholder]) => {
+          const response = responses[questionId][placeholderKey];
+          
+          if (response !== undefined && response !== "") {
+            let displayValue = "";
+            
+            // Gestisci i diversi tipi di placeholder
+            if (placeholder.type === "select") {
+              const options = placeholder.options;
+              if (!Array.isArray(response)) {
+                // Per selezione singola
+                const option = options.find(opt => opt.id === response);
+                if (option) {
+                  displayValue = option.label;
+                }
+              } else {
+                // Per selezione multipla
+                displayValue = response
+                  .map(id => {
+                    const option = options.find(opt => opt.id === id);
+                    return option ? option.label : id;
+                  })
+                  .join(", ");
+              }
+            } else if (placeholder.type === "input") {
+              // Per input di testo o numeri
+              displayValue = Array.isArray(response) ? response.join(", ") : response.toString();
+              
+              // Formatta i valori monetari quando appropriato
+              if (placeholder.input_validation === "euro" && !isNaN(Number(displayValue))) {
+                displayValue = new Intl.NumberFormat('it-IT', { 
+                  style: 'currency', 
+                  currency: 'EUR',
+                  maximumFractionDigits: 0
+                }).format(Number(displayValue));
+              }
+            }
+            
+            // Crea un'etichetta dalla domanda,
+            // rimuovendo placeholder e sostituendoli con la risposta effettiva
+            let questionText = question.question_text;
+            
+            // Rimuovi tutti i placeholder dal testo della domanda per l'etichetta
+            questionText = questionText.replace(/\{\{[^}]+\}\}/g, "");
+            
+            // Pulisci il testo da spazi eccessivi e rimuovi eventuali spazi a fine testo
+            questionText = questionText.trim();
+            
+            // Aggiungi al sommario solo se c'è un valore da mostrare
+            if (displayValue) {
+              summaryItems.push({
+                label: questionText,
+                value: displayValue
+              });
+            }
+          }
+        });
+      }
+    });
     
-    // Se è "altro", cerca la descrizione personalizzata
-    let tipoReddito = "";
-    if (tipoRedditoRisposta === "altro" && block.questions[1]) {
-      const altroDescrizioneId = block.questions[1].question_id;
-      tipoReddito = (responses[altroDescrizioneId]?.placeholder1 as string) || "Altro";
-    } else {
-      // Mappa l'ID alla label leggibile
-      const tipoMap: Record<string, string> = {
-        "affitti": "Affitti",
-        "lavoro_autonomo": "Lavoro autonomo",
-        "assegno_minori": "Assegno minori",
-        "supporto_familiari": "Supporto familiari",
-        "dividendi_diritti": "Dividendi e diritti",
-        "altro": "Altro"
-      };
-      tipoReddito = tipoRedditoRisposta ? tipoMap[tipoRedditoRisposta as string] || tipoRedditoRisposta as string : "Non specificato";
-    }
-
-    // Trova l'importo del reddito (domanda 3)
-    const importoQuestionId = block.questions.find(q => q.question_id.includes("media_reddito"))?.question_id;
-    const importo = importoQuestionId ? responses[importoQuestionId]?.placeholder1 as string : "N/A";
-
-    // Trova la frequenza del reddito (domanda 4) 
-    const frequenzaQuestionId = block.questions.find(q => q.question_id.includes("frequenza_reddito"))?.question_id;
-    const frequenzaRisposta = frequenzaQuestionId ? responses[frequenzaQuestionId]?.placeholder1 as string : "";
-    const frequenzaMap: Record<string, string> = {
-      "mensile": "mensili",
-      "annuale": "annui"
-    };
-    const frequenza = frequenzaRisposta ? frequenzaMap[frequenzaRisposta] || "" : "";
-
-    // Trova se lordo o netto (domanda 5)
-    const lordoNettoQuestionId = block.questions.find(q => q.question_id.includes("lordo_netto"))?.question_id;
-    const lordoNetto = lordoNettoQuestionId ? responses[lordoNettoQuestionId]?.placeholder1 as string : "";
-
-    return {
-      tipoReddito,
-      importo,
-      frequenza,
-      lordoNetto
-    };
+    return { summaryItems };
   };
 
   // Gestisci la creazione di una nuova copia del blocco e naviga direttamente ad essa
@@ -117,24 +140,31 @@ export function SubBlocksPlaceholder({
     if (isAddingBlock) return;
     
     setIsAddingBlock(true);
+    console.log("Creazione di una nuova copia del blocco:", sourceBlockId);
     
     try {
       // Crea una nuova copia del blocco
       const newBlockId = copyBlock(sourceBlockId);
+      console.log("Nuovo blocco creato con ID:", newBlockId);
       
       // Se la creazione è riuscita, naviga automaticamente alla prima domanda del nuovo blocco
       if (newBlockId) {
+        // Aumentato il timeout per garantire che il blocco sia completamente aggiunto
         setTimeout(() => {
           // Trova il blocco appena creato
           const newBlock = blocks.find(b => b.block_id === newBlockId);
+          console.log("Trovato blocco:", newBlock);
+          
           if (newBlock && newBlock.questions.length > 0) {
             // Naviga alla prima domanda del nuovo blocco
             const firstQuestionId = newBlock.questions[0].question_id;
+            console.log(`Navigazione a ${newBlockId}/${firstQuestionId}`);
             goToQuestion(newBlockId, firstQuestionId);
           }
           setIsAddingBlock(false);
-        }, 750); // Aumentato ulteriormente il ritardo per garantire che il blocco sia aggiunto correttamente
+        }, 1000); // Aumentato a 1000ms per garantire che il blocco sia completamente registrato
       } else {
+        console.error("Impossibile creare un nuovo blocco");
         setIsAddingBlock(false);
       }
     } catch (e) {
@@ -149,6 +179,7 @@ export function SubBlocksPlaceholder({
     const block = blocks.find(b => b.block_id === blockId);
     if (block && block.questions.length > 0) {
       const firstQuestionId = block.questions[0].question_id;
+      console.log(`Navigazione diretta a ${blockId}/${firstQuestionId}`);
       goToQuestion(blockId, firstQuestionId);
     }
   };
@@ -161,18 +192,6 @@ export function SubBlocksPlaceholder({
   // Gestisci la navigazione al prossimo blocco (saltando i blocchi invisibili)
   const handleGoToNextBlock = () => {
     navigateToNextQuestion(questionId, "next_block");
-  };
-
-  // Formatta l'importo con separatori delle migliaia e simbolo €
-  const formatCurrency = (value: string) => {
-    if (!value || isNaN(Number(value))) return "€ N/A";
-    
-    const numValue = Number(value);
-    return new Intl.NumberFormat('it-IT', { 
-      style: 'currency', 
-      currency: 'EUR',
-      maximumFractionDigits: 0
-    }).format(numValue);
   };
 
   return (
@@ -205,15 +224,16 @@ export function SubBlocksPlaceholder({
                         {block?.title} {index + 1}
                       </h4>
                       
-                      {/* Visualizza il riepilogo delle risposte */}
-                      <div className="text-sm text-gray-700">
-                        <p><span className="font-medium">Tipo:</span> {summary.tipoReddito}</p>
-                        {summary.importo !== "N/A" && (
-                          <p>
-                            <span className="font-medium">Importo:</span> {formatCurrency(summary.importo)}
-                            {summary.frequenza && ` ${summary.frequenza}`}
-                            {summary.lordoNetto && ` ${summary.lordoNetto === "netto" ? "netti" : "lordi"}`}
-                          </p>
+                      {/* Visualizza il riepilogo dinamico delle risposte */}
+                      <div className="text-sm text-gray-700 space-y-1">
+                        {summary.summaryItems.length > 0 ? (
+                          summary.summaryItems.map((item, idx) => (
+                            <p key={idx}>
+                              <span className="font-medium">{item.label}</span> {item.value}
+                            </p>
+                          ))
+                        ) : (
+                          <p>Nessuna informazione disponibile</p>
                         )}
                       </div>
                     </div>
