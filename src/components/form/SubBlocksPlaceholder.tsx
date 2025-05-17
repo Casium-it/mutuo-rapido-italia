@@ -88,7 +88,7 @@ export function SubBlocksPlaceholder({
             goToQuestion(newBlockId, firstQuestionId);
           }
           setIsAddingBlock(false);
-        }, 300); // Aumentato il ritardo da 100ms a 300ms per garantire che il blocco sia stato aggiunto
+        }, 500); // Aumentato il ritardo a 500ms per garantire che il blocco sia stato aggiunto correttamente
       } else {
         setIsAddingBlock(false);
       }

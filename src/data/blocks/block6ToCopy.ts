@@ -140,7 +140,7 @@ export const block6ToCopy: Block = {
           type: "input",
           input_type: "text",
           placeholder_label: "Anno o 'non lo so'",
-          leads_to: "gestione_redditi_secondari", // Modificato per puntare alla domanda gestione_redditi_secondari
+          leads_to: "[[PARENT:gestione_redditi_secondari]]", // Usa marcatore speciale per il parent
           input_validation: "free_text"
         }
       }
