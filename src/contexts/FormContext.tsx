@@ -119,7 +119,7 @@ function formReducer(state: FormState, action: Action): FormState {
       };
     }
     case "ADD_BLOCK_COPY": {
-      // Aggiungi il nuovo blocco al registro delle copie
+      // Aggiungi il nuovo blocco al registro delle copie, assicurandosi di non creare duplicati
       const updatedRegistry = { ...state.blockCopyRegistry };
       const sourceBlockId = action.sourceBlockId;
       
@@ -127,7 +127,12 @@ function formReducer(state: FormState, action: Action): FormState {
         updatedRegistry[sourceBlockId] = [];
       }
       
-      updatedRegistry[sourceBlockId].push(action.newBlock.block_id);
+      // Verifica se l'ID del nuovo blocco è già presente prima di aggiungerlo
+      if (!updatedRegistry[sourceBlockId].includes(action.newBlock.block_id)) {
+        updatedRegistry[sourceBlockId] = [...updatedRegistry[sourceBlockId], action.newBlock.block_id];
+      } else {
+        console.log(`Blocco ${action.newBlock.block_id} già presente nel registro di ${sourceBlockId}`);
+      }
       
       // Attiviamo anche il nuovo blocco
       const updatedActiveBlocks = [...state.activeBlocks];
@@ -142,7 +147,7 @@ function formReducer(state: FormState, action: Action): FormState {
       };
     }
     case "REMOVE_BLOCK": {
-      // Rimuovi il blocco dal registro delle copie
+      // Rimuovi il blocco dal registro dei blocchi copiati
       const updatedRegistry = { ...state.blockCopyRegistry };
       
       // Cerca in quale fonte è presente questo blockId
@@ -205,7 +210,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       .filter(b => b.default_active)
       .map(b => b.block_id);
     
-    // Aggiungi tutti i blocchi default_active che non sono già attivi
+    // Aggiungi tutti i blocchi default_active che non sono gi�� attivi
     defaultActiveBlockIds.forEach(blockId => {
       if (!state.activeBlocks.includes(blockId)) {
         dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
@@ -554,17 +559,35 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   const copyBlock = useCallback((sourceBlockId: string): string | undefined => {
     // Trova il blocco sorgente
     const sourceBlock = blocks.find(b => b.block_id === sourceBlockId);
-    if (!sourceBlock) return undefined;
+    if (!sourceBlock) {
+      console.error(`Blocco sorgente ${sourceBlockId} non trovato`);
+      return undefined;
+    }
     
     // Determina l'indice del nuovo blocco
     const existingCopies = state.blockCopyRegistry[sourceBlockId]?.length || 0;
-    const copyIndex = existingCopies + 1;
     
-    // Crea una copia profonda del blocco
+    // Conta anche i blocchi che hanno is_copy_of impostato a sourceBlockId
+    // ma potrebbero non essere nel registro
+    const additionalCopies = blocks.filter(b => b.is_copy_of === sourceBlockId && 
+      (!state.blockCopyRegistry[sourceBlockId] || !state.blockCopyRegistry[sourceBlockId].includes(b.block_id))).length;
+    
+    const copyIndex = existingCopies + additionalCopies + 1;
+    console.log(`Creando blocco con indice ${copyIndex} (${existingCopies} nel registry + ${additionalCopies} aggiuntivi)`);
+    
+    // Crea una copia profonda del blocco con un indice unico
     const newBlock = deepCloneBlock(sourceBlock, copyIndex);
+    console.log(`Nuovo blocco creato: ${newBlock.block_id} (copia di ${sourceBlockId})`);
     
     // Aggiorna la lista dei blocchi
-    setBlocks(prevBlocks => [...prevBlocks, newBlock]);
+    setBlocks(prevBlocks => {
+      // Verifica che il blocco non esista già
+      if (prevBlocks.some(b => b.block_id === newBlock.block_id)) {
+        console.error(`Blocco con ID ${newBlock.block_id} già esistente!`);
+        return prevBlocks;
+      }
+      return [...prevBlocks, newBlock];
+    });
     
     // Aggiorna il registry dei blocchi copiati
     dispatch({
@@ -574,12 +597,27 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     });
     
     return newBlock.block_id;
-  }, [blocks, state.blockCopyRegistry]);
+  }, [blocks, state.blockCopyRegistry, dispatch]);
   
   // Funzione per ottenere tutti i blocchi copiati da un blocco sorgente
   const getBlockCopiesForSource = useCallback((sourceBlockId: string): string[] => {
-    return state.blockCopyRegistry[sourceBlockId] || [];
-  }, [state.blockCopyRegistry]);
+    const registryBlocks = state.blockCopyRegistry[sourceBlockId] || [];
+    
+    // Cerca anche blocchi che hanno is_copy_of impostato a sourceBlockId ma potrebbero
+    // non essere nel registry
+    const additionalBlockIds = blocks
+      .filter(b => b.is_copy_of === sourceBlockId)
+      .map(b => b.block_id)
+      .filter(id => !registryBlocks.includes(id));
+    
+    // Combina gli ID e deduplica
+    const allBlockIds = [...registryBlocks, ...additionalBlockIds];
+    const uniqueBlockIds = Array.from(new Set(allBlockIds));
+    
+    console.log(`getBlockCopiesForSource: Dal registry: ${registryBlocks.length}, Da is_copy_of: ${additionalBlockIds.length}, Totali unici: ${uniqueBlockIds.length}`);
+    
+    return uniqueBlockIds;
+  }, [state.blockCopyRegistry, blocks]);
 
   // Nuova funzione per rimuovere un blocco
   const removeBlock = useCallback((blockId: string) => {

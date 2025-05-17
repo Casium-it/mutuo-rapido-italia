@@ -50,19 +50,32 @@ export function SubBlocksPlaceholder({
 
   // Recupera tutti i blocchi copiati dal sorgente specificato
   useEffect(() => {
-    // Recupera gli ID dei blocchi copiati
+    // Recupera gli ID dei blocchi copiati dal registro
     const copiedBlockIds = getBlockCopiesForSource(sourceBlockId);
-    console.log(`Blocchi copiati per ${sourceBlockId}:`, copiedBlockIds);
+    console.log(`Blocchi copiati per ${sourceBlockId} (dal registry):`, copiedBlockIds);
     
-    // Cerca tutti i blocchi che sono copie del blocco sorgente, sia dal registry che dal campo is_copy_of
+    // Usa un Set per garantire ID unici e prevenire duplicati
+    const uniqueBlockIds = new Set<string>();
+    
+    // Aggiungi prima gli ID dal registry
+    copiedBlockIds.forEach(id => uniqueBlockIds.add(id));
+    
+    // Trova tutti i blocchi con is_copy_of corrispondente al sourceBlockId
+    const blocksWithCopyOf = blocks.filter(b => b.is_copy_of === sourceBlockId);
+    console.log(`Blocchi con is_copy_of=${sourceBlockId}:`, blocksWithCopyOf.map(b => b.block_id));
+    
+    // Aggiungi questi ID al Set per garantire unicità
+    blocksWithCopyOf.forEach(b => uniqueBlockIds.add(b.block_id));
+    
+    // Converti il Set in un array di ID unici
+    const allUniqueIds = Array.from(uniqueBlockIds);
+    console.log("ID unici combinati:", allUniqueIds);
+    
+    // Recupera i blocchi completi usando gli ID unici
     const foundBlocks = blocks
-      .filter(block => {
-        // Include sia i blocchi dal registry che quelli con is_copy_of corrispondente
-        return copiedBlockIds.includes(block.block_id) || 
-               (block.is_copy_of === sourceBlockId);
-      });
+      .filter(block => allUniqueIds.includes(block.block_id));
     
-    console.log("Blocchi trovati che sono copie:", foundBlocks.map(b => b.block_id));
+    console.log("Blocchi trovati dopo deduplicazione:", foundBlocks.map(b => b.block_id));
     setCopiedBlocks(foundBlocks);
   }, [sourceBlockId, blocks, getBlockCopiesForSource, state.blockCopyRegistry]);
 
@@ -161,7 +174,7 @@ export function SubBlocksPlaceholder({
       if (newBlockId) {
         // Aumentato il timeout per garantire che il blocco sia completamente aggiunto
         setTimeout(() => {
-          // Trova il blocco appena creato
+          // Verifica che il blocco sia stato effettivamente aggiunto all'elenco dei blocchi
           const newBlock = blocks.find(b => b.block_id === newBlockId);
           console.log("Trovato blocco:", newBlock);
           
@@ -170,9 +183,11 @@ export function SubBlocksPlaceholder({
             const firstQuestionId = newBlock.questions[0].question_id;
             console.log(`Navigazione a ${newBlockId}/${firstQuestionId}`);
             goToQuestion(newBlockId, firstQuestionId);
+          } else {
+            console.error("Blocco creato ma non trovato nell'elenco dei blocchi o senza domande");
           }
           setIsAddingBlock(false);
-        }, 1000); // Mantenuto a 1000ms per garantire che il blocco sia registrato
+        }, 1500); // Aumentato a 1500ms per garantire che il blocco sia completamente registrato
       } else {
         console.error("Impossibile creare un nuovo blocco");
         setIsAddingBlock(false);
