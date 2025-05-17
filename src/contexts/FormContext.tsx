@@ -191,6 +191,82 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     activeBlocks: initialBlocks.filter(b => b.default_active).map(b => b.block_id)
   });
 
+  // Funzione per la navigazione tra le domande
+  const goToQuestion = useCallback((block_id: string, question_id: string, replace = false) => {
+    const previousBlockId = state.activeQuestion.block_id;
+    const previousQuestionId = state.activeQuestion.question_id;
+
+    // Verifica che il blocco e la domanda esistano
+    const targetBlock = blocks.find(b => b.block_id === block_id);
+    const targetQuestion = targetBlock?.questions.find(q => q.question_id === question_id);
+    
+    if (!targetBlock || !targetQuestion) {
+      console.error(`Errore di navigazione: blocco ${block_id} o domanda ${question_id} non trovati`);
+      return;
+    }
+
+    console.log(`Navigazione a ${block_id}/${question_id}`);
+    
+    // Aggiorna lo stato attivo
+    dispatch({ type: "GO_TO_QUESTION", block_id, question_id });
+    
+    // Aggiungi la navigazione alla cronologia
+    dispatch({ 
+      type: "ADD_NAVIGATION_HISTORY", 
+      history: {
+        from_block_id: previousBlockId,
+        from_question_id: previousQuestionId,
+        to_block_id: block_id,
+        to_question_id: question_id,
+        timestamp: Date.now()
+      }
+    });
+    
+    // Set navigating state when navigating
+    dispatch({ type: "SET_NAVIGATING", isNavigating: true });
+    
+    // Aggiorna l'URL per riflettere la nuova domanda
+    const blockType = params.blockType || "funnel";
+    const newPath = `/simulazione/${blockType}/${block_id}/${question_id}`;
+    
+    if (replace) {
+      navigate(newPath, { replace: true });
+    } else {
+      navigate(newPath);
+    }
+    
+    // Reset navigating state after a short delay
+    setTimeout(() => {
+      dispatch({ type: "SET_NAVIGATING", isNavigating: false });
+    }, 300);
+  }, [params.blockType, navigate, state.activeQuestion, blocks]);
+
+  // Funzione per aggiungere blocchi all'elenco
+  const addBlocks = useCallback((newBlocks: Block[]) => {
+    setBlocks(prevBlocks => {
+      // Filtra i blocchi che non sono già presenti
+      const blocksToAdd = newBlocks.filter(
+        newBlock => !prevBlocks.some(existingBlock => 
+          existingBlock.block_id === newBlock.block_id
+        )
+      );
+      
+      if (blocksToAdd.length === 0) {
+        return prevBlocks;
+      }
+      
+      console.log(`Aggiunta di ${blocksToAdd.length} nuovi blocchi:`, 
+        blocksToAdd.map(b => b.block_id));
+      
+      return [...prevBlocks, ...blocksToAdd];
+    });
+    
+    // Dispatch action per informare il reducer dell'aggiunta di nuovi blocchi
+    dispatch({ type: "ADD_BLOCKS", blocks: newBlocks });
+    
+    return true;
+  }, []);
+  
   // Funzione per ottenere tutti i blocchi copiati da un blocco sorgente
   const getBlockCopiesForSource = useCallback((sourceBlockId: string): string[] => {
     const registryBlocks = state.blockCopyRegistry[sourceBlockId] || [];
@@ -260,32 +336,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return false;
   }, [blocks, goToQuestion, state.blockCopyRegistry, addBlocks]);
 
-  // Funzione per aggiungere blocchi all'elenco
-  const addBlocks = useCallback((newBlocks: Block[]) => {
-    setBlocks(prevBlocks => {
-      // Filtra i blocchi che non sono già presenti
-      const blocksToAdd = newBlocks.filter(
-        newBlock => !prevBlocks.some(existingBlock => 
-          existingBlock.block_id === newBlock.block_id
-        )
-      );
-      
-      if (blocksToAdd.length === 0) {
-        return prevBlocks;
-      }
-      
-      console.log(`Aggiunta di ${blocksToAdd.length} nuovi blocchi:`, 
-        blocksToAdd.map(b => b.block_id));
-      
-      return [...prevBlocks, ...blocksToAdd];
-    });
-    
-    // Dispatch action per informare il reducer dell'aggiunta di nuovi blocchi
-    dispatch({ type: "ADD_BLOCKS", blocks: newBlocks });
-    
-    return true;
-  }, []);
-  
   // Inizializza o aggiorna i blocchi attivi dal JSON
   useEffect(() => {
     // Prima attiva tutti i blocchi che dovrebbero essere attivi per default
@@ -499,55 +549,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       }
     }
   };
-
-  const goToQuestion = useCallback((block_id: string, question_id: string, replace = false) => {
-    const previousBlockId = state.activeQuestion.block_id;
-    const previousQuestionId = state.activeQuestion.question_id;
-
-    // Verifica che il blocco e la domanda esistano
-    const targetBlock = blocks.find(b => b.block_id === block_id);
-    const targetQuestion = targetBlock?.questions.find(q => q.question_id === question_id);
-    
-    if (!targetBlock || !targetQuestion) {
-      console.error(`Errore di navigazione: blocco ${block_id} o domanda ${question_id} non trovati`);
-      return;
-    }
-
-    console.log(`Navigazione a ${block_id}/${question_id}`);
-    
-    // Aggiorna lo stato attivo
-    dispatch({ type: "GO_TO_QUESTION", block_id, question_id });
-    
-    // Aggiungi la navigazione alla cronologia
-    dispatch({ 
-      type: "ADD_NAVIGATION_HISTORY", 
-      history: {
-        from_block_id: previousBlockId,
-        from_question_id: previousQuestionId,
-        to_block_id: block_id,
-        to_question_id: question_id,
-        timestamp: Date.now()
-      }
-    });
-    
-    // Set navigating state when navigating
-    dispatch({ type: "SET_NAVIGATING", isNavigating: true });
-    
-    // Aggiorna l'URL per riflettere la nuova domanda
-    const blockType = params.blockType || "funnel";
-    const newPath = `/simulazione/${blockType}/${block_id}/${question_id}`;
-    
-    if (replace) {
-      navigate(newPath, { replace: true });
-    } else {
-      navigate(newPath);
-    }
-    
-    // Reset navigating state after a short delay
-    setTimeout(() => {
-      dispatch({ type: "SET_NAVIGATING", isNavigating: false });
-    }, 300);
-  }, [params.blockType, navigate, state.activeQuestion, blocks]);
 
   const setResponse = useCallback((question_id: string, placeholder_key: string, value: string | string[]) => {
     dispatch({ type: "SET_RESPONSE", question_id, placeholder_key, value });
