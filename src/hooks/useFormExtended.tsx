@@ -5,12 +5,14 @@ import {
   getChainOfInlineQuestions
 } from "@/utils/formUtils";
 import { Question, Block } from "@/types/form";
+import { useToast } from "@/hooks/use-toast";
 
 /**
  * Extended hook for the form context with additional functionality
  */
 export const useFormExtended = () => {
   const formContext = useOriginalForm();
+  const { toast } = useToast();
   
   /**
    * Gets the text of the previous question with responses filled in
@@ -84,40 +86,80 @@ export const useFormExtended = () => {
   };
   
   /**
-   * Creates a dynamic block based on a blueprint and navigates to it
-   * @param blockBlueprintId The ID of the block blueprint to use
-   * @param navigateToBlock Whether to navigate to the new block after creation
-   * @returns The ID of the created block or null if creation failed
+   * Naviga a un blocco dinamico creato precedentemente
+   * @param blockId L'ID del blocco dinamico a cui navigare
+   * @returns True se la navigazione è avvenuta con successo, False altrimenti
    */
-  const createAndNavigateToBlock = (blockBlueprintId: string, navigateToBlock: boolean = true): string | null => {
+  const navigateToDynamicBlock = (blockId: string): boolean => {
+    // Cerca il blocco nei blocchi dinamici
+    const dynamicBlock = formContext.state.dynamicBlocks.find(b => b.block_id === blockId);
+    
+    if (!dynamicBlock || dynamicBlock.questions.length === 0) {
+      console.error("Blocco dinamico non trovato o senza domande:", blockId);
+      toast({
+        title: "Errore",
+        description: "Impossibile navigare al blocco richiesto",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    // Naviga alla prima domanda del blocco
+    const firstQuestionId = dynamicBlock.questions[0].question_id;
+    console.log(`Navigazione al blocco dinamico: ${blockId}, domanda: ${firstQuestionId}`);
+    formContext.goToQuestion(blockId, firstQuestionId);
+    return true;
+  };
+  
+  /**
+   * Crea un blocco dinamico separatamente dalla navigazione
+   * @param blockBlueprintId L'ID del blueprint del blocco da creare
+   * @returns L'ID del blocco creato o null se la creazione è fallita
+   */
+  const createDynamicBlock = (blockBlueprintId: string): string | null => {
     console.log(`Creazione blocco dinamico dal blueprint: ${blockBlueprintId}`);
     
     try {
-      // Create the dynamic block
-      const newBlockId = formContext.createDynamicBlock(blockBlueprintId);
-      console.log(`Nuovo blocco creato con ID: ${newBlockId}`);
+      // Crea il blocco dinamico
+      const result = formContext.createDynamicBlock(blockBlueprintId);
       
-      if (newBlockId && navigateToBlock) {
-        // Accedi direttamente al nuovo blocco dai blocchi dinamici
-        const newDynamicBlock = formContext.state.dynamicBlocks.find(b => b.block_id === newBlockId);
-        
-        if (newDynamicBlock && newDynamicBlock.questions.length > 0) {
-          // Usa direttamente il blocco dinamico appena creato
-          const firstQuestionId = newDynamicBlock.questions[0].question_id;
-          console.log(`Navigazione al blocco: ${newBlockId}, domanda: ${firstQuestionId}`);
-          formContext.goToQuestion(newBlockId, firstQuestionId);
-        } else {
-          console.error("Errore: blocco dinamico non trovato o senza domande:", newBlockId);
-          console.log("Blocchi dinamici disponibili:", 
-            formContext.state.dynamicBlocks.map(b => b.block_id).join(", "));
-        }
+      if (!result.blockId) {
+        console.error("Creazione blocco fallita");
+        toast({
+          title: "Errore",
+          description: "Impossibile creare il blocco richiesto",
+          variant: "destructive"
+        });
+        return null;
       }
       
-      return newBlockId;
+      console.log(`Nuovo blocco creato con ID: ${result.blockId}`);
+      return result.blockId;
     } catch (error) {
       console.error("Errore nella creazione del blocco dinamico:", error);
+      toast({
+        title: "Errore",
+        description: "Si è verificato un errore durante la creazione del blocco",
+        variant: "destructive"
+      });
       return null;
     }
+  };
+  
+  /**
+   * Crea un blocco dinamico basato su un blueprint e naviga ad esso
+   * @param blockBlueprintId L'ID del blueprint del blocco da utilizzare
+   * @param navigateToBlock Se navigare al blocco dopo la creazione
+   * @returns L'ID del blocco creato o null se la creazione è fallita
+   */
+  const createAndNavigateToBlock = (blockBlueprintId: string, navigateToBlock: boolean = true): string | null => {
+    const blockId = createDynamicBlock(blockBlueprintId);
+    
+    if (blockId && navigateToBlock) {
+      navigateToDynamicBlock(blockId);
+    }
+    
+    return blockId;
   };
   
   return {
@@ -126,6 +168,8 @@ export const useFormExtended = () => {
     getPreviousQuestion,
     getInlineQuestionChain,
     isBlockInvisible,
-    createAndNavigateToBlock
+    createAndNavigateToBlock,
+    createDynamicBlock,
+    navigateToDynamicBlock
   };
 };
