@@ -18,10 +18,8 @@ export function BlockSidebar() {
   };
 
   const isBlockCompleted = (blockId: string) => {
-    const block = blocks.find(b => b.block_id === blockId);
-    if (!block) return false;
-
-    return block.questions.every(question => state.answeredQuestions.has(question.question_id));
+    // Usa completedBlocks invece di controllare tutte le domande
+    return state.completedBlocks.has(blockId);
   };
 
   const getBlockStatus = (blockId: string) => {
