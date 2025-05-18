@@ -18,7 +18,6 @@ interface FormQuestionProps {
 }
 
 export function FormQuestion({ question }: FormQuestionProps) {
-  // Utilizzo dell'hook esteso per accedere sia alle funzionalità base che a quelle aggiuntive
   const { 
     getResponse, 
     setResponse, 
