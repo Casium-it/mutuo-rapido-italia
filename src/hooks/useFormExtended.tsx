@@ -84,12 +84,104 @@ export const useFormExtended = () => {
   };
   
   /**
-   * Creates a dynamic block based on a blueprint and navigates to it
+   * Creates a dynamic block based on a blueprint without navigating to it
+   * @param blockBlueprintId The ID of the block blueprint to use
+   * @returns The ID of the created block or null if creation failed
+   */
+  const createDynamicBlock = (blockBlueprintId: string): string | null => {
+    console.log(`Creazione blocco dinamico dal blueprint: ${blockBlueprintId}`);
+    
+    try {
+      // Create the dynamic block
+      const newBlockId = formContext.createDynamicBlock(blockBlueprintId);
+      console.log(`Nuovo blocco creato con ID: ${newBlockId}`);
+      
+      return newBlockId;
+    } catch (error) {
+      console.error("Errore nella creazione del blocco dinamico:", error);
+      return null;
+    }
+  };
+  
+  /**
+   * Navigate to a specific dynamic block
+   * @param blockId The ID of the block to navigate to
+   * @returns True if navigation was successful, false otherwise
+   */
+  const navigateToDynamicBlock = (blockId: string): boolean => {
+    // Trova il blocco dinamico per ID
+    const dynamicBlock = formContext.state.dynamicBlocks.find(b => b.block_id === blockId);
+    
+    if (!dynamicBlock || dynamicBlock.questions.length === 0) {
+      console.error("Blocco dinamico non trovato o senza domande:", blockId);
+      return false;
+    }
+    
+    const firstQuestionId = dynamicBlock.questions[0].question_id;
+    console.log(`Navigazione al blocco: ${blockId}, domanda: ${firstQuestionId}`);
+    formContext.goToQuestion(blockId, firstQuestionId);
+    return true;
+  };
+
+  /**
+   * Delete a specific dynamic block
+   * @param blockId The ID of the dynamic block to delete
+   */
+  const deleteDynamicBlock = (blockId: string): boolean => {
+    return formContext.deleteDynamicBlock(blockId);
+  };
+
+  /**
+   * Check if a specific block has all questions answered
+   * @param blockId The ID of the block to check
+   * @returns True if all questions in the block are answered, false otherwise
+   */
+  const isBlockComplete = (blockId: string): boolean => {
+    const block = formContext.blocks.find(b => b.block_id === blockId);
+    if (!block) return false;
+    
+    // Check if all questions in the block have been answered
+    return block.questions.every(question => 
+      formContext.isQuestionAnswered(question.question_id)
+    );
+  };
+
+  /**
+   * Get all dynamic blocks of a specific blueprint type
+   * @param blueprintId The blueprint ID to filter by
+   * @returns Array of dynamic blocks matching the blueprint type
+   */
+  const getDynamicBlocksByBlueprint = (blueprintId: string): Block[] => {
+    if (!blueprintId) return [];
+    
+    const dynamicBlueprint = blueprintId.includes("{copyNumber}") ? 
+      blueprintId : 
+      `${blueprintId}{copyNumber}`;
+      
+    return formContext.state.dynamicBlocks
+      .filter(block => block.blueprint_id === blueprintId || 
+                       block.blueprint_id === dynamicBlueprint);
+  };
+
+  /**
+   * Check if all dynamic blocks of a specific blueprint type are complete
+   * @param blueprintId The blueprint ID to check
+   * @returns True if all blocks of the blueprint type are complete, false otherwise
+   */
+  const areAllDynamicBlocksComplete = (blueprintId: string): boolean => {
+    const blocks = getDynamicBlocksByBlueprint(blueprintId);
+    if (blocks.length === 0) return true; // Se non ci sono blocchi, consideriamo completato
+    
+    return blocks.every(block => isBlockComplete(block.block_id));
+  };
+  
+  /**
+   * Creates a dynamic block based on a blueprint and optionally navigates to it
    * @param blockBlueprintId The ID of the block blueprint to use
    * @param navigateToBlock Whether to navigate to the new block after creation
    * @returns The ID of the created block or null if creation failed
    */
-  const createAndNavigateToBlock = (blockBlueprintId: string, navigateToBlock: boolean = true): string | null => {
+  const createAndNavigateToBlock = (blockBlueprintId: string, navigateToBlock: boolean = false): string | null => {
     console.log(`Creazione blocco dinamico dal blueprint: ${blockBlueprintId}`);
     
     try {
@@ -98,19 +190,7 @@ export const useFormExtended = () => {
       console.log(`Nuovo blocco creato con ID: ${newBlockId}`);
       
       if (newBlockId && navigateToBlock) {
-        // Accedi direttamente al nuovo blocco dai blocchi dinamici
-        const newDynamicBlock = formContext.state.dynamicBlocks.find(b => b.block_id === newBlockId);
-        
-        if (newDynamicBlock && newDynamicBlock.questions.length > 0) {
-          // Usa direttamente il blocco dinamico appena creato
-          const firstQuestionId = newDynamicBlock.questions[0].question_id;
-          console.log(`Navigazione al blocco: ${newBlockId}, domanda: ${firstQuestionId}`);
-          formContext.goToQuestion(newBlockId, firstQuestionId);
-        } else {
-          console.error("Errore: blocco dinamico non trovato o senza domande:", newBlockId);
-          console.log("Blocchi dinamici disponibili:", 
-            formContext.state.dynamicBlocks.map(b => b.block_id).join(", "));
-        }
+        navigateToDynamicBlock(newBlockId);
       }
       
       return newBlockId;
@@ -126,6 +206,12 @@ export const useFormExtended = () => {
     getPreviousQuestion,
     getInlineQuestionChain,
     isBlockInvisible,
+    createDynamicBlock,
+    navigateToDynamicBlock,
+    deleteDynamicBlock,
+    isBlockComplete,
+    getDynamicBlocksByBlueprint,
+    areAllDynamicBlocksComplete,
     createAndNavigateToBlock
   };
 };

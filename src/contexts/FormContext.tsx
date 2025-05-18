@@ -16,6 +16,7 @@ type FormContextType = {
   resetForm: () => void;
   getNavigationHistoryFor: (questionId: string) => NavigationHistory | undefined;
   createDynamicBlock: (blockBlueprintId: string) => string | null;
+  deleteDynamicBlock: (blockId: string) => boolean;
 };
 
 type Action =
@@ -27,7 +28,8 @@ type Action =
   | { type: "RESET_FORM" }
   | { type: "SET_NAVIGATING"; isNavigating: boolean }
   | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory }
-  | { type: "ADD_DYNAMIC_BLOCK"; block: Block };
+  | { type: "ADD_DYNAMIC_BLOCK"; block: Block }
+  | { type: "DELETE_DYNAMIC_BLOCK"; blockId: string };
 
 const initialState: FormState = {
   activeBlocks: [],
@@ -121,6 +123,23 @@ function formReducer(state: FormState, action: Action): FormState {
         ...state,
         dynamicBlocks: [...state.dynamicBlocks, action.block],
         activeBlocks: [...state.activeBlocks, action.block.block_id]
+      };
+    }
+    case "DELETE_DYNAMIC_BLOCK": {
+      // Remove the block from dynamicBlocks
+      const updatedDynamicBlocks = state.dynamicBlocks.filter(
+        block => block.block_id !== action.blockId
+      );
+      
+      // Also remove it from activeBlocks if it's there
+      const updatedActiveBlocks = state.activeBlocks.filter(
+        blockId => blockId !== action.blockId
+      );
+      
+      return {
+        ...state,
+        dynamicBlocks: updatedDynamicBlocks,
+        activeBlocks: updatedActiveBlocks
       };
     }
     default:
@@ -569,6 +588,24 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return sortedHistory.find(item => item.to_question_id === questionId);
   }, [state.navigationHistory]);
 
+  const deleteDynamicBlock = useCallback((blockId: string): boolean => {
+    try {
+      // Verify the block exists and is a dynamic block
+      const blockExists = state.dynamicBlocks.some(b => b.block_id === blockId);
+      
+      if (!blockExists) {
+        console.error(`Il blocco dinamico ${blockId} non esiste`);
+        return false;
+      }
+      
+      dispatch({ type: "DELETE_DYNAMIC_BLOCK", blockId });
+      return true;
+    } catch (error) {
+      console.error("Errore nell'eliminazione del blocco dinamico:", error);
+      return false;
+    }
+  }, [state.dynamicBlocks]);
+
   return (
     <FormContext.Provider
       value={{
@@ -587,7 +624,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         getProgress,
         resetForm,
         getNavigationHistoryFor,
-        createDynamicBlock
+        createDynamicBlock,
+        deleteDynamicBlock
       }}
     >
       {children}
