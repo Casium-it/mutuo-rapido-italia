@@ -10,7 +10,6 @@ import { SelectPlaceholderBox } from "./SelectPlaceholderBox";
 import { Separator } from "@/components/ui/separator";
 import { getQuestionTextWithClickableResponses } from "@/utils/formUtils";
 import { validateInput } from "@/utils/validationUtils";
-import { SubBlocksPlaceholder } from "./SubBlocksPlaceholder";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface FormQuestionProps {
@@ -401,21 +400,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
               </Tooltip>
             </TooltipProvider>
           );
-        } else if (question.placeholders[placeholderKey].type === "sub-blocks") {
-          // Nuovo tipo di placeholder: sub-blocks
-          const placeholder = question.placeholders[placeholderKey] as any;
-          
-          parts.push(
-            <span key={`placeholder-${placeholderKey}`} className="block w-full my-2">
-              <SubBlocksPlaceholder
-                questionId={question.question_id}
-                placeholderKey={placeholderKey}
-                sourceBlockId={placeholder.create_block_copy}
-                addBlockLabel={placeholder.add_block_label}
-                placeholderLabel={placeholder.placeholder_label}
-              />
-            </span>
-          );
         } else {
           parts.push(<span key={`placeholder-${placeholderKey}`} className="mx-1 px-2 py-0.5 bg-gray-100 rounded-md text-[16px]">_____</span>);
         }
@@ -439,7 +423,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
     const existingResponse = getResponse(question.question_id, key);
     
     if (placeholder.type === "select" && visibleOptions[key]) {
-      // ... keep existing code (select options rendering)
       return (
         <div key={`select-${key}`} className="mt-5">
           <label className="block text-[16px] font-medium text-gray-700 mb-2">
@@ -467,23 +450,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
         </div>
       );
     }
-    
-    // Renderizza sub-blocks anche se non sono "visible" 
-    // (vogliamo che siano sempre visibili nella domanda)
-    if (placeholder.type === "sub-blocks") {
-      return (
-        <div key={`sub-blocks-${key}`} className="mt-5">
-          <SubBlocksPlaceholder
-            questionId={question.question_id}
-            placeholderKey={key}
-            sourceBlockId={placeholder.create_block_copy}
-            addBlockLabel={placeholder.add_block_label}
-            placeholderLabel={placeholder.placeholder_label}
-          />
-        </div>
-      );
-    }
-    
     return null;
   };
 
@@ -540,7 +506,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
       {/* Linea separatrice beige */}
       <Separator className="h-[1px] bg-[#F0EAE0] mb-5" />
       
-      {/* Contenitore per i select options visibili e sub-blocks */}
+      {/* Contenitore per i select options visibili */}
       <div className="space-y-5">
         {Object.keys(question.placeholders).map(key => renderVisibleSelectOptions(key, question.placeholders[key]))}
       </div>

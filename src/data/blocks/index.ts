@@ -6,7 +6,6 @@ import { block3 } from "./block3";
 import { block4 } from "./block4";
 import { block5 } from "./block5";
 import { block6 } from "./block6";
-import { block6ToCopy } from "./block6ToCopy";
 import { block7 } from "./block7";
 import { block8 } from "./block8";
 import { block9 } from "./block9";
@@ -16,7 +15,6 @@ import { block23 } from "./block23";
 import { block24 } from "./block24";
 import { block25 } from "./block25";
 import { block26 } from "./block26";
-import { block26ToCopy } from "./block26ToCopy";
 import { block27 } from "./block27";
 import { blockStop } from "./blockStop";
 
@@ -28,7 +26,6 @@ export {
   block4,
   block5,
   block6,
-  block6ToCopy,
   block7,
   block8,
   block9,
@@ -38,7 +35,6 @@ export {
   block24,
   block25,
   block26,
-  block26ToCopy,
   block27,
   blockStop
 };
@@ -51,7 +47,6 @@ export const allBlocks: Block[] = [
   block4,
   block5,
   block6,
-  block6ToCopy,
   block7,
   block8,
   block9,
@@ -61,7 +56,6 @@ export const allBlocks: Block[] = [
   block24,
   block25,
   block26,
-  block26ToCopy,
   block27,
   blockStop
 ].sort((a, b) => a.priority - b.priority); // Ordina i blocchi per priorità

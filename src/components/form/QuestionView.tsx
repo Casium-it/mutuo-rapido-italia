@@ -9,20 +9,17 @@ export function QuestionView() {
   const location = useLocation();
   const params = useParams<{ blockId?: string, questionId?: string }>();
   
-  // Sincronizza il componente con l'URL quando cambia, evitando cicli infiniti
+  // Sincronizza il componente con l'URL quando cambia
   useEffect(() => {
     if (params.blockId && params.questionId) {
-      // Solo se l'URL contiene blockId e questionId, e sono diversi dallo stato attuale
+      // Se l'URL contiene blockId e questionId, ma sono diversi dallo stato attuale,
+      // aggiorna lo stato interno per allinearlo all'URL
       if (state.activeQuestion.block_id !== params.blockId || 
           state.activeQuestion.question_id !== params.questionId) {
-        
-        // Usa replace=true per evitare di aggiungere un'entry alla history
-        // e riduci le chiamate sostituendo invece di aggiungere alla cronologia
         goToQuestion(params.blockId, params.questionId, true);
       }
     }
-  // Rimuoviamo state.activeQuestion dalle dipendenze per evitare cicli
-  }, [location.pathname, params.blockId, params.questionId, goToQuestion]);
+  }, [location.pathname, params.blockId, params.questionId, state.activeQuestion, goToQuestion]);
   
   // Find the current active block and question
   const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
