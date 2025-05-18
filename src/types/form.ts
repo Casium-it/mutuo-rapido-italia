@@ -19,10 +19,18 @@ export type InputPlaceholder = {
   input_type: "text" | "number" | "date";
   placeholder_label: string;
   leads_to?: string;
-  input_validation: ValidationTypes; // Now required
+  input_validation: ValidationTypes;
 };
 
-export type Placeholder = SelectPlaceholder | InputPlaceholder;
+export type MultiBlockManagerPlaceholder = {
+  type: "MultiBlockManager";
+  placeholder_label: string;
+  add_block_label: string;
+  blockBlueprint: string;
+  leads_to: string;
+};
+
+export type Placeholder = SelectPlaceholder | InputPlaceholder | MultiBlockManagerPlaceholder;
 
 export type Question = {
   question_id: string;
@@ -40,7 +48,10 @@ export type Block = {
   title: string;
   priority: number;
   default_active?: boolean;
-  invisible?: boolean; // New attribute to hide blocks from the sidebar
+  invisible?: boolean;
+  multiBlock?: boolean;
+  blueprint_id?: string; // Reference to the original block this was copied from
+  copy_number?: number; // The copy number used when creating this block
   questions: Question[];
 };
 
@@ -67,5 +78,6 @@ export type FormState = {
   responses: FormResponse;
   answeredQuestions: Set<string>;
   isNavigating?: boolean;
-  navigationHistory: NavigationHistory[]; // Aggiungiamo la cronologia di navigazione
+  navigationHistory: NavigationHistory[];
+  dynamicBlocks: Block[]; // New field to store dynamically generated blocks
 };

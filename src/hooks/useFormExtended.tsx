@@ -1,4 +1,3 @@
-
 import { useForm as useOriginalForm } from "@/contexts/FormContext";
 import { 
   getPreviousQuestion as getPreviousQuestionUtil, 
@@ -88,11 +87,36 @@ export const useFormExtended = () => {
     return !!block?.invisible;
   };
   
+  /**
+   * Creates a dynamic block based on a blueprint and navigates to it
+   * @param blockBlueprintId The ID of the block blueprint to use
+   * @param navigateToBlock Whether to navigate to the new block after creation
+   * @returns The ID of the created block or null if creation failed
+   */
+  const createAndNavigateToBlock = (blockBlueprintId: string, navigateToBlock: boolean = true): string | null => {
+    // Create the dynamic block
+    const newBlockId = formContext.createDynamicBlock(blockBlueprintId);
+    
+    if (newBlockId && navigateToBlock) {
+      // Find the block to navigate to its first question
+      const allBlocks = formContext.blocks;
+      const newBlock = allBlocks.find(b => b.block_id === newBlockId);
+      
+      if (newBlock && newBlock.questions.length > 0) {
+        const firstQuestionId = newBlock.questions[0].question_id;
+        formContext.goToQuestion(newBlockId, firstQuestionId);
+      }
+    }
+    
+    return newBlockId;
+  };
+  
   return {
     ...formContext,
     getPreviousQuestionText,
     getPreviousQuestion,
     getInlineQuestionChain,
-    isBlockInvisible
+    isBlockInvisible,
+    createAndNavigateToBlock
   };
 };

@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { getQuestionTextWithClickableResponses } from "@/utils/formUtils";
 import { validateInput } from "@/utils/validationUtils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { MultiBlockManager } from "./MultiBlockManager";
 
 interface FormQuestionProps {
   question: Question;
@@ -496,6 +497,31 @@ export function FormQuestion({ question }: FormQuestionProps) {
     responses[key] !== undefined || getResponse(question.question_id, key) !== undefined
   ) && allInputsHaveValidContent();
 
+  // Renderizza i MultiBlockManager placeholder
+  const renderMultiBlockManagers = () => {
+    const multiBlockManagers = Object.entries(question.placeholders)
+      .filter(([_, placeholder]) => placeholder.type === "MultiBlockManager")
+      .map(([key, placeholder]) => (
+        <div key={`multi-${key}`} className="mt-5">
+          <MultiBlockManager
+            questionId={question.question_id}
+            placeholderKey={key}
+            placeholder={placeholder as any}
+          />
+        </div>
+      ));
+
+    if (multiBlockManagers.length > 0) {
+      return (
+        <div className="space-y-4">
+          {multiBlockManagers}
+        </div>
+      );
+    }
+    
+    return null;
+  };
+
   return (
     <div className="max-w-xl animate-fade-in">
       {/* Testo della domanda semplificato */}
@@ -511,8 +537,11 @@ export function FormQuestion({ question }: FormQuestionProps) {
         {Object.keys(question.placeholders).map(key => renderVisibleSelectOptions(key, question.placeholders[key]))}
       </div>
       
+      {/* Nuovo contenitore per i MultiBlockManager placeholder */}
+      {renderMultiBlockManagers()}
+      
       {/* Pulsante Avanti - mostrato solo se ci sono risposte valide e tutti gli input hanno contenuto valido */}
-      {hasValidResponses && (
+      {hasValidResponses && !Object.values(question.placeholders).some(p => p.type === "MultiBlockManager") && (
         <div className="mt-8">
           <Button
             type="button"

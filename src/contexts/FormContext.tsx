@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback } from "react";
 import { Block, FormState, FormResponse, NavigationHistory } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { ensureBlockHasPriority } from "@/utils/blockUtils";
 
 type FormContextType = {
   state: FormState;
@@ -14,6 +15,7 @@ type FormContextType = {
   getProgress: () => number;
   resetForm: () => void;
   getNavigationHistoryFor: (questionId: string) => NavigationHistory | undefined;
+  createDynamicBlock: (blockBlueprintId: string) => string | null;
 };
 
 type Action =
@@ -24,7 +26,8 @@ type Action =
   | { type: "SET_FORM_STATE"; state: Partial<FormState> }
   | { type: "RESET_FORM" }
   | { type: "SET_NAVIGATING"; isNavigating: boolean }
-  | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory };
+  | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory }
+  | { type: "ADD_DYNAMIC_BLOCK"; block: Block };
 
 const initialState: FormState = {
   activeBlocks: [],
@@ -35,7 +38,8 @@ const initialState: FormState = {
   responses: {},
   answeredQuestions: new Set(),
   isNavigating: false,
-  navigationHistory: []
+  navigationHistory: [],
+  dynamicBlocks: []
 };
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
@@ -89,6 +93,7 @@ function formReducer(state: FormState, action: Action): FormState {
         ...initialState,
         activeBlocks: state.activeBlocks.filter(blockId => 
           initialState.activeBlocks.includes(blockId)),
+        dynamicBlocks: [], // Clear dynamic blocks on reset
         navigationHistory: [] // Reset anche la cronologia di navigazione
       };
     }
@@ -110,6 +115,14 @@ function formReducer(state: FormState, action: Action): FormState {
         navigationHistory: [...filteredHistory, action.history]
       };
     }
+    case "ADD_DYNAMIC_BLOCK": {
+      // Add a new dynamic block to the state
+      return {
+        ...state,
+        dynamicBlocks: [...state.dynamicBlocks, action.block],
+        activeBlocks: [...state.activeBlocks, action.block.block_id]
+      };
+    }
     default:
       return state;
   }
@@ -125,8 +138,54 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   
   const [state, dispatch] = useReducer(formReducer, {
     ...initialState,
-    activeBlocks: sortedBlocks.filter(b => b.default_active).map(b => b.block_id)
+    activeBlocks: sortedBlocks.filter(b => b.default_active).map(b => b.block_id),
+    dynamicBlocks: [] // Initialize with empty dynamic blocks
   });
+
+  // Funzione per creare un blocco dinamico basato su un blueprint
+  const createDynamicBlock = useCallback((blockBlueprintId: string): string | null => {
+    // Trova il blocco blueprint
+    const blueprintBlock = blocks.find(b => b.block_id === blockBlueprintId && b.multiBlock === true);
+    
+    if (!blueprintBlock) {
+      console.error(`Blueprint block ${blockBlueprintId} not found or is not a multiBlock`);
+      return null;
+    }
+    
+    // Determina il nuovo numero di copia
+    const existingCopies = state.dynamicBlocks
+      .filter(block => block.blueprint_id === blockBlueprintId)
+      .map(block => block.copy_number || 0);
+    
+    const nextCopyNumber = existingCopies.length > 0 ? Math.max(...existingCopies) + 1 : 1;
+    
+    // Crea un nuovo ID per il blocco
+    const newBlockId = blockBlueprintId.replace('{copyNumber}', nextCopyNumber.toString());
+    
+    // Copia il blocco e aggiorna gli ID
+    const newBlock: Block = {
+      ...JSON.parse(JSON.stringify(blueprintBlock)),
+      block_id: newBlockId,
+      blueprint_id: blockBlueprintId,
+      copy_number: nextCopyNumber,
+      title: `${blueprintBlock.title} ${nextCopyNumber}`,
+    };
+    
+    // Aggiorna gli ID delle domande
+    newBlock.questions = newBlock.questions.map(question => ({
+      ...question,
+      question_id: question.question_id.replace('{copyNumber}', nextCopyNumber.toString())
+    }));
+    
+    // Aggiungi il nuovo blocco allo stato
+    dispatch({ type: "ADD_DYNAMIC_BLOCK", block: newBlock });
+    
+    // Assicurati che il nuovo blocco abbia una priorità
+    const blockWithPriority = ensureBlockHasPriority(newBlock);
+    dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: newBlockId });
+    
+    return newBlockId;
+  }, [blocks, state.dynamicBlocks]);
 
   // Inizializza o aggiorna i blocchi attivi dal JSON
   useEffect(() => {
@@ -213,6 +272,16 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
           parsedState.answeredQuestions = new Set(parsedState.answeredQuestions);
         } else {
           parsedState.answeredQuestions = new Set();
+        }
+        
+        // Gestisci i blocchi dinamici salvati
+        if (Array.isArray(parsedState.dynamicBlocks)) {
+          // Assicurati che i blocchi dinamici abbiano tutte le proprietà necessarie
+          parsedState.dynamicBlocks = parsedState.dynamicBlocks.map(block => 
+            ensureBlockHasPriority(block)
+          );
+        } else {
+          parsedState.dynamicBlocks = [];
         }
         
         // Applica lo stato salvato
@@ -335,8 +404,15 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return state.answeredQuestions.has(question_id);
   }, [state.answeredQuestions]);
 
+  // Aggiorna findQuestionById per cercare anche nei blocchi dinamici
   const findQuestionById = useCallback((questionId: string): { block: Block; question: any } | null => {
-    for (const block of sortedBlocks) { // Usa blocchi ordinati
+    // Combina blocchi statici e dinamici per la ricerca
+    const allBlocks = [
+      ...sortedBlocks,
+      ...state.dynamicBlocks
+    ];
+    
+    for (const block of allBlocks) {
       for (const question of block.questions) {
         if (question.question_id === questionId) {
           return { block, question };
@@ -344,7 +420,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       }
     }
     return null;
-  }, [sortedBlocks]);
+  }, [sortedBlocks, state.dynamicBlocks]);
 
   const navigateToNextQuestion = useCallback((currentQuestionId: string, leadsTo: string) => {
     // Salva la domanda corrente prima di navigare
@@ -376,10 +452,17 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         // Trova il prossimo blocco attivo
         let foundNextActiveBlock = false;
         
+        // Combine static blocks and dynamic blocks
+        const allBlocks = [
+          ...sortedBlocks,
+          ...state.dynamicBlocks
+        ];
+        
         // Ordina i blocchi attivi per priorità
         const activeBlocksWithPriority = state.activeBlocks
-          .map(blockId => sortedBlocks.find(b => b.block_id === blockId))
+          .map(blockId => allBlocks.find(b => b.block_id === blockId))
           .filter(Boolean)
+          .filter(b => !b!.invisible) // Filtra i blocchi invisibili!
           .sort((a, b) => a!.priority - b!.priority);
         
         // Trova la posizione del blocco corrente nella lista di blocchi attivi ordinati per priorità
@@ -445,7 +528,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     setTimeout(() => {
       dispatch({ type: "SET_NAVIGATING", isNavigating: false });
     }, 300);
-  }, [sortedBlocks, state.activeBlocks, goToQuestion, findQuestionById, state.activeQuestion.block_id]);
+  }, [sortedBlocks, state.activeBlocks, goToQuestion, findQuestionById, state.activeQuestion.block_id, state.dynamicBlocks]);
 
   // Calcola il progresso complessivo del form
   const getProgress = useCallback(() => {
@@ -453,8 +536,14 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     let totalQuestions = 0;
     let answeredCount = 0;
     
+    // Combina blocchi statici e dinamici
+    const allBlocks = [
+      ...blocks,
+      ...state.dynamicBlocks
+    ];
+    
     for (const blockId of state.activeBlocks) {
-      const block = blocks.find(b => b.block_id === blockId);
+      const block = allBlocks.find(b => b.block_id === blockId);
       if (block) {
         // Conta tutte le domande per il totale
         totalQuestions += block.questions.length;
@@ -469,7 +558,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     }
     
     return totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
-  }, [state.activeBlocks, state.answeredQuestions, blocks]);
+  }, [state.activeBlocks, state.answeredQuestions, blocks, state.dynamicBlocks]);
 
   // Nuova funzione per ottenere la cronologia di navigazione per una domanda specifica
   const getNavigationHistoryFor = useCallback((questionId: string): NavigationHistory | undefined => {
@@ -484,7 +573,11 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     <FormContext.Provider
       value={{
         state,
-        blocks: sortedBlocks, // Restituisci i blocchi ordinati per priorità
+        // Combina blocchi statici e dinamici per l'API blocks
+        blocks: [
+          ...sortedBlocks,
+          ...state.dynamicBlocks
+        ].sort((a, b) => a.priority - b.priority), 
         goToQuestion,
         setResponse,
         getResponse,
@@ -493,7 +586,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         navigateToNextQuestion,
         getProgress,
         resetForm,
-        getNavigationHistoryFor
+        getNavigationHistoryFor,
+        createDynamicBlock
       }}
     >
       {children}
