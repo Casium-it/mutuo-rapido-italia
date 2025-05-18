@@ -1,4 +1,3 @@
-
 import { useForm as useOriginalForm } from "@/contexts/FormContext";
 import { 
   getPreviousQuestion as getPreviousQuestionUtil, 
@@ -91,35 +90,27 @@ export const useFormExtended = () => {
    * @returns The ID of the created block or null if creation failed
    */
   const createAndNavigateToBlock = (blockBlueprintId: string, navigateToBlock: boolean = true): string | null => {
-    console.log(`Creating dynamic block from blueprint: ${blockBlueprintId}`);
+    console.log(`Creazione blocco dinamico dal blueprint: ${blockBlueprintId}`);
     
     try {
       // Create the dynamic block
       const newBlockId = formContext.createDynamicBlock(blockBlueprintId);
-      console.log(`New block created with ID: ${newBlockId}`);
+      console.log(`Nuovo blocco creato con ID: ${newBlockId}`);
       
       if (newBlockId && navigateToBlock) {
-        // Aggiungi un breve ritardo per assicurarsi che il blocco sia completamente registrato
-        setTimeout(() => {
-          try {
-            // Find the block to navigate to its first question
-            const allBlocks = formContext.blocks;
-            console.log(`Searching for block with ID: ${newBlockId} in ${allBlocks.length} blocks`);
-            
-            const newBlock = allBlocks.find(b => b.block_id === newBlockId);
-            
-            if (newBlock && newBlock.questions.length > 0) {
-              const firstQuestionId = newBlock.questions[0].question_id;
-              console.log(`Navigating to block: ${newBlockId}, question: ${firstQuestionId}`);
-              formContext.goToQuestion(newBlockId, firstQuestionId);
-            } else {
-              console.error("Nuovo blocco non trovato o senza domande:", newBlockId);
-              console.log("Blocchi disponibili:", allBlocks.map(b => b.block_id).join(", "));
-            }
-          } catch (navigationError) {
-            console.error("Errore durante la navigazione al nuovo blocco:", navigationError);
-          }
-        }, 100); // Piccolo ritardo di 100ms per assicurarsi che il blocco sia registrato
+        // Accedi direttamente al nuovo blocco dai blocchi dinamici
+        const newDynamicBlock = formContext.state.dynamicBlocks.find(b => b.block_id === newBlockId);
+        
+        if (newDynamicBlock && newDynamicBlock.questions.length > 0) {
+          // Usa direttamente il blocco dinamico appena creato
+          const firstQuestionId = newDynamicBlock.questions[0].question_id;
+          console.log(`Navigazione al blocco: ${newBlockId}, domanda: ${firstQuestionId}`);
+          formContext.goToQuestion(newBlockId, firstQuestionId);
+        } else {
+          console.error("Errore: blocco dinamico non trovato o senza domande:", newBlockId);
+          console.log("Blocchi dinamici disponibili:", 
+            formContext.state.dynamicBlocks.map(b => b.block_id).join(", "));
+        }
       }
       
       return newBlockId;
