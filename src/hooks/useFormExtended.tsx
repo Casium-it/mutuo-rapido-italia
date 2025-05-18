@@ -199,7 +199,69 @@ export const useFormExtended = () => {
       return null;
     }
   };
-  
+
+  /**
+   * Gets a summary of block responses for display in the dynamic block list
+   * @param blockId The ID of the block to summarize
+   * @returns HTML string with responses formatted (bold for answers)
+   */
+  const getBlockResponseSummary = (blockId: string): string => {
+    const block = formContext.blocks.find(b => b.block_id === blockId) || 
+                  formContext.state.dynamicBlocks.find(b => b.block_id === blockId);
+                  
+    if (!block || block.questions.length === 0) return "";
+    
+    // Cerchiamo le domande che hanno risposte
+    const answeredQuestions = block.questions.filter(q => 
+      formContext.state.answeredQuestions.has(q.question_id)
+    );
+    
+    if (answeredQuestions.length === 0) return "";
+    
+    // Prendiamo solo le prime 2-3 domande per il riassunto
+    const questionsToSummarize = answeredQuestions.slice(0, 3);
+    
+    // Creiamo un riassunto formattato con le risposte in grassetto e verde
+    const summaryParts = questionsToSummarize.map(question => {
+      let text = question.question_text;
+      
+      Object.keys(question.placeholders || {}).forEach(key => {
+        const placeholder = `{{${key}}}`;
+        const responseValue = formContext.state.responses[question.question_id]?.[key];
+        
+        if (responseValue) {
+          let displayValue = "";
+          
+          // Handle select type placeholders
+          if (question.placeholders[key].type === "select" && !Array.isArray(responseValue)) {
+            const option = (question.placeholders[key] as any).options.find(
+              (opt: any) => opt.id === responseValue
+            );
+            if (option) {
+              displayValue = option.label;
+            }
+          } else {
+            // Handle other types
+            displayValue = Array.isArray(responseValue) 
+              ? responseValue.join(", ") 
+              : responseValue.toString();
+          }
+          
+          // Sostituisci il placeholder con il valore in grassetto e verde
+          text = text.replace(placeholder, `<span class="font-bold text-green-600">${displayValue}</span>`);
+        }
+      });
+      
+      // Sostituisci i placeholder rimanenti
+      text = text.replace(/\{\{[^}]+\}\}/g, "____");
+      
+      return text;
+    });
+    
+    // Unisci tutto in una stringa HTML
+    return summaryParts.join("<br>");
+  };
+
   return {
     ...formContext,
     getPreviousQuestionText,
@@ -212,6 +274,7 @@ export const useFormExtended = () => {
     isBlockComplete,
     getDynamicBlocksByBlueprint,
     areAllDynamicBlocksComplete,
-    createAndNavigateToBlock
+    createAndNavigateToBlock,
+    getBlockResponseSummary
   };
 };

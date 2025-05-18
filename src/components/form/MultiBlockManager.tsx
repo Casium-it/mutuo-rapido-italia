@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { MultiBlockManagerPlaceholder } from "@/types/form";
-import { Plus, ArrowRight, Check, Trash, X } from "lucide-react";
+import { Plus, ArrowRight, Check, Trash } from "lucide-react";
 
 interface MultiBlockManagerProps {
   questionId: string;
@@ -23,7 +23,8 @@ export function MultiBlockManager({
     navigateToNextQuestion,
     getDynamicBlocksByBlueprint,
     areAllDynamicBlocksComplete,
-    isBlockComplete 
+    isBlockComplete,
+    getBlockResponseSummary
   } = useFormExtended();
   
   const [isCreating, setIsCreating] = useState(false);
@@ -90,6 +91,8 @@ export function MultiBlockManager({
             <ul className="space-y-2">
               {dynamicBlocks.map((block) => {
                 const isComplete = isBlockComplete(block.block_id);
+                const responseSummary = getBlockResponseSummary(block.block_id);
+                
                 return (
                   <li 
                     key={block.block_id} 
@@ -100,19 +103,23 @@ export function MultiBlockManager({
                         <span className="flex items-center text-green-600 mr-2">
                           <Check className="h-4 w-4" />
                         </span>
-                      ) : (
-                        <span className="flex items-center text-amber-500 mr-2">
-                          <X className="h-4 w-4" />
+                      ) : null}
+                      <div>
+                        <span className="text-gray-800">
+                          {block.title}
+                          {!isComplete && (
+                            <span className="text-amber-500 ml-2 text-sm">
+                              (Incompleto)
+                            </span>
+                          )}
                         </span>
-                      )}
-                      <span className="text-gray-800">
-                        {block.title}
-                        {!isComplete && (
-                          <span className="text-amber-500 ml-2 text-sm">
-                            (Incompleto)
-                          </span>
+                        {responseSummary && (
+                          <div 
+                            className="text-sm mt-1"
+                            dangerouslySetInnerHTML={{ __html: responseSummary }}
+                          />
                         )}
-                      </span>
+                      </div>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Button
@@ -122,7 +129,7 @@ export function MultiBlockManager({
                         className="bg-white border border-[#245C4F] text-[#245C4F] hover:bg-[#F8F4EF] rounded-[10px] px-2 py-1 flex items-center"
                       >
                         <ArrowRight className="h-4 w-4 mr-1" />
-                        {isComplete ? "Visualizza" : "Completa"}
+                        {isComplete ? "Modifica" : "Completa"}
                       </Button>
                       <Button
                         type="button"
@@ -163,7 +170,7 @@ export function MultiBlockManager({
           >
             {dynamicBlocks.length > 0 && !allBlocksComplete 
               ? "Completa tutti gli elementi per continuare" 
-              : "Continua"}
+              : "Avanti"}
           </Button>
         </div>
         
