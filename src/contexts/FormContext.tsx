@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback } from "react";
 import { Block, FormState, FormResponse, NavigationHistory, Placeholder } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { ensureBlockHasPriority, mapBlockPaths } from "@/utils/blockUtils";
+import { ensureBlockHasPriority } from "@/utils/blockUtils";
 
 type FormContextType = {
   state: FormState;
@@ -17,8 +17,6 @@ type FormContextType = {
   getNavigationHistoryFor: (questionId: string) => NavigationHistory | undefined;
   createDynamicBlock: (blockBlueprintId: string) => string | null;
   deleteDynamicBlock: (blockId: string) => boolean;
-  hasNavigatedToNextBlockFrom: (blockId: string) => boolean;
-  getTerminalQuestionsForBlock: (block: Block) => string[];
 };
 
 type Action =
@@ -31,8 +29,7 @@ type Action =
   | { type: "SET_NAVIGATING"; isNavigating: boolean }
   | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory }
   | { type: "ADD_DYNAMIC_BLOCK"; block: Block }
-  | { type: "DELETE_DYNAMIC_BLOCK"; blockId: string }
-  | { type: "MARK_BLOCK_COMPLETED"; blockId: string };
+  | { type: "DELETE_DYNAMIC_BLOCK"; blockId: string };
 
 const initialState: FormState = {
   activeBlocks: [],
@@ -44,8 +41,7 @@ const initialState: FormState = {
   answeredQuestions: new Set(),
   isNavigating: false,
   navigationHistory: [],
-  dynamicBlocks: [],
-  completedBlocks: new Set(),  // New field to track completed blocks
+  dynamicBlocks: []
 };
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
@@ -144,14 +140,6 @@ function formReducer(state: FormState, action: Action): FormState {
         ...state,
         dynamicBlocks: updatedDynamicBlocks,
         activeBlocks: updatedActiveBlocks
-      };
-    }
-    case "MARK_BLOCK_COMPLETED": {
-      const completedBlocks = new Set(state.completedBlocks);
-      completedBlocks.add(action.blockId);
-      return {
-        ...state,
-        completedBlocks
       };
     }
     default:
@@ -481,7 +469,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return null;
   }, [sortedBlocks, state.dynamicBlocks]);
 
-  // Funzione modificata per la navigazione alla domanda successiva - ora marca i blocchi come completati
   const navigateToNextQuestion = useCallback((currentQuestionId: string, leadsTo: string) => {
     // Salva la domanda corrente prima di navigare
     const currentBlockId = state.activeQuestion.block_id;
@@ -490,9 +477,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     dispatch({ type: "SET_NAVIGATING", isNavigating: true });
     
     if (leadsTo === "next_block") {
-      // Se stiamo navigando al blocco successivo, marca questo blocco come completato
-      dispatch({ type: "MARK_BLOCK_COMPLETED", blockId: currentBlockId });
-      
       // Trova il blocco corrente
       let currentBlock = null;
       let currentBlockIndex = -1;
@@ -650,39 +634,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     }
   }, [state.dynamicBlocks]);
 
-  // Nuova funzione per verificare se è stata eseguita una navigazione a next_block da un blocco specifico
-  const hasNavigatedToNextBlockFrom = useCallback((blockId: string): boolean => {
-    return state.completedBlocks.has(blockId);
-  }, [state.completedBlocks]);
-
-  // Funzione per ottenere le domande terminali di un blocco (semplificata)
-  const getTerminalQuestionsForBlock = useCallback((block: Block): string[] => {
-    const terminalQuestionIds: string[] = [];
-    
-    // Considera come terminali solo le domande che hanno placeholder che portano a next_block
-    block.questions.forEach(question => {
-      let leadsToNextBlock = false;
-      
-      // Controlla tutti i placeholder
-      Object.values(question.placeholders).forEach(placeholder => {
-        if (placeholder.type === "select") {
-          // Controlla se qualsiasi opzione porta a next_block
-          if ((placeholder.options || []).some(opt => opt.leads_to === "next_block")) {
-            leadsToNextBlock = true;
-          }
-        } else if ((placeholder as any).leads_to === "next_block") {
-          leadsToNextBlock = true;
-        }
-      });
-      
-      if (leadsToNextBlock) {
-        terminalQuestionIds.push(question.question_id);
-      }
-    });
-    
-    return terminalQuestionIds;
-  }, []);
-
   return (
     <FormContext.Provider
       value={{
@@ -702,9 +653,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         resetForm,
         getNavigationHistoryFor,
         createDynamicBlock,
-        deleteDynamicBlock,
-        hasNavigatedToNextBlockFrom,
-        getTerminalQuestionsForBlock
+        deleteDynamicBlock
       }}
     >
       {children}
