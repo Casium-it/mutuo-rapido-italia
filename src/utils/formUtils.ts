@@ -1,4 +1,3 @@
-
 import { Block, Question } from "@/types/form";
 
 /**
@@ -197,4 +196,45 @@ export const getQuestionTextWithClickableResponses = (
   }
 
   return { parts };
+};
+
+/**
+ * Determina se una domanda è terminale all'interno del suo blocco
+ * @param question La domanda da analizzare
+ * @param blockId L'ID del blocco a cui appartiene la domanda
+ * @returns true se la domanda è terminale (porta fuori dal blocco)
+ */
+export const isTerminalQuestion = (question: Question, blockId: string): boolean => {
+  let isTerminal = false;
+  
+  // Analizza tutti i placeholder per vedere se portano fuori dal blocco
+  Object.entries(question.placeholders || {}).forEach(([_, placeholder]) => {
+    // Controlla select options
+    if (placeholder.type === "select") {
+      (placeholder.options || []).forEach(option => {
+        if (
+          option.leads_to === "next_block" || 
+          (option.leads_to && !option.leads_to.startsWith(blockId))
+        ) {
+          isTerminal = true;
+        }
+      });
+    } 
+    // Controlla altri tipi di placeholder con leads_to
+    else if ((placeholder as any).leads_to) {
+      const leadsTo = (placeholder as any).leads_to;
+      if (
+        leadsTo === "next_block" || 
+        !leadsTo.startsWith(blockId)
+      ) {
+        isTerminal = true;
+      }
+    } 
+    // MultiBlockManager è sempre terminale
+    else if (placeholder.type === "MultiBlockManager") {
+      isTerminal = true;
+    }
+  });
+  
+  return isTerminal;
 };
