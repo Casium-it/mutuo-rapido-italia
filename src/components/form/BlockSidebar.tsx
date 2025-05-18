@@ -1,11 +1,11 @@
 
-import { useFormExtended } from "@/hooks/useFormExtended";
+import { useForm } from "@/contexts/FormContext";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useParams } from "react-router-dom";
 
 export function BlockSidebar() {
-  const { blocks, state, isBlockComplete } = useFormExtended();
+  const { blocks, state } = useForm();
   const params = useParams<{ blockType?: string }>();
   
   // Filter blocks that are active, not invisible, and sort by priority
@@ -17,8 +17,15 @@ export function BlockSidebar() {
     return state.activeQuestion.block_id === blockId;
   };
 
+  const isBlockCompleted = (blockId: string) => {
+    const block = blocks.find(b => b.block_id === blockId);
+    if (!block) return false;
+
+    return block.questions.every(question => state.answeredQuestions.has(question.question_id));
+  };
+
   const getBlockStatus = (blockId: string) => {
-    if (isBlockComplete(blockId)) return "completato";
+    if (isBlockCompleted(blockId)) return "completato";
     if (isBlockActive(blockId)) return "attivo";
     
     // Se c'è almeno una domanda risposta ma non tutte

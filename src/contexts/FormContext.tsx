@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback } from "react";
 import { Block, FormState, FormResponse, NavigationHistory, Placeholder } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
@@ -18,7 +17,6 @@ type FormContextType = {
   getNavigationHistoryFor: (questionId: string) => NavigationHistory | undefined;
   createDynamicBlock: (blockBlueprintId: string) => string | null;
   deleteDynamicBlock: (blockId: string) => boolean;
-  isBlockCompleted: (blockId: string) => boolean; // Nuova funzione per verificare se un blocco è completato
 };
 
 type Action =
@@ -31,8 +29,7 @@ type Action =
   | { type: "SET_NAVIGATING"; isNavigating: boolean }
   | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory }
   | { type: "ADD_DYNAMIC_BLOCK"; block: Block }
-  | { type: "DELETE_DYNAMIC_BLOCK"; blockId: string }
-  | { type: "MARK_BLOCK_COMPLETED"; blockId: string }; // Nuova azione per marcare un blocco come completato
+  | { type: "DELETE_DYNAMIC_BLOCK"; blockId: string };
 
 const initialState: FormState = {
   activeBlocks: [],
@@ -41,11 +38,10 @@ const initialState: FormState = {
     question_id: "soggetto_acquisto"
   },
   responses: {},
-  answeredQuestions: new Set<string>(),
+  answeredQuestions: new Set(),
   isNavigating: false,
   navigationHistory: [],
-  dynamicBlocks: [],
-  completedBlocks: new Set<string>() // Inizializza il set dei blocchi completati come Set<string>
+  dynamicBlocks: []
 };
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
@@ -89,14 +85,9 @@ function formReducer(state: FormState, action: Action): FormState {
       };
     }
     case "SET_FORM_STATE": {
-      // Assicurati che completedBlocks sia un Set quando viene caricato
-      const newState = { ...action.state };
-      if (newState.completedBlocks && !(newState.completedBlocks instanceof Set)) {
-        newState.completedBlocks = new Set<string>(newState.completedBlocks as any);
-      }
       return {
         ...state,
-        ...newState
+        ...action.state
       };
     }
     case "RESET_FORM": {
@@ -105,8 +96,7 @@ function formReducer(state: FormState, action: Action): FormState {
         activeBlocks: state.activeBlocks.filter(blockId => 
           initialState.activeBlocks.includes(blockId)),
         dynamicBlocks: [], // Clear dynamic blocks on reset
-        navigationHistory: [], // Reset anche la cronologia di navigazione
-        completedBlocks: new Set<string>() // Reset dei blocchi completati come Set<string>
+        navigationHistory: [] // Reset anche la cronologia di navigazione
       };
     }
     case "SET_NAVIGATING": {
@@ -152,15 +142,6 @@ function formReducer(state: FormState, action: Action): FormState {
         activeBlocks: updatedActiveBlocks
       };
     }
-    case "MARK_BLOCK_COMPLETED": {
-      // Aggiunge il blocco al set dei blocchi completati
-      const completedBlocks = new Set(state.completedBlocks);
-      completedBlocks.add(action.blockId);
-      return {
-        ...state,
-        completedBlocks
-      };
-    }
     default:
       return state;
   }
@@ -174,12 +155,10 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   // Ordina i blocchi per priorità
   const sortedBlocks = [...blocks].sort((a, b) => a.priority - b.priority);
   
-  // Corretto il tipaggio dell'initialState per useReducer
   const [state, dispatch] = useReducer(formReducer, {
     ...initialState,
     activeBlocks: sortedBlocks.filter(b => b.default_active).map(b => b.block_id),
-    dynamicBlocks: [], // Initialize with empty dynamic blocks
-    completedBlocks: new Set<string>() // Inizializza il set dei blocchi completati come Set<string>
+    dynamicBlocks: [] // Initialize with empty dynamic blocks
   });
 
   // Funzione per creare un blocco dinamico basato su un blueprint
@@ -268,7 +247,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
       }
     });
-  }, [blocks, state.activeBlocks]);
+  }, [blocks]);
 
   // Funzione per reimpostare il form
   const resetForm = useCallback(() => {
@@ -337,16 +316,9 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         
         // Converti answeredQuestions da array a Set
         if (Array.isArray(parsedState.answeredQuestions)) {
-          parsedState.answeredQuestions = new Set<string>(parsedState.answeredQuestions);
+          parsedState.answeredQuestions = new Set(parsedState.answeredQuestions);
         } else {
-          parsedState.answeredQuestions = new Set<string>();
-        }
-        
-        // Converti completedBlocks da array a Set
-        if (Array.isArray(parsedState.completedBlocks)) {
-          parsedState.completedBlocks = new Set<string>(parsedState.completedBlocks);
-        } else {
-          parsedState.completedBlocks = new Set<string>();
+          parsedState.answeredQuestions = new Set();
         }
         
         // Gestisci i blocchi dinamici salvati
@@ -380,7 +352,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         console.error("Errore nel caricamento dello stato salvato:", e);
       }
     }
-  }, [params.blockId, params.questionId, params.blockType, blocks, navigate, state.activeBlocks]);
+  }, [params.blockId, params.questionId, params.blockType, blocks, navigate]);
 
   // Salva lo stato in localStorage quando cambia
   useEffect(() => {
@@ -388,8 +360,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       // Converti Set a array per JSON serialization
       const stateToSave = {
         ...state,
-        answeredQuestions: Array.from(state.answeredQuestions),
-        completedBlocks: Array.from(state.completedBlocks)
+        answeredQuestions: Array.from(state.answeredQuestions)
       };
       localStorage.setItem(`form-state-${params.blockType}`, JSON.stringify(stateToSave));
     }
@@ -506,9 +477,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     dispatch({ type: "SET_NAVIGATING", isNavigating: true });
     
     if (leadsTo === "next_block") {
-      // Marca il blocco corrente come completato quando si naviga a "next_block"
-      dispatch({ type: "MARK_BLOCK_COMPLETED", blockId: currentBlockId });
-      
       // Trova il blocco corrente
       let currentBlock = null;
       let currentBlockIndex = -1;
@@ -609,11 +577,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     }, 300);
   }, [sortedBlocks, state.activeBlocks, goToQuestion, findQuestionById, state.activeQuestion.block_id, state.dynamicBlocks]);
 
-  // Nuova funzione per verificare se un blocco è completato
-  const isBlockCompleted = useCallback((blockId: string): boolean => {
-    return state.completedBlocks.has(blockId);
-  }, [state.completedBlocks]);
-
   // Calcola il progresso complessivo del form
   const getProgress = useCallback(() => {
     // Conta tutte le domande nei blocchi attivi (senza distinzione per inline)
@@ -690,8 +653,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         resetForm,
         getNavigationHistoryFor,
         createDynamicBlock,
-        deleteDynamicBlock,
-        isBlockCompleted // Esporta la nuova funzione
+        deleteDynamicBlock
       }}
     >
       {children}
