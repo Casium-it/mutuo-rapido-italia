@@ -17,6 +17,7 @@ import { block25 } from "./block25";
 import { block26 } from "./block26";
 import { block27 } from "./block27";
 import { blockStop } from "./blockStop";
+import { blockDettagliRedditoSecondario } from "./blockDettagliRedditoSecondario";
 
 // Esportare tutti i blocchi individualmente
 export {
@@ -36,7 +37,8 @@ export {
   block25,
   block26,
   block27,
-  blockStop
+  blockStop,
+  blockDettagliRedditoSecondario
 };
 
 // Esportare l'array completo di tutti i blocchi, ordinato per priorità
@@ -57,5 +59,6 @@ export const allBlocks: Block[] = [
   block25,
   block26,
   block27,
-  blockStop
+  blockStop,
+  blockDettagliRedditoSecondario
 ].sort((a, b) => a.priority - b.priority); // Ordina i blocchi per priorità

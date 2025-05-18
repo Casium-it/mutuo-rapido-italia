@@ -11,6 +11,40 @@ export const blockDettagliRedditoSecondario: Block = {
   questions: [
     {
       question_number: "6D.1",
+      question_id: "tipo_reddito_secondario_{copyNumber}",
+      question_text: "Ricevo reddito aggiuntivo da {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
+      placeholders: {
+        placeholder1: {
+          type: "select",
+          options: [
+            { id: "affitti", label: "affitti", leads_to: "media_reddito_secondario_{copyNumber}" },
+            { id: "lavoro_autonomo", label: "lavoro autonomo", leads_to: "media_reddito_secondario_{copyNumber}" },
+            { id: "assegno_minori", label: "assegno minori", leads_to: "media_reddito_secondario_{copyNumber}" },
+            { id: "supporto_familiari", label: "supporto familiari", leads_to: "media_reddito_secondario_{copyNumber}" },
+            { id: "dividendi_diritti", label: "dividendi e diritti", leads_to: "media_reddito_secondario_{copyNumber}" },
+            { id: "altro", label: "altro", leads_to: "altro_descrizione_{copyNumber}" }
+          ]
+        }
+      }
+    },
+    {
+      question_number: "6D.2",
+      question_id: "altro_descrizione_{copyNumber}",
+      question_text: "Specifica la fonte del reddito aggiuntivo",
+      leads_to_placeholder_priority: "placeholder1",
+      placeholders: {
+        placeholder1: {
+          type: "input",
+          input_type: "text",
+          placeholder_label: "Descrizione",
+          leads_to: "media_reddito_secondario_{copyNumber}",
+          input_validation: "free_text"
+        }
+      }
+    },
+    {
+      question_number: "6D.3",
       question_id: "media_reddito_secondario_{copyNumber}",
       question_text: "Negli ultimi 3 anni di media ho ricevuto {{placeholder1}} euro",
       inline: true,
@@ -26,7 +60,7 @@ export const blockDettagliRedditoSecondario: Block = {
       }
     },
     {
-      question_number: "6D.2",
+      question_number: "6D.4",
       question_id: "frequenza_reddito_secondario_{copyNumber}",
       question_text: "{{placeholder1}}",
       inline: true,
@@ -42,7 +76,7 @@ export const blockDettagliRedditoSecondario: Block = {
       }
     },
     {
-      question_number: "6D.3",
+      question_number: "6D.5",
       question_id: "lordo_netto_reddito_secondario_{copyNumber}",
       question_text: "{{placeholder1}}",
       inline: true,
@@ -58,7 +92,7 @@ export const blockDettagliRedditoSecondario: Block = {
       }
     },
     {
-      question_number: "6D.4",
+      question_number: "6D.6",
       question_id: "stabilita_reddito_secondario_{copyNumber}",
       question_text: "Ritengo questa entrata {{placeholder1}}",
       leads_to_placeholder_priority: "placeholder1",
@@ -75,7 +109,7 @@ export const blockDettagliRedditoSecondario: Block = {
       }
     },
     {
-      question_number: "6D.5",
+      question_number: "6D.7",
       question_id: "data_inizio_reddito_{copyNumber}",
       question_text: "Ricevo questa entrata dal {{placeholder1}} / {{placeholder2}}",
       leads_to_placeholder_priority: "placeholder2",
@@ -97,7 +131,7 @@ export const blockDettagliRedditoSecondario: Block = {
       }
     },
     {
-      question_number: "6D.6",
+      question_number: "6D.8",
       question_id: "data_fine_reddito_{copyNumber}",
       question_text: "e continuerò a riceverla sicuramente fino al {{placeholder1}}",
       leads_to_placeholder_priority: "placeholder1",
@@ -106,21 +140,21 @@ export const blockDettagliRedditoSecondario: Block = {
           type: "input",
           input_type: "text",
           placeholder_label: "Anno o 'non lo so'",
-          leads_to: "torna_alla_gestione_redditi",
+          leads_to: "torna_alla_gestione_redditi_{copyNumber}",
           input_validation: "free_text"
         }
       }
     },
     {
-      question_number: "6D.7",
-      question_id: "torna_alla_gestione_redditi",
+      question_number: "6D.9",
+      question_id: "torna_alla_gestione_redditi_{copyNumber}",
       question_text: "Hai completato i dettagli per questo reddito secondario",
       leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
           options: [
-            { id: "torna_indietro", label: "Torna alla gestione redditi", leads_to: "tipo_reddito_secondario" }
+            { id: "torna_indietro", label: "Torna alla gestione redditi", leads_to: "gestione_redditi_secondari" }
           ]
         }
       }
