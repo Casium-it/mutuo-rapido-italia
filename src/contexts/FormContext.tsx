@@ -15,7 +15,7 @@ type FormContextType = {
   getProgress: () => number;
   resetForm: () => void;
   getNavigationHistoryFor: (questionId: string) => NavigationHistory | undefined;
-  createDynamicBlock: (blockBlueprintId: string) => { blockId: string | null, block: Block | null };
+  createDynamicBlock: (blockBlueprintId: string) => string | null;
 };
 
 type Action =
@@ -143,13 +143,13 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   });
 
   // Funzione per creare un blocco dinamico basato su un blueprint
-  const createDynamicBlock = useCallback((blockBlueprintId: string): { blockId: string | null, block: Block | null } => {
+  const createDynamicBlock = useCallback((blockBlueprintId: string): string | null => {
     // Trova il blocco blueprint
     const blueprintBlock = blocks.find(b => b.block_id === blockBlueprintId && b.multiBlock === true);
     
     if (!blueprintBlock) {
       console.error(`Blueprint block ${blockBlueprintId} not found or is not a multiBlock`);
-      return { blockId: null, block: null };
+      return null;
     }
     
     // Determina il nuovo numero di copia
@@ -184,7 +184,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     const blockWithPriority = ensureBlockHasPriority(newBlock);
     dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: newBlockId });
     
-    return { blockId: newBlockId, block: newBlock };
+    return newBlockId;
   }, [blocks, state.dynamicBlocks]);
 
   // Inizializza o aggiorna i blocchi attivi dal JSON

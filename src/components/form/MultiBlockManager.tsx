@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { MultiBlockManagerPlaceholder } from "@/types/form";
 import { Plus } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 
 interface MultiBlockManagerProps {
   questionId: string;
@@ -17,11 +16,10 @@ export function MultiBlockManager({
   placeholderKey,
   placeholder
 }: MultiBlockManagerProps) {
-  const { createDynamicBlock, navigateToDynamicBlock, navigateToNextQuestion } = useFormExtended();
-  const { toast } = useToast();
+  const { createAndNavigateToBlock, navigateToNextQuestion } = useFormExtended();
   const [isCreating, setIsCreating] = useState(false);
 
-  // Crea un nuovo blocco basato sul blueprint e naviga ad esso
+  // Crea un nuovo blocco basato sul blueprint
   const handleAddBlock = () => {
     if (isCreating) return; // Previene clic multipli durante la creazione
     
@@ -29,31 +27,17 @@ export function MultiBlockManager({
     console.log(`Creazione blocco con blueprint: ${placeholder.blockBlueprint}`);
     
     try {
-      // Usa il blueprint completo
+      // Usa il blueprint completo con il placeholder {copyNumber}
       const blockBlueprint = placeholder.blockBlueprint;
       
-      // Prima crea il blocco dinamico
-      const newBlockId = createDynamicBlock(blockBlueprint);
+      // Crea il blocco dinamico e naviga ad esso
+      const newBlockId = createAndNavigateToBlock(blockBlueprint, true);
       
       if (!newBlockId) {
         console.error("Creazione blocco fallita, nessun ID restituito");
-        toast({
-          title: "Errore",
-          description: "Impossibile creare il blocco richiesto",
-          variant: "destructive"
-        });
-        return;
       }
-      
-      // Poi naviga ad esso come operazione separata
-      navigateToDynamicBlock(newBlockId);
     } catch (error) {
       console.error("Errore durante la creazione del blocco:", error);
-      toast({
-        title: "Errore",
-        description: "Si è verificato un errore durante la creazione del blocco",
-        variant: "destructive"
-      });
     } finally {
       // Ripristina lo stato dopo un breve ritardo
       setTimeout(() => setIsCreating(false), 500);
