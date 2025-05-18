@@ -80,4 +80,5 @@ export type FormState = {
   isNavigating?: boolean;
   navigationHistory: NavigationHistory[];
   dynamicBlocks: Block[]; // New field to store dynamically generated blocks
+  completedBlocks: Set<string>; // Track blocks that have been explicitly completed
 };

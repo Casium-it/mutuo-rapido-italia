@@ -223,41 +223,20 @@ export const useFormExtended = () => {
   };
 
   /**
-   * Check if a specific block has all questions answered along at least one complete path
+   * Check if a specific block is complete - simplified logic
+   * A block is complete only when a question with "lead_to next_block" has been answered
    * @param blockId The ID of the block to check
-   * @returns True if at least one terminal question in the block is answered, false otherwise
+   * @returns True if a question leading to the next block has been answered, false otherwise
    */
   const isBlockComplete = (blockId: string): boolean => {
+    // Trova il blocco
     const block = formContext.blocks.find(b => b.block_id === blockId);
     if (!block) return false;
     
-    // Ottieni tutte le domande terminali per questo blocco
-    const terminalQuestionIds = getTerminalQuestionsForBlock(block);
-    
-    // Un blocco è completo se almeno una delle sue domande terminali è stata risposta
-    const isAnyTerminalQuestionAnswered = terminalQuestionIds.some(questionId => 
-      formContext.isQuestionAnswered(questionId)
-    );
-    
-    if (isAnyTerminalQuestionAnswered) {
-      return true;
-    }
-    
-    // Gestione speciale per blocchi dinamici
-    // Se il blocco è stato creato da un MultiBlockManager, controlliamo l'ultima domanda
-    if (block.blueprint_id && block.questions.length > 0) {
-      // Per i blocchi dinamici, controlla se l'ultima domanda è stata risposta
-      // Questo è spesso una domanda di "ritorno" al MultiBlockManager
-      const lastQuestion = block.questions[block.questions.length - 1];
-      if (formContext.isQuestionAnswered(lastQuestion.question_id)) {
-        return true;
-      }
-    }
-    
-    // Se non è stato trovato nessun percorso di completamento, il blocco non è completo
-    return false;
+    // Controlla se è stato navigato a "next_block" da questo blocco
+    return formContext.hasNavigatedToNextBlockFrom(blockId);
   };
-
+  
   /**
    * Get all dynamic blocks of a specific blueprint type
    * @param blueprintId The blueprint ID to filter by
@@ -388,6 +367,6 @@ export const useFormExtended = () => {
     areAllDynamicBlocksComplete,
     createAndNavigateToBlock,
     getBlockResponseSummary,
-    getTerminalQuestionsForBlock
+    getTerminalQuestionsForBlock: formContext.getTerminalQuestionsForBlock
   };
 };
