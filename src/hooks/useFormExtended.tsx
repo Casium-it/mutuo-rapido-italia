@@ -91,21 +91,42 @@ export const useFormExtended = () => {
    * @returns The ID of the created block or null if creation failed
    */
   const createAndNavigateToBlock = (blockBlueprintId: string, navigateToBlock: boolean = true): string | null => {
-    // Create the dynamic block
-    const newBlockId = formContext.createDynamicBlock(blockBlueprintId);
+    console.log(`Creating dynamic block from blueprint: ${blockBlueprintId}`);
     
-    if (newBlockId && navigateToBlock) {
-      // Find the block to navigate to its first question
-      const allBlocks = formContext.blocks;
-      const newBlock = allBlocks.find(b => b.block_id === newBlockId);
+    try {
+      // Create the dynamic block
+      const newBlockId = formContext.createDynamicBlock(blockBlueprintId);
+      console.log(`New block created with ID: ${newBlockId}`);
       
-      if (newBlock && newBlock.questions.length > 0) {
-        const firstQuestionId = newBlock.questions[0].question_id;
-        formContext.goToQuestion(newBlockId, firstQuestionId);
+      if (newBlockId && navigateToBlock) {
+        // Aggiungi un breve ritardo per assicurarsi che il blocco sia completamente registrato
+        setTimeout(() => {
+          try {
+            // Find the block to navigate to its first question
+            const allBlocks = formContext.blocks;
+            console.log(`Searching for block with ID: ${newBlockId} in ${allBlocks.length} blocks`);
+            
+            const newBlock = allBlocks.find(b => b.block_id === newBlockId);
+            
+            if (newBlock && newBlock.questions.length > 0) {
+              const firstQuestionId = newBlock.questions[0].question_id;
+              console.log(`Navigating to block: ${newBlockId}, question: ${firstQuestionId}`);
+              formContext.goToQuestion(newBlockId, firstQuestionId);
+            } else {
+              console.error("Nuovo blocco non trovato o senza domande:", newBlockId);
+              console.log("Blocchi disponibili:", allBlocks.map(b => b.block_id).join(", "));
+            }
+          } catch (navigationError) {
+            console.error("Errore durante la navigazione al nuovo blocco:", navigationError);
+          }
+        }, 100); // Piccolo ritardo di 100ms per assicurarsi che il blocco sia registrato
       }
+      
+      return newBlockId;
+    } catch (error) {
+      console.error("Errore nella creazione del blocco dinamico:", error);
+      return null;
     }
-    
-    return newBlockId;
   };
   
   return {

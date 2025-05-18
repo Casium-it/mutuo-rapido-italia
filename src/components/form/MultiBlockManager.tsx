@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { MultiBlockManagerPlaceholder } from "@/types/form";
@@ -17,14 +17,31 @@ export function MultiBlockManager({
   placeholder
 }: MultiBlockManagerProps) {
   const { createAndNavigateToBlock, navigateToNextQuestion } = useFormExtended();
+  const [isCreating, setIsCreating] = useState(false);
 
   // Crea un nuovo blocco basato sul blueprint
   const handleAddBlock = () => {
-    // Usa il blueprint completo con il placeholder {copyNumber}
-    const blockBlueprint = placeholder.blockBlueprint;
+    if (isCreating) return; // Previene clic multipli durante la creazione
     
-    // Crea il blocco dinamico e naviga ad esso
-    createAndNavigateToBlock(blockBlueprint, true);
+    setIsCreating(true);
+    console.log(`Creazione blocco con blueprint: ${placeholder.blockBlueprint}`);
+    
+    try {
+      // Usa il blueprint completo con il placeholder {copyNumber}
+      const blockBlueprint = placeholder.blockBlueprint;
+      
+      // Crea il blocco dinamico e naviga ad esso
+      const newBlockId = createAndNavigateToBlock(blockBlueprint, true);
+      
+      if (!newBlockId) {
+        console.error("Creazione blocco fallita, nessun ID restituito");
+      }
+    } catch (error) {
+      console.error("Errore durante la creazione del blocco:", error);
+    } finally {
+      // Ripristina lo stato dopo un breve ritardo
+      setTimeout(() => setIsCreating(false), 500);
+    }
   };
 
   // Naviga alla prossima domanda senza creare un nuovo blocco
@@ -43,10 +60,11 @@ export function MultiBlockManager({
           <Button
             type="button"
             onClick={handleAddBlock}
+            disabled={isCreating}
             className="bg-white border border-[#245C4F] text-[#245C4F] hover:bg-[#F8F4EF] px-[16px] py-[10px] rounded-[10px] text-[16px] font-medium inline-flex items-center gap-[8px]"
           >
             <Plus className="h-4 w-4" />
-            {placeholder.add_block_label}
+            {isCreating ? "Creazione in corso..." : placeholder.add_block_label}
           </Button>
           
           <Button
