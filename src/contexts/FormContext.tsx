@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback } from "react";
-import { Block, FormState, FormResponse, NavigationHistory } from "@/types/form";
+import { Block, FormState, FormResponse, NavigationHistory, Placeholder } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { ensureBlockHasPriority } from "@/utils/blockUtils";
 
@@ -190,11 +190,39 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       title: `${blueprintBlock.title} ${nextCopyNumber}`,
     };
     
-    // Aggiorna gli ID delle domande
-    newBlock.questions = newBlock.questions.map(question => ({
-      ...question,
-      question_id: question.question_id.replace('{copyNumber}', nextCopyNumber.toString())
-    }));
+    // Aggiorna gli ID delle domande e i leads_to nei placeholder
+    newBlock.questions = newBlock.questions.map(question => {
+      // Aggiorna l'ID della domanda
+      const updatedQuestion = {
+        ...question,
+        question_id: question.question_id.replace('{copyNumber}', nextCopyNumber.toString())
+      };
+      
+      // Attraversa tutti i placeholder e aggiorna i leads_to
+      for (const placeholderKey in updatedQuestion.placeholders) {
+        const placeholder = updatedQuestion.placeholders[placeholderKey];
+        
+        // Sostituisci {copyNumber} nei leads_to dei placeholder di tipo "select"
+        if (placeholder.type === "select") {
+          placeholder.options = placeholder.options.map(option => ({
+            ...option,
+            leads_to: option.leads_to.replace('{copyNumber}', nextCopyNumber.toString())
+          }));
+        }
+        
+        // Sostituisci {copyNumber} nei leads_to dei placeholder di tipo "input"
+        if (placeholder.type === "input" && placeholder.leads_to) {
+          placeholder.leads_to = placeholder.leads_to.replace('{copyNumber}', nextCopyNumber.toString());
+        }
+        
+        // Sostituisci {copyNumber} nei leads_to dei placeholder di tipo "MultiBlockManager"
+        if (placeholder.type === "MultiBlockManager" && placeholder.leads_to) {
+          placeholder.leads_to = placeholder.leads_to.replace('{copyNumber}', nextCopyNumber.toString());
+        }
+      }
+      
+      return updatedQuestion;
+    });
     
     // Aggiungi il nuovo blocco allo stato
     dispatch({ type: "ADD_DYNAMIC_BLOCK", block: newBlock });
