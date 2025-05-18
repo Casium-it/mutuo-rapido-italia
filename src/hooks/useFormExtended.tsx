@@ -132,130 +132,13 @@ export const useFormExtended = () => {
   };
 
   /**
-   * Identifica le domande terminali per un blocco - quelle che portano fuori dal blocco
-   * o rappresentano la fine di un percorso significativo
-   * @param block Il blocco da analizzare
-   * @returns Array di ID delle domande terminali
-   */
-  const getTerminalQuestionsForBlock = (block: Block): string[] => {
-    const terminalQuestionIds: string[] = [];
-    const blockId = block.block_id;
-    
-    // Mappa le domande per tracciare i percorsi potenziali
-    const questionConnections = new Map<string, Set<string>>();
-    
-    // Primo passo: identifica le connessioni tra domande all'interno del blocco
-    block.questions.forEach(question => {
-      const questionId = question.question_id;
-      const leadsToTargets = new Set<string>();
-      
-      // Analizza tutti i placeholder per determinare dove portano
-      Object.entries(question.placeholders).forEach(([_, placeholder]) => {
-        if (placeholder.type === "select") {
-          // Analizza tutte le opzioni select
-          (placeholder.options || []).forEach(option => {
-            if (option.leads_to) {
-              if (option.leads_to === "next_block") {
-                // Se porta al blocco successivo, è una domanda terminale
-                terminalQuestionIds.push(questionId);
-              } 
-              else if (!option.leads_to.startsWith(blockId)) {
-                // Se porta a un altro blocco, è una domanda terminale
-                terminalQuestionIds.push(questionId);
-              } 
-              else {
-                // Se porta a un'altra domanda nello stesso blocco, traccia la connessione
-                leadsToTargets.add(option.leads_to);
-              }
-            }
-          });
-        } 
-        else if ((placeholder as any).leads_to) {
-          const leadsTo = (placeholder as any).leads_to;
-          if (leadsTo === "next_block" || !leadsTo.startsWith(blockId)) {
-            // Se porta fuori dal blocco, è una domanda terminale
-            terminalQuestionIds.push(questionId);
-          } 
-          else {
-            // Se porta a un'altra domanda nello stesso blocco
-            leadsToTargets.add(leadsTo);
-          }
-        } 
-        else if (placeholder.type === "MultiBlockManager") {
-          // MultiBlockManager è sempre terminale perché rappresenta un punto di uscita o un cambio di flusso
-          terminalQuestionIds.push(questionId);
-        }
-      });
-      
-      questionConnections.set(questionId, leadsToTargets);
-    });
-    
-    // Secondo passo: identifica le domande che non portano a nessun'altra domanda nel blocco
-    // ma che non sono già state identificate come terminali
-    block.questions.forEach(question => {
-      const questionId = question.question_id;
-      
-      // Se questa domanda non è già stata identificata come terminale
-      if (!terminalQuestionIds.includes(questionId)) {
-        const leadsTo = questionConnections.get(questionId);
-        
-        // Se non porta a nessun'altra domanda (e non è stata già identificata come terminale),
-        // potrebbe essere un endpoint implicito
-        if (!leadsTo || leadsTo.size === 0) {
-          // Verifica se questa domanda è l'ultima del blocco
-          const isLastQuestion = question === block.questions[block.questions.length - 1];
-          
-          // Se è l'ultima domanda o non ha destinazioni esplicite, è terminale
-          if (isLastQuestion) {
-            terminalQuestionIds.push(questionId);
-          }
-          // Per domande che non sono l'ultima, verifica che abbiano almeno un placeholder
-          // Se hanno placeholder ma nessuna destinazione esplicita, ciò significa che
-          // potrebbero essere dei punti morti o domande puramente informative
-          else if (Object.keys(question.placeholders).length > 0) {
-            terminalQuestionIds.push(questionId);
-          }
-        }
-      }
-    });
-    
-    return [...new Set(terminalQuestionIds)]; // Rimuovi duplicati
-  };
-
-  /**
-   * Check if a specific block has all questions answered along at least one complete path
+   * Check if a specific block is complete - nuova implementazione semplificata
+   * Ora verifica semplicemente se il blocco è nel set dei blocchi completati
    * @param blockId The ID of the block to check
-   * @returns True if at least one terminal question in the block is answered, false otherwise
+   * @returns True if the block is completed, false otherwise
    */
   const isBlockComplete = (blockId: string): boolean => {
-    const block = formContext.blocks.find(b => b.block_id === blockId);
-    if (!block) return false;
-    
-    // Ottieni tutte le domande terminali per questo blocco
-    const terminalQuestionIds = getTerminalQuestionsForBlock(block);
-    
-    // Un blocco è completo se almeno una delle sue domande terminali è stata risposta
-    const isAnyTerminalQuestionAnswered = terminalQuestionIds.some(questionId => 
-      formContext.isQuestionAnswered(questionId)
-    );
-    
-    if (isAnyTerminalQuestionAnswered) {
-      return true;
-    }
-    
-    // Gestione speciale per blocchi dinamici
-    // Se il blocco è stato creato da un MultiBlockManager, controlliamo l'ultima domanda
-    if (block.blueprint_id && block.questions.length > 0) {
-      // Per i blocchi dinamici, controlla se l'ultima domanda è stata risposta
-      // Questo è spesso una domanda di "ritorno" al MultiBlockManager
-      const lastQuestion = block.questions[block.questions.length - 1];
-      if (formContext.isQuestionAnswered(lastQuestion.question_id)) {
-        return true;
-      }
-    }
-    
-    // Se non è stato trovato nessun percorso di completamento, il blocco non è completo
-    return false;
+    return formContext.isBlockCompleted(blockId);
   };
 
   /**
@@ -388,6 +271,6 @@ export const useFormExtended = () => {
     areAllDynamicBlocksComplete,
     createAndNavigateToBlock,
     getBlockResponseSummary,
-    getTerminalQuestionsForBlock
+    getTerminalQuestionsForBlock: (block: Block): string[] => [] // Mantenuto per compatibilità API ma rimosso l'implementazione poiché non più necessaria
   };
 };
