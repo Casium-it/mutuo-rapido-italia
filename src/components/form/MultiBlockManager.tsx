@@ -20,11 +20,11 @@ export function MultiBlockManager({
 
   // Crea un nuovo blocco basato sul blueprint
   const handleAddBlock = () => {
-    // Estrai il blueprint senza l'eventuale placeholder {copyNumber}
-    const blockBlueprintBase = placeholder.blockBlueprint.replace('{copyNumber}', '');
+    // Usa il blueprint completo con il placeholder {copyNumber}
+    const blockBlueprint = placeholder.blockBlueprint;
     
     // Crea il blocco dinamico e naviga ad esso
-    createAndNavigateToBlock(blockBlueprintBase, true);
+    createAndNavigateToBlock(blockBlueprint, true);
   };
 
   // Naviga alla prossima domanda senza creare un nuovo blocco

@@ -1,3 +1,4 @@
+
 import { useForm as useOriginalForm } from "@/contexts/FormContext";
 import { 
   getPreviousQuestion as getPreviousQuestionUtil, 
@@ -70,11 +71,7 @@ export const useFormExtended = () => {
     }
     
     // Fallback al comportamento precedente se non troviamo una cronologia
-    return getChainOfInlineQuestions(
-      formContext.blocks,
-      blockId,
-      questionId
-    );
+    return getChainOfInlineQuestions(formContext.blocks, blockId, questionId);
   };
   
   /**
