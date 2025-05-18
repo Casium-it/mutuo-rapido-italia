@@ -1,3 +1,4 @@
+
 import { useForm as useOriginalForm } from "@/contexts/FormContext";
 import { 
   getPreviousQuestion as getPreviousQuestionUtil, 
@@ -132,7 +133,7 @@ export const useFormExtended = () => {
   };
 
   /**
-   * Check if a specific block is complete - nuova implementazione semplificata
+   * Check if a specific block is complete - implementazione semplificata
    * Ora verifica semplicemente se il blocco è nel set dei blocchi completati
    * @param blockId The ID of the block to check
    * @returns True if the block is completed, false otherwise
