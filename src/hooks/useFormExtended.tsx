@@ -1,122 +1,39 @@
-import { useForm as useOriginalForm } from "@/contexts/FormContext";
-import { 
-  getPreviousQuestion as getPreviousQuestionUtil, 
-  getQuestionTextWithResponses,
-  getChainOfInlineQuestions
-} from "@/utils/formUtils";
-import { Question, Block } from "@/types/form";
 
-/**
- * Extended hook for the form context with additional functionality
- */
-export const useFormExtended = () => {
-  const formContext = useOriginalForm();
-  
-  /**
-   * Gets the text of the previous question with responses filled in
-   * @param blockId Current block ID
-   * @param questionId Current question ID
-   * @returns The previous question's text with responses or empty string
-   */
-  const getPreviousQuestionText = (blockId: string, questionId: string): string => {
-    const previousQuestion = getPreviousQuestionUtil(
-      formContext.blocks,
-      blockId,
-      questionId
-    );
-    
-    if (!previousQuestion) return "";
-    
-    return getQuestionTextWithResponses(previousQuestion, formContext.state.responses);
-  };
-  
-  /**
-   * Gets the previous question object
-   * @param blockId Current block ID
-   * @param questionId Current question ID
-   * @returns The previous question object or undefined
-   */
-  const getPreviousQuestion = (blockId: string, questionId: string) => {
-    return getPreviousQuestionUtil(formContext.blocks, blockId, questionId);
-  };
+import { useForm } from "@/contexts/FormContext";
+import { useCallback } from "react";
+import { cloneBlockForDynamicCreation } from "@/utils/blockUtils";
 
-  /**
-   * Gets all previous inline questions in a chain, starting from the current question
-   * @param blockId Current block ID
-   * @param questionId Current question ID
-   * @returns Array of previous questions in the chain, ordered from first to last
-   */
-  const getInlineQuestionChain = (blockId: string, questionId: string): Question[] => {
-    // Se la domanda è inline, troviamo da dove viene l'utente attraverso la cronologia
-    const question = formContext.blocks
-      .find(b => b.block_id === blockId)
-      ?.questions.find(q => q.question_id === questionId);
+export function useFormExtended() {
+  const formContext = useForm();
+
+  // Funzione per creare un blocco dinamico basato su un blueprint e navigare ad esso
+  const createAndNavigateToBlock = useCallback((blockBlueprintId: string, navigateToFirst: boolean = true) => {
+    console.log(`Creating dynamic block from blueprint: ${blockBlueprintId}`);
     
-    if (question?.inline) {
-      // Cerca nella cronologia di navigazione da dove l'utente è arrivato a questa domanda
-      const navigationHistory = formContext.getNavigationHistoryFor(questionId);
-      
-      if (navigationHistory) {
-        // Trova la domanda da cui l'utente è arrivato
-        const sourceQuestion = formContext.blocks
-          .find(b => b.block_id === navigationHistory.from_block_id)
-          ?.questions.find(q => q.question_id === navigationHistory.from_question_id);
-        
-        if (sourceQuestion) {
-          // Restituisci la catena formata dalla domanda di origine
-          return [sourceQuestion];
-        }
-      }
-    }
-    
-    // Fallback al comportamento precedente se non troviamo una cronologia
-    return getChainOfInlineQuestions(
-      formContext.blocks,
-      blockId,
-      questionId
-    );
-  };
-  
-  /**
-   * Checks if a block is invisible
-   * @param blockId Block ID
-   * @returns True if the block is invisible, false otherwise
-   */
-  const isBlockInvisible = (blockId: string): boolean => {
-    const block = formContext.blocks.find(b => b.block_id === blockId);
-    return !!block?.invisible;
-  };
-  
-  /**
-   * Creates a dynamic block based on a blueprint and navigates to it
-   * @param blockBlueprintId The ID of the block blueprint to use
-   * @param navigateToBlock Whether to navigate to the new block after creation
-   * @returns The ID of the created block or null if creation failed
-   */
-  const createAndNavigateToBlock = (blockBlueprintId: string, navigateToBlock: boolean = true): string | null => {
-    // Create the dynamic block
+    // Crea il blocco dinamico
     const newBlockId = formContext.createDynamicBlock(blockBlueprintId);
+    console.log(`Created new block with ID: ${newBlockId}`);
     
-    if (newBlockId && navigateToBlock) {
-      // Find the block to navigate to its first question
-      const allBlocks = formContext.blocks;
-      const newBlock = allBlocks.find(b => b.block_id === newBlockId);
+    if (newBlockId && navigateToFirst) {
+      // Trova il blocco creato tra tutti i blocchi disponibili
+      const createdBlock = formContext.blocks.find(block => block.block_id === newBlockId);
       
-      if (newBlock && newBlock.questions.length > 0) {
-        const firstQuestionId = newBlock.questions[0].question_id;
-        formContext.goToQuestion(newBlockId, firstQuestionId);
+      if (createdBlock && createdBlock.questions.length > 0) {
+        // Naviga alla prima domanda del nuovo blocco
+        const firstQuestionId = createdBlock.questions[0].question_id;
+        console.log(`Navigating to first question: ${firstQuestionId} in block: ${newBlockId}`);
+        formContext.goToQuestion(newBlockId, firstQuestionId, true);
+      } else {
+        console.error(`Blocco creato ${newBlockId} non trovato o senza domande`);
       }
     }
     
     return newBlockId;
-  };
-  
+  }, [formContext]);
+
+  // Ritorna le funzionalità estese insieme al context del form
   return {
     ...formContext,
-    getPreviousQuestionText,
-    getPreviousQuestion,
-    getInlineQuestionChain,
-    isBlockInvisible,
     createAndNavigateToBlock
   };
-};
+}
