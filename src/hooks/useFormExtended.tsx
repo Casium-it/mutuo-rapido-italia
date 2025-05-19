@@ -363,6 +363,14 @@ export const useFormExtended = () => {
     return summaryParts.join("<br>");
   };
 
+  /**
+   * Delete responses for specific questions
+   * @param questionIds Array of question IDs to remove responses for
+   */
+  const deleteQuestionResponses = (questionIds: string[]) => {
+    return formContext.deleteQuestionResponses(questionIds);
+  };
+
   return {
     ...formContext,
     getPreviousQuestionText,
@@ -377,6 +385,7 @@ export const useFormExtended = () => {
     areAllDynamicBlocksComplete,
     createAndNavigateToBlock,
     getBlockResponseSummary,
-    getTerminalQuestionsForBlock
+    getTerminalQuestionsForBlock,
+    deleteQuestionResponses
   };
 };
