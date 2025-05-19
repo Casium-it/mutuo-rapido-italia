@@ -167,6 +167,21 @@
     clip-path: polygon(0% 0%, 50% 0%, 50% 100%, 0% 100%);
   }
 
+  /* Stili per il vertical stepper */
+  .vertical-line {
+    @apply absolute left-2 w-0.5 z-0;
+    top: 14px;
+    bottom: 14px;
+  }
+
+  .stepper-item {
+    @apply relative flex items-center py-2;
+  }
+
+  .step-indicator {
+    @apply z-10 relative flex items-center justify-center;
+  }
+
   @keyframes shine {
     0% { background-position: 0% center; }
     100% { background-position: 200% center; }
