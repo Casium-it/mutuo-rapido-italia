@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { MultiBlockManagerPlaceholder } from "@/types/form";
-import { Plus, ArrowRight, Check, Trash } from "lucide-react";
+import { Plus, ArrowRight, Trash } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 interface MultiBlockManagerProps {
@@ -101,24 +101,19 @@ export function MultiBlockManager({
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        {isComplete ? (
-                          <span className="flex items-center text-[#245C4F] mr-2">
-                            <Check className="h-4 w-4" />
-                          </span>
-                        ) : null}
                         <div>
                           <span className="text-gray-800 font-medium">
                             {block.title}
                           </span>
                           {responseSummary && (
                             <div 
-                              className="text-sm mt-1 text-gray-600"
+                              className="text-sm mt-1 text-[#245C4F]"
                               dangerouslySetInnerHTML={{ __html: responseSummary }}
                             />
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-2 self-end">
                         <Button
                           type="button"
                           size="sm"
