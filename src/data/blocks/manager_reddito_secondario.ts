@@ -1,6 +1,6 @@
 import { Block } from "@/types/form";
 
-export const block13: Block = {
+export const manager_reddito_secondario: Block = {
   block_number: "13",
   block_id: "manager_reddito_secondario",
   title: "Redditi aggiuntivi",
