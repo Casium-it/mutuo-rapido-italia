@@ -9,6 +9,7 @@ import { allBlocks } from "./data/blocks"; // Aggiornato per usare la nuova stru
 import Index from "./pages/Index";
 import SimulazioneAvanzata from "./pages/SimulazioneAvanzata";
 import Form from "./pages/Form";
+import StopFlow from "./pages/StopFlow"; // Importiamo la nuova pagina
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/simulazione-avanzata" element={<SimulazioneAvanzata />} />
+          <Route path="/stop-flow" element={<StopFlow />} /> {/* Aggiungiamo la nuova rotta */}
           <Route 
             path="/simulazione/:blockType" 
             element={

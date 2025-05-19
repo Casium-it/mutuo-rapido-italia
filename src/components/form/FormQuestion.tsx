@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useNavigate } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { Question, ValidationTypes } from "@/types/form";
 import { Input } from "@/components/ui/input";
@@ -57,6 +57,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
   // Nuovo stato per tenere traccia dei campi in fase di editing
   const [editingFields, setEditingFields] = useState<{ [key: string]: boolean }>({});
   const params = useParams();
+  const navigate = useNavigate();
 
   // Effetto per caricare le risposte esistenti e impostare visibilità iniziale delle opzioni
   useEffect(() => {
@@ -216,7 +217,14 @@ export function FormQuestion({ question }: FormQuestionProps) {
           (opt: any) => opt.id === priorityResponse
         );
         
-        if (selectedOption?.leads_to) {
+        if (selectedOption?.leads_to === "stop_flow") {
+          // Redirect to stop flow page
+          setTimeout(() => {
+            navigate("/stop-flow");
+            setIsNavigating(false);
+          }, 50);
+          return;
+        } else if (selectedOption?.leads_to) {
           setTimeout(() => {
             navigateToNextQuestion(question.question_id, selectedOption.leads_to);
             setIsNavigating(false);
@@ -226,11 +234,22 @@ export function FormQuestion({ question }: FormQuestionProps) {
       } 
       // Se il placeholder prioritario è di tipo input
       else if (priorityResponse && priorityPlaceholder.type === "input" && (priorityPlaceholder as any).leads_to) {
-        setTimeout(() => {
-          navigateToNextQuestion(question.question_id, (priorityPlaceholder as any).leads_to);
-          setIsNavigating(false);
-        }, 50);
-        return;
+        const leadsTo = (priorityPlaceholder as any).leads_to;
+        
+        if (leadsTo === "stop_flow") {
+          // Redirect to stop flow page
+          setTimeout(() => {
+            navigate("/stop-flow");
+            setIsNavigating(false);
+          }, 50);
+          return;
+        } else {
+          setTimeout(() => {
+            navigateToNextQuestion(question.question_id, leadsTo);
+            setIsNavigating(false);
+          }, 50);
+          return;
+        }
       }
     }
     
@@ -244,7 +263,14 @@ export function FormQuestion({ question }: FormQuestionProps) {
           (opt: any) => opt.id === response
         );
         
-        if (selectedOption?.leads_to) {
+        if (selectedOption?.leads_to === "stop_flow") {
+          // Redirect to stop flow page
+          setTimeout(() => {
+            navigate("/stop-flow");
+            setIsNavigating(false);
+          }, 50);
+          return;
+        } else if (selectedOption?.leads_to) {
           setTimeout(() => {
             navigateToNextQuestion(question.question_id, selectedOption.leads_to);
             setIsNavigating(false);
@@ -252,11 +278,22 @@ export function FormQuestion({ question }: FormQuestionProps) {
           return;
         }
       } else if (response && question.placeholders[key].type === "input" && (question.placeholders[key] as any).leads_to) {
-        setTimeout(() => {
-          navigateToNextQuestion(question.question_id, (question.placeholders[key] as any).leads_to);
-          setIsNavigating(false);
-        }, 50);
-        return;
+        const leadsTo = (question.placeholders[key] as any).leads_to;
+        
+        if (leadsTo === "stop_flow") {
+          // Redirect to stop flow page
+          setTimeout(() => {
+            navigate("/stop-flow");
+            setIsNavigating(false);
+          }, 50);
+          return;
+        } else {
+          setTimeout(() => {
+            navigateToNextQuestion(question.question_id, leadsTo);
+            setIsNavigating(false);
+          }, 50);
+          return;
+        }
       }
     }
     
