@@ -46,7 +46,7 @@ export const block1: Block = {
     {
       question_number: "1.3",
       question_id: "localizzazione_immobile",
-      question_text: "La {{placeholder3}} proprietà si trova a {{placeholder1}}, {{placeholder2}} ooo oooo o o o o {{placeholder4}}",
+      question_text: "La proprietà si trova a {{placeholder1}}, {{placeholder2}}",
       leads_to_placeholder_priority: "placeholder2",
       placeholders: {
         placeholder1: {
@@ -61,23 +61,6 @@ export const block1: Block = {
           placeholder_label: "CAP",
           leads_to: "tipologia_acquisto",
           input_validation: "cap"
-        },
-        placeholder3: {
-          type: "select",
-          options: [
-            {"id": "classico", "label": "un acquisto classico dal proprietario", "leads_to": "venditore"},
-            {"id": "nuova_costruzione", "label": "una casa mai abitata, appena costruita", "leads_to": "venditore"},
-            {"id": "in_costruzione", "label": "acquisto durante la costruzione", "leads_to": "venditore"},
-            {"id": "terreno", "label": "terreno e progetto di costruzione", "leads_to": "venditore"},
-            {"id": "su_progetto", "label": "su progetto di costruzione", "leads_to": "venditore"}
-          ]
-        },
-        placeholder4: {
-          type: "select",
-          options: [
-            {"id": "fisica", "label": "persona fisica", "leads_to": "next_block"},
-            {"id": "societa", "label": "società o ditta", "leads_to": "next_block"}
-          ]
         }
       }
     },
