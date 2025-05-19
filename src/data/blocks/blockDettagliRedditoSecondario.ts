@@ -141,22 +141,8 @@ export const blockDettagliRedditoSecondario: Block = {
           type: "input",
           input_type: "text",
           placeholder_label: "Anno o 'non lo so'",
-          leads_to: "torna_alla_gestione_redditi_{copyNumber}",
+          leads_to: "gestione_redditi_secondari",
           input_validation: "free_text"
-        }
-      }
-    },
-    {
-      question_number: "6D.9",
-      question_id: "torna_alla_gestione_redditi_{copyNumber}",
-      question_text: "Hai completato i dettagli per questo reddito secondario",
-      leads_to_placeholder_priority: "placeholder1",
-      placeholders: {
-        placeholder1: {
-          type: "select",
-          options: [
-            { id: "torna_indietro", label: "Torna alla gestione redditi", leads_to: "gestione_redditi_secondari" }
-          ]
         }
       }
     }
