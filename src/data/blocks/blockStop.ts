@@ -1,7 +1,8 @@
+
 import { Block } from "@/types/form";
 
-// Block 99 - Interruzione percorso / Surroga
-export const stop_flow: Block = {
+// Block 99 - Stop Flow
+export const blockStop: Block = {
   block_number: "99",
   block_id: "stop_flow",
   title: "Interruzione percorso / Surroga",

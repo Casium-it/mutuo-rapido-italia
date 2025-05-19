@@ -1,11 +1,11 @@
 import { Block } from "@/types/form";
 
 // Block 7 - Finanziamenti
-export const finanziamenti: Block = {
-  block_number: "1500",
+export const block7: Block = {
+  block_number: "7",
   block_id: "finanziamenti",
   title: "I tuoi finanziamenti",
-  priority: 1500, // Priorità aggiunta
+  priority: 70, // Priorità aggiunta
   default_active: true,
   questions: [
     {
@@ -20,8 +20,7 @@ export const finanziamenti: Block = {
             {
               id: "ho",
               label: "ho",
-              leads_to: "tipo_finanziamento",
-              add_block: "dettagli_finanziamenti"
+              leads_to: "tipo_finanziamento"
             },
             {
               id: "non_ho",
@@ -40,7 +39,6 @@ export const finanziamenti: Block = {
       placeholders: {
         placeholder1: {
           type: "select",
-          multiple: true,
           options: [
             {
               id: "mutuo",

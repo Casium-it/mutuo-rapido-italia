@@ -1,82 +1,64 @@
 
 import { Block } from "@/types/form";
-import { introduzione } from "./introduzione";
-import { la_tua_situazione } from "./la_tua_situazione";
-import { la_tua_professione } from "./block3";
-import { reddito_lavoro_autonomo } from "./block4";
-import { reddito_principale } from "./block5";
-import { reddito_secondario } from "./block6";
-import { finanziamenti } from "./block7";
-import { la_tua_offerta } from "./block8";
-import { casa_da_vendere } from "./block9";
-import { conclusione } from "./conclusione";
-import { la_tua_ricerca_casa } from "./la_tua_ricerca_casa";
-import { la_casa_individuata } from "./la_casa_individuata";
-import { manager_reddito_secondario } from "./manager_reddito_secondario";
-import { manager_finanziamenti } from "./manager_finanziamenti";
-import { cointestatario } from "./block22";
-import { la_sua_professione } from "./block23";
-import { reddito_suo_autonomo } from "./reddito_suo_autonomo";
-import { reddito_suo_principale } from "./block25";
-import { reddito_suo_secondario } from "./reddito_suo_secondario";
-import { i_suoi_finanziamenti } from "./i_suoi_finanziamenti";
-import { la_sua_da_vendere } from "./la_sua_da_vendere";
-import { manager_finanziamenti_coint } from "./manager_finanziamenti_coint";
-import { stop_flow } from "./blockStop";
-import { dettagli_reddito_secondario } from "./blockDettagliRedditoSecondario";
+import { block1 } from "./block1";
+import { block2 } from "./block2";
+import { block3 } from "./block3";
+import { block4 } from "./block4";
+import { block5 } from "./block5";
+import { block6 } from "./block6";
+import { block7 } from "./block7";
+import { block8 } from "./block8";
+import { block9 } from "./block9";
+import { block10 } from "./block10";
+import { block22 } from "./block22";
+import { block23 } from "./block23";
+import { block24 } from "./block24";
+import { block25 } from "./block25";
+import { block26 } from "./block26";
+import { block27 } from "./block27";
+import { blockStop } from "./blockStop";
+import { blockDettagliRedditoSecondario } from "./blockDettagliRedditoSecondario";
 
 // Esportare tutti i blocchi individualmente
 export {
-  introduzione,
-  la_tua_situazione,
-  la_tua_professione,
-  reddito_lavoro_autonomo,
-  reddito_principale,
-  reddito_secondario,
-  finanziamenti,
-  la_tua_offerta,
-  casa_da_vendere,
-  conclusione,
-  la_tua_ricerca_casa,
-  la_casa_individuata,
-  manager_reddito_secondario,
-  manager_finanziamenti,
-  cointestatario,
-  la_sua_professione,
-  reddito_suo_autonomo,
-  reddito_suo_principale,
-  reddito_suo_secondario,
-  i_suoi_finanziamenti,
-  la_sua_da_vendere,
-  manager_finanziamenti_coint,
-  stop_flow,
-  dettagli_reddito_secondario
+  block1,
+  block2,
+  block3,
+  block4,
+  block5,
+  block6,
+  block7,
+  block8,
+  block9,
+  block10,
+  block22,
+  block23,
+  block24,
+  block25,
+  block26,
+  block27,
+  blockStop,
+  blockDettagliRedditoSecondario
 };
 
 // Esportare l'array completo di tutti i blocchi, ordinato per priorità
 export const allBlocks: Block[] = [
-  introduzione,
-  la_tua_situazione,
-  la_tua_professione,
-  reddito_lavoro_autonomo,
-  reddito_principale,
-  reddito_secondario,
-  finanziamenti,
-  la_tua_offerta,
-  casa_da_vendere,
-  conclusione,
-  la_tua_ricerca_casa,
-  la_casa_individuata,
-  manager_reddito_secondario,
-  manager_finanziamenti,
-  cointestatario,
-  la_sua_professione,
-  reddito_suo_autonomo,
-  reddito_suo_principale,
-  reddito_suo_secondario,
-  i_suoi_finanziamenti,
-  la_sua_da_vendere,
-  manager_finanziamenti_coint,
-  stop_flow,
-  dettagli_reddito_secondario
+  block1,
+  block2,
+  block3,
+  block4,
+  block5,
+  block6,
+  block7,
+  block8,
+  block9,
+  block10,
+  block22,
+  block23,
+  block24,
+  block25,
+  block26,
+  block27,
+  blockStop,
+  blockDettagliRedditoSecondario
 ].sort((a, b) => a.priority - b.priority); // Ordina i blocchi per priorità

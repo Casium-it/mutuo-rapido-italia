@@ -1,7 +1,7 @@
 import { Block } from "@/types/form";
 
 // Block 25 - Reddito principale del cointestatario
-export const reddito_suo_principale: Block = {
+export const block25: Block = {
   block_number: "25",
   block_id: "reddito_suo_principale",
   title: "Reddito principale del cointestatario",

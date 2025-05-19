@@ -1,11 +1,11 @@
 import { Block } from "@/types/form";
 
 // Block 9 - La casa da vendere
-export const casa_da_vendere: Block = {
+export const block9: Block = {
   block_number: "9",
   block_id: "casa_da_vendere",
   title: "La casa da vendere",
-  priority: 1700, // Priorità aggiunta
+  priority: 90, // Priorità aggiunta
   default_active: false,
   questions: [
     {
@@ -49,8 +49,8 @@ export const casa_da_vendere: Block = {
     {
       question_number: "9.3",
       question_id: "dettagli_mutuo_casa_vendita",
-      question_text: "Al mutuo mancano {{placeholder1}} euro da saldare. Il mutuo ha un tasso {{placeholder 2}} del {{placeholder3}}%, e finirà nel {{placeholder4}}",
-      leads_to_placeholder_priority: "placeholder4",
+      question_text: "Al mutuo mancano {{placeholder1}} euro da saldare. Il mutuo aveva un tasso del {{placeholder2}}%, e finirà nel {{placeholder3}}",
+      leads_to_placeholder_priority: "placeholder3",
       placeholders: {
         placeholder1: {
           type: "input",
@@ -58,28 +58,13 @@ export const casa_da_vendere: Block = {
           placeholder_label: "Importo residuo",
           input_validation: "euro"
         },
-        placeholder2:{
-          type: "select",
-          options: [
-            {
-              id: "fisso",
-              label: "fisso",
-              leads_to: "next_block"
-            },
-            {
-              id: "variabile",
-              label: "variabile",
-              leads_to: "next_block"
-            },
-          ]
-        },
-        placeholder3: {
+        placeholder2: {
           type: "input",
           input_type: "number",
           placeholder_label: "Tasso percentuale",
           input_validation: "free_text"
         },
-        placeholder4: {
+        placeholder3: {
           type: "input",
           input_type: "number",
           placeholder_label: "Anno",

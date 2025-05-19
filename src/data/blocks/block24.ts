@@ -1,7 +1,7 @@
 import { Block } from "@/types/form";
 
 // Block 24 - Reddito lavoro autonomo del cointestatario
-export const reddito_suo_autonomo: Block = {
+export const block24: Block = {
   block_number: "24",
   block_id: "reddito_suo_autonomo",
   title: "Reddito lavoro autonomo del cointestatario",
