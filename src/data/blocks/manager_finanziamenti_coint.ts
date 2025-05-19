@@ -1,4 +1,3 @@
-
 import { Block } from "@/types/form";
 
 export const manager_finanziamenti_coint: Block = {
