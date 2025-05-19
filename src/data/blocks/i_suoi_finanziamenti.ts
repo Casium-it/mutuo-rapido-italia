@@ -4,7 +4,7 @@ import { Block } from "@/types/form";
 export const i_suoi_finanziamenti: Block = {
   block_number: "13",
   block_id: "i_suoi_finanziamenti",
-  title: "I suoi finanziamenti",
+  title: "I finanziamenti del cointestatario",
   priority: 2200,
   default_active: false,
   questions: [
@@ -34,7 +34,7 @@ export const i_suoi_finanziamenti: Block = {
     {
       question_number: "13.2",
       question_id: "manager_suoi_finanziamenti",
-      question_text: "Aggiungi qui tutti i finanziamenti attualmente aperti",
+      question_text: "Aggiungi qui tutti i finanziamenti attualmente aperti del cointestatario",
       leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {

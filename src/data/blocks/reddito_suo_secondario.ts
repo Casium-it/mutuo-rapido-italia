@@ -4,7 +4,7 @@ import { Block } from "@/types/form";
 export const reddito_suo_secondario: Block = {
   block_number: "12",
   block_id: "reddito_suo_secondario",
-  title: "Reddito suo secondario",
+  title: "Reddito secondario del cointestatario",
   priority: 2000,
   default_active: false,
   questions: [
@@ -26,7 +26,7 @@ export const reddito_suo_secondario: Block = {
     {
       question_number: "12.2",
       question_id: "manager_reddito_suo_secondario",
-      question_text: "Aggiungi qui tutte le fonti di reddito secondarie",
+      question_text: "Aggiungi qui tutte le fonti di reddito secondarie del cointestatario",
       leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
