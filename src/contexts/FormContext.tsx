@@ -497,6 +497,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     
     if (leadsTo === "next_block") {
       // Marca il blocco corrente come completato quando si naviga al blocco successivo
+      // Questo deve avvenire prima della navigazione per evitare loop
       dispatch({ type: "MARK_BLOCK_COMPLETED", block_id: currentBlockId });
       
       // Trova il blocco corrente
@@ -544,6 +545,19 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
             if (nextBlock && nextBlock.questions.length > 0) {
               console.log(`Found next active block: ${nextBlock.block_id}`);
               foundNextActiveBlock = true;
+              
+              // Aggiungi la navigazione alla cronologia prima di navigare
+              dispatch({ 
+                type: "ADD_NAVIGATION_HISTORY", 
+                history: {
+                  from_block_id: currentBlockId,
+                  from_question_id: currentQuestionId,
+                  to_block_id: nextBlock.block_id,
+                  to_question_id: nextBlock.questions[0].question_id,
+                  timestamp: Date.now()
+                }
+              });
+              
               goToQuestion(nextBlock.block_id, nextBlock.questions[0].question_id);
               break;
             }
@@ -561,6 +575,19 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
           if (currentQuestionIndex < currentBlock.questions.length - 1) {
             const nextQuestion = currentBlock.questions[currentQuestionIndex + 1];
             console.log(`No next active block, but found next question in current block: ${nextQuestion.question_id}`);
+            
+            // Aggiungi la navigazione alla cronologia prima di navigare
+            dispatch({ 
+              type: "ADD_NAVIGATION_HISTORY", 
+              history: {
+                from_block_id: currentBlockId,
+                from_question_id: currentQuestionId,
+                to_block_id: currentBlock.block_id,
+                to_question_id: nextQuestion.question_id,
+                timestamp: Date.now()
+              }
+            });
+            
             goToQuestion(currentBlock.block_id, nextQuestion.question_id);
             return;
           }
@@ -575,7 +602,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       if (found) {
         console.log(`Navigating to specific question: ${found.question.question_id} in block ${found.block.block_id}`);
         
-        // Aggiungi la navigazione alla cronologia
+        // Aggiungi la navigazione alla cronologia prima di navigare
         dispatch({ 
           type: "ADD_NAVIGATION_HISTORY", 
           history: {
