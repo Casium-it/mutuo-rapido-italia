@@ -14,8 +14,13 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
           "placeholder:text-muted-foreground",
           "focus-visible:outline-none focus-visible:ring-0 focus-visible:border-[#245C4F]",
           "disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+          "appearance-none",
           className
         )}
+        style={{
+          WebkitAppearance: 'none',
+          MozAppearance: 'textfield'
+        }}
         ref={ref}
         {...props}
       />

@@ -373,7 +373,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
                     className="inline-block align-middle mx-1"
                   >
                     <Input
-                      type={placeholder.input_type || "text"}
+                      inputMode={validationType === "age" || validationType === "euro" ? "numeric" : "text"}
                       value={value}
                       onChange={(e) => handleResponseChange(placeholderKey, e.target.value)}
                       placeholder={placeholder.placeholder_label || ""}
@@ -384,6 +384,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
                         "h-[48px] px-[12px] py-[10px]",
                         "outline-none focus:ring-0",
                         "placeholder:text-[#E7E1D9] placeholder:font-normal",
+                        "appearance-none",
                         {
                           "border-[#245C4F] focus:border-[#245C4F]": !hasError,
                           "border-red-500 focus:border-red-500": hasError,
@@ -392,6 +393,11 @@ export function FormQuestion({ question }: FormQuestionProps) {
                           "w-[200px]": placeholder.input_type === "text" && !placeholder.placeholder_label?.toLowerCase().includes("cap"),
                         }
                       )}
+                      style={{ 
+                        /* Nasconde le frecce su input numerico */
+                        WebkitAppearance: 'none',
+                        MozAppearance: 'textfield'
+                      }}
                     />
                   </span>
                 </TooltipTrigger>
