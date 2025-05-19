@@ -378,7 +378,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
     }
   };
   
-  // Funzione per renderizzare i placeholder nella domanda
+  // Function for rendering question placeholders
   const renderQuestionPlaceholders = (text: string) => {
     const parts = [];
     let lastIndex = 0;
@@ -449,9 +449,9 @@ export function FormQuestion({ question }: FormQuestionProps) {
                           // Post-editing con errore - rosso
                           "border-red-500 focus:border-red-500": hasError && !isEditing,
                           // Durante l'editing - verde scuro
-                          "border-[#245C4F] focus:border-[#245C4F]": isEditing,
+                          "border-[#245C4F] focus:border-[#245C4F]": isEditing && (!isValid || !value),
                           // Valore valido anche dopo l'editing - verde scuro
-                          "border-[#245C4F] focus:border-[#245C4F]": isValid && !isEditing && value !== "",
+                          "border-[#245C4F]": isValid && !isEditing && value !== "",
                           // Dimensioni per input numerici standard
                           "w-[70px]": placeholder.input_type === "number" && validationType !== "euro",
                           // Dimensioni per input euro (allargati)
