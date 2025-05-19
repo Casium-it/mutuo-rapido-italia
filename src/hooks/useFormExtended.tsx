@@ -312,20 +312,37 @@ export const useFormExtended = () => {
               displayValue = option.label;
             }
           } else {
-            // Basic formatting - only capitalization for text and basic number formatting
+            // Format based on placeholder validation or content type
+            const placeholder_obj = question.placeholders[key];
+            let validationType = "";
+            
+            // Check the placeholder type and get the validation type if it's an input
+            if (placeholder_obj.type === "input") {
+              validationType = (placeholder_obj as InputPlaceholder).input_validation;
+            }
+            
             if (Array.isArray(responseValue)) {
               displayValue = responseValue.join(", ");
             } else {
               const strValue = responseValue.toString();
               
-              // Applica formattazione base: capitalizza testo e formatta numeri con separatore
-              if (/^\d+$/.test(strValue)) {
-                // È un numero, applica formattazione con separatore migliaia
-                displayValue = formatNumberWithThousandSeparator(strValue);
-              } else if (typeof strValue === 'string' && strValue.length > 0) {
-                // È testo, capitalizza
+              // Apply specific formatting ONLY for specific types
+              if (validationType === "euro" || key.includes("euro") || key.includes("importo")) {
+                // Format as currency
+                const numValue = parseInt(strValue.replace(/\D/g, ""), 10);
+                if (!isNaN(numValue)) {
+                  displayValue = formatCurrency(numValue);
+                } else {
+                  displayValue = strValue;
+                }
+              } else if (validationType === "city" || key.includes("città") || key.includes("citta") || key.includes("comune")) {
+                // Capitalize city names
+                displayValue = capitalizeWords(strValue);
+              } else if (validationType === "month" || key.includes("mese")) {
+                // Capitalize month names
                 displayValue = capitalizeWords(strValue);
               } else {
+                // For all other values, no special formatting
                 displayValue = strValue;
               }
             }
