@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useFormExtended } from "@/hooks/useFormExtended";
@@ -143,22 +142,8 @@ export function MultiBlockManager({
           </div>
         )}
         
-        <div className="flex flex-row justify-between items-center space-x-3 mt-4">
-          {/* Avanti button on the left */}
-          {(dynamicBlocks.length === 0 || allBlocksComplete) && (
-            <Button
-              type="button"
-              onClick={handleContinue}
-              className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-[16px] py-[10px] rounded-[10px] text-[16px] font-medium shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all"
-            >
-              Avanti
-            </Button>
-          )}
-          
-          {/* Flexible spacer */}
-          <div className="flex-grow"></div>
-          
-          {/* Add button on the right */}
+        <div className="flex flex-col space-y-3 mt-4">
+          {/* Add button first */}
           <Button
             type="button"
             onClick={handleAddBlock}
@@ -168,6 +153,17 @@ export function MultiBlockManager({
             <Plus className="h-4 w-4" />
             {isCreating ? "Creazione in corso..." : placeholder.add_block_label}
           </Button>
+          
+          {/* Avanti button second */}
+          {(dynamicBlocks.length === 0 || allBlocksComplete) && (
+            <Button
+              type="button"
+              onClick={handleContinue}
+              className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-[16px] py-[10px] rounded-[10px] text-[16px] font-medium shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all"
+            >
+              Avanti
+            </Button>
+          )}
         </div>
       </div>
     </div>
