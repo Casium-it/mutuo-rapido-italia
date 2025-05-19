@@ -451,27 +451,25 @@ export function FormQuestion({ question }: FormQuestionProps) {
                       onChange={(e) => handleResponseChange(placeholderKey, e.target.value)}
                       onBlur={() => handleInputBlur(placeholderKey, value)}
                       placeholder={placeholder.placeholder_label || ""}
-                      dynamicWidth={true}
                       className={cn(
                         "inline-block align-middle text-center",
                         "border-[1.5px] rounded-[8px]",
                         "text-[16px] text-[#222222] font-['Inter']",
-                        "h-[38px] px-[12px] py-[8px]",
+                        "h-[38px] px-[12px] py-[8px]", // Reduced height by 8px
                         "outline-none focus:ring-0",
                         "placeholder:text-[#E7E1D9] placeholder:font-normal",
                         "appearance-none",
                         getInputWidth(),
-                        // Fix the conditional styling to avoid duplicate properties
+                        // Fixed the duplicate properties by combining conditions
                         {
-                          // Base state with default border
-                          "border-[#E7E1D9]": !hasError && !isEditing && (!isValid || value === ""),
-                          // Success state with dark green border
-                          "border-[#245C4F]": (isEditing && (isValid || !value)) || (isValid && !isEditing && value !== ""),
-                          // Error state with red border
-                          "border-red-500": hasError && !isEditing,
-                          // Focus styles for each state
-                          "focus:border-[#245C4F]": !hasError || isEditing,
-                          "focus:border-red-500": hasError && !isEditing
+                          // Base state (not editing, not valid or empty)
+                          "border-[#E7E1D9] focus:border-[#245C4F]": !hasError && !isEditing && (!isValid || value === ""),
+                          // During editing with valid value
+                          "border-[#245C4F] focus:border-[#245C4F]": isEditing && (isValid || !value),
+                          // Post-editing with error
+                          "border-red-500 focus:border-red-500": hasError && !isEditing,
+                          // Valid value after editing - dark green
+                          "border-[#245C4F] focus:border-[#245C4F]": isValid && !isEditing && value !== ""
                         }
                       )}
                       style={{ 
