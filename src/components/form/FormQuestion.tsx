@@ -419,6 +419,24 @@ export function FormQuestion({ question }: FormQuestionProps) {
           const validationType = placeholder.input_validation;
           const isValid = validateInput(value, validationType);
           
+          // Determine width dynamically based on placeholder label
+          const getInputWidth = () => {
+            const label = placeholder.placeholder_label || "";
+            if (validationType === "euro") {
+              // Dynamic width based on placeholder label length with a minimum
+              const charWidth = 8; // Average character width in pixels
+              const minWidth = 100;
+              const calculatedWidth = Math.max(label.length * charWidth, minWidth);
+              return `min-w-[${calculatedWidth}px]`;
+            } else if (placeholder.input_type === "number") {
+              return "w-[70px]";
+            } else if (placeholder.input_type === "text" && placeholder.placeholder_label?.toLowerCase().includes("cap")) {
+              return "w-[120px]";
+            } else {
+              return "w-[200px]";
+            }
+          };
+          
           parts.push(
             <TooltipProvider key={`tooltip-${placeholderKey}`}>
               <Tooltip open={hasError && !isEditing ? undefined : false}>
@@ -437,7 +455,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
                         "inline-block align-middle text-center",
                         "border-[1.5px] rounded-[8px]",
                         "text-[16px] text-[#222222] font-['Inter']",
-                        "h-[46px] px-[12px] py-[10px]", // Ridotta l'altezza da 48px a 46px
+                        "h-[38px] px-[12px] py-[8px]", // Reduced height by 8px (from 46px to 38px)
                         "outline-none focus:ring-0",
                         "placeholder:text-[#E7E1D9] placeholder:font-normal",
                         "appearance-none",
@@ -451,15 +469,15 @@ export function FormQuestion({ question }: FormQuestionProps) {
                           // Durante l'editing - verde scuro
                           "border-[#245C4F] focus:border-[#245C4F]": isEditing && (!isValid || !value),
                           // Valore valido anche dopo l'editing - verde scuro
-                          "border-[#245C4F]": isValid && !isEditing && value !== "",
+                          "border-[#245C4F] focus:border-[#245C4F]": isValid && !isEditing && value !== "",
                           // Dimensioni per input numerici standard
                           "w-[70px]": placeholder.input_type === "number" && validationType !== "euro",
-                          // Dimensioni per input euro (allargati)
-                          "w-[110px]": validationType === "euro",
+                          // Dimensioni per input euro (non più larghezza fissa ma dinamica)
+                          [getInputWidth()]: validationType === "euro",
                           // Dimensioni per input CAP
                           "w-[120px]": placeholder.input_type === "text" && placeholder.placeholder_label?.toLowerCase().includes("cap"),
                           // Dimensioni per altri input di testo
-                          "w-[200px]": placeholder.input_type === "text" && !placeholder.placeholder_label?.toLowerCase().includes("cap"),
+                          "w-[200px]": placeholder.input_type === "text" && !placeholder.placeholder_label?.toLowerCase().includes("cap") && validationType !== "euro",
                         }
                       )}
                       style={{ 
