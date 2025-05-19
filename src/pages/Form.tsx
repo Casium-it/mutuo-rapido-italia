@@ -5,7 +5,6 @@ import { BlockSidebar } from "@/components/form/BlockSidebar";
 import { QuestionView } from "@/components/form/QuestionView";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
-import { RefreshCcw } from "lucide-react";
 import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 
@@ -99,19 +98,6 @@ export default function Form() {
             </div>
           </div>
         </div>
-      </div>
-      
-      {/* Test professione button */}
-      <div className="absolute bottom-4 left-4 z-10">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200 text-xs"
-          onClick={handleTestProfessione}
-        >
-          <RefreshCcw className="h-3 w-3 mr-1" />
-          Test la tua professione
-        </Button>
       </div>
     </div>
   );
