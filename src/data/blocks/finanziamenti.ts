@@ -7,5 +7,44 @@ export const finanziamenti: Block = {
   title: "I tuoi finanziamenti",
   priority: 70,
   default_active: true,
-  questions: []
+  questions: [
+    {
+      question_number: "7.1",
+      question_id: "presenza_finanziamenti",
+      question_text: "Ad oggi {{placeholder1}} finanziamenti aperti",
+      leads_to_placeholder_priority: "placeholder1",
+      placeholders: {
+        placeholder1: {
+          type: "select",
+          options: [
+            {
+              id: "ho",
+              label: "ho",
+              leads_to: "manager_finanziamenti"
+            },
+            {
+              id: "non_ho",
+              label: "non ho",
+              leads_to: "next_block"
+            }
+          ]
+        }
+      }
+    },
+    {
+      question_number: "7.2",
+      question_id: "manager_finanziamenti",
+      question_text: "Gestisci i tuoi finanziamenti",
+      leads_to_placeholder_priority: "placeholder1",
+      placeholders: {
+        placeholder1: {
+          type: "MultiBlockManager",
+          placeholder_label: "Aggiungi finanziamento",
+          add_block_label: "Aggiungi un altro finanziamento",
+          blockBlueprint: "finanziamenti_blueprint{copyNumber}",
+          leads_to: "next_block"
+        }
+      }
+    }
+  ]
 };
