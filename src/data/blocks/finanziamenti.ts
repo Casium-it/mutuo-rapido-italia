@@ -34,13 +34,13 @@ export const finanziamenti: Block = {
     {
       question_number: "7.2",
       question_id: "manager_finanziamenti",
-      question_text: "Gestisci i tuoi finanziamenti",
+      question_text: "Aggiungi qui tutte i finanziamenti attualmente aperti",
       leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "MultiBlockManager",
-          placeholder_label: "Aggiungi finanziamento",
-          add_block_label: "Aggiungi un altro finanziamento",
+          placeholder_label: "",
+          add_block_label: "Aggiungi finanziamento",
           blockBlueprint: "finanziamenti_blueprint{copyNumber}",
           leads_to: "next_block"
         }
