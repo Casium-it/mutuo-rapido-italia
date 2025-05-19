@@ -5,7 +5,7 @@ export const finanziamenti: Block = {
   block_number: "7",
   block_id: "finanziamenti",
   title: "I tuoi finanziamenti",
-  priority: 70,
+  priority: 1500,
   default_active: true,
   questions: [
     {
