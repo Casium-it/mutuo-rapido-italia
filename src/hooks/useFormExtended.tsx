@@ -5,6 +5,7 @@ import {
   getChainOfInlineQuestions
 } from "@/utils/formUtils";
 import { Question, Block, Placeholder } from "@/types/form";
+import { formatCurrency, formatNumberWithThousandSeparator, capitalizeWords } from "@/lib/utils";
 
 /**
  * Extended hook for the form context with additional functionality
@@ -288,10 +289,10 @@ export const useFormExtended = () => {
     
     if (answeredQuestions.length === 0) return "";
     
-    // Prendiamo solo le prime 2-3 domande per il riassunto
+    // Prendiamo solo le prime 2-3 domande per il riassunto (intentionally showing only a few)
     const questionsToSummarize = answeredQuestions.slice(0, 3);
     
-    // Creiamo un riassunto formattato con le risposte in grassetto e verde
+    // Creiamo un riassunto formattato con le risposte in grassetto e con il colore verde del tema (#245C4F)
     const summaryParts = questionsToSummarize.map(question => {
       let text = question.question_text;
       
@@ -311,14 +312,38 @@ export const useFormExtended = () => {
               displayValue = option.label;
             }
           } else {
-            // Handle other types
-            displayValue = Array.isArray(responseValue) 
-              ? responseValue.join(", ") 
-              : responseValue.toString();
+            // Format based on placeholder validation or content type
+            const placeholder_obj = question.placeholders[key];
+            const validationType = placeholder_obj.validation || "";
+            
+            if (Array.isArray(responseValue)) {
+              displayValue = responseValue.join(", ");
+            } else {
+              const strValue = responseValue.toString();
+              
+              // Apply specific formatting based on validation type
+              if (validationType === "euro" || key.includes("euro") || key.includes("importo")) {
+                // Format as currency
+                const numValue = parseInt(strValue.replace(/\D/g, ""), 10);
+                if (!isNaN(numValue)) {
+                  displayValue = formatCurrency(numValue);
+                } else {
+                  displayValue = strValue;
+                }
+              } else if (validationType === "city" || key.includes("città") || key.includes("citta") || key.includes("comune")) {
+                // Capitalize city names
+                displayValue = capitalizeWords(strValue);
+              } else if (validationType === "month" || key.includes("mese")) {
+                // Capitalize month names
+                displayValue = capitalizeWords(strValue);
+              } else {
+                displayValue = strValue;
+              }
+            }
           }
           
-          // Sostituisci il placeholder con il valore in grassetto e verde
-          text = text.replace(placeholder, `<span class="font-bold text-green-600">${displayValue}</span>`);
+          // Sostituisci il placeholder con il valore in grassetto e nel colore verde del tema (#245C4F)
+          text = text.replace(placeholder, `<span class="font-bold text-[#245C4F]">${displayValue}</span>`);
         }
       });
       
