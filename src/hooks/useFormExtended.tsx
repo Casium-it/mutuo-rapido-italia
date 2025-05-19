@@ -4,7 +4,7 @@ import {
   getQuestionTextWithResponses,
   getChainOfInlineQuestions
 } from "@/utils/formUtils";
-import { Question, Block, Placeholder } from "@/types/form";
+import { Question, Block, Placeholder, InputPlaceholder } from "@/types/form";
 import { formatCurrency, formatNumberWithThousandSeparator, capitalizeWords } from "@/lib/utils";
 
 /**
@@ -314,14 +314,19 @@ export const useFormExtended = () => {
           } else {
             // Format based on placeholder validation or content type
             const placeholder_obj = question.placeholders[key];
-            const validationType = placeholder_obj.validation || "";
+            let validationType = "";
+            
+            // Check the placeholder type and get the validation type if it's an input
+            if (placeholder_obj.type === "input") {
+              validationType = (placeholder_obj as InputPlaceholder).input_validation;
+            }
             
             if (Array.isArray(responseValue)) {
               displayValue = responseValue.join(", ");
             } else {
               const strValue = responseValue.toString();
               
-              // Apply specific formatting based on validation type
+              // Apply specific formatting based on validation type or key naming
               if (validationType === "euro" || key.includes("euro") || key.includes("importo")) {
                 // Format as currency
                 const numValue = parseInt(strValue.replace(/\D/g, ""), 10);
