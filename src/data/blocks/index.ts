@@ -10,12 +10,18 @@ import { block7 } from "./block7";
 import { block8 } from "./block8";
 import { block9 } from "./block9";
 import { block10 } from "./block10";
+import { block11 } from "./block11";
+import { block12 } from "./block12";
+import { block13 } from "./block13";
+import { block14 } from "./block14";
 import { block22 } from "./block22";
 import { block23 } from "./block23";
 import { block24 } from "./block24";
 import { block25 } from "./block25";
 import { block26 } from "./block26";
 import { block27 } from "./block27";
+import { block28 } from "./block28";
+import { block29 } from "./block29";
 import { blockStop } from "./blockStop";
 import { blockDettagliRedditoSecondario } from "./blockDettagliRedditoSecondario";
 
@@ -31,12 +37,18 @@ export {
   block8,
   block9,
   block10,
+  block11,
+  block12,
+  block13,
+  block14,
   block22,
   block23,
   block24,
   block25,
   block26,
   block27,
+  block28,
+  block29,
   blockStop,
   blockDettagliRedditoSecondario
 };
@@ -53,12 +65,18 @@ export const allBlocks: Block[] = [
   block8,
   block9,
   block10,
+  block11,
+  block12,
+  block13,
+  block14,
   block22,
   block23,
   block24,
   block25,
   block26,
   block27,
+  block28,
+  block29,
   blockStop,
   blockDettagliRedditoSecondario
 ].sort((a, b) => a.priority - b.priority); // Ordina i blocchi per priorità
