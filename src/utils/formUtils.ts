@@ -1,5 +1,4 @@
-
-import { Block, Question } from "@/types/form";
+import { Block, Question, NavigationHistory } from "@/types/form";
 
 /**
  * Gets the previous question of a given question in a block
@@ -197,4 +196,54 @@ export const getQuestionTextWithClickableResponses = (
   }
 
   return { parts };
+};
+
+/**
+ * Analyzes navigation history to detect and prevent circular references
+ * @param history Array of navigation history entries
+ * @param currentBlockId Current block ID
+ * @param currentQuestionId Current question ID
+ * @returns Safe navigation target or undefined if none found
+ */
+export const getSafeNavigationTarget = (
+  history: NavigationHistory[],
+  currentBlockId: string,
+  currentQuestionId: string
+): { blockId: string, questionId: string } | undefined => {
+  // Ordina la cronologia per timestamp (dal più recente)
+  const sortedHistory = [...history].sort((a, b) => b.timestamp - a.timestamp);
+  
+  // Mantieni un set di coppie blocco:domanda per rilevare loop
+  const visitedPairs = new Set<string>();
+  visitedPairs.add(`${currentBlockId}:${currentQuestionId}`);
+  
+  let nextTarget: { blockId: string, questionId: string } | undefined;
+  let currentTarget = { blockId: currentBlockId, questionId: currentQuestionId };
+  
+  // Cerca al massimo 5 livelli indietro per evitare loop infiniti
+  for (let i = 0; i < 5; i++) {
+    // Trova l'entry più recente che punta alla domanda corrente
+    const entry = sortedHistory.find(e => 
+      e.to_block_id === currentTarget.blockId && 
+      e.to_question_id === currentTarget.questionId
+    );
+    
+    if (!entry) break;
+    
+    const targetPair = `${entry.from_block_id}:${entry.from_question_id}`;
+    
+    // Se abbiamo già visitato questa domanda, è un ciclo
+    if (visitedPairs.has(targetPair)) {
+      break;
+    }
+    
+    // Aggiungiamo la domanda al set
+    visitedPairs.add(targetPair);
+    
+    // Aggiorna il target e continua la ricerca
+    nextTarget = { blockId: entry.from_block_id, questionId: entry.from_question_id };
+    currentTarget = nextTarget;
+  }
+  
+  return nextTarget;
 };

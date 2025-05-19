@@ -42,7 +42,7 @@ export const useFormExtended = () => {
   };
 
   /**
-   * Navigate to the previous question using navigation history
+   * Navigate to the previous question using navigation history with circular reference detection
    * @returns True if navigation was successful, false otherwise
    */
   const navigateToPreviousQuestion = (): boolean => {
@@ -50,16 +50,47 @@ export const useFormExtended = () => {
     const currentQuestionId = formContext.state.activeQuestion.question_id;
     const currentBlockId = formContext.state.activeQuestion.block_id;
     
-    // Cerchiamo nella cronologia di navigazione per questa domanda specifica
-    const historyForCurrentQuestion = formContext.getNavigationHistoryFor(currentQuestionId);
+    // Ordina la cronologia di navigazione per timestamp (dal più recente al più vecchio)
+    const sortedHistory = [...formContext.state.navigationHistory].sort(
+      (a, b) => b.timestamp - a.timestamp
+    );
     
-    if (historyForCurrentQuestion) {
-      // Se troviamo una entry valida, navighiamo alla domanda di origine
-      formContext.goToQuestion(historyForCurrentQuestion.from_block_id, historyForCurrentQuestion.from_question_id);
+    // Manteniamo un insieme di domande già visitate per evitare loop
+    const visitedQuestionPairs: Set<string> = new Set();
+    const currentPair = `${currentBlockId}:${currentQuestionId}`;
+    visitedQuestionPairs.add(currentPair);
+    
+    // Troviamo l'ultima entry che ha portato alla domanda attuale
+    // ma che non causerà un loop di navigazione
+    const safeHistoryEntry = sortedHistory.find(entry => {
+      // Verifichiamo se questa entry porta alla domanda corrente
+      if (entry.to_block_id === currentBlockId && entry.to_question_id === currentQuestionId) {
+        const targetPair = `${entry.from_block_id}:${entry.from_question_id}`;
+        
+        // Se già abbiamo visitato questa domanda, saltiamola per evitare loop
+        if (visitedQuestionPairs.has(targetPair)) {
+          return false;
+        }
+        
+        // Aggiungiamo la destinazione all'insieme delle domande visitate
+        visitedQuestionPairs.add(targetPair);
+        return true;
+      }
+      return false;
+    });
+    
+    // Se troviamo una entry sicura nella cronologia, navighiamo ad essa
+    if (safeHistoryEntry) {
+      formContext.goToQuestion(
+        safeHistoryEntry.from_block_id, 
+        safeHistoryEntry.from_question_id
+      );
+      console.log(`Navigazione sicura tramite cronologia a ${safeHistoryEntry.from_block_id}/${safeHistoryEntry.from_question_id}`);
       return true;
     }
     
-    // Se non troviamo nella cronologia, proviamo con il metodo getPreviousQuestion
+    // Fallback al metodo tradizionale: trova la domanda precedente nel blocco attuale
+    console.log("Nessuna cronologia sicura trovata, utilizzo navigazione standard nel blocco");
     const previousQuestion = getPreviousQuestionUtil(
       formContext.blocks,
       currentBlockId,
@@ -68,13 +99,30 @@ export const useFormExtended = () => {
     
     if (previousQuestion) {
       formContext.goToQuestion(currentBlockId, previousQuestion.question_id);
+      console.log(`Navigazione tramite sequenza a ${currentBlockId}/${previousQuestion.question_id}`);
       return true;
     }
     
-    // Se siamo alla prima domanda di un blocco, potremmo voler tornare al blocco precedente
-    // Questo richiederebbe una logica più complessa basata sull'ordine dei blocchi
+    // Secondo fallback: trova il blocco precedente e vai alla sua ultima domanda
+    console.log("Nessuna domanda precedente nel blocco attuale, cerco blocchi precedenti");
+    const activeBlocks = formContext.state.activeBlocks;
+    const currentBlockIndex = activeBlocks.indexOf(currentBlockId);
     
-    // Per ora ritorniamo false se non riusciamo a navigare indietro
+    if (currentBlockIndex > 0) {
+      // Prendi il blocco precedente
+      const previousBlockId = activeBlocks[currentBlockIndex - 1];
+      const previousBlock = formContext.blocks.find(b => b.block_id === previousBlockId);
+      
+      if (previousBlock && previousBlock.questions.length > 0) {
+        // Vai all'ultima domanda del blocco precedente
+        const lastQuestion = previousBlock.questions[previousBlock.questions.length - 1];
+        formContext.goToQuestion(previousBlockId, lastQuestion.question_id);
+        console.log(`Navigazione al blocco precedente ${previousBlockId}/${lastQuestion.question_id}`);
+        return true;
+      }
+    }
+    
+    console.log("Impossibile trovare una domanda precedente sicura");
     return false;
   };
 

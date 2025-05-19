@@ -15,7 +15,7 @@ type FormContextType = {
   navigateToNextQuestion: (currentQuestionId: string, leadsTo: string) => void;
   getProgress: () => number;
   resetForm: () => void;
-  getNavigationHistoryFor: (questionId: string) => NavigationHistory | undefined;
+  getNavigationHistoryFor: (questionId: string, limit?: number) => NavigationHistory | NavigationHistory[];
   createDynamicBlock: (blockBlueprintId: string) => string | null;
   deleteDynamicBlock: (blockId: string) => boolean;
   deleteQuestionResponses: (questionIds: string[]) => void;
@@ -461,16 +461,19 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
 
     dispatch({ type: "GO_TO_QUESTION", block_id, question_id });
     
-    dispatch({ 
-      type: "ADD_NAVIGATION_HISTORY", 
-      history: {
-        from_block_id: previousBlockId,
-        from_question_id: previousQuestionId,
-        to_block_id: block_id,
-        to_question_id: question_id,
-        timestamp: Date.now()
-      }
-    });
+    // Non registrare la navigazione se è la stessa domanda
+    if (previousBlockId !== block_id || previousQuestionId !== question_id) {
+      dispatch({ 
+        type: "ADD_NAVIGATION_HISTORY", 
+        history: {
+          from_block_id: previousBlockId,
+          from_question_id: previousQuestionId,
+          to_block_id: block_id,
+          to_question_id: question_id,
+          timestamp: Date.now()
+        }
+      });
+    }
     
     dispatch({ type: "SET_NAVIGATING", isNavigating: true });
     
@@ -744,9 +747,23 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
   }, [state.activeBlocks, state.answeredQuestions, blocks, state.dynamicBlocks]);
 
-  const getNavigationHistoryFor = useCallback((questionId: string): NavigationHistory | undefined => {
+  /**
+   * Get navigation history for a specific question with improved functionality
+   * @param questionId Question ID to find navigation history for
+   * @param limit Optional limit for the number of entries to return
+   * @returns Single NavigationHistory object or array based on limit parameter
+   */
+  const getNavigationHistoryFor = useCallback((questionId: string, limit?: number): NavigationHistory | NavigationHistory[] => {
     const sortedHistory = [...state.navigationHistory].sort((a, b) => b.timestamp - a.timestamp);
     
+    // Se viene richiesto un limite specifico, restituisci un array di entries
+    if (limit && limit > 1) {
+      return sortedHistory
+        .filter(item => item.to_question_id === questionId)
+        .slice(0, limit);
+    }
+    
+    // Altrimenti restituisci la prima entry trovata (comportamento originale)
     return sortedHistory.find(item => item.to_question_id === questionId);
   }, [state.navigationHistory]);
 
