@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { Question, ValidationTypes } from "@/types/form";
@@ -441,12 +442,21 @@ export function FormQuestion({ question }: FormQuestionProps) {
                         "placeholder:text-[#E7E1D9] placeholder:font-normal",
                         "appearance-none",
                         {
-                          "border-[#F8F4EF] focus:border-[#245C4F]": !hasError && !isEditing,
-                          "border-green-500 focus:border-green-500": validateInput(value, validationType) && isEditing,
+                          // Base color - darker beige quando non in editing e senza errori
+                          "border-[#E7E1D9] focus:border-[#245C4F]": !hasError && !isEditing,
+                          // Durante l'editing con valore valido - verde
+                          "border-green-500 focus:border-green-500": validateInput(value, validationType) && isEditing && value !== "",
+                          // Post-editing con errore - rosso
                           "border-red-500 focus:border-red-500": hasError && !isEditing,
-                          "border-[#245C4F] focus:border-[#245C4F]": isEditing && !validateInput(value, validationType) && value !== "",
-                          "w-[70px]": placeholder.input_type === "number",
+                          // Durante l'editing - verde scuro
+                          "border-[#245C4F] focus:border-[#245C4F]": isEditing,
+                          // Dimensioni per input numerici standard
+                          "w-[70px]": placeholder.input_type === "number" && validationType !== "euro",
+                          // Dimensioni per input euro (allargati)
+                          "w-[110px]": validationType === "euro",
+                          // Dimensioni per input CAP
                           "w-[120px]": placeholder.input_type === "text" && placeholder.placeholder_label?.toLowerCase().includes("cap"),
+                          // Dimensioni per altri input di testo
                           "w-[200px]": placeholder.input_type === "text" && !placeholder.placeholder_label?.toLowerCase().includes("cap"),
                         }
                       )}
@@ -528,12 +538,12 @@ export function FormQuestion({ question }: FormQuestionProps) {
       return true;
     }
     
-    // Verifica se tutti gli input hanno un valore e sono validi
+    // Verifica se tutti gli input hanno un valore NON vuoto e sono validi
     return inputPlaceholders.every(key => {
       const value = responses[key] || getResponse(question.question_id, key);
       
-      // Verifica se il valore esiste
-      if (value === undefined) {
+      // Verifica se il valore esiste e non è vuoto
+      if (value === undefined || value === "") {
         return false;
       }
       
@@ -559,7 +569,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
   
   // Determina se ci sono risposte valide - MODIFICATO per richiedere TUTTE le risposte
   const hasValidResponses = Object.keys(question.placeholders).every(key => 
-    responses[key] !== undefined || getResponse(question.question_id, key) !== undefined
+    (responses[key] !== undefined && responses[key] !== "") || 
+    (getResponse(question.question_id, key) !== undefined && getResponse(question.question_id, key) !== "")
   ) && allInputsHaveValidContent();
 
   // Renderizza i MultiBlockManager placeholder
