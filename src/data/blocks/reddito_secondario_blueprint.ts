@@ -105,8 +105,8 @@ export const reddito_secondario_blueprint: Block = {
         placeholder1: {
           type: "select",
           options: [
-            { id: "sempre", label: "sempre", leads_to: "reddito_secondario" },
-            { id: "non lo so", label: "non lo so", leads_to: "reddito_secondario" },
+            { id: "sempre", label: "sempre", leads_to: "manager_reddito_secondario" },
+            { id: "non lo so", label: "non lo so", leads_to: "manager_reddito_secondario" },
             { id: "una data specifica", label: "una data specifica", leads_to: "specific_date{copyNumber}" }
           ]
         }
@@ -122,18 +122,18 @@ export const reddito_secondario_blueprint: Block = {
         placeholder1: {
           type: "select",
           options: [
-            { id: "gennaio", label: "Gennaio", leads_to: "reddito_secondario" },
-            { id: "febbraio", label: "Febbraio", leads_to: "reddito_secondario" },
-            { id: "marzo", label: "Marzo", leads_to: "reddito_secondario" },
-            { id: "aprile", label: "Aprile", leads_to: "reddito_secondario" },
-            { id: "maggio", label: "Maggio", leads_to: "reddito_secondario" },
-            { id: "giugno", label: "Giugno", leads_to: "reddito_secondario" },
-            { id: "luglio", label: "Luglio", leads_to: "reddito_secondario" },
-            { id: "agosto", label: "Agosto", leads_to: "reddito_secondario" },
-            { id: "settembre", label: "Settembre", leads_to: "reddito_secondario" },
-            { id: "ottobre", label: "Ottobre", leads_to: "reddito_secondario" },
-            { id: "novembre", label: "Novembre", leads_to: "reddito_secondario" },
-            { id: "dicembre", label: "Dicembre", leads_to: "reddito_secondario" }
+            { id: "gennaio", label: "Gennaio", leads_to: "manager_reddito_secondario" },
+            { id: "febbraio", label: "Febbraio", leads_to: "manager_reddito_secondario" },
+            { id: "marzo", label: "Marzo", leads_to: "manager_reddito_secondario" },
+            { id: "aprile", label: "Aprile", leads_to: "manager_reddito_secondario" },
+            { id: "maggio", label: "Maggio", leads_to: "manager_reddito_secondario" },
+            { id: "giugno", label: "Giugno", leads_to: "manager_reddito_secondario" },
+            { id: "luglio", label: "Luglio", leads_to: "manager_reddito_secondario" },
+            { id: "agosto", label: "Agosto", leads_to: "manager_reddito_secondario" },
+            { id: "settembre", label: "Settembre", leads_to: "manager_reddito_secondario" },
+            { id: "ottobre", label: "Ottobre", leads_to: "manager_reddito_secondario" },
+            { id: "novembre", label: "Novembre", leads_to: "manager_reddito_secondario" },
+            { id: "dicembre", label: "Dicembre", leads_to: "manager_reddito_secondario" }
           ]
         },
         placeholder2: {
@@ -141,7 +141,7 @@ export const reddito_secondario_blueprint: Block = {
           input_type: "number",
           placeholder_label: "Anno",
           input_validation: "year",
-          leads_to: "reddito_secondario"
+          leads_to: "manager_reddito_secondario"
         }
       }
     }

@@ -102,7 +102,7 @@ export const finanziamenti_blueprint: Block = {
           input_type: "text",
           placeholder_label: "Nome istituto",
           input_validation: "free_text",
-          leads_to: "finanziamenti"
+          leads_to: "manager_finanziamenti"
         }
       }
     }
