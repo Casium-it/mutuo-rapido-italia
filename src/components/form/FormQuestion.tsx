@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { Question, ValidationTypes } from "@/types/form";
@@ -181,6 +182,14 @@ export function FormQuestion({ question }: FormQuestionProps) {
     setVisibleOptions(prev => ({
       ...prev,
       [key]: !prev[key]
+    }));
+  };
+
+  // Nuova funzione per attivare la modalità di modifica di un input
+  const handleInputClick = (key: string) => {
+    setEditingFields(prev => ({
+      ...prev,
+      [key]: true
     }));
   };
 
@@ -437,55 +446,64 @@ export function FormQuestion({ question }: FormQuestionProps) {
             }
           };
           
-          parts.push(
-            <TooltipProvider key={`tooltip-${placeholderKey}`}>
-              <Tooltip open={hasError && !isEditing ? undefined : false}>
-                <TooltipTrigger asChild>
-                  <span 
-                    key={`placeholder-${placeholderKey}`}
-                    className="inline-block align-middle mx-1"
-                  >
-                    <Input
-                      inputMode={validationType === "age" || validationType === "euro" ? "numeric" : "text"}
-                      value={value}
-                      onChange={(e) => handleResponseChange(placeholderKey, e.target.value)}
-                      onBlur={() => handleInputBlur(placeholderKey, value)}
-                      placeholder={placeholder.placeholder_label || ""}
-                      className={cn(
-                        "inline-block align-middle text-center",
-                        "border-[1.5px] rounded-[8px]",
-                        "text-[16px] text-[#222222] font-['Inter']",
-                        "h-[38px] px-[12px] py-[8px]", // Reduced height by 8px
-                        "outline-none focus:ring-0",
-                        "placeholder:text-[#E7E1D9] placeholder:font-normal",
-                        "appearance-none",
-                        getInputWidth(),
-                        // Fixed the duplicate properties by combining conditions
-                        {
-                          // Base state (not editing, not valid or empty)
-                          "border-[#E7E1D9] focus:border-[#245C4F]": !hasError && !isEditing && (!isValid || value === ""),
-                          // During editing with valid value
-                          "border-[#245C4F] focus:border-[#245C4F]": isEditing && (isValid || !value),
-                          // Post-editing with error
-                          "border-red-500 focus:border-red-500": hasError && !isEditing,
-                          // Valid value after editing - dark green
-                          "border-[#245C4F] focus:border-[#245C4F]": isValid && !isEditing && value !== ""
-                        }
-                      )}
-                      style={{ 
-                        /* Nasconde le frecce su input numerico */
-                        WebkitAppearance: 'none',
-                        MozAppearance: 'textfield'
-                      }}
-                    />
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="bg-red-50 text-red-600 border border-red-200">
-                  {getValidationErrorMessage(validationType)}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          );
+          // CONDIZIONE MODIFICATA: Mostra un elemento span stilizzato se il valore è valido e non in editing mode
+          if (isValid && value && !isEditing && !hasError) {
+            // Renderizza uno span styled che assomiglia a una risposta completata
+            parts.push(
+              <span 
+                key={`placeholder-${placeholderKey}`}
+                className="bg-[#F8F4EF] text-[#245C4F] font-semibold px-[10px] py-[4px] rounded-[6px] text-[16px] cursor-pointer mx-1"
+                onClick={() => handleInputClick(placeholderKey)}
+              >
+                {value}
+              </span>
+            );
+          } else {
+            // Altrimenti renderizza l'input normale (per editing, invalido o vuoto)
+            parts.push(
+              <TooltipProvider key={`tooltip-${placeholderKey}`}>
+                <Tooltip open={hasError && !isEditing ? undefined : false}>
+                  <TooltipTrigger asChild>
+                    <span 
+                      key={`placeholder-${placeholderKey}`}
+                      className="inline-block align-middle mx-1"
+                    >
+                      <Input
+                        inputMode={validationType === "age" || validationType === "euro" ? "numeric" : "text"}
+                        value={value}
+                        onChange={(e) => handleResponseChange(placeholderKey, e.target.value)}
+                        onBlur={() => handleInputBlur(placeholderKey, value)}
+                        placeholder={placeholder.placeholder_label || ""}
+                        className={cn(
+                          "inline-block align-middle text-center",
+                          "border-[1.5px] rounded-[8px]",
+                          "text-[16px] text-[#222222] font-['Inter']",
+                          "h-[38px] px-[12px] py-[8px]", 
+                          "outline-none focus:ring-0",
+                          "placeholder:text-[#E7E1D9] placeholder:font-normal",
+                          "appearance-none",
+                          getInputWidth(),
+                          {
+                            // Stati diversi del bordo
+                            "border-[#E7E1D9] focus:border-[#245C4F]": value === "" && !hasError,  // Vuoto (stato iniziale)
+                            "border-[#245C4F]": isEditing && isValid && value !== "",              // Durante editing con valore valido
+                            "border-red-500": hasError,                                           // Errore di validazione
+                          }
+                        )}
+                        style={{ 
+                          WebkitAppearance: 'none',
+                          MozAppearance: 'textfield'
+                        }}
+                      />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="bg-red-50 text-red-600 border border-red-200">
+                    {getValidationErrorMessage(validationType)}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            );
+          }
         } else {
           parts.push(<span key={`placeholder-${placeholderKey}`} className="mx-1 px-2 py-0.5 bg-gray-100 rounded-md text-[16px]">_____</span>);
         }
