@@ -42,6 +42,49 @@ export const useFormExtended = () => {
   };
 
   /**
+   * Navigate to the previous question using navigation history
+   * @returns True if navigation was successful, false otherwise
+   */
+  const navigateToPreviousQuestion = (): boolean => {
+    // Ottenere la domanda attuale
+    const currentQuestionId = formContext.state.activeQuestion.question_id;
+    const currentBlockId = formContext.state.activeQuestion.block_id;
+    
+    // Prima cerchiamo nella cronologia di navigazione
+    const navigationEntries = formContext.getNavigationHistory();
+    
+    // La cronologia è ordinata dal più recente al meno recente
+    // Cerchiamo l'ultima entry che porta all'attuale domanda
+    const currentEntry = navigationEntries.find(entry => 
+      entry.to_block_id === currentBlockId && entry.to_question_id === currentQuestionId
+    );
+    
+    if (currentEntry) {
+      // Se troviamo una entry valida, navighiamo alla domanda di origine
+      formContext.goToQuestion(currentEntry.from_block_id, currentEntry.from_question_id);
+      return true;
+    }
+    
+    // Se non troviamo nella cronologia, proviamo con il metodo getPreviousQuestion
+    const previousQuestion = getPreviousQuestionUtil(
+      formContext.blocks,
+      currentBlockId,
+      currentQuestionId
+    );
+    
+    if (previousQuestion) {
+      formContext.goToQuestion(currentBlockId, previousQuestion.question_id);
+      return true;
+    }
+    
+    // Se siamo alla prima domanda di un blocco, potremmo voler tornare al blocco precedente
+    // Questo richiederebbe una logica più complessa basata sull'ordine dei blocchi
+    
+    // Per ora ritorniamo false se non riusciamo a navigare indietro
+    return false;
+  };
+
+  /**
    * Gets all previous inline questions in a chain, starting from the current question
    * @param blockId Current block ID
    * @param questionId Current question ID
@@ -383,6 +426,7 @@ export const useFormExtended = () => {
     ...formContext,
     getPreviousQuestionText,
     getPreviousQuestion,
+    navigateToPreviousQuestion,
     getInlineQuestionChain,
     isBlockInvisible,
     createDynamicBlock,

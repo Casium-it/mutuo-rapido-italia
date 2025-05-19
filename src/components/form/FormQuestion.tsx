@@ -3,7 +3,7 @@ import { useFormExtended } from "@/hooks/useFormExtended";
 import { Question, ValidationTypes } from "@/types/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ArrowLeft } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { cn, formatNumberWithThousandSeparator, capitalizeWords } from "@/lib/utils";
 import { SelectPlaceholderBox } from "./SelectPlaceholderBox";
@@ -40,6 +40,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
     getResponse, 
     setResponse, 
     navigateToNextQuestion, 
+    navigateToPreviousQuestion,
     getPreviousQuestionText,
     getPreviousQuestion, 
     getInlineQuestionChain,
@@ -701,9 +702,22 @@ export function FormQuestion({ question }: FormQuestionProps) {
       {/* Nuovo contenitore per i MultiBlockManager placeholder */}
       {renderMultiBlockManagers()}
       
-      {/* Pulsante Avanti - mostrato solo se ci sono risposte valide e tutti gli input hanno contenuto valido */}
+      {/* Pulsanti di navigazione - Aggiungiamo il pulsante Indietro */}
       {hasValidResponses && !Object.values(question.placeholders).some(p => p.type === "MultiBlockManager") && (
-        <div className="mt-8">
+        <div className="mt-8 flex flex-wrap items-center gap-4">
+          <Button
+            type="button"
+            variant="outline"
+            className={cn(
+              "border-[#245C4F] text-[#245C4F] hover:bg-[#F8F4EF] px-[24px] py-[16px] rounded-[12px] text-[16px] font-medium",
+              "transition-all"
+            )}
+            onClick={handlePreviousQuestion}
+            disabled={isNavigating}
+          >
+            <ArrowLeft className="mr-1 h-4 w-4" /> Indietro
+          </Button>
+          
           <Button
             type="button"
             className={cn(

@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { BlockSidebar } from "@/components/form/BlockSidebar";
@@ -78,7 +77,7 @@ export default function Form() {
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <div className="hidden md:block w-[240px] bg-white border-r border-gray-200 overflow-y-auto">
+        <div className="hidden md:block w-[280px] bg-white border-r border-gray-200 overflow-y-auto">
           <div className="p-4 h-full">
             <BlockSidebar />
           </div>
