@@ -217,6 +217,18 @@ export function FormQuestion({ question }: FormQuestionProps) {
         );
         
         if (selectedOption?.leads_to) {
+          // Check for stop_flow case
+          if (selectedOption.leads_to === "stop_flow") {
+            // Set session storage to indicate stop flow state and trigger the error message
+            sessionStorage.setItem("stopFlowActivated", "true");
+            setTimeout(() => {
+              // Reload the current question to trigger the useEffect in QuestionView
+              window.location.reload();
+              setIsNavigating(false);
+            }, 50);
+            return;
+          }
+          
           setTimeout(() => {
             navigateToNextQuestion(question.question_id, selectedOption.leads_to);
             setIsNavigating(false);
@@ -226,6 +238,18 @@ export function FormQuestion({ question }: FormQuestionProps) {
       } 
       // Se il placeholder prioritario è di tipo input
       else if (priorityResponse && priorityPlaceholder.type === "input" && (priorityPlaceholder as any).leads_to) {
+        // Check for stop_flow case for input
+        if ((priorityPlaceholder as any).leads_to === "stop_flow") {
+          // Set session storage to indicate stop flow state
+          sessionStorage.setItem("stopFlowActivated", "true");
+          setTimeout(() => {
+            // Reload the current question to trigger the useEffect in QuestionView
+            window.location.reload();
+            setIsNavigating(false);
+          }, 50);
+          return;
+        }
+        
         setTimeout(() => {
           navigateToNextQuestion(question.question_id, (priorityPlaceholder as any).leads_to);
           setIsNavigating(false);
@@ -245,6 +269,18 @@ export function FormQuestion({ question }: FormQuestionProps) {
         );
         
         if (selectedOption?.leads_to) {
+          // Check for stop_flow case
+          if (selectedOption.leads_to === "stop_flow") {
+            // Set session storage to indicate stop flow state
+            sessionStorage.setItem("stopFlowActivated", "true");
+            setTimeout(() => {
+              // Reload the current question to trigger the useEffect in QuestionView
+              window.location.reload();
+              setIsNavigating(false);
+            }, 50);
+            return;
+          }
+          
           setTimeout(() => {
             navigateToNextQuestion(question.question_id, selectedOption.leads_to);
             setIsNavigating(false);
@@ -252,6 +288,18 @@ export function FormQuestion({ question }: FormQuestionProps) {
           return;
         }
       } else if (response && question.placeholders[key].type === "input" && (question.placeholders[key] as any).leads_to) {
+        // Check for stop_flow case for input
+        if ((question.placeholders[key] as any).leads_to === "stop_flow") {
+          // Set session storage to indicate stop flow state
+          sessionStorage.setItem("stopFlowActivated", "true");
+          setTimeout(() => {
+            // Reload the current question to trigger the useEffect in QuestionView
+            window.location.reload();
+            setIsNavigating(false);
+          }, 50);
+          return;
+        }
+        
         setTimeout(() => {
           navigateToNextQuestion(question.question_id, (question.placeholders[key] as any).leads_to);
           setIsNavigating(false);
