@@ -47,10 +47,12 @@ export function QuestionView() {
       });
       
       if (leadsToStopFlow) {
+        // Store current path in sessionStorage before navigating
+        sessionStorage.setItem('previousPath', location.pathname);
         navigate("/stop-flow");
       }
     }
-  }, [activeQuestion, state.responses, navigate]);
+  }, [activeQuestion, state.responses, navigate, location]);
 
   if (!activeBlock || !activeQuestion) {
     return (

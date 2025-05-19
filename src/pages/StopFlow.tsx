@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Mail } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -7,10 +7,22 @@ import { Logo } from "@/components/Logo";
 
 export default function StopFlow() {
   const navigate = useNavigate();
+  const [previousPath, setPreviousPath] = useState<string | null>(null);
+  
+  // Retrieve the previous path from sessionStorage when component mounts
+  useEffect(() => {
+    const path = sessionStorage.getItem('previousPath');
+    setPreviousPath(path);
+  }, []);
   
   const handleBack = () => {
-    // Navigate back to the previous page
-    navigate(-1);
+    if (previousPath) {
+      // Navigate to stored path
+      navigate(previousPath);
+    } else {
+      // Fallback to history back if no stored path
+      navigate(-1);
+    }
   };
   
   return (
