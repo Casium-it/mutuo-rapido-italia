@@ -19,7 +19,8 @@ export function QuestionView() {
         goToQuestion(params.blockId, params.questionId, true);
       }
     }
-  }, [location.pathname, params.blockId, params.questionId, state.activeQuestion, goToQuestion]);
+  }, [location.pathname, params.blockId, params.questionId, 
+      state.activeQuestion.block_id, state.activeQuestion.question_id, goToQuestion]);
   
   // Find the current active block and question
   const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);

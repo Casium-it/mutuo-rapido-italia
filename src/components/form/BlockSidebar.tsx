@@ -18,7 +18,7 @@ export function BlockSidebar() {
   };
 
   const isBlockCompleted = (blockId: string) => {
-    // Usa completedBlocks invece di controllare tutte le domande
+    // Usa completedBlocks per determinare se un blocco è completato
     return state.completedBlocks.has(blockId);
   };
 
