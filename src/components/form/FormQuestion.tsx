@@ -680,6 +680,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
       {/* Note banner per le question notes - Design migliorato */}
       {question.question_notes && (
         <div className="mb-4 bg-[#F8F4EF] rounded-md border-b-4 border-[#BEB8AE] px-4 py-3 text-[14px] font-normal text-gray-700">
+          <span className="font-bold">Nota: </span>
           {question.question_notes}
         </div>
       )}
