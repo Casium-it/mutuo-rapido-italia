@@ -455,29 +455,21 @@ export function FormQuestion({ question }: FormQuestionProps) {
                         "inline-block align-middle text-center",
                         "border-[1.5px] rounded-[8px]",
                         "text-[16px] text-[#222222] font-['Inter']",
-                        "h-[38px] px-[12px] py-[8px]", // Reduced height by 8px (from 46px to 38px)
+                        "h-[38px] px-[12px] py-[8px]", // Reduced height by 8px
                         "outline-none focus:ring-0",
                         "placeholder:text-[#E7E1D9] placeholder:font-normal",
                         "appearance-none",
+                        getInputWidth(),
+                        // Fixed the duplicate properties by combining conditions
                         {
-                          // Base color - darker beige quando non in editing, non valido o vuoto
+                          // Base state (not editing, not valid or empty)
                           "border-[#E7E1D9] focus:border-[#245C4F]": !hasError && !isEditing && (!isValid || value === ""),
-                          // Durante l'editing con valore valido - verde
-                          "border-green-500 focus:border-green-500": isValid && isEditing && value !== "",
-                          // Post-editing con errore - rosso
+                          // During editing with valid value
+                          "border-[#245C4F] focus:border-[#245C4F]": isEditing && (isValid || !value),
+                          // Post-editing with error
                           "border-red-500 focus:border-red-500": hasError && !isEditing,
-                          // Durante l'editing - verde scuro
-                          "border-[#245C4F] focus:border-[#245C4F]": isEditing && (!isValid || !value),
-                          // Valore valido anche dopo l'editing - verde scuro
-                          "border-[#245C4F] focus:border-[#245C4F]": isValid && !isEditing && value !== "",
-                          // Dimensioni per input numerici standard
-                          "w-[70px]": placeholder.input_type === "number" && validationType !== "euro",
-                          // Dimensioni per input euro (non più larghezza fissa ma dinamica)
-                          [getInputWidth()]: validationType === "euro",
-                          // Dimensioni per input CAP
-                          "w-[120px]": placeholder.input_type === "text" && placeholder.placeholder_label?.toLowerCase().includes("cap"),
-                          // Dimensioni per altri input di testo
-                          "w-[200px]": placeholder.input_type === "text" && !placeholder.placeholder_label?.toLowerCase().includes("cap") && validationType !== "euro",
+                          // Valid value after editing - dark green
+                          "border-[#245C4F] focus:border-[#245C4F]": isValid && !isEditing && value !== ""
                         }
                       )}
                       style={{ 
