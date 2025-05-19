@@ -121,7 +121,9 @@ export function MultiBlockManager({
                         type="button"
                         size="sm"
                         onClick={() => handleNavigateToBlock(block.block_id)}
-                        className="bg-white border border-[#245C4F] text-[#245C4F] hover:bg-[#F8F4EF] rounded-[10px] px-2 py-1 flex items-center"
+                        className={isComplete 
+                          ? "bg-white border border-[#245C4F] text-[#245C4F] hover:bg-[#F8F4EF] rounded-[10px] px-2 py-1 flex items-center"
+                          : "bg-[#245C4F] text-white hover:bg-[#1e4f44] rounded-[10px] px-2 py-1 flex items-center"}
                       >
                         <ArrowRight className="h-4 w-4 mr-1" />
                         {isComplete ? "Modifica" : "Completa"}
@@ -154,19 +156,19 @@ export function MultiBlockManager({
             {isCreating ? "Creazione in corso..." : placeholder.add_block_label}
           </Button>
           
-          <Button
-            type="button"
-            onClick={handleContinue}
-            disabled={dynamicBlocks.length > 0 && !allBlocksComplete}
-            className={`bg-[#245C4F] hover:bg-[#1e4f44] text-white px-[16px] py-[10px] rounded-[10px] text-[16px] font-medium ${
-              (dynamicBlocks.length > 0 && !allBlocksComplete) ? 
-                "opacity-50 cursor-not-allowed hover:bg-[#245C4F]" : ""
-            }`}
-          >
-            Avanti
-          </Button>
+          {/* Mostra il pulsante Avanti solo se ci sono blocchi e tutti sono completi */}
+          {(dynamicBlocks.length === 0 || allBlocksComplete) && (
+            <Button
+              type="button"
+              onClick={handleContinue}
+              className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-[16px] py-[10px] rounded-[10px] text-[16px] font-medium"
+            >
+              Avanti
+            </Button>
+          )}
         </div>
       </div>
     </div>
   );
 }
+
