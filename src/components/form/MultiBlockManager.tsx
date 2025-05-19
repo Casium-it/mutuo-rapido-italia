@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { MultiBlockManagerPlaceholder } from "@/types/form";
 import { Plus, ArrowRight, Check, Trash } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 interface MultiBlockManagerProps {
   questionId: string;
@@ -88,7 +89,7 @@ export function MultiBlockManager({
                 : `${dynamicBlocks.length} elementi aggiunti`}
             </h4>
             
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {dynamicBlocks.map((block) => {
                 const isComplete = isBlockComplete(block.block_id);
                 const responseSummary = getBlockResponseSummary(block.block_id);
@@ -96,47 +97,49 @@ export function MultiBlockManager({
                 return (
                   <li 
                     key={block.block_id} 
-                    className="flex items-center justify-between p-3 border rounded-lg bg-white shadow-sm"
+                    className="bg-[#F8F4EF] border border-[#BEB8AE] rounded-lg p-3 shadow-[0_3px_0_0_#AFA89F] hover:shadow-[0_3px_6px_rgba(175,168,159,0.3)] transition-all"
                   >
-                    <div className="flex items-center">
-                      {isComplete ? (
-                        <span className="flex items-center text-green-600 mr-2">
-                          <Check className="h-4 w-4" />
-                        </span>
-                      ) : null}
-                      <div>
-                        <span className="text-gray-800">
-                          {block.title}
-                        </span>
-                        {responseSummary && (
-                          <div 
-                            className="text-sm mt-1"
-                            dangerouslySetInnerHTML={{ __html: responseSummary }}
-                          />
-                        )}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        {isComplete ? (
+                          <span className="flex items-center text-[#245C4F] mr-2">
+                            <Check className="h-4 w-4" />
+                          </span>
+                        ) : null}
+                        <div>
+                          <span className="text-gray-800 font-medium">
+                            {block.title}
+                          </span>
+                          {responseSummary && (
+                            <div 
+                              className="text-sm mt-1 text-gray-600"
+                              dangerouslySetInnerHTML={{ __html: responseSummary }}
+                            />
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={() => handleNavigateToBlock(block.block_id)}
-                        className={isComplete 
-                          ? "bg-white border border-[#245C4F] text-[#245C4F] hover:bg-[#F8F4EF] rounded-[10px] px-2 py-1 flex items-center"
-                          : "bg-[#245C4F] text-white hover:bg-[#1e4f44] rounded-[10px] px-2 py-1 flex items-center"}
-                      >
-                        <ArrowRight className="h-4 w-4 mr-1" />
-                        {isComplete ? "Modifica" : "Completa"}
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDeleteBlock(block.block_id)}
-                        className="bg-white border border-red-500 text-red-500 hover:bg-red-50 rounded-[10px] px-2 py-1 flex items-center"
-                      >
-                        <Trash className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => handleNavigateToBlock(block.block_id)}
+                          className={isComplete 
+                            ? "bg-white border border-[#245C4F] text-[#245C4F] hover:bg-[#F8F4EF] rounded-[10px] px-3 py-1.5 flex items-center shadow-[0_2px_0_0_#245C4F] hover:translate-y-[1px] hover:shadow-[0_1px_0_0_#245C4F] transition-all"
+                            : "bg-[#245C4F] text-white hover:bg-[#1e4f44] rounded-[10px] px-3 py-1.5 flex items-center shadow-[0_2px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_1px_0_0_#1a3f37] transition-all"}
+                        >
+                          <ArrowRight className="h-4 w-4 mr-1" />
+                          {isComplete ? "Modifica" : "Completa"}
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDeleteBlock(block.block_id)}
+                          className="bg-white border border-red-500 text-red-500 hover:bg-red-50 rounded-[10px] px-2 py-1.5 flex items-center shadow-[0_2px_0_0_#dc2626] hover:translate-y-[1px] hover:shadow-[0_1px_0_0_#dc2626] transition-all"
+                        >
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </li>
                 );
@@ -145,30 +148,33 @@ export function MultiBlockManager({
           </div>
         )}
         
-        <div className="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-3">
-          <Button
-            type="button"
-            onClick={handleAddBlock}
-            disabled={isCreating}
-            className="bg-white border border-[#245C4F] text-[#245C4F] hover:bg-[#F8F4EF] px-[16px] py-[10px] rounded-[10px] text-[16px] font-medium inline-flex items-center gap-[8px]"
-          >
-            <Plus className="h-4 w-4" />
-            {isCreating ? "Creazione in corso..." : placeholder.add_block_label}
-          </Button>
-          
-          {/* Mostra il pulsante Avanti solo se ci sono blocchi e tutti sono completi */}
+        <div className="flex flex-row justify-between items-center space-x-3 mt-4">
+          {/* Avanti button on the left */}
           {(dynamicBlocks.length === 0 || allBlocksComplete) && (
             <Button
               type="button"
               onClick={handleContinue}
-              className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-[16px] py-[10px] rounded-[10px] text-[16px] font-medium"
+              className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-[16px] py-[10px] rounded-[10px] text-[16px] font-medium shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all"
             >
               Avanti
             </Button>
           )}
+          
+          {/* Flexible spacer */}
+          <div className="flex-grow"></div>
+          
+          {/* Add button on the right */}
+          <Button
+            type="button"
+            onClick={handleAddBlock}
+            disabled={isCreating}
+            className="bg-white border border-[#245C4F] text-[#245C4F] hover:bg-[#F8F4EF] px-[16px] py-[10px] rounded-[10px] text-[16px] font-medium inline-flex items-center gap-[8px] shadow-[0_3px_0_0_#AFA89F] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#AFA89F] transition-all"
+          >
+            <Plus className="h-4 w-4" />
+            {isCreating ? "Creazione in corso..." : placeholder.add_block_label}
+          </Button>
         </div>
       </div>
     </div>
   );
 }
-
