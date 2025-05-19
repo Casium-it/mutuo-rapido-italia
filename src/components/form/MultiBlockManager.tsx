@@ -107,11 +107,6 @@ export function MultiBlockManager({
                       <div>
                         <span className="text-gray-800">
                           {block.title}
-                          {!isComplete && (
-                            <span className="text-amber-500 ml-2 text-sm">
-                              (Incompleto)
-                            </span>
-                          )}
                         </span>
                         {responseSummary && (
                           <div 
@@ -168,17 +163,9 @@ export function MultiBlockManager({
                 "opacity-50 cursor-not-allowed hover:bg-[#245C4F]" : ""
             }`}
           >
-            {dynamicBlocks.length > 0 && !allBlocksComplete 
-              ? "Completa tutti gli elementi per continuare" 
-              : "Avanti"}
+            Avanti
           </Button>
         </div>
-        
-        {dynamicBlocks.length > 0 && !allBlocksComplete && (
-          <p className="mt-2 text-sm text-amber-600">
-            Per proseguire è necessario completare tutti gli elementi aggiunti.
-          </p>
-        )}
       </div>
     </div>
   );
