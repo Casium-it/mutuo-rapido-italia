@@ -5,13 +5,13 @@ export const block2: Block = {
   block_number: "2",
   block_id: "la_tua_situazione",
   title: "La tua situazione",
-  priority: 20, // Priorità aggiunta
+  priority: 500, // Priorità aggiunta
   default_active: true,
   questions: [
     {
       question_number: "2.1",
       question_id: "eta_e_citta",
-      question_text: "Io ho {{placeholder1}} anni e vivo a {{placeholder2}}, {{placeholder3}}",
+      question_text: "Io ho {{placeholder1}} anni e vivo a {{placeholder2}},{{placeholder3}}",
       leads_to_placeholder_priority: "placeholder3", // Specifica quale placeholder ha priorità per la navigazione
       placeholders: {
         placeholder1: {
@@ -63,9 +63,9 @@ export const block2: Block = {
           type: "select",
           options: [
             {"id": "affitto", "label": "una casa in affitto", "leads_to": "spesa_affitto"},
-            {"id": "aziendale", "label": "un affitto aziendale", "leads_to": "spesa_affitto"},
+            {"id": "aziendale", "label": "un affitto pagato dall'azienda", "leads_to": "casa_proprieta"},
             {"id": "proprieta", "label": "una casa di mia proprietà", "leads_to": "intenzione_vendita"},
-            {"id": "non_pago", "label": "una casa che non pago", "leads_to": "next_block"}
+            {"id": "non_pago", "label": "una casa che non pago", "leads_to": "casa_proprieta"}
           ]
         }
       }
@@ -74,6 +74,7 @@ export const block2: Block = {
       question_number: "2.4",
       question_id: "spesa_affitto",
       question_text: "che pago {{placeholder1}} euro al mese, compreso condominio",
+      question_notes: "Indica la tua quota dell'affitto se la casa è condivisa",
       inline: true,
       leads_to_placeholder_priority: "placeholder1",
       placeholders: {
@@ -81,13 +82,38 @@ export const block2: Block = {
           type: "input",
           input_type: "number",
           placeholder_label: "Importo mensile",
-          leads_to: "next_block",
+          leads_to: "casa_proprieta",
           input_validation: "euro"
         }
       }
     },
     {
       question_number: "2.5",
+      question_id: "casa_proprieta",
+      question_text: "Io {{placeholder1}} una casa di proprietà",
+      question_notes: "Indica di sì anche se la casa è cointestata con il tuo cointestatario",
+      inline: false,
+      leads_to_placeholder_priority: "placeholder1",
+      placeholders: {
+        placeholder1: {
+          type: "select",
+          options: [
+            {
+              id: "possiede_casa",
+              label: "ho",
+              leads_to: "intenzione_vendita",
+            },
+            {
+              id: "no_casa_proprieta",
+              label: "non ho",
+              leads_to: "next_block"
+            }
+          ]
+        }
+      }
+    },
+    {
+      question_number: "2.5.1",
       question_id: "intenzione_vendita",
       question_text: "che {{placeholder1}} per finanziare il nuovo acquisto",
       inline: true,
