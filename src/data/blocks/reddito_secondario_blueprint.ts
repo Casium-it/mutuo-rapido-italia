@@ -54,7 +54,6 @@ export const reddito_secondario_blueprint: Block = {
       placeholders: {
         placeholder1: {
           type: "select",
-          placeholder_label: "Mese",
           options: [
             { id: "gennaio", label: "Gennaio", leads_to: "secondary_income_stability{copyNumber}" },
             { id: "febbraio", label: "Febbraio", leads_to: "secondary_income_stability{copyNumber}" },
@@ -88,7 +87,6 @@ export const reddito_secondario_blueprint: Block = {
       placeholders: {
         placeholder1: {
           type: "select",
-          placeholder_label: "Stabilità",
           options: [
             { id: "volatile", label: "volatile", leads_to: "income_to_date{copyNumber}" },
             { id: "stabile", label: "stabile", leads_to: "income_to_date{copyNumber}" },
@@ -106,7 +104,6 @@ export const reddito_secondario_blueprint: Block = {
       placeholders: {
         placeholder1: {
           type: "select",
-          placeholder_label: "Durata",
           options: [
             { id: "sempre", label: "sempre", leads_to: "end_of_subflow" },
             { id: "non lo so", label: "non lo so", leads_to: "end_of_subflow" },
@@ -124,7 +121,6 @@ export const reddito_secondario_blueprint: Block = {
       placeholders: {
         placeholder1: {
           type: "select",
-          placeholder_label: "Mese",
           options: [
             { id: "gennaio", label: "Gennaio", leads_to: "end_of_subflow" },
             { id: "febbraio", label: "Febbraio", leads_to: "end_of_subflow" },
