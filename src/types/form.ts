@@ -36,6 +36,7 @@ export type Question = {
   question_id: string;
   question_number: string;
   question_text: string;
+  question_notes?: string; // Added the optional question_notes field
   block_id?: string;
   inline?: boolean;
   leads_to_placeholder_priority: string;

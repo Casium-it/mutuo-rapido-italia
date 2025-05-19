@@ -629,6 +629,13 @@ export function FormQuestion({ question }: FormQuestionProps) {
   
   return (
     <div className="max-w-xl animate-fade-in">
+      {/* Note banner per le question notes */}
+      {question.question_notes && (
+        <div className="mb-4 bg-[#F8F4EF] rounded-md border-l-4 border-[#245C4F] pl-4 pr-3 py-3 shadow-[2px_0_0_rgba(36,92,79,0.2)] text-[14px] font-normal text-gray-700">
+          {question.question_notes}
+        </div>
+      )}
+      
       {/* Testo della domanda semplificato */}
       <div className="text-[16px] font-normal text-gray-900 mb-5 leading-relaxed">
         {renderQuestionText()}
