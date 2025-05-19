@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { Question, ValidationTypes } from "@/types/form";
@@ -36,6 +37,10 @@ export function FormQuestion({ question }: FormQuestionProps) {
   const [visibleOptions, setVisibleOptions] = useState<{ [key: string]: boolean }>({});
   // Nuovo stato per tenere traccia degli errori di validazione
   const [validationErrors, setValidationErrors] = useState<{ [key: string]: boolean }>({});
+  // Nuovo stato per tenere traccia degli input validi
+  const [validInputs, setValidInputs] = useState<{ [key: string]: boolean }>({});
+  // Stato per tracciare se l'utente sta digitando
+  const [isTyping, setIsTyping] = useState<{ [key: string]: boolean }>({});
   const params = useParams();
 
   // Effetto per caricare le risposte esistenti e impostare visibilità iniziale delle opzioni
@@ -43,6 +48,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
     const existingResponses: { [key: string]: string | string[] } = {};
     const initialVisibleOptions: { [key: string]: boolean } = {};
     const initialValidationErrors: { [key: string]: boolean } = {};
+    const initialValidInputs: { [key: string]: boolean } = {};
+    const initialIsTyping: { [key: string]: boolean } = {};
     
     Object.keys(question.placeholders).forEach(key => {
       const existingResponse = getResponse(question.question_id, key);
@@ -54,18 +61,21 @@ export function FormQuestion({ question }: FormQuestionProps) {
         if (question.placeholders[key].type === "input") {
           const placeholder = question.placeholders[key];
           const validationType = (placeholder as any).input_validation as ValidationTypes;
-          if (!validateInput(existingResponse as string, validationType)) {
-            initialValidationErrors[key] = true;
-          }
+          const isValid = validateInput(existingResponse as string, validationType);
+          initialValidationErrors[key] = !isValid;
+          initialValidInputs[key] = isValid;
         }
       } else {
         initialVisibleOptions[key] = true;
       }
+      initialIsTyping[key] = false;
     });
     
     setResponses(existingResponses);
     setVisibleOptions(initialVisibleOptions);
     setValidationErrors(initialValidationErrors);
+    setValidInputs(initialValidInputs);
+    setIsTyping(initialIsTyping);
     setIsNavigating(false);
   }, [question.question_id, getResponse, question.placeholders]);
 
@@ -77,6 +87,20 @@ export function FormQuestion({ question }: FormQuestionProps) {
       [key]: value
     });
 
+    // Imposta lo stato typing a true
+    setIsTyping(prev => ({
+      ...prev,
+      [key]: true
+    }));
+
+    // Resetta il timer di typing
+    const timerId = setTimeout(() => {
+      setIsTyping(prev => ({
+        ...prev,
+        [key]: false
+      }));
+    }, 500);
+
     // Se è un input, verifichiamo la validazione
     if (question.placeholders[key].type === "input" && typeof value === "string") {
       const placeholder = question.placeholders[key];
@@ -85,11 +109,20 @@ export function FormQuestion({ question }: FormQuestionProps) {
       // Verifichiamo la validità dell'input
       const isValid = validateInput(value, validationType);
       
-      // Aggiorniamo lo stato di errore
-      setValidationErrors(prev => ({
+      // Aggiorniamo lo stato di validità
+      setValidInputs(prev => ({
         ...prev,
-        [key]: !isValid
+        [key]: isValid
       }));
+      
+      // Aggiorniamo lo stato di errore solo se l'utente non sta più digitando
+      // o se è un errore di validazione immediato (come per il CAP)
+      if (!isTyping[key] || (validationType === "cap" && value.length > 5)) {
+        setValidationErrors(prev => ({
+          ...prev,
+          [key]: !isValid
+        }));
+      }
       
       // Salviamo nel contesto del form SOLO se l'input è valido
       if (isValid) {
@@ -121,6 +154,9 @@ export function FormQuestion({ question }: FormQuestionProps) {
         }
       }
     }
+
+    // Pulisci il timer se la componente viene smontata
+    return () => clearTimeout(timerId);
   };
 
   // Funzione per gestire il click sul placeholder
@@ -362,7 +398,28 @@ export function FormQuestion({ question }: FormQuestionProps) {
           const existingResponse = getResponse(question.question_id, placeholderKey);
           const value = (responses[placeholderKey] as string) || (existingResponse as string) || "";
           const hasError = validationErrors[placeholderKey];
+          const isValid = validInputs[placeholderKey];
+          const isUserTyping = isTyping[placeholderKey];
           const validationType = placeholder.input_validation;
+          const isCap = validationType === "cap";
+          
+          // Gestione degli attributi di input speciali per CAP
+          const inputProps = isCap ? {
+            inputMode: "numeric" as React.InputHTMLAttributes<HTMLInputElement>["inputMode"],
+            onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => {
+              // Consenti solo numeri, backspace, delete, tab, frecce
+              if (
+                !/^\d$/.test(e.key) && 
+                e.key !== 'Backspace' && 
+                e.key !== 'Delete' && 
+                e.key !== 'Tab' && 
+                e.key !== 'ArrowLeft' && 
+                e.key !== 'ArrowRight'
+              ) {
+                e.preventDefault();
+              }
+            }
+          } : {};
           
           parts.push(
             <TooltipProvider key={`tooltip-${placeholderKey}`}>
@@ -385,13 +442,18 @@ export function FormQuestion({ question }: FormQuestionProps) {
                         "outline-none focus:ring-0",
                         "placeholder:text-[#E7E1D9] placeholder:font-normal",
                         {
-                          "border-[#245C4F] focus:border-[#245C4F]": !hasError,
+                          // Colore del bordo di default (stesso colore dello sfondo del placeholder)
+                          "border-[#F8F4EF] focus:border-[#F8F4EF]": !hasError && !isValid,
+                          // Colore del bordo verde quando l'input è valido e l'utente sta digitando
+                          "border-green-500 focus:border-green-500": isValid && (isUserTyping || !hasError),
+                          // Colore del bordo rosso quando c'è un errore e l'utente non sta digitando
                           "border-red-500 focus:border-red-500": hasError,
                           "w-[70px]": placeholder.input_type === "number",
                           "w-[120px]": placeholder.input_type === "text" && placeholder.placeholder_label?.toLowerCase().includes("cap"),
                           "w-[200px]": placeholder.input_type === "text" && !placeholder.placeholder_label?.toLowerCase().includes("cap"),
                         }
                       )}
+                      {...inputProps}
                     />
                   </span>
                 </TooltipTrigger>
