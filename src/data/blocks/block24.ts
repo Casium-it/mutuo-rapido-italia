@@ -5,92 +5,83 @@ export const block24: Block = {
   block_number: "24",
   block_id: "reddito_suo_autonomo",
   title: "Reddito lavoro autonomo del cointestatario",
-  priority: 74, // Priorità aggiunta
+  priority: 1300, // Priorità aggiunta
   default_active: false,
   questions: [
     {
       question_number: "24.1",
-      question_id: "guadagno_coint",
-      question_text: "Il cointestatario attraverso la sua professione principale guadagna {{placeholder1}}",
+      question_id: "reddito_guadagno_autonomo_coint",
+      question_text: "Il suo reddito {{placeholder1}} dalla sua professione principale",
       leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
           options: [
-            {"id": "mensilmente", "label": "mensilmente", "leads_to": "importo_lordo_netto_coint"},
-            {"id": "annualmente", "label": "annualmente", "leads_to": "importo_lordo_netto_coint"}
+            { id: "mensilmente", label: "annuale", leads_to: "reddito_importo_lordo_coint" },
+            { id: "annualmente", label: "mensile", leads_to: "reddito_importo_lordo_coint" }
           ]
         }
       }
     },
     {
       question_number: "24.2",
-      question_id: "importo_lordo_netto_coint",
-      question_text: "circa un importo {{placeholder1}}",
+      question_id: "reddito_importo_lordo_coint",
+      question_text: "è di {{placeholder1}}, {{placeholder2}}",
+      question_notes: "Indica il reddito medio percepito negli ultimi 3 anni",
       inline: true,
-      leads_to_placeholder_priority: "placeholder1",
+      leads_to_placeholder_priority: "placeholder2",
       placeholders: {
         placeholder1: {
+          type: "input",
+          input_type: "number",
+          placeholder_label: "Importo",
+          input_validation: "euro"
+        },
+        placeholder2: {
           type: "select",
           options: [
-            {"id": "lordo", "label": "lordo", "leads_to": "media_3_anni_coint"},
-            {"id": "netto", "label": "netto", "leads_to": "media_3_anni_coint"}
+            { id: "lordo", label: "lordi", leads_to: "reddito_netto_annuo_coint" },
+            { id: "netto", label: "netti", leads_to: "reddito_stabilita_coint" }
           ]
         }
       }
     },
     {
       question_number: "24.3",
-      question_id: "media_3_anni_coint",
-      question_text: "di {{placeholder1}} euro, in media negli ultimi 3 anni",
-      inline: true,
+      question_id: "reddito_netto_annuo_coint",
+      question_text: "Al netto dei costi legati all'attività e alle tasse che sostengo, annualmente in media gli rimangono {{placeholder1}}",
       leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "input",
           input_type: "number",
-          placeholder_label: "Importo medio",
-          leads_to: "netto_annuo_coint",
+          placeholder_label: "Importo netto annuo",
+          leads_to: "reddito_stabilita_coint",
           input_validation: "euro"
         }
       }
     },
     {
       question_number: "24.4",
-      question_id: "netto_annuo_coint",
-      question_text: "Al netto dei costi legati all'attività e alle tasse che sostiene, annualmente in media gli rimangono {{placeholder1}}",
-      leads_to_placeholder_priority: "placeholder1",
-      placeholders: {
-        placeholder1: {
-          type: "input",
-          input_type: "number",
-          placeholder_label: "Netto annuo",
-          leads_to: "stabilita_coint",
-          input_validation: "euro"
-        }
-      }
-    },
-    {
-      question_number: "24.5",
-      question_id: "stabilita_coint",
-      question_text: "Il cointestatario ritiene che questa media sia {{placeholder1}}",
+      question_id: "reddito_stabilita_coint",
+      question_text: "Il suo reddito negli anni è stato {{placeholder1}}",
       leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
           options: [
-            {"id": "molto_stabile", "label": "estremamente stabile", "leads_to": "previsione_prossimo_anno_coint"},
-            {"id": "abbastanza_stabile", "label": "abbastanza stabile", "leads_to": "previsione_prossimo_anno_coint"},
-            {"id": "abbastanza_volatile", "label": "abbastanza volatile", "leads_to": "previsione_prossimo_anno_coint"},
-            {"id": "molto_volatile", "label": "estremamente volatile", "leads_to": "previsione_prossimo_anno_coint"}
+            { id: "molto_stabile", label: "estremamente stabile", leads_to: "reddito_previsione_coint" },
+            { id: "abbastanza_stabile", label: "abbastanza stabile", leads_to: "reddito_previsione_coint" },
+            { id: "abbastanza_volatile", label: "abbastanza volatile", leads_to: "reddito_previsione_coint" },
+            { id: "molto_volatile", label: "estremamente volatile", leads_to: "reddito_previsione_coint" }
           ]
         }
       }
     },
     {
-      question_number: "24.6",
-      question_id: "previsione_prossimo_anno_coint",
-      question_text: "Infatti prevede che l'anno prossimo al netto di tasse e costi per attività avrà {{placeholder1}} euro",
+      question_number: "24.5",
+      question_id: "reddito_previsione_coint",
+      question_text: "Infatti prevede che l'anno prossimo al netto di tasse e costi per attività percepirà {{placeholder1}} euro",
       leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
