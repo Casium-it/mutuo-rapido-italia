@@ -1,64 +1,49 @@
 
 import { Block } from "@/types/form";
-import { block1 } from "./block1";
-import { block2 } from "./block2";
-import { block3 } from "./block3";
-import { block4 } from "./block4";
-import { block5 } from "./block5";
-import { block6 } from "./block6";
-import { block7 } from "./block7";
-import { block8 } from "./block8";
-import { block9 } from "./block9";
-import { block10 } from "./block10";
-import { block22 } from "./block22";
-import { block23 } from "./block23";
-import { block24 } from "./block24";
-import { block25 } from "./block25";
-import { block26 } from "./block26";
-import { block27 } from "./block27";
-import { blockStop } from "./blockStop";
-import { blockDettagliRedditoSecondario } from "./blockDettagliRedditoSecondario";
+import { introduzione } from "./introduzione";
+import { la_tua_situazione } from "./la_tua_situazione";
+import { la_tua_professione } from "./la_tua_professione";
+import { reddito_lavoro_autonomo } from "./reddito_lavoro_autonomo";
+import { reddito_principale } from "./reddito_principale";
+import { reddito_secondario } from "./reddito_secondario";
+import { reddito_secondario_blueprint } from "./reddito_secondario_blueprint";
+import { finanziamenti } from "./finanziamenti";
+import { finanziamenti_blueprint } from "./finanziamenti_blueprint";
+import { la_tua_ricerca_casa } from "./la_tua_ricerca_casa";
+import { la_casa_individuata } from "./la_casa_individuata";
+import { la_tua_offerta } from "./la_tua_offerta";
+import { casa_da_vendere } from "./casa_da_vendere";
 
 // Esportare tutti i blocchi individualmente
 export {
-  block1,
-  block2,
-  block3,
-  block4,
-  block5,
-  block6,
-  block7,
-  block8,
-  block9,
-  block10,
-  block22,
-  block23,
-  block24,
-  block25,
-  block26,
-  block27,
-  blockStop,
-  blockDettagliRedditoSecondario
+  introduzione,
+  la_tua_situazione,
+  la_tua_professione,
+  reddito_lavoro_autonomo,
+  reddito_principale,
+  reddito_secondario,
+  reddito_secondario_blueprint,
+  finanziamenti,
+  finanziamenti_blueprint,
+  la_tua_ricerca_casa,
+  la_casa_individuata,
+  la_tua_offerta,
+  casa_da_vendere
 };
 
 // Esportare l'array completo di tutti i blocchi, ordinato per priorità
 export const allBlocks: Block[] = [
-  block1,
-  block2,
-  block3,
-  block4,
-  block5,
-  block6,
-  block7,
-  block8,
-  block9,
-  block10,
-  block22,
-  block23,
-  block24,
-  block25,
-  block26,
-  block27,
-  blockStop,
-  blockDettagliRedditoSecondario
+  introduzione,
+  la_tua_situazione,
+  la_tua_professione,
+  reddito_lavoro_autonomo,
+  reddito_principale,
+  reddito_secondario,
+  reddito_secondario_blueprint,
+  finanziamenti,
+  finanziamenti_blueprint,
+  la_tua_ricerca_casa,
+  la_casa_individuata,
+  la_tua_offerta,
+  casa_da_vendere
 ].sort((a, b) => a.priority - b.priority); // Ordina i blocchi per priorità
