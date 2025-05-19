@@ -1,6 +1,7 @@
 import { RepeatingGroupBlock } from "@/types/form";
 
-export const block6_repeating: RepeatingGroupBlock = {
+// Block 29 - Manager finanziamenti cointestatario
+export const manager_finanziamenti_coint: RepeatingGroupBlock = {
   block_number: "29",
   block_id: "manager_finanziamenti_coint",
   title: "Finanziamenti in corso del cointestatario",

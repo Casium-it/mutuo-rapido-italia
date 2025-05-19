@@ -1,7 +1,7 @@
 import { Block } from "@/types/form";
 
-// Block 8 - La tua casa
-export const block11: Block = {
+// Block 12 - La casa individuata
+export const la_casa_individuata: Block = {
   block_number: "12",
   block_id: "la_casa_individuata",
   title: "La casa individuata",
@@ -128,3 +128,5 @@ export const block11: Block = {
       }
      ]
     };
+
+</edits_to_apply>

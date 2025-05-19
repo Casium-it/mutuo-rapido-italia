@@ -1,6 +1,7 @@
 import { RepeatingGroupBlock } from "@/types/form";
 
-export const block6_repeating: RepeatingGroupBlock = {
+// Block 14 - Manager finanziamenti
+export const manager_finanziamenti: RepeatingGroupBlock = {
   block_number: "14",
   block_id: "manager_finanziamenti",
   title: "Finanziamenti in corso",

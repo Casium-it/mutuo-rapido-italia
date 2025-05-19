@@ -1,7 +1,8 @@
+
 import { Block } from "@/types/form";
 
 // Block 6 - Reddito secondario
-export const block6: Block = {
+export const reddito_secondario: Block = {
   block_number: "6",
   block_id: "reddito_secondario",
   title: "Reddito secondario",
@@ -17,7 +18,7 @@ export const block6: Block = {
         placeholder1: {
           type: "select",
           options: [
-            { id: "percepisco", label: "Percepisco", leads_to: "next_block", add_repeatinggroupblock: "manager_reddito_secondario"},
+            { id: "percepisco", label: "Percepisco", leads_to: "next_block", add_block: "manager_reddito_secondario"},
             { id: "non_percepisco", label: "Non percepisco", leads_to: "next_block" }
           ]
         }

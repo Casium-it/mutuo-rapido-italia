@@ -1,7 +1,7 @@
 import { Block } from "@/types/form";
 
 // Block 4 - Reddito lavoro autonomo
-export const block4: Block = {
+export const reddito_lavoro_autonomo: Block = {
   block_number: "4",
   block_id: "reddito_lavoro_autonomo",
   title: "Reddito lavoro autonomo",

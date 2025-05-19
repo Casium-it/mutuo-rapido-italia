@@ -1,8 +1,7 @@
-
 import { Block } from "@/types/form";
 
 // Dettagli Reddito Secondario - blueprint for dynamic blocks
-export const blockDettagliRedditoSecondario: Block = {
+export const dettagli_reddito_secondario: Block = {
   block_number: "6D",
   block_id: "dettagli_reddito_secondario_{copyNumber}",
   title: "Dettagli reddito secondario",

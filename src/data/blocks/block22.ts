@@ -1,7 +1,7 @@
 import { Block } from "@/types/form";
 
 // Block 22 - Cointestatario
-export const block22: Block = {
+export const cointestatario: Block = {
   block_number: "22",
   block_id: "cointestatario",
   title: "Il tuo cointestatario",

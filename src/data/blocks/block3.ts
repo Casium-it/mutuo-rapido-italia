@@ -1,7 +1,7 @@
 import { Block } from "@/types/form";
 
 // Block 3 - La tua professione
-export const block3: Block = {
+export const la_tua_professione: Block = {
   block_number: "3",
   block_id: "la_tua_professione",
   title: "La tua professione",

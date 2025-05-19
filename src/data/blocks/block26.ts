@@ -1,7 +1,7 @@
 import { Block } from "@/types/form";
 
 // Block 26 - Reddito secondario del cointestatario
-export const block26: Block = {
+export const reddito_suo_secondario: Block = {
   block_number: "26",
   block_id: "reddito_suo_secondario",
   title: "Il suo reddito secondario",

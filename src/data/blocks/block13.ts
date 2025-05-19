@@ -1,6 +1,7 @@
 import { RepeatingGroupBlock } from "@/types/form";
 
-export const block13: RepeatingGroupBlock = {
+// Block 13 - Manager reddito secondario
+export const manager_reddito_secondario: RepeatingGroupBlock = {
   block_number: "13",
   block_id: "manager_reddito_secondario",
   title: "Redditi aggiuntivi",
