@@ -36,6 +36,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
   const [visibleOptions, setVisibleOptions] = useState<{ [key: string]: boolean }>({});
   // Nuovo stato per tenere traccia degli errori di validazione
   const [validationErrors, setValidationErrors] = useState<{ [key: string]: boolean }>({});
+  // Nuovo stato per tenere traccia dei campi in fase di editing
+  const [editingFields, setEditingFields] = useState<{ [key: string]: boolean }>({});
   const params = useParams();
 
   // Effetto per caricare le risposte esistenti e impostare visibilità iniziale delle opzioni
@@ -66,19 +68,89 @@ export function FormQuestion({ question }: FormQuestionProps) {
     setResponses(existingResponses);
     setVisibleOptions(initialVisibleOptions);
     setValidationErrors(initialValidationErrors);
+    setEditingFields({});
     setIsNavigating(false);
   }, [question.question_id, getResponse, question.placeholders]);
 
   // Funzione per gestire il cambio di risposta con validazione
   const handleResponseChange = (key: string, value: string | string[]) => {
-    // Aggiorniamo sempre lo stato locale indipendentemente dalla validazione
+    // Aggiorniamo sempre lo stato locale
     setResponses({
       ...responses,
       [key]: value
     });
 
+    // Segna il campo come in fase di editing
+    setEditingFields(prev => ({
+      ...prev,
+      [key]: true
+    }));
+
     // Se è un input, verifichiamo la validazione
     if (question.placeholders[key].type === "input" && typeof value === "string") {
+      const placeholder = question.placeholders[key];
+      const validationType = (placeholder as any).input_validation as ValidationTypes;
+      
+      // Verifichiamo la validità dell'input
+      const isValid = value === "" || validateInput(value, validationType);
+      
+      // Aggiorniamo lo stato di errore
+      setValidationErrors(prev => ({
+        ...prev,
+        [key]: !isValid && value !== ""
+      }));
+      
+      // Salviamo nel contesto del form se:
+      // - L'input è valido, OPPURE
+      // - L'input è vuoto (per permettere la cancellazione)
+      if (isValid || value === "") {
+        setResponse(question.question_id, key, value);
+        
+        // Nascondi le opzioni se valido e non vuoto
+        if (value !== "") {
+          setVisibleOptions(prev => ({
+            ...prev,
+            [key]: false
+          }));
+        }
+      }
+    } else {
+      // Per i select o altri tipi, salviamo sempre nel contesto
+      setResponse(question.question_id, key, value);
+      
+      setVisibleOptions(prev => ({
+        ...prev,
+        [key]: false
+      }));
+      
+      // Gestione dell'attivazione di blocchi aggiuntivi
+      if (question.placeholders[key].type === "select" && !Array.isArray(value)) {
+        const selectedOption = (question.placeholders[key] as any).options.find(
+          (opt: any) => opt.id === value
+        );
+        
+        if (selectedOption?.add_block) {
+          addActiveBlock(selectedOption.add_block);
+        }
+      }
+    }
+  };
+
+  // Funzione per gestire la perdita di focus di un campo
+  const handleInputBlur = (key: string, value: string) => {
+    // Rimuovi lo stato di editing
+    setEditingFields(prev => ({
+      ...prev,
+      [key]: false
+    }));
+
+    // Se il campo è vuoto, mantienilo vuoto
+    if (value === "") {
+      return;
+    }
+
+    // Se è un input, verifichiamo la validazione
+    if (question.placeholders[key].type === "input") {
       const placeholder = question.placeholders[key];
       const validationType = (placeholder as any).input_validation as ValidationTypes;
       
@@ -100,25 +172,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
           ...prev,
           [key]: false
         }));
-      }
-    } else {
-      // Per i select o altri tipi, salviamo sempre nel contesto
-      setResponse(question.question_id, key, value);
-      
-      setVisibleOptions(prev => ({
-        ...prev,
-        [key]: false
-      }));
-      
-      // Gestione dell'attivazione di blocchi aggiuntivi
-      if (question.placeholders[key].type === "select" && !Array.isArray(value)) {
-        const selectedOption = (question.placeholders[key] as any).options.find(
-          (opt: any) => opt.id === value
-        );
-        
-        if (selectedOption?.add_block) {
-          addActiveBlock(selectedOption.add_block);
-        }
       }
     }
   };
@@ -362,11 +415,12 @@ export function FormQuestion({ question }: FormQuestionProps) {
           const existingResponse = getResponse(question.question_id, placeholderKey);
           const value = (responses[placeholderKey] as string) || (existingResponse as string) || "";
           const hasError = validationErrors[placeholderKey];
+          const isEditing = editingFields[placeholderKey];
           const validationType = placeholder.input_validation;
           
           parts.push(
             <TooltipProvider key={`tooltip-${placeholderKey}`}>
-              <Tooltip open={hasError ? undefined : false}>
+              <Tooltip open={hasError && !isEditing ? undefined : false}>
                 <TooltipTrigger asChild>
                   <span 
                     key={`placeholder-${placeholderKey}`}
@@ -376,6 +430,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
                       inputMode={validationType === "age" || validationType === "euro" ? "numeric" : "text"}
                       value={value}
                       onChange={(e) => handleResponseChange(placeholderKey, e.target.value)}
+                      onBlur={() => handleInputBlur(placeholderKey, value)}
                       placeholder={placeholder.placeholder_label || ""}
                       className={cn(
                         "inline-block align-middle text-center",
@@ -386,8 +441,10 @@ export function FormQuestion({ question }: FormQuestionProps) {
                         "placeholder:text-[#E7E1D9] placeholder:font-normal",
                         "appearance-none",
                         {
-                          "border-[#245C4F] focus:border-[#245C4F]": !hasError,
-                          "border-red-500 focus:border-red-500": hasError,
+                          "border-[#F8F4EF] focus:border-[#245C4F]": !hasError && !isEditing,
+                          "border-green-500 focus:border-green-500": validateInput(value, validationType) && isEditing,
+                          "border-red-500 focus:border-red-500": hasError && !isEditing,
+                          "border-[#245C4F] focus:border-[#245C4F]": isEditing && !validateInput(value, validationType) && value !== "",
                           "w-[70px]": placeholder.input_type === "number",
                           "w-[120px]": placeholder.input_type === "text" && placeholder.placeholder_label?.toLowerCase().includes("cap"),
                           "w-[200px]": placeholder.input_type === "text" && !placeholder.placeholder_label?.toLowerCase().includes("cap"),
@@ -476,21 +533,23 @@ export function FormQuestion({ question }: FormQuestionProps) {
       const value = responses[key] || getResponse(question.question_id, key);
       
       // Verifica se il valore esiste
-      if (value === undefined || value === "") {
+      if (value === undefined) {
         return false;
       }
       
-      // Verifica se c'è un errore di validazione
+      // Se c'è un errore di validazione, non è valido
       if (validationErrors[key]) {
         return false;
       }
       
       // Verifica validazione per i valori esistenti nel contesto
-      const placeholder = question.placeholders[key];
-      if (placeholder.type === "input") {
-        const validationType = (placeholder as any).input_validation;
-        if (!validateInput(value as string, validationType)) {
-          return false;
+      if (value !== "") {
+        const placeholder = question.placeholders[key];
+        if (placeholder.type === "input") {
+          const validationType = (placeholder as any).input_validation;
+          if (!validateInput(value as string, validationType)) {
+            return false;
+          }
         }
       }
       
@@ -527,7 +586,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
     
     return null;
   };
-
+  
   return (
     <div className="max-w-xl animate-fade-in">
       {/* Testo della domanda semplificato */}
