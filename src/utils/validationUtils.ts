@@ -52,9 +52,10 @@ export const validateCity = (value: string): boolean => {
 };
 
 /**
- * Controlla se il valore è un CAP italiano valido (5 cifre)
+ * Controlla se il valore è un CAP italiano valido (esattamente 5 cifre)
  */
 export const validateCap = (value: string): boolean => {
+  // Verifica che ci siano esattamente 5 cifre
   return /^\d{5}$/.test(value.trim());
 };
 

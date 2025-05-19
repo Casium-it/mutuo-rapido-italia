@@ -82,6 +82,15 @@ export function FormQuestion({ question }: FormQuestionProps) {
       const placeholder = question.placeholders[key];
       const validationType = (placeholder as any).input_validation as ValidationTypes;
       
+      // Per il CAP, verifica anche se l'input ha più di 5 caratteri
+      if (validationType === "cap" && value.length > 5) {
+        setValidationErrors(prev => ({
+          ...prev,
+          [key]: true
+        }));
+        return; // Non salvare nel contesto del form
+      }
+      
       // Verifichiamo la validità dell'input
       const isValid = validateInput(value, validationType);
       
@@ -377,6 +386,14 @@ export function FormQuestion({ question }: FormQuestionProps) {
           const value = (responses[placeholderKey] as string) || (existingResponse as string) || "";
           const hasError = validationErrors[placeholderKey];
           const validationType = placeholder.input_validation;
+
+          // Per CAP, imposta errore se più di 5 caratteri
+          if (validationType === "cap" && value.length > 5 && !hasError) {
+            setValidationErrors(prev => ({
+              ...prev,
+              [placeholderKey]: true
+            }));
+          }
           
           parts.push(
             <TooltipProvider key={`tooltip-${placeholderKey}`}>
