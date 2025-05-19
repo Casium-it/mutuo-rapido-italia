@@ -32,7 +32,6 @@ export const cointestatario: Block = {
           placeholder_label: "CAP",
           leads_to: "figli_a_carico_coint",
           input_validation: "cap",
-          add_block: "i_suoi_finanziamenti"
         }
       }
     },
