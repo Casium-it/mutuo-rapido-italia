@@ -123,20 +123,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
     }
   };
 
-  // Gestore per input numerico per i campi CAP
-  const handleNumericInput = (e: React.KeyboardEvent<HTMLInputElement>, validationType: ValidationTypes) => {
-    // Consenti solo numeri per CAP
-    if (validationType === "cap") {
-      const isNumber = /^[0-9]$/.test(e.key);
-      // Consente solo numeri, tasti di navigazione e controllo
-      const isControl = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key);
-      
-      if (!isNumber && !isControl) {
-        e.preventDefault();
-      }
-    }
-  };
-
   // Funzione per gestire il click sul placeholder
   const handlePlaceholderClick = (key: string) => {
     setVisibleOptions(prev => ({
@@ -388,10 +374,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
                   >
                     <Input
                       type={placeholder.input_type || "text"}
-                      inputMode={validationType === "cap" ? "numeric" : "text"}
                       value={value}
                       onChange={(e) => handleResponseChange(placeholderKey, e.target.value)}
-                      onKeyDown={(e) => handleNumericInput(e, validationType)}
                       placeholder={placeholder.placeholder_label || ""}
                       className={cn(
                         "inline-block align-middle text-center",
