@@ -133,6 +133,14 @@ export const useFormExtended = () => {
   };
 
   /**
+   * Remove a block from active blocks
+   * @param blockId The ID of the block to remove
+   */
+  const removeActiveBlock = (blockId: string): void => {
+    return formContext.removeActiveBlock(blockId);
+  };
+
+  /**
    * Identifica le domande terminali per un blocco - quelle che portano fuori dal blocco
    * @param block Il blocco da analizzare
    * @returns Array di ID delle domande terminali
@@ -380,6 +388,7 @@ export const useFormExtended = () => {
     createDynamicBlock,
     navigateToDynamicBlock,
     deleteDynamicBlock,
+    removeActiveBlock,
     isBlockComplete,
     getDynamicBlocksByBlueprint,
     areAllDynamicBlocksComplete,

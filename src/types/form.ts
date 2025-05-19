@@ -36,7 +36,7 @@ export type Question = {
   question_id: string;
   question_number: string;
   question_text: string;
-  question_notes?: string; // Added the optional question_notes field
+  question_notes?: string;
   block_id?: string;
   inline?: boolean;
   leads_to_placeholder_priority: string;
@@ -51,8 +51,8 @@ export type Block = {
   default_active?: boolean;
   invisible?: boolean;
   multiBlock?: boolean;
-  blueprint_id?: string; // Reference to the original block this was copied from
-  copy_number?: number; // The copy number used when creating this block
+  blueprint_id?: string;
+  copy_number?: number;
   questions: Question[];
 };
 
@@ -70,6 +70,11 @@ export type NavigationHistory = {
   timestamp: number;
 };
 
+export type BlockActivationSource = {
+  questionId: string;
+  placeholderId: string;
+};
+
 export type FormState = {
   activeBlocks: string[];
   activeQuestion: {
@@ -80,5 +85,6 @@ export type FormState = {
   answeredQuestions: Set<string>;
   isNavigating?: boolean;
   navigationHistory: NavigationHistory[];
-  dynamicBlocks: Block[]; // New field to store dynamically generated blocks
+  dynamicBlocks: Block[];
+  blockActivations: Record<string, BlockActivationSource[]>; // Track which questions activated which blocks
 };
