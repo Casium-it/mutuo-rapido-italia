@@ -32,6 +32,7 @@ export const cointestatario: Block = {
           placeholder_label: "CAP",
           leads_to: "figli_a_carico_coint",
           input_validation: "cap",
+          add_block: "i_suoi_finanziamenti"
         }
       }
     },
@@ -163,10 +164,11 @@ export const cointestatario: Block = {
           type: "select",
           options: [
             { id: "percepisce", label: "percepisce", leads_to: "next_block", add_block:"la_sua_professione"},
-            { id: "non_percepisce", label: "non percepisce", leads_to: "next_block"}
+            { id: "non_percepisce", label: "non percepisce", leads_to: "next_block",}
           ]
         }
       }
     },
+
   ]
 };
