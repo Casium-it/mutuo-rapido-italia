@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { Question, ValidationTypes } from "@/types/form";
@@ -418,6 +417,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
           const hasError = validationErrors[placeholderKey];
           const isEditing = editingFields[placeholderKey];
           const validationType = placeholder.input_validation;
+          const isValid = validateInput(value, validationType);
           
           parts.push(
             <TooltipProvider key={`tooltip-${placeholderKey}`}>
@@ -437,19 +437,21 @@ export function FormQuestion({ question }: FormQuestionProps) {
                         "inline-block align-middle text-center",
                         "border-[1.5px] rounded-[8px]",
                         "text-[16px] text-[#222222] font-['Inter']",
-                        "h-[48px] px-[12px] py-[10px]",
+                        "h-[46px] px-[12px] py-[10px]", // Ridotta l'altezza da 48px a 46px
                         "outline-none focus:ring-0",
                         "placeholder:text-[#E7E1D9] placeholder:font-normal",
                         "appearance-none",
                         {
-                          // Base color - darker beige quando non in editing e senza errori
-                          "border-[#E7E1D9] focus:border-[#245C4F]": !hasError && !isEditing,
+                          // Base color - darker beige quando non in editing, non valido o vuoto
+                          "border-[#E7E1D9] focus:border-[#245C4F]": !hasError && !isEditing && (!isValid || value === ""),
                           // Durante l'editing con valore valido - verde
-                          "border-green-500 focus:border-green-500": validateInput(value, validationType) && isEditing && value !== "",
+                          "border-green-500 focus:border-green-500": isValid && isEditing && value !== "",
                           // Post-editing con errore - rosso
                           "border-red-500 focus:border-red-500": hasError && !isEditing,
                           // Durante l'editing - verde scuro
                           "border-[#245C4F] focus:border-[#245C4F]": isEditing,
+                          // Valore valido anche dopo l'editing - verde scuro
+                          "border-[#245C4F] focus:border-[#245C4F]": isValid && !isEditing && value !== "",
                           // Dimensioni per input numerici standard
                           "w-[70px]": placeholder.input_type === "number" && validationType !== "euro",
                           // Dimensioni per input euro (allargati)
