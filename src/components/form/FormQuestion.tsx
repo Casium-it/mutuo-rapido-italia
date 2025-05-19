@@ -451,6 +451,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
                       onChange={(e) => handleResponseChange(placeholderKey, e.target.value)}
                       onBlur={() => handleInputBlur(placeholderKey, value)}
                       placeholder={placeholder.placeholder_label || ""}
+                      dynamicWidth={true}
                       className={cn(
                         "inline-block align-middle text-center",
                         "border-[1.5px] rounded-[8px]",

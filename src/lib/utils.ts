@@ -19,3 +19,19 @@ export function formatCurrency(amount: number): string {
     currency: 'EUR'
   }).format(amount);
 }
+
+// Misura la larghezza di un testo usando l'API Canvas
+export function measureTextWidth(text: string, font: string): number {
+  if (!text) return 0;
+  
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+  
+  if (context) {
+    context.font = font;
+    const metrics = context.measureText(text);
+    return metrics.width;
+  }
+  
+  return 0;
+}
