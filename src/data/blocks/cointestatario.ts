@@ -1,4 +1,3 @@
-
 import { Block } from "@/types/form";
 
 export const cointestatario: Block = {
@@ -31,8 +30,7 @@ export const cointestatario: Block = {
           input_type: "text",
           placeholder_label: "CAP",
           leads_to: "figli_a_carico_coint",
-          input_validation: "cap",
-          add_block: "i_suoi_finanziamenti"
+          input_validation: "cap"
         }
       }
     },
@@ -163,12 +161,11 @@ export const cointestatario: Block = {
         placeholder1: {
           type: "select",
           options: [
-            { id: "percepisce", label: "percepisce", leads_to: "next_block", add_block:"la_sua_professione"},
-            { id: "non_percepisce", label: "non percepisce", leads_to: "next_block",}
+            { id: "percepisce", label: "percepisce", leads_to: "next_block", add_block: "la_sua_professione"},
+            { id: "non_percepisce", label: "non percepisce", leads_to: "next_block" }
           ]
         }
       }
     },
-
   ]
 };
