@@ -75,7 +75,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
 
   // Funzione per gestire il cambio di risposta con validazione
   const handleResponseChange = (key: string, value: string | string[]) => {
-    // Aggiorniamo sempre lo stato locale
+    // Aggiorniamo sempre lo stato locale senza validazione durante la digitazione
     setResponses({
       ...responses,
       [key]: value
@@ -87,33 +87,11 @@ export function FormQuestion({ question }: FormQuestionProps) {
       [key]: true
     }));
 
-    // Se è un input, verifichiamo la validazione
+    // Se è un input, verifichiamo solo se è vuoto per resettare il contesto
     if (question.placeholders[key].type === "input" && typeof value === "string") {
-      const placeholder = question.placeholders[key];
-      const validationType = (placeholder as any).input_validation as ValidationTypes;
-      
-      // Verifichiamo la validità dell'input
-      const isValid = value === "" || validateInput(value, validationType);
-      
-      // Aggiorniamo lo stato di errore
-      setValidationErrors(prev => ({
-        ...prev,
-        [key]: !isValid && value !== ""
-      }));
-      
-      // Salviamo nel contesto del form se:
-      // - L'input è valido, OPPURE
-      // - L'input è vuoto (per permettere la cancellazione)
-      if (isValid || value === "") {
+      // Se l'utente cancella il valore, cancelliamo anche dal contesto
+      if (value === "") {
         setResponse(question.question_id, key, value);
-        
-        // Nascondi le opzioni se valido e non vuoto
-        if (value !== "") {
-          setVisibleOptions(prev => ({
-            ...prev,
-            [key]: false
-          }));
-        }
       }
     } else {
       // Per i select o altri tipi, salviamo sempre nel contesto
@@ -139,7 +117,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
 
   // Funzione per gestire la perdita di focus di un campo
   const handleInputBlur = (key: string, value: string) => {
-    // Rimuovi lo stato di editing
+    // Rimuoviamo lo stato di editing solo ora che l'utente ha finito di digitare
     setEditingFields(prev => ({
       ...prev,
       [key]: false
@@ -150,7 +128,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
       return;
     }
 
-    // Se è un input, verifichiamo la validazione
+    // Se è un input, verifichiamo la validazione SOLO quando l'utente ha finito di digitare
     if (question.placeholders[key].type === "input") {
       const placeholder = question.placeholders[key];
       const validationType = (placeholder as any).input_validation as ValidationTypes;
@@ -185,7 +163,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
     }));
   };
 
-  // Nuova funzione per attivare la modalità di modifica di un input
+  // Funzione per attivare la modalità di modifica di un input
   const handleInputClick = (key: string) => {
     setEditingFields(prev => ({
       ...prev,
@@ -446,7 +424,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
             }
           };
           
-          // CONDIZIONE MODIFICATA: Mostra un elemento span stilizzato se il valore è valido e non in editing mode
+          // Mostra un elemento span stilizzato SOLO se il valore è valido, NON in editing mode, 
+          // e l'utente ha terminato di digitare (non è attualmente in focus)
           if (isValid && value && !isEditing && !hasError) {
             // Renderizza uno span styled che assomiglia a una risposta completata
             parts.push(
@@ -485,9 +464,9 @@ export function FormQuestion({ question }: FormQuestionProps) {
                           getInputWidth(),
                           {
                             // Stati diversi del bordo
-                            "border-[#E7E1D9] focus:border-[#245C4F]": value === "" && !hasError,  // Vuoto (stato iniziale)
-                            "border-[#245C4F]": isEditing && isValid && value !== "",              // Durante editing con valore valido
-                            "border-red-500": hasError,                                           // Errore di validazione
+                            "border-[#E7E1D9]": value === "" && !hasError,  // Vuoto (stato iniziale)
+                            "border-[#245C4F] focus:border-[#245C4F]": isEditing && !hasError, // Durante editing senza errori
+                            "border-red-500": hasError,                     // Errore di validazione
                           }
                         )}
                         style={{ 
