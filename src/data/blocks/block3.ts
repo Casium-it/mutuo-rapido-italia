@@ -5,7 +5,7 @@ export const block3: Block = {
   block_number: "3",
   block_id: "la_tua_professione",
   title: "La tua professione",
-  priority: 30,
+  priority: 700,
   default_active: true,
   questions: [
     {
@@ -69,7 +69,7 @@ export const block3: Block = {
         placeholder1: {
           type: "select",
           options: [
-            {"id": "corso", "label": "ancora in corso", "leads_to": "next_block"},
+            {"id": "corso", "label": "ancora in corso", "leads_to": "scadenza_contratto"},
             {"id": "finito", "label": "finito", "leads_to": "next_block"}
           ]
         }
@@ -101,16 +101,16 @@ export const block3: Block = {
     {
       question_number: "3.6",
       question_id: "probabilita_rinnovo",
-      question_text: "con {{placeholder1}} possibilità di rinnovo",
+      question_text: "con {{placeholder1}} possibilità di rinnovo o assunzione indeterminata",
       inline: true,
       leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "select",
           options: [
-            {"id": "nessuna", "label": "nessuna possibilità", "leads_to": "posizione_ricoperta"},
-            {"id": "bassa", "label": "bassa probabilità", "leads_to": "posizione_ricoperta"},
-            {"id": "alta", "label": "alta probabilità", "leads_to": "posizione_ricoperta"}
+            {"id": "nessuna", "label": "nessuna possibilità", "leads_to": "next_block"},
+            {"id": "bassa", "label": "bassa probabilità", "leads_to": "next_block"},
+            {"id": "alta", "label": "alta probabilità", "leads_to": "next_block"}
           ]
         }
       }
@@ -166,15 +166,31 @@ export const block3: Block = {
     {
       question_number: "3.9",
       question_id: "anno_pensione",
-      question_text: "Sei andato in pensione nel {{placeholder1}}",
+      question_text: "Sono andato in pensione nel {{placeholder1}}",
       leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "input",
           input_type: "number",
           placeholder_label: "Anno",
-          leads_to: "next_block",
+          leads_to: "reddito_pensione",
           input_validation: "year"
+        }
+      }
+    },
+    {
+      question_number: "3.9.1",
+      question_id: "reddito_pensione",
+      question_text: "e percepisco una pensione mensile di {{placeholder1}}",
+      leads_to_placeholder_priority: "placeholder1",
+      inline: true,
+      placeholders: {
+        placeholder1: {
+          type: "input",
+          input_type: "number",
+          placeholder_label: "valore",
+          leads_to: "next_block",
+          input_validation: "euro"
         }
       }
     },
