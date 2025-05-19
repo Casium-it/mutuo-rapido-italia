@@ -50,18 +50,12 @@ export const useFormExtended = () => {
     const currentQuestionId = formContext.state.activeQuestion.question_id;
     const currentBlockId = formContext.state.activeQuestion.block_id;
     
-    // Prima cerchiamo nella cronologia di navigazione
-    const navigationEntries = formContext.getNavigationHistory();
+    // Cerchiamo nella cronologia di navigazione per questa domanda specifica
+    const historyForCurrentQuestion = formContext.getNavigationHistoryFor(currentQuestionId);
     
-    // La cronologia è ordinata dal più recente al meno recente
-    // Cerchiamo l'ultima entry che porta all'attuale domanda
-    const currentEntry = navigationEntries.find(entry => 
-      entry.to_block_id === currentBlockId && entry.to_question_id === currentQuestionId
-    );
-    
-    if (currentEntry) {
+    if (historyForCurrentQuestion) {
       // Se troviamo una entry valida, navighiamo alla domanda di origine
-      formContext.goToQuestion(currentEntry.from_block_id, currentEntry.from_question_id);
+      formContext.goToQuestion(historyForCurrentQuestion.from_block_id, historyForCurrentQuestion.from_question_id);
       return true;
     }
     

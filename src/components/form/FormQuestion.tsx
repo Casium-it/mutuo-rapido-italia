@@ -712,7 +712,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
               "border-[#245C4F] text-[#245C4F] hover:bg-[#F8F4EF] px-[24px] py-[16px] rounded-[12px] text-[16px] font-medium",
               "transition-all"
             )}
-            onClick={handlePreviousQuestion}
+            onClick={navigateToPreviousQuestion}
             disabled={isNavigating}
           >
             <ArrowLeft className="mr-1 h-4 w-4" /> Indietro
