@@ -1,6 +1,6 @@
 
 import { useForm } from "@/contexts/FormContext";
-import { Check } from "lucide-react";
+import { Circle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useParams } from "react-router-dom";
 
@@ -38,6 +38,34 @@ export function BlockSidebar() {
     return "non iniziato";
   };
 
+  // Funzione per renderizzare il cerchio di stato appropriato
+  const renderStatusCircle = (status: string) => {
+    switch (status) {
+      case "completato":
+        // Cerchio pieno verde
+        return (
+          <div className="w-5 h-5 rounded-full bg-[#245C4F] flex items-center justify-center" />
+        );
+      case "parziale":
+        // Cerchio mezzo pieno
+        return (
+          <div className="w-5 h-5 rounded-full border-2 border-[#BEB8AE] relative">
+            <div className="absolute inset-0 bg-[#245C4F] rounded-full clip-half" />
+          </div>
+        );
+      case "attivo":
+        // Cerchio con bordo più spesso per l'elemento attivo
+        return (
+          <div className="w-5 h-5 rounded-full border-2 border-black flex items-center justify-center" />
+        );
+      default:
+        // Cerchio vuoto (beige)
+        return (
+          <div className="w-5 h-5 rounded-full border-2 border-[#BEB8AE] flex items-center justify-center" />
+        );
+    }
+  };
+
   return (
     <div className="w-full bg-[#FAF9F6] h-full py-6 overflow-y-auto border-r border-gray-200">
       <div className="px-4">
@@ -59,7 +87,7 @@ export function BlockSidebar() {
                 )}
               >
                 <div className="mr-2 shrink-0">
-                  {status === "completato" && <Check className="w-4 h-4 text-black" />}
+                  {renderStatusCircle(status)}
                 </div>
                 <div className="truncate text-sm">{block.title}</div>
               </div>

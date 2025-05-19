@@ -162,6 +162,11 @@
     @apply inline-flex items-center gap-[12px];
   }
 
+  /* Stile per il cerchio mezzo pieno */
+  .clip-half {
+    clip-path: polygon(0% 0%, 50% 0%, 50% 100%, 0% 100%);
+  }
+
   @keyframes shine {
     0% { background-position: 0% center; }
     100% { background-position: 200% center; }
