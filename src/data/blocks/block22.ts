@@ -31,7 +31,7 @@ export const block22: Block = {
           input_type: "text",
           placeholder_label: "CAP",
           leads_to: "figli_a_carico_coint",
-          input_validation: "cap",
+          input_validation: "cap"
         }
       }
     },
