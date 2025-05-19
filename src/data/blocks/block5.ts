@@ -5,14 +5,14 @@ export const block5: Block = {
   block_number: "5",
   block_id: "reddito_principale",
   title: "Reddito principale",
-  priority: 50, // Priorità aggiunta
+  priority: 800, // Priorità aggiunta
   default_active: false,
   questions: [
     {
       question_number: "5.1",
       question_id: "busta_paga_periodicita",
-      question_text: "Ricevo busta paga {{placeholder1}}",
-      leads_to_placeholder_priority: "placeholder1",
+      question_text: "Percepisco un reddito {{placeholder1}} {{placeholder2}}",
+      leads_to_placeholder_priority: "placeholder2",
       placeholders: {
         placeholder1: {
           type: "select",
@@ -20,13 +20,20 @@ export const block5: Block = {
             { id: "mensile", label: "mensile", leads_to: "busta_paga_importo" },
             { id: "annuale", label: "annuale", leads_to: "busta_paga_importo" }
           ]
+        },
+        placeholder2: {
+          type: "select",
+          options: [
+            { id: "netta", label: "netto", leads_to: "busta_paga_importo" },
+            { id: "lorda", label: "lordo", leads_to: "busta_paga_importo" }
+          ]
         }
       }
     },
     {
       question_number: "5.2",
       question_id: "busta_paga_importo",
-      question_text: ", senza straordinari e bonus, di {{placeholder1}} euro",
+      question_text: "di euro {{placeholder1}}, senza bonus e straordinari.",
       inline: true,
       leads_to_placeholder_priority: "placeholder1",
       placeholders: {
@@ -34,28 +41,13 @@ export const block5: Block = {
           type: "input",
           input_type: "number",
           placeholder_label: "Importo",
-          leads_to: "busta_paga_lordo_netto",
-          input_validation: "euro"
+          input_validation: "euro",
+          leads_to: "contratto_tredicesime"
         }
       }
     },
     {
       question_number: "5.3",
-      question_id: "busta_paga_lordo_netto",
-      question_text: "L'importo indicato è {{placeholder1}}",
-      leads_to_placeholder_priority: "placeholder1",
-      placeholders: {
-        placeholder1: {
-          type: "select",
-          options: [
-            { id: "lordo", label: "al lordo", leads_to: "contratto_tredicesime" },
-            { id: "netto", label: "al netto", leads_to: "contratto_tredicesime" }
-          ]
-        }
-      }
-    },
-    {
-      question_number: "5.4",
       question_id: "contratto_tredicesime",
       question_text: "Il mio contratto {{placeholder1}}",
       leads_to_placeholder_priority: "placeholder1",
@@ -71,7 +63,7 @@ export const block5: Block = {
       }
     },
     {
-      question_number: "5.5",
+      question_number: "5.4",
       question_id: "ricezione_bonus",
       question_text: "Nella mia posizione {{placeholder1}} bonus.",
       leads_to_placeholder_priority: "placeholder1",
@@ -86,7 +78,7 @@ export const block5: Block = {
       }
     },
     {
-      question_number: "5.6",
+      question_number: "5.5",
       question_id: "importo_bonus",
       question_text: "Il bonus in media è di {{placeholder1}} euro netti annuali, negli ultimi 3 anni",
       leads_to_placeholder_priority: "placeholder1",
@@ -101,7 +93,7 @@ export const block5: Block = {
       }
     },
     {
-      question_number: "5.7",
+      question_number: "5.6",
       question_id: "bonus_stabilita",
       question_text: "Il mio bonus è {{placeholder1}}",
       leads_to_placeholder_priority: "placeholder1",
@@ -118,7 +110,7 @@ export const block5: Block = {
       }
     },
     {
-      question_number: "5.8",
+      question_number: "5.7",
       question_id: "ricezione_benefit",
       question_text: "Nella mia posizione {{placeholder1}} benefit aziendali.",
       leads_to_placeholder_priority: "placeholder1",
@@ -133,7 +125,8 @@ export const block5: Block = {
       }
     },
     {
-      question_number: "5.9",
+      //assolutamente da MIGLIORARE
+      question_number: "5.8",
       question_id: "tipologia_benefit",
       question_text: "I miei benefit sono: {{placeholder1}}",
       leads_to_placeholder_priority: "placeholder1",
