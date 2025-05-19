@@ -1,7 +1,6 @@
-import { RepeatingGroupBlock } from "@/types/form";
+import { Block } from "@/types/form";
 
-// Block 14 - Manager finanziamenti
-export const manager_finanziamenti: RepeatingGroupBlock = {
+export const block14: Block = {
   block_number: "14",
   block_id: "manager_finanziamenti",
   title: "Finanziamenti in corso",
