@@ -8,6 +8,7 @@ export const blockDettagliRedditoSecondario: Block = {
   title: "Dettagli reddito secondario",
   priority: 61,
   multiBlock: true, // Mark as multiBlock blueprint
+  invisible: true, //mark this block blueprint as invisible
   questions: [
     {
       question_number: "6D.1",
