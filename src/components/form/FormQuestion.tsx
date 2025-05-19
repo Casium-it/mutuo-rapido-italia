@@ -13,6 +13,24 @@ import { validateInput } from "@/utils/validationUtils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { MultiBlockManager } from "./MultiBlockManager";
 
+// Funzione per formattare il valore da visualizzare in base al tipo di validazione
+const formatDisplayValue = (value: string, validationType: ValidationTypes): string => {
+  if (!value) return "";
+  
+  switch (validationType) {
+    case "euro":
+      // Formatta con separatore migliaia in formato italiano
+      return formatNumberWithThousandSeparator(value);
+    case "city":
+    case "month":
+      // Capitalizza la prima lettera di ogni parola per città e mesi
+      return capitalizeWords(value);
+    default:
+      // Per tutti gli altri tipi, mantieni il valore originale
+      return value;
+  }
+};
+
 interface FormQuestionProps {
   question: Question;
 }
