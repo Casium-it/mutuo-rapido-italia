@@ -18,19 +18,19 @@ export const reddito_secondario_blueprint: Block = {
         placeholder1: {
           type: "select",
           options: [
-            { id: "rental", label: "Reddito da affitto", leads_to: "amount_input{copyNumber}" },
-            { id: "freelance", label: "Lavoro autonomo", leads_to: "amount_input{copyNumber}" },
-            { id: "child_support", label: "Mantenimento figli", leads_to: "amount_input{copyNumber}" },
-            { id: "allowance", label: "Indennità", leads_to: "amount_input{copyNumber}" },
-            { id: "dividends", label: "Dividendi", leads_to: "amount_input{copyNumber}" },
-            { id: "pension", label: "Pensione", leads_to: "amount_input{copyNumber}" },
-            { id: "other", label: "Altro", leads_to: "amount_input{copyNumber}" }
+            { id: "rental", label: "Reddito da affitto", leads_to: "reddito_secondario_importo{copyNumber}" },
+            { id: "freelance", label: "Lavoro autonomo", leads_to: "reddito_secondario_importo{copyNumber}" },
+            { id: "child_support", label: "Mantenimento figli", leads_to: "reddito_secondario_importo{copyNumber}" },
+            { id: "allowance", label: "Indennità", leads_to: "reddito_secondario_importo{copyNumber}" },
+            { id: "dividends", label: "Dividendi", leads_to: "reddito_secondario_importo{copyNumber}" },
+            { id: "pension", label: "Pensione", leads_to: "reddito_secondario_importo{copyNumber}" },
+            { id: "other", label: "Altro", leads_to: "reddito_secondario_importo{copyNumber}" }
           ]
         }
       }
     },
     {
-      question_id: "amount_input{copyNumber}",
+      question_id: "reddito_secondario_importo{copyNumber}",
       question_number: "13.2",
       question_text: "Percepisco {{placeholder1}} mensilmente",
       question_notes: "Indica una media degli ultimi tre anni percepisci questo reddito da un po' di tempo",

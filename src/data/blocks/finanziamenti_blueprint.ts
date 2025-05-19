@@ -18,17 +18,17 @@ export const finanziamenti_blueprint: Block = {
         placeholder1: {
           type: "select",
           options: [
-            { id: "personal_loan", label: "Prestito personale", leads_to: "amount_input{copyNumber}" },
-            { id: "car_loan", label: "Prestito auto", leads_to: "amount_input{copyNumber}" },
-            { id: "credit_card", label: "Carta di credito", leads_to: "amount_input{copyNumber}" },
-            { id: "mortgage", label: "Mutuo", leads_to: "amount_input{copyNumber}" },
-            { id: "other", label: "Altro", leads_to: "amount_input{copyNumber}" }
+            { id: "personal_loan", label: "Prestito personale", leads_to: "finanziamenti_importo{copyNumber}" },
+            { id: "car_loan", label: "Prestito auto", leads_to: "finanziamenti_importo{copyNumber}" },
+            { id: "credit_card", label: "Carta di credito", leads_to: "finanziamenti_importo{copyNumber}" },
+            { id: "mortgage", label: "Mutuo", leads_to: "finanziamenti_importo{copyNumber}" },
+            { id: "other", label: "Altro", leads_to: "finanziamenti_importo{copyNumber}" }
           ]
         }
       }
     },
     {
-      question_id: "amount_input{copyNumber}",
+      question_id: "finanziamenti_importo{copyNumber}",
       question_number: "14.2",
       question_text: "L'importo della rata mensile è di {{placeholder1}}",
       question_notes: "Indica l'importo della rata mensile che paghi attualmente",
