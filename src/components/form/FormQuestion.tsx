@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { Question, ValidationTypes } from "@/types/form";
@@ -677,9 +678,9 @@ export function FormQuestion({ question }: FormQuestionProps) {
   
   return (
     <div className="max-w-xl animate-fade-in">
-      {/* Note banner per le question notes */}
+      {/* Note banner per le question notes - Design migliorato */}
       {question.question_notes && (
-        <div className="mb-4 bg-[#F8F4EF] rounded-md border-l-4 border-[#245C4F] pl-4 pr-3 py-3 shadow-[2px_0_0_rgba(36,92,79,0.2)] text-[14px] font-normal text-gray-700">
+        <div className="mb-4 bg-[#F8F4EF] rounded-md border-b-4 border-[#BEB8AE] px-4 py-3 shadow-[0_3px_0_0_rgba(175,168,159,0.35)] text-[14px] font-normal text-gray-700">
           {question.question_notes}
         </div>
       )}
