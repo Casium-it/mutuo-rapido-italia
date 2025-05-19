@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { Question, ValidationTypes } from "@/types/form";
@@ -6,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { useParams } from "react-router-dom";
-import { cn } from "@/lib/utils";
+import { cn, formatNumberWithThousandSeparator, capitalizeWords } from "@/lib/utils";
 import { SelectPlaceholderBox } from "./SelectPlaceholderBox";
 import { Separator } from "@/components/ui/separator";
 import { getQuestionTextWithClickableResponses } from "@/utils/formUtils";
@@ -427,6 +426,9 @@ export function FormQuestion({ question }: FormQuestionProps) {
           // Mostra un elemento span stilizzato SOLO se il valore è valido, NON in editing mode, 
           // e l'utente ha terminato di digitare (non è attualmente in focus)
           if (isValid && value && !isEditing && !hasError) {
+            // Formatta il valore in base al tipo di validazione prima di mostrarlo
+            const formattedValue = formatDisplayValue(value, validationType);
+            
             // Renderizza uno span styled che assomiglia a una risposta completata
             parts.push(
               <span 
@@ -434,7 +436,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
                 className="bg-[#F8F4EF] text-[#245C4F] font-semibold px-[10px] py-[4px] rounded-[6px] text-[16px] cursor-pointer mx-1"
                 onClick={() => handleInputClick(placeholderKey)}
               >
-                {value}
+                {formattedValue}
               </span>
             );
           } else {

@@ -19,3 +19,19 @@ export function formatCurrency(amount: number): string {
     currency: 'EUR'
   }).format(amount);
 }
+
+// Formatta un numero con separatore migliaia in formato italiano
+export function formatNumberWithThousandSeparator(value: string | number): string {
+  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(numValue)) return '';
+  return new Intl.NumberFormat('it-IT', { useGrouping: true }).format(numValue);
+}
+
+// Capitalizza la prima lettera di ogni parola
+export function capitalizeWords(value: string): string {
+  if (!value) return '';
+  return value
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
