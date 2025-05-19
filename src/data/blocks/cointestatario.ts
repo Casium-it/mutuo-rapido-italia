@@ -163,11 +163,10 @@ export const cointestatario: Block = {
           type: "select",
           options: [
             { id: "percepisce", label: "percepisce", leads_to: "next_block", add_block:"la_sua_professione"},
-            { id: "non_percepisce", label: "non percepisce", leads_to: "next_block",}
+            { id: "non_percepisce", label: "non percepisce", leads_to: "next_block"}
           ]
         }
       }
     },
-
   ]
 };

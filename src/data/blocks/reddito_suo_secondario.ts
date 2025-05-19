@@ -17,9 +17,24 @@ export const reddito_suo_secondario: Block = {
         placeholder1: {
           type: "select",
           options: [
-            { id: "percepisce", label: "percepisce", leads_to: "next_block", add_block: "manager_reddito_secondario_coint"},
+            { id: "percepisce", label: "percepisce", leads_to: "manager_reddito_secondario_coint"},
             { id: "non_percepisce", label: "non percepisce", leads_to: "next_block" }
           ]
+        }
+      }
+    },
+    {
+      question_number: "26.2",
+      question_id: "manager_reddito_secondario_coint",
+      question_text: "Aggiungi qui tutte le fonti di reddito secondarie del tuo cointestatario",
+      leads_to_placeholder_priority: "placeholder1",
+      placeholders: {
+        placeholder1: {
+          type: "MultiBlockManager",
+          placeholder_label: "",
+          add_block_label: "Aggiungi reddito",
+          blockBlueprint: "reddito_suo_secondario_blueprint{copyNumber}",
+          leads_to: "next_block"
         }
       }
     }
