@@ -26,13 +26,13 @@ export const reddito_secondario: Block = {
     {
       question_number: "6.2",
       question_id: "manager_reddito_secondario",
-      question_text: "Gestisci i tuoi redditi secondari",
+      question_text: "Altre fonti di reddito",
       leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "MultiBlockManager",
-          placeholder_label: "Aggiungi reddito secondario",
-          add_block_label: "Aggiungi un altro reddito secondario",
+          placeholder_label: "",
+          add_block_label: "Aggiungi un altro reddito",
           blockBlueprint: "reddito_secondario_blueprint{copyNumber}",
           leads_to: "next_block"
         }
