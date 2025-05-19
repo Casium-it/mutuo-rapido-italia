@@ -1,4 +1,3 @@
-
 import { Block } from "@/types/form";
 
 // Block 10 - Conclusione
@@ -6,7 +5,7 @@ export const block10: Block = {
   block_number: "10",
   block_id: "conclusione",
   title: "Conclusione",
-  priority: 100,
+  priority: 2000,
   default_active: true,
   questions: [
     {
