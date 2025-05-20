@@ -1,12 +1,17 @@
-
 import { useForm } from "@/contexts/FormContext";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useParams } from "react-router-dom";
+import { useEffect } from "react";
 
 export function BlockSidebar() {
   const { blocks, state } = useForm();
   const params = useParams<{ blockType?: string }>();
+  
+  // Add debugging to see when the sidebar renders and what completed blocks it knows about
+  useEffect(() => {
+    console.log("BlockSidebar rendering, completedBlocks:", state.completedBlocks);
+  }, [state.completedBlocks]);
   
   // Filter blocks that are active, not invisible, and sort by priority
   const activeBlocks = blocks
@@ -18,6 +23,12 @@ export function BlockSidebar() {
   };
 
   const isBlockCompleted = (blockId: string) => {
+    // Add debug log to see each check for block completion
+    const isInCompletedArray = state.completedBlocks.includes(blockId);
+    if (isInCompletedArray) {
+      console.log(`Block ${blockId} is explicitly marked as completed`);
+    }
+    
     // First check if the block is in the completedBlocks array
     if (state.completedBlocks.includes(blockId)) {
       return true;
@@ -27,7 +38,11 @@ export function BlockSidebar() {
     const block = blocks.find(b => b.block_id === blockId);
     if (!block) return false;
 
-    return block.questions.every(question => state.answeredQuestions.has(question.question_id));
+    const allQuestionsAnswered = block.questions.every(question => state.answeredQuestions.has(question.question_id));
+    if (allQuestionsAnswered) {
+      console.log(`Block ${blockId} is completed by all questions answered`);
+    }
+    return allQuestionsAnswered;
   };
 
   const getBlockStatus = (blockId: string) => {

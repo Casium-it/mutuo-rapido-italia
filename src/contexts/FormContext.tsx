@@ -253,6 +253,7 @@ function formReducer(state: FormState, action: Action): FormState {
       if (state.completedBlocks.includes(action.blockId)) {
         return state;
       }
+      console.log(`Marking block as completed: ${action.blockId}, current completed blocks:`, state.completedBlocks);
       return {
         ...state,
         completedBlocks: [...state.completedBlocks, action.blockId]
@@ -448,12 +449,12 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       const stateToSave = {
         ...state,
         answeredQuestions: Array.from(state.answeredQuestions),
-        // Ensure completedBlocks is included in the saved state
         completedBlocks: state.completedBlocks
       };
+      console.log("Saving to localStorage:", JSON.stringify(stateToSave.completedBlocks));
       localStorage.setItem(`form-state-${params.blockType}`, JSON.stringify(stateToSave));
     }
-  }, [state, params.blockType]);
+  }, [state, state.completedBlocks, params.blockType]);
 
   const activateRequiredBlocksBasedOnResponses = (responses: FormResponse) => {
     for (const questionId of Object.keys(responses)) {
@@ -670,6 +671,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
 
   // Definire la funzione markBlockCompleted
   const markBlockCompleted = useCallback((blockId: string) => {
+    console.log(`markBlockCompleted called for block: ${blockId}`);
     dispatch({ type: "MARK_BLOCK_COMPLETED", blockId });
   }, []);
 
