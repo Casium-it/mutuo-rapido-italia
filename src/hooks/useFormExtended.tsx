@@ -1,4 +1,3 @@
-
 import { useForm as useOriginalForm } from "@/contexts/FormContext";
 import { 
   getPreviousQuestion as getPreviousQuestionUtil, 
@@ -306,9 +305,9 @@ export const useFormExtended = () => {
   };
 
   /**
-   * Gets the terminal (last) questions for a specific block
-   * @param blockId The ID of the block to check
-   * @returns Array of terminal questions in the block
+   * Identifica le domande terminali per un blocco - quelle che portano fuori dal blocco
+   * @param blockId L'ID del blocco da analizzare
+   * @returns Array di domande terminali
    */
   const getTerminalQuestionsForBlock = (blockId: string): Question[] => {
     const block = formContext.blocks.find(b => b.block_id === blockId) || 
@@ -316,9 +315,50 @@ export const useFormExtended = () => {
     
     if (!block || block.questions.length === 0) return [];
     
-    // Per ora, consideriamo solo l'ultima domanda come terminale
-    const lastQuestion = block.questions[block.questions.length - 1];
-    return [lastQuestion];
+    const terminalQuestions: Question[] = [];
+    
+    // Itera attraverso le domande per trovare quelle che portano fuori dal blocco
+    block.questions.forEach(question => {
+      let isTerminal = false;
+      
+      // Caso speciale per l'ultima domanda del blocco
+      if (question === block.questions[block.questions.length - 1]) {
+        isTerminal = true;
+      }
+      
+      // Controlla i placeholder per i percorsi leads_to
+      Object.entries(question.placeholders).forEach(([_, placeholder]) => {
+        if (placeholder.type === "select") {
+          // Controlla se qualche opzione porta fuori da questo blocco
+          (placeholder.options || []).forEach(option => {
+            if (
+              option.leads_to === "next_block" || 
+              (option.leads_to && !option.leads_to.includes(blockId))
+            ) {
+              isTerminal = true;
+            }
+          });
+        } else if ("leads_to" in placeholder) {
+          // Controlla se l'input porta fuori da questo blocco
+          const leadsTo = placeholder.leads_to;
+          if (
+            leadsTo === "next_block" || 
+            (leadsTo && !leadsTo.includes(blockId))
+          ) {
+            isTerminal = true;
+          }
+        } else if (placeholder.type === "MultiBlockManager") {
+          // MultiBlockManager è sempre terminale
+          isTerminal = true;
+        }
+      });
+      
+      if (isTerminal) {
+        terminalQuestions.push(question);
+      }
+    });
+    
+    return terminalQuestions;
   };
 
   return {

@@ -5,7 +5,7 @@ import { FormQuestion } from "./FormQuestion";
 import { useLocation, useParams } from "react-router-dom";
 
 export function QuestionView() {
-  const { state, blocks, goToQuestion, markBlockCompleted } = useFormExtended();
+  const { state, blocks, goToQuestion, markBlockCompleted, getTerminalQuestionsForBlock } = useFormExtended();
   const location = useLocation();
   const params = useParams<{ blockId?: string, questionId?: string }>();
   const [showStopFlow, setShowStopFlow] = useState<boolean>(false);
@@ -27,16 +27,18 @@ export function QuestionView() {
     if (state.activeQuestion.block_id && state.activeQuestion.question_id) {
       const block = blocks.find(b => b.block_id === state.activeQuestion.block_id);
       if (block) {
-        const question = block.questions.find(q => q.question_id === state.activeQuestion.question_id);
-        const isLastQuestion = block.questions[block.questions.length - 1] === question;
+        const terminalQuestions = getTerminalQuestionsForBlock(state.activeQuestion.block_id);
+        const currentQuestion = block.questions.find(q => q.question_id === state.activeQuestion.question_id);
         
-        // If this is the last question, and it's answered, mark the block as complete
-        if (isLastQuestion && state.answeredQuestions.has(state.activeQuestion.question_id)) {
+        // If this is a terminal question and it's answered, mark the block as complete
+        if (currentQuestion && 
+            terminalQuestions.some(q => q.question_id === currentQuestion.question_id) && 
+            state.answeredQuestions.has(state.activeQuestion.question_id)) {
           markBlockCompleted(state.activeQuestion.block_id);
         }
       }
     }
-  }, [state.activeQuestion, state.answeredQuestions, blocks, markBlockCompleted]);
+  }, [state.activeQuestion, state.answeredQuestions, blocks, markBlockCompleted, getTerminalQuestionsForBlock]);
   
   // Find the current active block and question
   const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
