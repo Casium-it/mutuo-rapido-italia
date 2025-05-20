@@ -1,31 +1,34 @@
 
-import React, { useMemo } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useParams } from "react-router-dom";
 
 export function BlockSidebar() {
-  const { blocks, state, isBlockCompleted } = useForm();
+  const { blocks, state } = useForm();
   const params = useParams<{ blockType?: string }>();
   
-  // Utilizziamo useMemo per evitare calcoli ripetuti ad ogni render
-  const activeBlocks = useMemo(() => {
-    return blocks
-      .filter(block => state.activeBlocks.includes(block.block_id) && !block.invisible)
-      .sort((a, b) => a.priority - b.priority);
-  }, [blocks, state.activeBlocks]);
+  // Filter blocks that are active, not invisible, and sort by priority
+  const activeBlocks = blocks
+    .filter(block => state.activeBlocks.includes(block.block_id) && !block.invisible)
+    .sort((a, b) => a.priority - b.priority); // Ordinamento per priorità
 
   const isBlockActive = (blockId: string) => {
     return state.activeQuestion.block_id === blockId;
   };
 
+  const isBlockCompleted = (blockId: string) => {
+    const block = blocks.find(b => b.block_id === blockId);
+    if (!block) return false;
+
+    return block.questions.every(question => state.answeredQuestions.has(question.question_id));
+  };
+
   const getBlockStatus = (blockId: string) => {
-    // Usa completedBlocks per ottimizzare - è la fonte primaria di verità
     if (isBlockCompleted(blockId)) return "completato";
     if (isBlockActive(blockId)) return "attivo";
     
-    // Solo se non completato, verifica se alcune domande sono risposte
+    // Se c'è almeno una domanda risposta ma non tutte
     const block = blocks.find(b => b.block_id === blockId);
     if (block) {
       const hasAnyAnswer = block.questions.some(q => state.answeredQuestions.has(q.question_id));
