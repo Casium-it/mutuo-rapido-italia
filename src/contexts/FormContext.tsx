@@ -1,5 +1,4 @@
-
-import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback, useRef } from "react";
 import { Block, FormState, FormResponse, NavigationHistory, Placeholder, SelectPlaceholder } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { ensureBlockHasPriority } from "@/utils/blockUtils";
@@ -7,7 +6,7 @@ import { ensureBlockHasPriority } from "@/utils/blockUtils";
 type FormContextType = {
   state: FormState;
   blocks: Block[];
-  goToQuestion: (block_id: string, question_id: string, replace?: boolean) => void;
+  goToQuestion: (block_id: string, question_id: string, replace?: boolean, skipMarkingCompleted?: boolean) => void;
   setResponse: (question_id: string, placeholder_key: string, value: string | string[]) => void;
   getResponse: (question_id: string, placeholder_key: string) => string | string[] | undefined;
   addActiveBlock: (block_id: string) => void;
@@ -250,7 +249,7 @@ function formReducer(state: FormState, action: Action): FormState {
       };
     }
     case "MARK_BLOCK_COMPLETED": {
-      // Only add if it doesn't exist already
+      // Solo aggiungi se non esiste già
       if (!state.completedBlocks.includes(action.blockId)) {
         return {
           ...state,
@@ -278,6 +277,9 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     blockActivations: {},
     completedBlocks: [] // Initialize with empty array
   });
+
+  // Ref per tenere traccia dei salvataggi pendenti
+  const saveTimeoutRef = useRef<number | null>(null);
 
   const createDynamicBlock = useCallback((blockBlueprintId: string): string | null => {
     const blueprintBlock = blocks.find(b => b.block_id === blockBlueprintId && b.multiBlock === true);
@@ -450,15 +452,33 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     }
   }, [params.blockId, params.questionId, params.blockType, blocks, navigate, state.activeBlocks]);
 
-  // Save state to localStorage whenever it changes
-  useEffect(() => {
-    if (params.blockType) {
-      const stateToSave = {
-        ...state,
-        answeredQuestions: Array.from(state.answeredQuestions)
-      };
-      localStorage.setItem(`form-state-${params.blockType}`, JSON.stringify(stateToSave));
+  // Funzione per salvare lo stato con debounce
+  const debouncedSaveState = useCallback(() => {
+    if (saveTimeoutRef.current) {
+      window.clearTimeout(saveTimeoutRef.current);
     }
+    
+    saveTimeoutRef.current = window.setTimeout(() => {
+      if (params.blockType) {
+        const stateToSave = {
+          ...state,
+          answeredQuestions: Array.from(state.answeredQuestions)
+        };
+        localStorage.setItem(`form-state-${params.blockType}`, JSON.stringify(stateToSave));
+      }
+      saveTimeoutRef.current = null;
+    }, 300); // Attendi 300ms prima di salvare
+  }, [params.blockType, state]);
+
+  // Save state to localStorage whenever it changes (with debounce)
+  useEffect(() => {
+    debouncedSaveState();
+    
+    return () => {
+      if (saveTimeoutRef.current) {
+        window.clearTimeout(saveTimeoutRef.current);
+      }
+    };
   }, [
     state.activeQuestion,
     state.activeBlocks,
@@ -466,10 +486,10 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     state.answeredQuestions,
     state.dynamicBlocks,
     state.completedBlocks, // Include completedBlocks in dependency array
-    params.blockType
+    debouncedSaveState
   ]);
 
-  const activateRequiredBlocksBasedOnResponses = (responses: FormResponse) => {
+  const activateRequiredBlocksBasedOnResponses = useCallback((responses: FormResponse) => {
     for (const questionId of Object.keys(responses)) {
       for (const blockObj of blocks) {
         const question = blockObj.questions.find(q => q.question_id === questionId);
@@ -495,32 +515,26 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         }
       }
     }
-  };
+  }, [blocks, state.activeBlocks]);
 
   // Mark a block as completed
   const markBlockCompleted = useCallback((blockId: string) => {
+    if (!blockId || state.completedBlocks.includes(blockId)) {
+      return; // Evita aggiornamenti inutili se il blocco è già completato
+    }
+    
     dispatch({ type: "MARK_BLOCK_COMPLETED", blockId });
     
-    // Immediately save to localStorage
-    if (params.blockType) {
-      const stateToSave = {
-        ...state,
-        answeredQuestions: Array.from(state.answeredQuestions),
-        completedBlocks: state.completedBlocks.includes(blockId) 
-          ? state.completedBlocks 
-          : [...state.completedBlocks, blockId]
-      };
-      localStorage.setItem(`form-state-${params.blockType}`, JSON.stringify(stateToSave));
-    }
-  }, [state, params.blockType]);
+    // Non salviamo più immediatamente in localStorage qui, useremo il debounce
+  }, [state.completedBlocks]);
 
-  // Navigate to a specific question
-  const goToQuestion = useCallback((block_id: string, question_id: string, replace = false) => {
+  // Navigate to a specific question - modificato per evitare dipendenza circolare
+  const goToQuestion = useCallback((block_id: string, question_id: string, replace = false, skipMarkingCompleted = false) => {
     const previousBlockId = state.activeQuestion.block_id;
     const previousQuestionId = state.activeQuestion.question_id;
 
-    // If we're navigating away from a block, mark it as completed
-    if (previousBlockId !== block_id) {
+    // Mark block as completed SOLO se non è stato richiesto di saltare questo passaggio
+    if (!skipMarkingCompleted && previousBlockId !== block_id) {
       markBlockCompleted(previousBlockId);
     }
 
@@ -551,7 +565,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     setTimeout(() => {
       dispatch({ type: "SET_NAVIGATING", isNavigating: false });
     }, 300);
-  }, [params.blockType, navigate, state.activeQuestion, markBlockCompleted]);
+  }, [params.blockType, navigate, state.activeQuestion.block_id, state.activeQuestion.question_id, markBlockCompleted]);
 
   // Check if a block is completed
   const isBlockCompleted = useCallback((blockId: string) => {
@@ -716,11 +730,11 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return null;
   }, [sortedBlocks, state.dynamicBlocks]);
 
-  // Navigate to the next question
+  // Navigate to the next question - modificato per passare il parametro skipMarkingCompleted
   const navigateToNextQuestion = useCallback((currentQuestionId: string, leadsTo: string) => {
     const currentBlockId = state.activeQuestion.block_id;
     
-    // Mark the current block as completed before navigating away
+    // Mark the current block as completed manually qui
     markBlockCompleted(currentBlockId);
     
     dispatch({ type: "SET_NAVIGATING", isNavigating: true });
@@ -760,7 +774,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
             const nextBlock = activeBlocksWithPriority[i];
             if (nextBlock && nextBlock.questions.length > 0) {
               foundNextActiveBlock = true;
-              goToQuestion(nextBlock.block_id, nextBlock.questions[0].question_id);
+              goToQuestion(nextBlock.block_id, nextBlock.questions[0].question_id, false, true);
               break;
             }
           }
@@ -771,7 +785,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
           
           if (currentQuestionIndex < currentBlock.questions.length - 1) {
             const nextQuestion = currentBlock.questions[currentQuestionIndex + 1];
-            goToQuestion(currentBlock.block_id, nextQuestion.question_id);
+            goToQuestion(currentBlock.block_id, nextQuestion.question_id, false, true);
             return;
           }
         }
@@ -790,7 +804,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
           }
         });
         
-        goToQuestion(found.block.block_id, found.question.question_id);
+        // Passa true per skipMarkingCompleted dato che abbiamo già segnato il blocco come completato
+        goToQuestion(found.block.block_id, found.question.question_id, false, true);
       }
     }
     

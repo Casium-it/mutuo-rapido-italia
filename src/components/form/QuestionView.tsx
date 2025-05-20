@@ -18,12 +18,14 @@ export function QuestionView() {
       if (state.activeQuestion.block_id !== params.blockId || 
           state.activeQuestion.question_id !== params.questionId) {
         
-        // Mark previous block as completed when navigating to a new block
+        // Solo in questo effetto marcheremo il blocco come completato
+        // In altre situazioni questo verrà gestito da goToQuestion
         if (state.activeQuestion.block_id !== params.blockId) {
           markBlockCompleted(state.activeQuestion.block_id);
         }
         
-        goToQuestion(params.blockId, params.questionId, true);
+        // Usa skipMarkingCompleted per evitare di marcare nuovamente il blocco
+        goToQuestion(params.blockId, params.questionId, true, true);
       }
     }
   }, [location.pathname, params.blockId, params.questionId, state.activeQuestion, goToQuestion, markBlockCompleted]);
