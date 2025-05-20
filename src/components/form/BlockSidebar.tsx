@@ -3,39 +3,32 @@ import { useForm } from "@/contexts/FormContext";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useParams } from "react-router-dom";
-import { useEffect } from "react";
 
 export function BlockSidebar() {
   const { blocks, state } = useForm();
   const params = useParams<{ blockType?: string }>();
   
-  // Add debugging with prefix for easier filtering
-  useEffect(() => {
-    console.log("[SIDEBAR] Rendering with completedBlocks:", state.completedBlocks);
-  }, [state.completedBlocks]);
-  
   // Filter blocks that are active, not invisible, and sort by priority
   const activeBlocks = blocks
     .filter(block => state.activeBlocks.includes(block.block_id) && !block.invisible)
-    .sort((a, b) => a.priority - b.priority);
+    .sort((a, b) => a.priority - b.priority); // Ordinamento per priorità
 
   const isBlockActive = (blockId: string) => {
     return state.activeQuestion.block_id === blockId;
   };
 
   const isBlockCompleted = (blockId: string) => {
-    // Simplified logic: only check the completedBlocks array
-    return state.completedBlocks.includes(blockId);
+    const block = blocks.find(b => b.block_id === blockId);
+    if (!block) return false;
+
+    return block.questions.every(question => state.answeredQuestions.has(question.question_id));
   };
 
   const getBlockStatus = (blockId: string) => {
-    // First check if the block is completed
     if (isBlockCompleted(blockId)) return "completato";
-    
-    // Then check if it's the current active block
     if (isBlockActive(blockId)) return "attivo";
     
-    // If there's at least one question answered but not all
+    // Se c'è almeno una domanda risposta ma non tutte
     const block = blocks.find(b => b.block_id === blockId);
     if (block) {
       const hasAnyAnswer = block.questions.some(q => state.answeredQuestions.has(q.question_id));
