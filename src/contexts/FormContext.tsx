@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback } from "react";
-import { Block, FormState, FormResponse, NavigationHistory, Placeholder, SelectPlaceholder, NavigationStackEntry } from "@/types/form";
+import { Block, FormState, FormResponse, NavigationHistory, Placeholder, SelectPlaceholder } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { ensureBlockHasPriority } from "@/utils/blockUtils";
 
 type FormContextType = {
   state: FormState;
   blocks: Block[];
-  goToQuestion: (block_id: string, question_id: string, replace?: boolean, preventStackPush?: boolean) => void;
+  goToQuestion: (block_id: string, question_id: string, replace?: boolean) => void;
   setResponse: (question_id: string, placeholder_key: string, value: string | string[]) => void;
   getResponse: (question_id: string, placeholder_key: string) => string | string[] | undefined;
   addActiveBlock: (block_id: string) => void;
@@ -15,12 +15,10 @@ type FormContextType = {
   navigateToNextQuestion: (currentQuestionId: string, leadsTo: string) => void;
   getProgress: () => number;
   resetForm: () => void;
-  getNavigationHistoryFor: (questionId: string, limit?: number) => NavigationHistory | NavigationHistory[];
+  getNavigationHistoryFor: (questionId: string) => NavigationHistory | undefined;
   createDynamicBlock: (blockBlueprintId: string) => string | null;
   deleteDynamicBlock: (blockId: string) => boolean;
   deleteQuestionResponses: (questionIds: string[]) => void;
-  navigateBack: () => boolean; // Nuova funzione per navigare indietro
-  clearNavigationStack: () => void; // Funzione per pulire lo stack quando necessario
 };
 
 type Action =
@@ -33,9 +31,6 @@ type Action =
   | { type: "RESET_FORM" }
   | { type: "SET_NAVIGATING"; isNavigating: boolean }
   | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory }
-  | { type: "PUSH_TO_NAVIGATION_STACK"; entry: NavigationStackEntry } // Nuovo action type
-  | { type: "POP_FROM_NAVIGATION_STACK" } // Nuovo action type
-  | { type: "CLEAR_NAVIGATION_STACK" } // Nuovo action type
   | { type: "ADD_DYNAMIC_BLOCK"; block: Block }
   | { type: "DELETE_DYNAMIC_BLOCK"; blockId: string }
   | { type: "DELETE_QUESTION_RESPONSES"; questionIds: string[] };
@@ -50,7 +45,6 @@ const initialState: FormState = {
   answeredQuestions: new Set(),
   isNavigating: false,
   navigationHistory: [],
-  navigationStack: [], // Inizializzazione dello stack vuoto
   dynamicBlocks: [],
   blockActivations: {} // Track which questions/placeholders activated which blocks
 };
@@ -170,8 +164,7 @@ function formReducer(state: FormState, action: Action): FormState {
         activeBlocks: state.activeBlocks.filter(blockId => 
           initialState.activeBlocks.includes(blockId)),
         dynamicBlocks: [],
-        blockActivations: {},
-        navigationStack: [] // Assicuriamoci che lo stack venga resettato
+        blockActivations: {}
       };
     }
     case "SET_NAVIGATING": {
@@ -189,27 +182,6 @@ function formReducer(state: FormState, action: Action): FormState {
       return {
         ...state,
         navigationHistory: [...filteredHistory, action.history]
-      };
-    }
-    case "PUSH_TO_NAVIGATION_STACK": {
-      return {
-        ...state,
-        navigationStack: [...state.navigationStack, action.entry]
-      };
-    }
-    case "POP_FROM_NAVIGATION_STACK": {
-      if (state.navigationStack.length === 0) {
-        return state;
-      }
-      return {
-        ...state,
-        navigationStack: state.navigationStack.slice(0, -1)
-      };
-    }
-    case "CLEAR_NAVIGATION_STACK": {
-      return {
-        ...state,
-        navigationStack: []
       };
     }
     case "ADD_DYNAMIC_BLOCK": {
@@ -282,7 +254,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     ...initialState,
     activeBlocks: sortedBlocks.filter(b => b.default_active).map(b => b.block_id),
     dynamicBlocks: [],
-    navigationStack: [], // Inizializzazione dello stack vuoto
     blockActivations: {}
   });
 
@@ -364,7 +335,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     }
     
     dispatch({ type: "RESET_FORM" });
-    dispatch({ type: "CLEAR_NAVIGATION_STACK" }); // Pulizia dello stack
     
     navigate("/simulazione/pensando/introduzione/soggetto_acquisto", { replace: true });
   }, [params.blockType, navigate]);
@@ -485,27 +455,22 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     }
   };
 
-  const goToQuestion = useCallback((block_id: string, question_id: string, replace = false, preventStackPush = false) => {
+  const goToQuestion = useCallback((block_id: string, question_id: string, replace = false) => {
     const previousBlockId = state.activeQuestion.block_id;
     const previousQuestionId = state.activeQuestion.question_id;
 
-    // Se non siamo sulla stessa domanda e non stiamo prevenendo un push dello stack
-    if (!preventStackPush && (previousBlockId !== block_id || previousQuestionId !== question_id)) {
-      // Aggiungiamo la domanda corrente allo stack prima di navigare
-      dispatch({ 
-        type: "PUSH_TO_NAVIGATION_STACK", 
-        entry: {
-          block_id: previousBlockId,
-          question_id: previousQuestionId,
-          timestamp: Date.now()
-        }
-      });
-    }
-
     dispatch({ type: "GO_TO_QUESTION", block_id, question_id });
     
-    // Non registrare la navigazione bidirezionale come prima
-    // Ora usiamo lo stack invece della storia di navigazione
+    dispatch({ 
+      type: "ADD_NAVIGATION_HISTORY", 
+      history: {
+        from_block_id: previousBlockId,
+        from_question_id: previousQuestionId,
+        to_block_id: block_id,
+        to_question_id: question_id,
+        timestamp: Date.now()
+      }
+    });
     
     dispatch({ type: "SET_NAVIGATING", isNavigating: true });
     
@@ -779,23 +744,9 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
   }, [state.activeBlocks, state.answeredQuestions, blocks, state.dynamicBlocks]);
 
-  /**
-   * Get navigation history for a specific question with improved functionality
-   * @param questionId Question ID to find navigation history for
-   * @param limit Optional limit for the number of entries to return
-   * @returns Single NavigationHistory object or array based on limit parameter
-   */
-  const getNavigationHistoryFor = useCallback((questionId: string, limit?: number): NavigationHistory | NavigationHistory[] => {
+  const getNavigationHistoryFor = useCallback((questionId: string): NavigationHistory | undefined => {
     const sortedHistory = [...state.navigationHistory].sort((a, b) => b.timestamp - a.timestamp);
     
-    // Se viene richiesto un limite specifico, restituisci un array di entries
-    if (limit && limit > 1) {
-      return sortedHistory
-        .filter(item => item.to_question_id === questionId)
-        .slice(0, limit);
-    }
-    
-    // Altrimenti restituisci la prima entry trovata (comportamento originale)
     return sortedHistory.find(item => item.to_question_id === questionId);
   }, [state.navigationHistory]);
 
@@ -821,37 +772,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     dispatch({ type: "DELETE_QUESTION_RESPONSES", questionIds });
   }, []);
 
-  /**
-   * Funzione per navigare indietro nello stack
-   * @returns True se la navigazione indietro ha avuto successo, false altrimenti
-   */
-  const navigateBack = useCallback((): boolean => {
-    // Controlla se c'è una entry nello stack
-    if (state.navigationStack.length === 0) {
-      console.log("Nessuna entry nello stack di navigazione.");
-      return false;
-    }
-    
-    // Ottieni l'ultima entry dallo stack (senza rimuoverla ancora)
-    const lastEntry = state.navigationStack[state.navigationStack.length - 1];
-    
-    // Naviga alla domanda precedente
-    goToQuestion(lastEntry.block_id, lastEntry.question_id, false, true);
-    
-    // Rimuovi l'entry dallo stack solo dopo la navigazione
-    dispatch({ type: "POP_FROM_NAVIGATION_STACK" });
-    
-    console.log(`Navigazione tramite stack a ${lastEntry.block_id}/${lastEntry.question_id}`);
-    return true;
-  }, [state.navigationStack, goToQuestion]);
-
-  /**
-   * Pulisce lo stack di navigazione
-   */
-  const clearNavigationStack = useCallback(() => {
-    dispatch({ type: "CLEAR_NAVIGATION_STACK" });
-  }, []);
-
   return (
     <FormContext.Provider
       value={{
@@ -872,9 +792,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         getNavigationHistoryFor,
         createDynamicBlock,
         deleteDynamicBlock,
-        deleteQuestionResponses,
-        navigateBack, // Nuova funzione esposta
-        clearNavigationStack // Nuova funzione esposta
+        deleteQuestionResponses
       }}
     >
       {children}

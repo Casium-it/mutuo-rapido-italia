@@ -70,13 +70,6 @@ export type NavigationHistory = {
   timestamp: number;
 };
 
-// Nuova struttura per lo stack di navigazione
-export type NavigationStackEntry = {
-  block_id: string;
-  question_id: string;
-  timestamp: number;
-};
-
 export type BlockActivationSource = {
   questionId: string;
   placeholderId: string;
@@ -92,8 +85,6 @@ export type FormState = {
   answeredQuestions: Set<string>;
   isNavigating?: boolean;
   navigationHistory: NavigationHistory[];
-  // Nuovo stack di navigazione per gestire correttamente il back button
-  navigationStack: NavigationStackEntry[];
   dynamicBlocks: Block[];
   blockActivations: Record<string, BlockActivationSource[]>; // Track which questions activated which blocks
 };
