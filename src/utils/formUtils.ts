@@ -79,6 +79,47 @@ export const getChainOfInlineQuestions = (
 };
 
 /**
+ * Determines if a question leads outside of its current block
+ * @param question The question to check
+ * @param blockId The block ID of the question
+ * @returns True if the question leads outside the block, false otherwise
+ */
+export const questionLeadsOutsideBlock = (
+  question: Question,
+  blockId: string
+): boolean => {
+  // Check if any placeholder leads out of the block
+  for (const placeholderKey in question.placeholders) {
+    const placeholder = question.placeholders[placeholderKey];
+    
+    // Check select placeholders
+    if (placeholder.type === "select") {
+      for (const option of placeholder.options) {
+        if (option.leads_to === "next_block" || 
+            (option.leads_to && !option.leads_to.includes(blockId))) {
+          return true;
+        }
+      }
+    }
+    
+    // Check input placeholders with leads_to property
+    if (placeholder.type === "input" && "leads_to" in placeholder && placeholder.leads_to) {
+      if (placeholder.leads_to === "next_block" || 
+          !placeholder.leads_to.includes(blockId)) {
+        return true;
+      }
+    }
+    
+    // MultiBlockManager always leads outside the current context
+    if (placeholder.type === "MultiBlockManager") {
+      return true;
+    }
+  }
+  
+  return false;
+};
+
+/**
  * Gets the text value with responses from a question
  * @param question The question object
  * @param responses The form responses

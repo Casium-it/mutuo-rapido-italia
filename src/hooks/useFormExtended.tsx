@@ -194,11 +194,16 @@ export const useFormExtended = () => {
   };
 
   /**
-   * Check if a specific block has all questions answered
+   * Check if a specific block is completed (all questions answered or explicitly marked as completed)
    * @param blockId The ID of the block to check
-   * @returns True if all questions in the block are answered, false otherwise
+   * @returns True if the block is completed, false otherwise
    */
   const isBlockComplete = (blockId: string): boolean => {
+    // First check if the block is explicitly marked as completed
+    if (formContext.state.completedBlocks.includes(blockId)) {
+      return true;
+    }
+    
     const block = formContext.blocks.find(b => b.block_id === blockId);
     if (!block) return false;
     
@@ -252,6 +257,14 @@ export const useFormExtended = () => {
     if (blocks.length === 0) return true; // Se non ci sono blocchi, consideriamo completato
     
     return blocks.every(block => isBlockComplete(block.block_id));
+  };
+  
+  /**
+   * Mark a block as completed
+   * @param blockId The ID of the block to mark as completed
+   */
+  const markBlockCompleted = (blockId: string): void => {
+    formContext.markBlockCompleted(blockId);
   };
   
   /**
@@ -379,6 +392,15 @@ export const useFormExtended = () => {
     return formContext.deleteQuestionResponses(questionIds);
   };
 
+  /**
+   * Check if a block is completed by being in the completedBlocks array
+   * @param blockId Block ID to check
+   * @returns True if the block is in the completedBlocks array
+   */
+  const isBlockExplicitlyCompleted = (blockId: string): boolean => {
+    return formContext.state.completedBlocks.includes(blockId);
+  };
+
   return {
     ...formContext,
     getPreviousQuestionText,
@@ -395,6 +417,8 @@ export const useFormExtended = () => {
     createAndNavigateToBlock,
     getBlockResponseSummary,
     getTerminalQuestionsForBlock,
-    deleteQuestionResponses
+    deleteQuestionResponses,
+    markBlockCompleted,
+    isBlockExplicitlyCompleted
   };
 };

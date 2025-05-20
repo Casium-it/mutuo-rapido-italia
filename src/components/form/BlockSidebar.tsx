@@ -18,6 +18,12 @@ export function BlockSidebar() {
   };
 
   const isBlockCompleted = (blockId: string) => {
+    // First check if the block is in the completedBlocks array
+    if (state.completedBlocks.includes(blockId)) {
+      return true;
+    }
+    
+    // Fallback to the old logic for backward compatibility
     const block = blocks.find(b => b.block_id === blockId);
     if (!block) return false;
 
@@ -25,10 +31,13 @@ export function BlockSidebar() {
   };
 
   const getBlockStatus = (blockId: string) => {
+    // First check if the block is completed (either explicitly marked or all questions answered)
     if (isBlockCompleted(blockId)) return "completato";
+    
+    // Then check if it's the current active block
     if (isBlockActive(blockId)) return "attivo";
     
-    // Se c'è almeno una domanda risposta ma non tutte
+    // If there's at least one question answered but not all
     const block = blocks.find(b => b.block_id === blockId);
     if (block) {
       const hasAnyAnswer = block.questions.some(q => state.answeredQuestions.has(q.question_id));

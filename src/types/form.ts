@@ -1,4 +1,3 @@
-
 export type PlaceholderOption = {
   id: string;
   label: string;
@@ -87,4 +86,5 @@ export type FormState = {
   navigationHistory: NavigationHistory[];
   dynamicBlocks: Block[];
   blockActivations: Record<string, BlockActivationSource[]>; // Track which questions activated which blocks
+  completedBlocks: string[]; // New field to track completed blocks
 };
