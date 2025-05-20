@@ -5,7 +5,7 @@ import { FormQuestion } from "./FormQuestion";
 import { useLocation, useParams } from "react-router-dom";
 
 export function QuestionView() {
-  const { state, blocks, goToQuestion, markBlockCompleted, getTerminalQuestionsForBlock } = useFormExtended();
+  const { state, blocks, goToQuestion, markBlockCompleted, getTerminalQuestionsForBlock, isNavigationCompletingBlock } = useFormExtended();
   const location = useLocation();
   const params = useParams<{ blockId?: string, questionId?: string }>();
   const [showStopFlow, setShowStopFlow] = useState<boolean>(false);

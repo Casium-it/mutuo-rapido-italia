@@ -4,7 +4,7 @@ import {
   getQuestionTextWithResponses,
   getChainOfInlineQuestions
 } from "@/utils/formUtils";
-import { Question, Block, Placeholder, InputPlaceholder } from "@/types/form";
+import { Question, Block, Placeholder, InputPlaceholder, MultiBlockManagerPlaceholder } from "@/types/form";
 import { formatCurrency, formatNumberWithThousandSeparator, capitalizeWords } from "@/lib/utils";
 
 /**
@@ -305,6 +305,26 @@ export const useFormExtended = () => {
   };
 
   /**
+   * Determina se una navigazione sta completando un blocco
+   * @param currentBlockId L'ID del blocco corrente
+   * @param leadsTo La destinazione della navigazione
+   * @returns True se la navigazione completa il blocco, false altrimenti
+   */
+  const isNavigationCompletingBlock = (currentBlockId: string, leadsTo: string): boolean => {
+    // Se leads_to è "next_block", stiamo sicuramente uscendo dal blocco corrente
+    if (leadsTo === "next_block") {
+      return true;
+    }
+    
+    // Se leads_to punta a una domanda in un blocco diverso, stiamo completando il blocco
+    if (leadsTo && !leadsTo.includes(currentBlockId)) {
+      return true;
+    }
+    
+    return false;
+  };
+  
+  /**
    * Identifica le domande terminali per un blocco - quelle che portano fuori dal blocco
    * @param blockId L'ID del blocco da analizzare
    * @returns Array di domande terminali
@@ -331,23 +351,17 @@ export const useFormExtended = () => {
         if (placeholder.type === "select") {
           // Controlla se qualche opzione porta fuori da questo blocco
           (placeholder.options || []).forEach(option => {
-            if (
-              option.leads_to === "next_block" || 
-              (option.leads_to && !option.leads_to.includes(blockId))
-            ) {
+            if (isNavigationCompletingBlock(blockId, option.leads_to)) {
               isTerminal = true;
             }
           });
         } else if ("leads_to" in placeholder) {
           // Controlla se l'input porta fuori da questo blocco
           const leadsTo = placeholder.leads_to;
-          if (
-            leadsTo === "next_block" || 
-            (leadsTo && !leadsTo.includes(blockId))
-          ) {
+          if (isNavigationCompletingBlock(blockId, leadsTo)) {
             isTerminal = true;
           }
-        } else if (placeholder.type === "MultiBlockManager") {
+        } else if ("type" in placeholder && placeholder.type === "MultiBlockManager") {
           // MultiBlockManager è sempre terminale
           isTerminal = true;
         }
@@ -377,6 +391,7 @@ export const useFormExtended = () => {
     createAndNavigateToBlock,
     getBlockResponseSummary,
     getTerminalQuestionsForBlock,
+    isNavigationCompletingBlock,
     deleteQuestionResponses
   };
 };

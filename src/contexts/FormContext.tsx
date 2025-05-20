@@ -677,7 +677,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   const navigateToNextQuestion = useCallback((currentQuestionId: string, leadsTo: string) => {
     const currentBlockId = state.activeQuestion.block_id;
     
-    // Find the current block and check if this is a terminal question
+    // Find the current block
     const currentBlock = [...sortedBlocks, ...state.dynamicBlocks].find(b => b.block_id === currentBlockId);
     
     if (currentBlock) {
@@ -685,10 +685,11 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       const isLastQuestion = currentBlock.questions.findIndex(q => q.question_id === currentQuestionId) === 
                              currentBlock.questions.length - 1;
                              
-      const isTerminalQuestion = leadsTo === "next_block" || 
-                               (leadsTo && !leadsTo.includes(currentBlockId));
+      // Check if leads_to indicates we're exiting the current block
+      const isExitingBlock = leadsTo === "next_block" || 
+                            (leadsTo && !leadsTo.includes(currentBlockId));
       
-      if (isLastQuestion || isTerminalQuestion) {
+      if (isLastQuestion || isExitingBlock) {
         dispatch({ type: "MARK_BLOCK_COMPLETED", blockId: currentBlockId });
       }
     }
@@ -768,7 +769,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       dispatch({ type: "SET_NAVIGATING", isNavigating: false });
     }, 300);
   }, [sortedBlocks, state.activeBlocks, goToQuestion, findQuestionById, state.activeQuestion.block_id, state.dynamicBlocks]);
-
+  
   const getProgress = useCallback(() => {
     let totalQuestions = 0;
     let answeredCount = 0;
