@@ -194,40 +194,13 @@ export const useFormExtended = () => {
   };
 
   /**
-   * Check if a specific block is completed (all questions answered or explicitly marked as completed)
+   * Check if a specific block is completed (explicitly marked as completed)
    * @param blockId The ID of the block to check
    * @returns True if the block is completed, false otherwise
    */
   const isBlockComplete = (blockId: string): boolean => {
-    // First check if the block is explicitly marked as completed
-    if (formContext.state.completedBlocks.includes(blockId)) {
-      return true;
-    }
-    
-    const block = formContext.blocks.find(b => b.block_id === blockId);
-    if (!block) return false;
-    
-    // Ottieni tutte le domande terminali per questo blocco
-    const terminalQuestions = getTerminalQuestionsForBlock(block);
-    
-    // Un blocco è completo se almeno una delle sue domande terminali è stata risposta
-    if (terminalQuestions.some(questionId => formContext.isQuestionAnswered(questionId))) {
-      return true;
-    }
-    
-    // Gestione speciale per blocchi dinamici
-    // Se il blocco è stato creato da un MultiBlockManager, controlliamo l'ultima domanda
-    if (block.blueprint_id && block.questions.length > 0) {
-      // Per i blocchi dinamici, controlla se l'ultima domanda è stata risposta
-      // Questo è spesso una domanda di "ritorno" al MultiBlockManager
-      const lastQuestion = block.questions[block.questions.length - 1];
-      if (formContext.isQuestionAnswered(lastQuestion.question_id)) {
-        return true;
-      }
-    }
-    
-    // Se non è stato trovato nessun percorso di completamento, il blocco non è completo
-    return false;
+    // Simplified logic: only check if the block is explicitly marked as completed
+    return formContext.state.completedBlocks.includes(blockId);
   };
 
   /**
@@ -264,9 +237,11 @@ export const useFormExtended = () => {
    * @param blockId The ID of the block to mark as completed
    */
   const markBlockCompleted = (blockId: string): void => {
+    if (!blockId) return;
+    console.log("[BLOCKS] Extended: markBlockCompleted called for block:", blockId);
     formContext.markBlockCompleted(blockId);
   };
-  
+
   /**
    * Creates a dynamic block based on a blueprint and optionally navigates to it
    * @param blockBlueprintId The ID of the block blueprint to use

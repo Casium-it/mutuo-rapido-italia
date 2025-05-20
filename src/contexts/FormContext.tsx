@@ -19,7 +19,7 @@ type FormContextType = {
   createDynamicBlock: (blockBlueprintId: string) => string | null;
   deleteDynamicBlock: (blockId: string) => boolean;
   deleteQuestionResponses: (questionIds: string[]) => void;
-  markBlockCompleted: (blockId: string) => void; // Definizione della funzione markBlockCompleted
+  markBlockCompleted: (blockId: string) => void;
 };
 
 type Action =
@@ -35,7 +35,7 @@ type Action =
   | { type: "ADD_DYNAMIC_BLOCK"; block: Block }
   | { type: "DELETE_DYNAMIC_BLOCK"; blockId: string }
   | { type: "DELETE_QUESTION_RESPONSES"; questionIds: string[] }
-  | { type: "MARK_BLOCK_COMPLETED"; blockId: string }; // New action type
+  | { type: "MARK_BLOCK_COMPLETED"; blockId: string };
 
 const initialState: FormState = {
   activeBlocks: [],
@@ -48,8 +48,8 @@ const initialState: FormState = {
   isNavigating: false,
   navigationHistory: [],
   dynamicBlocks: [],
-  blockActivations: {}, // Track which questions/placeholders activated which blocks
-  completedBlocks: [] // Initialize the completedBlocks array
+  blockActivations: {},
+  completedBlocks: []
 };
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
@@ -80,14 +80,12 @@ function formReducer(state: FormState, action: Action): FormState {
         return state;
       }
       
-      // Track which question/placeholder activated this block
       const updatedBlockActivations = { ...state.blockActivations };
       if (action.sourceQuestionId && action.sourcePlaceholderId) {
         if (!updatedBlockActivations[action.block_id]) {
           updatedBlockActivations[action.block_id] = [];
         }
         
-        // Check if this activation source is already recorded
         const exists = updatedBlockActivations[action.block_id].some(
           source => source.questionId === action.sourceQuestionId && 
                    source.placeholderId === action.sourcePlaceholderId
@@ -112,32 +110,26 @@ function formReducer(state: FormState, action: Action): FormState {
         return state;
       }
       
-      // Find block to get its questions
       const allBlocks = [...state.dynamicBlocks];
       const blockToRemove = allBlocks.find(b => b.block_id === action.block_id);
       
-      // Create updated state
       const updatedState = {
         ...state,
         activeBlocks: state.activeBlocks.filter(id => id !== action.block_id),
         blockActivations: { ...state.blockActivations }
       };
       
-      // Remove from blockActivations
       delete updatedState.blockActivations[action.block_id];
       
-      // If it's a static block, we need to clean up responses and answered questions manually
       if (blockToRemove) {
         const questionIdsToRemove = blockToRemove.questions.map(q => q.question_id);
         
-        // Remove responses
         const updatedResponses = { ...state.responses };
         questionIdsToRemove.forEach(questionId => {
           delete updatedResponses[questionId];
         });
         updatedState.responses = updatedResponses;
         
-        // Remove from answered questions
         const updatedAnsweredQuestions = new Set(state.answeredQuestions);
         questionIdsToRemove.forEach(questionId => {
           updatedAnsweredQuestions.delete(questionId);
@@ -168,7 +160,7 @@ function formReducer(state: FormState, action: Action): FormState {
           initialState.activeBlocks.includes(blockId)),
         dynamicBlocks: [],
         blockActivations: {},
-        completedBlocks: [] // Reset completed blocks too
+        completedBlocks: []
       };
     }
     case "SET_NAVIGATING": {
@@ -213,11 +205,9 @@ function formReducer(state: FormState, action: Action): FormState {
         updatedAnsweredQuestions.delete(questionId);
       });
       
-      // Also clean up blockActivations
       const updatedBlockActivations = { ...state.blockActivations };
       delete updatedBlockActivations[action.blockId];
       
-      // Also remove from completedBlocks if present
       const updatedCompletedBlocks = state.completedBlocks.filter(
         blockId => blockId !== action.blockId
       );
@@ -249,9 +239,8 @@ function formReducer(state: FormState, action: Action): FormState {
       };
     }
     case "MARK_BLOCK_COMPLETED": {
-      // Only add the block if it's not already in the completedBlocks array
-      if (state.completedBlocks.includes(action.blockId)) {
-        console.log("[BLOCKS] Block already completed, skipping:", action.blockId);
+      if (!action.blockId || state.completedBlocks.includes(action.blockId)) {
+        console.log("[BLOCKS] Block already completed or invalid ID, skipping:", action.blockId);
         return state;
       }
       console.log("[BLOCKS] Marking block as completed:", action.blockId);
@@ -277,7 +266,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     activeBlocks: sortedBlocks.filter(b => b.default_active).map(b => b.block_id),
     dynamicBlocks: [],
     blockActivations: {},
-    completedBlocks: [] // Initialize completedBlocks
+    completedBlocks: []
   });
 
   const createDynamicBlock = useCallback((blockBlueprintId: string): string | null => {
@@ -340,18 +329,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return newBlockId;
   }, [blocks, state.dynamicBlocks]);
 
-  useEffect(() => {
-    const defaultActiveBlockIds = blocks
-      .filter(b => b.default_active)
-      .map(b => b.block_id);
-    
-    defaultActiveBlockIds.forEach(blockId => {
-      if (!state.activeBlocks.includes(blockId)) {
-        dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
-      }
-    });
-  }, [blocks]);
-
   const resetForm = useCallback(() => {
     if (params.blockType) {
       localStorage.removeItem(`form-state-${params.blockType}`);
@@ -403,6 +380,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     }
     
     const savedState = localStorage.getItem(`form-state-${params.blockType}`);
+    
     if (savedState) {
       try {
         const parsedState = JSON.parse(savedState);
@@ -421,7 +399,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
           parsedState.dynamicBlocks = [];
         }
         
-        // Ensure completedBlocks is properly initialized
         if (!Array.isArray(parsedState.completedBlocks)) {
           parsedState.completedBlocks = [];
         }
@@ -452,42 +429,17 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         answeredQuestions: Array.from(state.answeredQuestions),
         completedBlocks: state.completedBlocks
       };
-      console.log("[STORAGE] Saving completedBlocks to localStorage:", state.completedBlocks);
       localStorage.setItem(`form-state-${params.blockType}`, JSON.stringify(stateToSave));
     }
-  }, [state, state.completedBlocks, params.blockType]);
-
-  const activateRequiredBlocksBasedOnResponses = (responses: FormResponse) => {
-    for (const questionId of Object.keys(responses)) {
-      for (const blockObj of blocks) {
-        const question = blockObj.questions.find(q => q.question_id === questionId);
-        if (!question) continue;
-
-        for (const [placeholderKey, value] of Object.entries(responses[questionId])) {
-          if (question.placeholders[placeholderKey].type === "select") {
-            const options = (question.placeholders[placeholderKey] as any).options;
-            if (!Array.isArray(value)) {
-              const selectedOption = options.find((opt: any) => opt.id === value);
-              if (selectedOption?.add_block && !state.activeBlocks.includes(selectedOption.add_block)) {
-                dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: selectedOption.add_block });
-              }
-            } else {
-              for (const optionId of value) {
-                const selectedOption = options.find((opt: any) => opt.id === optionId);
-                if (selectedOption?.add_block && !state.activeBlocks.includes(selectedOption.add_block)) {
-                  dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: selectedOption.add_block });
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  };
+  }, [state, params.blockType]);
 
   const goToQuestion = useCallback((block_id: string, question_id: string, replace = false) => {
     const previousBlockId = state.activeQuestion.block_id;
     const previousQuestionId = state.activeQuestion.question_id;
+
+    if (previousBlockId && previousBlockId !== block_id) {
+      markBlockCompleted(previousBlockId);
+    }
 
     dispatch({ type: "GO_TO_QUESTION", block_id, question_id });
     
@@ -518,307 +470,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     }, 300);
   }, [params.blockType, navigate, state.activeQuestion]);
 
-  const setResponse = useCallback((question_id: string, placeholder_key: string, value: string | string[]) => {
-    const previousValue = state.responses[question_id]?.[placeholder_key];
-    
-    const allBlocks = [
-      ...sortedBlocks,
-      ...state.dynamicBlocks
-    ];
-    
-    let questionObj = null;
-    let foundBlock = null;
-    
-    for (const block of allBlocks) {
-      const question = block.questions.find(q => q.question_id === question_id);
-      if (question) {
-        questionObj = question;
-        foundBlock = block;
-        break;
-      }
-    }
-    
-    if (questionObj && foundBlock && 
-        questionObj.placeholders[placeholder_key] && 
-        questionObj.placeholders[placeholder_key].type === "select") {
-      
-      const placeholder = questionObj.placeholders[placeholder_key] as SelectPlaceholder;
-      
-      if (previousValue && previousValue !== value) {
-        if (typeof previousValue === 'string') {
-          const prevOption = placeholder.options.find(opt => opt.id === previousValue);
-          
-          if (prevOption?.add_block) {
-            let newOptionKeepsBlock = false;
-            
-            if (Array.isArray(value)) {
-              newOptionKeepsBlock = value.some(optId => {
-                const option = placeholder.options.find(opt => opt.id === optId);
-                return option?.add_block === prevOption.add_block;
-              });
-            } else {
-              const newOption = placeholder.options.find(opt => opt.id === value);
-              newOptionKeepsBlock = newOption?.add_block === prevOption.add_block;
-            }
-            
-            if (!newOptionKeepsBlock) {
-              const blockToRemove = prevOption.add_block;
-              const isDynamicBlock = state.dynamicBlocks.some(b => b.block_id === blockToRemove);
-              
-              // Handle both dynamic and static blocks
-              if (isDynamicBlock) {
-                dispatch({ type: "DELETE_DYNAMIC_BLOCK", blockId: blockToRemove });
-              } else if (state.activeBlocks.includes(blockToRemove)) {
-                // For static blocks, we just need to remove them from activeBlocks
-                dispatch({ type: "REMOVE_ACTIVE_BLOCK", block_id: blockToRemove });
-              }
-            }
-          }
-        } else if (Array.isArray(previousValue) && Array.isArray(value)) {
-          const removedOptionIds = previousValue.filter(id => !value.includes(id));
-          
-          removedOptionIds.forEach(optId => {
-            const option = placeholder.options.find(opt => opt.id === optId);
-            if (option?.add_block) {
-              const blockStillNeeded = value.some(remainingId => {
-                const remainingOpt = placeholder.options.find(opt => opt.id === remainingId);
-                return remainingOpt?.add_block === option.add_block;
-              });
-              
-              if (!blockStillNeeded) {
-                const blockToRemove = option.add_block;
-                const isDynamicBlock = state.dynamicBlocks.some(b => b.block_id === blockToRemove);
-                
-                // Handle both dynamic and static blocks
-                if (isDynamicBlock) {
-                  dispatch({ type: "DELETE_DYNAMIC_BLOCK", blockId: blockToRemove });
-                } else if (state.activeBlocks.includes(blockToRemove)) {
-                  dispatch({ type: "REMOVE_ACTIVE_BLOCK", block_id: blockToRemove });
-                }
-              }
-            }
-          });
-        }
-      }
-    }
-    
-    dispatch({ type: "SET_RESPONSE", question_id, placeholder_key, value });
-    dispatch({ type: "MARK_QUESTION_ANSWERED", question_id });
-    
-    // Check if the current response should add a block
-    if (questionObj && questionObj.placeholders[placeholder_key].type === "select") {
-      const placeholder = questionObj.placeholders[placeholder_key] as SelectPlaceholder;
-      
-      if (Array.isArray(value)) {
-        // Handle multi-select
-        value.forEach(optionId => {
-          const option = placeholder.options.find(opt => opt.id === optionId);
-          if (option?.add_block) {
-            dispatch({ 
-              type: "ADD_ACTIVE_BLOCK", 
-              block_id: option.add_block,
-              sourceQuestionId: question_id,
-              sourcePlaceholderId: placeholder_key
-            });
-          }
-        });
-      } else {
-        // Handle single-select
-        const selectedOption = placeholder.options.find(opt => opt.id === value);
-        if (selectedOption?.add_block) {
-          dispatch({ 
-            type: "ADD_ACTIVE_BLOCK", 
-            block_id: selectedOption.add_block,
-            sourceQuestionId: question_id,
-            sourcePlaceholderId: placeholder_key
-          });
-        }
-      }
-    }
-  }, [state.responses, state.dynamicBlocks, state.activeBlocks, sortedBlocks]);
-
-  const getResponse = useCallback((question_id: string, placeholder_key: string) => {
-    if (!state.responses[question_id]) return undefined;
-    return state.responses[question_id][placeholder_key];
-  }, [state.responses]);
-
-  const addActiveBlock = useCallback((block_id: string) => {
-    dispatch({ type: "ADD_ACTIVE_BLOCK", block_id });
-  }, []);
-
-  const removeActiveBlock = useCallback((block_id: string) => {
-    dispatch({ type: "REMOVE_ACTIVE_BLOCK", block_id });
-  }, []);
-
-  const isQuestionAnswered = useCallback((question_id: string) => {
-    return state.answeredQuestions.has(question_id);
-  }, [state.answeredQuestions]);
-
-  const findQuestionById = useCallback((questionId: string): { block: Block; question: any } | null => {
-    const allBlocks = [
-      ...sortedBlocks,
-      ...state.dynamicBlocks
-    ];
-    
-    for (const block of allBlocks) {
-      for (const question of block.questions) {
-        if (question.question_id === questionId) {
-          return { block, question };
-        }
-      }
-    }
-    return null;
-  }, [sortedBlocks, state.dynamicBlocks]);
-
-  // Definire la funzione markBlockCompleted
-  const markBlockCompleted = useCallback((blockId: string) => {
-    console.log("[BLOCKS] markBlockCompleted called for block:", blockId);
-    dispatch({ type: "MARK_BLOCK_COMPLETED", blockId });
-  }, []);
-
-  // Navigazione alla domanda successiva
-  const navigateToNextQuestion = useCallback((currentQuestionId: string, leadsTo: string) => {
-    const currentBlockId = state.activeQuestion.block_id;
-    
-    dispatch({ type: "SET_NAVIGATING", isNavigating: true });
-    
-    // Check if this is a "next_block" navigation and mark the current block as completed
-    if (leadsTo === "next_block") {
-      console.log("[NAVIGATION] Completing block due to next_block navigation:", currentBlockId);
-      markBlockCompleted(currentBlockId);
-      
-      let currentBlock = null;
-      let currentBlockIndex = -1;
-      
-      for (let i = 0; i < sortedBlocks.length; i++) {
-        const block = sortedBlocks[i];
-        const hasQuestion = block.questions.some(q => q.question_id === currentQuestionId);
-        if (hasQuestion) {
-          currentBlockIndex = i;
-          currentBlock = block;
-          break;
-        }
-      }
-
-      if (currentBlockIndex !== -1 && currentBlock) {
-        let foundNextActiveBlock = false;
-        
-        const allBlocks = [
-          ...sortedBlocks,
-          ...state.dynamicBlocks
-        ];
-        
-        const activeBlocksWithPriority = state.activeBlocks
-          .map(blockId => allBlocks.find(b => b.block_id === blockId))
-          .filter(Boolean)
-          .filter(b => !b!.invisible)
-          .sort((a, b) => a!.priority - b!.priority);
-        
-        const currentActiveIndex = activeBlocksWithPriority.findIndex(b => b!.block_id === currentBlock.block_id);
-        
-        if (currentActiveIndex !== -1) {
-          for (let i = currentActiveIndex + 1; i < activeBlocksWithPriority.length; i++) {
-            const nextBlock = activeBlocksWithPriority[i];
-            if (nextBlock && nextBlock.questions.length > 0) {
-              foundNextActiveBlock = true;
-              goToQuestion(nextBlock.block_id, nextBlock.questions[0].question_id);
-              break;
-            }
-          }
-        }
-        
-        if (!foundNextActiveBlock) {
-          const currentQuestionIndex = currentBlock.questions.findIndex(q => q.question_id === currentQuestionId);
-          
-          if (currentQuestionIndex < currentBlock.questions.length - 1) {
-            const nextQuestion = currentBlock.questions[currentQuestionIndex + 1];
-            goToQuestion(currentBlock.block_id, nextQuestion.question_id);
-            return;
-          }
-        }
-      }
-    } else {
-      const found = findQuestionById(leadsTo);
-      if (found) {
-        // If navigating to another block, mark the current block as completed
-        if (found.block.block_id !== currentBlockId) {
-          console.log("[NAVIGATION] Completing block due to navigation to different block:", currentBlockId);
-          markBlockCompleted(currentBlockId);
-        }
-        
-        dispatch({ 
-          type: "ADD_NAVIGATION_HISTORY", 
-          history: {
-            from_block_id: currentBlockId,
-            from_question_id: currentQuestionId,
-            to_block_id: found.block.block_id,
-            to_question_id: found.question.question_id,
-            timestamp: Date.now()
-          }
-        });
-        
-        goToQuestion(found.block.block_id, found.question.question_id);
-      }
-    }
-    
-    setTimeout(() => {
-      dispatch({ type: "SET_NAVIGATING", isNavigating: false });
-    }, 300);
-  }, [sortedBlocks, state.activeBlocks, goToQuestion, findQuestionById, state.activeQuestion.block_id, state.dynamicBlocks, markBlockCompleted]);
-
-  const getProgress = useCallback(() => {
-    let totalQuestions = 0;
-    let answeredCount = 0;
-    
-    const allBlocks = [
-      ...blocks,
-      ...state.dynamicBlocks
-    ];
-    
-    for (const blockId of state.activeBlocks) {
-      const block = allBlocks.find(b => b.block_id === blockId);
-      if (block) {
-        totalQuestions += block.questions.length;
-        
-        block.questions.forEach(q => {
-          if (state.answeredQuestions.has(q.question_id)) {
-            answeredCount++;
-          }
-        });
-      }
-    }
-    
-    return totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
-  }, [state.activeBlocks, state.answeredQuestions, blocks, state.dynamicBlocks]);
-
-  const getNavigationHistoryFor = useCallback((questionId: string): NavigationHistory | undefined => {
-    const sortedHistory = [...state.navigationHistory].sort((a, b) => b.timestamp - a.timestamp);
-    
-    return sortedHistory.find(item => item.to_question_id === questionId);
-  }, [state.navigationHistory]);
-
-  const deleteDynamicBlock = useCallback((blockId: string): boolean => {
-    try {
-      const blockExists = state.dynamicBlocks.some(b => b.block_id === blockId);
-      
-      if (!blockExists) {
-        console.error(`Il blocco dinamico ${blockId} non esiste`);
-        return false;
-      }
-      
-      dispatch({ type: "DELETE_DYNAMIC_BLOCK", blockId });
-      return true;
-    } catch (error) {
-      console.error("Errore nell'eliminazione del blocco dinamico:", error);
-      return false;
-    }
-  }, [state.dynamicBlocks]);
-  
-  const deleteQuestionResponses = useCallback((questionIds: string[]) => {
-    if (!questionIds || questionIds.length === 0) return;
-    dispatch({ type: "DELETE_QUESTION_RESPONSES", questionIds });
-  }, []);
-
   return (
     <FormContext.Provider
       value={{
@@ -840,7 +491,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         createDynamicBlock,
         deleteDynamicBlock,
         deleteQuestionResponses,
-        markBlockCompleted // Include the markBlockCompleted function in the context value
+        markBlockCompleted
       }}
     >
       {children}

@@ -24,20 +24,12 @@ export function BlockSidebar() {
   };
 
   const isBlockCompleted = (blockId: string) => {
-    // Single, consolidated check for block completion status
-    if (state.completedBlocks.includes(blockId)) {
-      return true;
-    }
-    
-    // Fallback to checking if all questions are answered
-    const block = blocks.find(b => b.block_id === blockId);
-    if (!block) return false;
-
-    return block.questions.every(question => state.answeredQuestions.has(question.question_id));
+    // Simplified logic: only check the completedBlocks array
+    return state.completedBlocks.includes(blockId);
   };
 
   const getBlockStatus = (blockId: string) => {
-    // First check if the block is completed (either explicitly marked or all questions answered)
+    // First check if the block is completed
     if (isBlockCompleted(blockId)) return "completato";
     
     // Then check if it's the current active block
