@@ -2,7 +2,8 @@ import { useForm as useOriginalForm } from "@/contexts/FormContext";
 import { 
   getPreviousQuestion as getPreviousQuestionUtil, 
   getQuestionTextWithResponses,
-  getChainOfInlineQuestions
+  getChainOfInlineQuestions,
+  isNavigationCompletingBlock as isNavigationCompletingBlockUtil
 } from "@/utils/formUtils";
 import { Question, Block, Placeholder, InputPlaceholder, MultiBlockManagerPlaceholder } from "@/types/form";
 import { formatCurrency, formatNumberWithThousandSeparator, capitalizeWords } from "@/lib/utils";
@@ -311,17 +312,7 @@ export const useFormExtended = () => {
    * @returns True se la navigazione completa il blocco, false altrimenti
    */
   const isNavigationCompletingBlock = (currentBlockId: string, leadsTo: string): boolean => {
-    // Se leads_to è "next_block", stiamo sicuramente uscendo dal blocco corrente
-    if (leadsTo === "next_block") {
-      return true;
-    }
-    
-    // Se leads_to punta a una domanda in un blocco diverso, stiamo completando il blocco
-    if (leadsTo && !leadsTo.includes(currentBlockId)) {
-      return true;
-    }
-    
-    return false;
+    return isNavigationCompletingBlockUtil(currentBlockId, leadsTo);
   };
   
   /**
@@ -361,7 +352,7 @@ export const useFormExtended = () => {
           if (isNavigationCompletingBlock(blockId, leadsTo)) {
             isTerminal = true;
           }
-        } else if ("type" in placeholder && placeholder.type === "MultiBlockManager") {
+        } else if (placeholder.type === "MultiBlockManager") {
           // MultiBlockManager è sempre terminale
           isTerminal = true;
         }
