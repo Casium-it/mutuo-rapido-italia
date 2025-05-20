@@ -346,13 +346,13 @@ export const useFormExtended = () => {
               isTerminal = true;
             }
           });
-        } else if ("leads_to" in placeholder) {
+        } else if (placeholder.type === "input" && "leads_to" in placeholder) {
           // Controlla se l'input porta fuori da questo blocco
           const leadsTo = placeholder.leads_to;
           if (isNavigationCompletingBlock(blockId, leadsTo)) {
             isTerminal = true;
           }
-        } else if (placeholder.type === "MultiBlockManager") {
+        } else if ("type" in placeholder && placeholder.type === "MultiBlockManager") {
           // MultiBlockManager è sempre terminale
           isTerminal = true;
         }
