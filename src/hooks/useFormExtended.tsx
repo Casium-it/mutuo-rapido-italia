@@ -1,3 +1,4 @@
+
 import { useForm as useOriginalForm } from "@/contexts/FormContext";
 import { 
   getPreviousQuestion as getPreviousQuestionUtil, 
@@ -302,6 +303,22 @@ export const useFormExtended = () => {
    */
   const deleteQuestionResponses = (questionIds: string[]) => {
     return formContext.deleteQuestionResponses(questionIds);
+  };
+
+  /**
+   * Gets the terminal (last) questions for a specific block
+   * @param blockId The ID of the block to check
+   * @returns Array of terminal questions in the block
+   */
+  const getTerminalQuestionsForBlock = (blockId: string): Question[] => {
+    const block = formContext.blocks.find(b => b.block_id === blockId) || 
+                  formContext.state.dynamicBlocks.find(b => b.block_id === blockId);
+    
+    if (!block || block.questions.length === 0) return [];
+    
+    // Per ora, consideriamo solo l'ultima domanda come terminale
+    const lastQuestion = block.questions[block.questions.length - 1];
+    return [lastQuestion];
   };
 
   return {
