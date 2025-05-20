@@ -49,7 +49,7 @@ export const casa_da_vendere: Block = {
     {
       question_number: "9.3",
       question_id: "dettagli_mutuo_casa_vendita",
-      question_text: "Al mutuo mancano {{placeholder1}} euro da saldare. Il mutuo ha un tasso {{placeholder 2}} del {{placeholder3}}%, e finirà nel {{placeholder4}}",
+      question_text: "Al mutuo mancano {{placeholder1}} euro da saldare. Il mutuo ha un tasso {{placeholder2}} del {{placeholder3}}%, e finirà nel {{placeholder4}}",
       leads_to_placeholder_priority: "placeholder4",
       placeholders: {
         placeholder1: {
