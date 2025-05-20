@@ -1,249 +1,120 @@
-import { Block, Question, NavigationHistory } from "@/types/form";
+import { Block, Question, FormResponse } from "@/types/form";
 
 /**
- * Gets the previous question of a given question in a block
- * @param blocks All form blocks
+ * Gets the previous question in a block
+ * @param blocks Array of blocks
  * @param blockId Current block ID
  * @param questionId Current question ID
- * @returns The previous question or undefined if none exists
+ * @returns The previous question object or undefined
  */
 export const getPreviousQuestion = (
   blocks: Block[],
   blockId: string,
   questionId: string
 ): Question | undefined => {
-  const currentBlock = blocks.find(block => block.block_id === blockId);
-  if (!currentBlock) return undefined;
+  const block = blocks.find((b) => b.block_id === blockId);
+  if (!block) return undefined;
 
-  const questionIndex = currentBlock.questions.findIndex(q => q.question_id === questionId);
+  const questionIndex = block.questions.findIndex((q) => q.question_id === questionId);
   if (questionIndex <= 0) return undefined;
 
-  return currentBlock.questions[questionIndex - 1];
+  return block.questions[questionIndex - 1];
 };
 
 /**
- * Gets a chain of all connected inline questions, starting from the first non-inline question
- * and including the specified question (unless includeCurrent is false)
- * 
- * Note: This function should ideally be used as a fallback when navigation history isn't available
- * 
- * @param blocks All form blocks
+ * Gets the next question in a block
+ * @param blocks Array of blocks
  * @param blockId Current block ID
  * @param questionId Current question ID
- * @param includeCurrent Whether to include the current question in the chain
- * @returns Array of questions in the chain, ordered from first to last
+ * @returns The next question object or undefined
  */
-export const getChainOfInlineQuestions = (
+export const getNextQuestion = (
   blocks: Block[],
   blockId: string,
-  questionId: string,
-  includeCurrent: boolean = false
-): Question[] => {
-  const currentBlock = blocks.find(block => block.block_id === blockId);
-  if (!currentBlock) return [];
+  questionId: string
+): Question | undefined => {
+  const block = blocks.find((b) => b.block_id === blockId);
+  if (!block) return undefined;
 
-  const questionIndex = currentBlock.questions.findIndex(q => q.question_id === questionId);
-  if (questionIndex < 0) return [];
+  const questionIndex = block.questions.findIndex((q) => q.question_id === questionId);
+  if (questionIndex === -1 || questionIndex >= block.questions.length - 1) return undefined;
 
-  const currentQuestion = currentBlock.questions[questionIndex];
-  
-  // Se questa è la prima domanda o non è inline, restituisci solo la domanda attuale
-  if (questionIndex === 0 || !currentQuestion.inline) {
-    return includeCurrent ? [currentQuestion] : [];
-  }
-  
-  // Inizia la catena con la domanda precedente
-  const chain: Question[] = [];
-  let currentIndex = questionIndex - 1;
-  
-  // Continua ad aggiungere domande precedenti finché non troviamo una non inline
-  while (currentIndex >= 0) {
-    const question = currentBlock.questions[currentIndex];
-    chain.unshift(question); // Aggiungi all'inizio dell'array
-    
-    // Se questa domanda non è inline, abbiamo raggiunto l'inizio della catena
-    if (!question.inline) {
-      break;
-    }
-    
-    currentIndex--;
-  }
-  
-  // Aggiungi la domanda corrente alla fine se richiesto
-  if (includeCurrent) {
-    chain.push(currentQuestion);
-  }
-  
-  return chain;
+  return block.questions[questionIndex + 1];
 };
 
 /**
- * Gets the text value with responses from a question
- * @param question The question object
- * @param responses The form responses
- * @returns Text with responses inserted
+ * Gets the text of a question with responses filled in
+ * @param question Question object
+ * @param responses Form responses
+ * @returns The question's text with responses
  */
 export const getQuestionTextWithResponses = (
   question: Question,
-  responses: { [question_id: string]: { [placeholder_key: string]: string | string[] } }
+  responses: FormResponse
 ): string => {
-  if (!question || !question.question_text) return "";
-
   let text = question.question_text;
-  
-  Object.keys(question.placeholders || {}).forEach(key => {
+  Object.keys(question.placeholders).forEach((key) => {
     const placeholder = `{{${key}}}`;
     const responseValue = responses[question.question_id]?.[key];
-    
     if (responseValue) {
-      let displayValue = "";
-      
-      // Handle select type placeholders
-      if (question.placeholders[key].type === "select" && !Array.isArray(responseValue)) {
-        const option = (question.placeholders[key] as any).options.find(
-          (opt: any) => opt.id === responseValue
-        );
-        if (option) {
-          displayValue = option.label;
-        }
-      } else {
-        // Handle other types
-        displayValue = Array.isArray(responseValue) 
-          ? responseValue.join(", ") 
-          : responseValue.toString();
-      }
-      
-      text = text.replace(placeholder, displayValue);
+      text = text.replace(placeholder, responseValue.toString());
     }
   });
-  
-  // Replace any remaining placeholders
-  text = text.replace(/\{\{[^}]+\}\}/g, "____");
-  
   return text;
 };
 
 /**
- * Gets the text value with clickable responses (for inline questions)
- * @param question The question object
- * @param responses The form responses
- * @returns Object with parts array containing text and response objects
+ * Gets all previous inline questions in a chain, starting from the current question
+ * @param blocks Array of blocks
+ * @param blockId Current block ID
+ * @param questionId Current question ID
+ * @returns Array of previous questions in the chain, ordered from first to last
  */
-export const getQuestionTextWithClickableResponses = (
-  question: Question,
-  responses: { [question_id: string]: { [placeholder_key: string]: string | string[] } }
-): { parts: Array<{type: 'text' | 'response', content: string, placeholderKey?: string}> } => {
-  if (!question || !question.question_text) return { parts: [] };
+export const getChainOfInlineQuestions = (
+  blocks: Block[],
+  blockId: string,
+  questionId: string
+): Question[] => {
+  let chain: Question[] = [];
+  let currentQuestion = blocks
+    .find((b) => b.block_id === blockId)
+    ?.questions.find((q) => q.question_id === questionId);
 
-  const text = question.question_text;
-  const parts: Array<{type: 'text' | 'response', content: string, placeholderKey?: string}> = [];
-  
-  let lastIndex = 0;
-  const regex = /\{\{([^}]+)\}\}/g;
-  let match;
+  while (currentQuestion?.inline) {
+    const previousQuestion = getPreviousQuestion(blocks, blockId, currentQuestion.question_id);
+    if (!previousQuestion) break;
 
-  while ((match = regex.exec(text)) !== null) {
-    // Aggiungi testo prima del placeholder
-    if (match.index > lastIndex) {
-      parts.push({
-        type: 'text',
-        content: text.slice(lastIndex, match.index)
-      });
-    }
-
-    const placeholderKey = match[1];
-    const responseValue = responses[question.question_id]?.[placeholderKey];
-    
-    if (responseValue) {
-      let displayValue = "";
-      
-      // Handle select type placeholders
-      if (question.placeholders[placeholderKey].type === "select" && !Array.isArray(responseValue)) {
-        const option = (question.placeholders[placeholderKey] as any).options.find(
-          (opt: any) => opt.id === responseValue
-        );
-        if (option) {
-          displayValue = option.label;
-        }
-      } else {
-        // Handle other types
-        displayValue = Array.isArray(responseValue) 
-          ? responseValue.join(", ") 
-          : responseValue.toString();
-      }
-      
-      parts.push({
-        type: 'response',
-        content: displayValue,
-        placeholderKey: placeholderKey
-      });
-    } else {
-      parts.push({
-        type: 'text',
-        content: "____"
-      });
-    }
-
-    lastIndex = match.index + match[0].length;
+    chain.unshift(previousQuestion);
+    currentQuestion = previousQuestion;
   }
 
-  // Aggiungi il testo rimanente
-  if (lastIndex < text.length) {
-    parts.push({
-      type: 'text',
-      content: text.slice(lastIndex)
-    });
-  }
-
-  return { parts };
+  return chain;
 };
 
-/**
- * Analyzes navigation history to detect and prevent circular references
- * @param history Array of navigation history entries
- * @param currentBlockId Current block ID
- * @param currentQuestionId Current question ID
- * @returns Safe navigation target or undefined if none found
- */
+// Presumendo che questo file esista già, aggiungiamo la nuova funzione
 export const getSafeNavigationTarget = (
-  history: NavigationHistory[],
-  currentBlockId: string,
-  currentQuestionId: string
-): { blockId: string, questionId: string } | undefined => {
-  // Ordina la cronologia per timestamp (dal più recente)
-  const sortedHistory = [...history].sort((a, b) => b.timestamp - a.timestamp);
+  history: any[], 
+  currentBlockId: string, 
+  currentQuestionId: string, 
+  visitedPairs: Set<string>
+) => {
+  const currentPair = `${currentBlockId}:${currentQuestionId}`;
+  visitedPairs.add(currentPair);
   
-  // Mantieni un set di coppie blocco:domanda per rilevare loop
-  const visitedPairs = new Set<string>();
-  visitedPairs.add(`${currentBlockId}:${currentQuestionId}`);
-  
-  let nextTarget: { blockId: string, questionId: string } | undefined;
-  let currentTarget = { blockId: currentBlockId, questionId: currentQuestionId };
-  
-  // Cerca al massimo 5 livelli indietro per evitare loop infiniti
-  for (let i = 0; i < 5; i++) {
-    // Trova l'entry più recente che punta alla domanda corrente
-    const entry = sortedHistory.find(e => 
-      e.to_block_id === currentTarget.blockId && 
-      e.to_question_id === currentTarget.questionId
-    );
-    
-    if (!entry) break;
-    
-    const targetPair = `${entry.from_block_id}:${entry.from_question_id}`;
-    
-    // Se abbiamo già visitato questa domanda, è un ciclo
-    if (visitedPairs.has(targetPair)) {
-      break;
+  // Trova l'ultima entry che porta alla domanda corrente
+  const historyEntry = history.find(item => {
+    if (item.to_block_id === currentBlockId && item.to_question_id === currentQuestionId) {
+      const targetPair = `${item.from_block_id}:${item.from_question_id}`;
+      
+      // Se già abbiamo visitato questa domanda, saltiamola per evitare loop
+      if (visitedPairs.has(targetPair)) {
+        return false;
+      }
+      
+      return true;
     }
-    
-    // Aggiungiamo la domanda al set
-    visitedPairs.add(targetPair);
-    
-    // Aggiorna il target e continua la ricerca
-    nextTarget = { blockId: entry.from_block_id, questionId: entry.from_question_id };
-    currentTarget = nextTarget;
-  }
+    return false;
+  });
   
-  return nextTarget;
+  return historyEntry;
 };

@@ -17,7 +17,9 @@ export function QuestionView() {
       // aggiorna lo stato interno per allinearlo all'URL
       if (state.activeQuestion.block_id !== params.blockId || 
           state.activeQuestion.question_id !== params.questionId) {
-        goToQuestion(params.blockId, params.questionId, true);
+        // Usa preventStackPush = true quando viene chiamato da un cambio di URL
+        // per evitare di aggiungere entry non necessarie allo stack
+        goToQuestion(params.blockId, params.questionId, true, true);
       }
     }
   }, [location.pathname, params.blockId, params.questionId, state.activeQuestion, goToQuestion]);
