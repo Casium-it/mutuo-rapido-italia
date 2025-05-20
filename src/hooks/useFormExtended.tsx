@@ -1,10 +1,12 @@
+
 import { useForm as useOriginalForm } from "@/contexts/FormContext";
 import { 
   getPreviousQuestion as getPreviousQuestionUtil, 
   getQuestionTextWithResponses,
-  getChainOfInlineQuestions
+  getChainOfInlineQuestions,
+  getSafeNavigationTarget
 } from "@/utils/formUtils";
-import { Question, Block, Placeholder, InputPlaceholder } from "@/types/form";
+import { Question, Block, Placeholder, InputPlaceholder, NavigationHistory } from "@/types/form";
 import { formatCurrency, formatNumberWithThousandSeparator, capitalizeWords } from "@/lib/utils";
 
 /**
@@ -143,14 +145,31 @@ export const useFormExtended = () => {
       const navigationHistory = formContext.getNavigationHistoryFor(questionId);
       
       if (navigationHistory) {
-        // Trova la domanda da cui l'utente è arrivato
-        const sourceQuestion = formContext.blocks
-          .find(b => b.block_id === navigationHistory.from_block_id)
-          ?.questions.find(q => q.question_id === navigationHistory.from_question_id);
-        
-        if (sourceQuestion) {
-          // Restituisci la catena formata dalla domanda di origine
-          return [sourceQuestion];
+        // Verifica se navigationHistory è un array o un singolo oggetto
+        if (Array.isArray(navigationHistory)) {
+          // Se è un array, usa la prima entry (la più recente, se ordinata)
+          if (navigationHistory.length > 0) {
+            const historyEntry = navigationHistory[0];
+            // Trova la domanda da cui l'utente è arrivato
+            const sourceQuestion = formContext.blocks
+              .find(b => b.block_id === historyEntry.from_block_id)
+              ?.questions.find(q => q.question_id === historyEntry.from_question_id);
+            
+            if (sourceQuestion) {
+              // Restituisci la catena formata dalla domanda di origine
+              return [sourceQuestion];
+            }
+          }
+        } else {
+          // È un singolo oggetto NavigationHistory
+          const sourceQuestion = formContext.blocks
+            .find(b => b.block_id === navigationHistory.from_block_id)
+            ?.questions.find(q => q.question_id === navigationHistory.from_question_id);
+          
+          if (sourceQuestion) {
+            // Restituisci la catena formata dalla domanda di origine
+            return [sourceQuestion];
+          }
         }
       }
     }
