@@ -5,7 +5,7 @@ import { FormQuestion } from "./FormQuestion";
 import { useLocation, useParams } from "react-router-dom";
 
 export function QuestionView() {
-  const { state, blocks, goToQuestion } = useFormExtended();
+  const { state, blocks, goToQuestion, markBlockCompleted } = useFormExtended();
   const location = useLocation();
   const params = useParams<{ blockId?: string, questionId?: string }>();
   const [showStopFlow, setShowStopFlow] = useState<boolean>(false);
@@ -21,6 +21,22 @@ export function QuestionView() {
       }
     }
   }, [location.pathname, params.blockId, params.questionId, state.activeQuestion, goToQuestion]);
+  
+  // Check if the current question is a terminal question
+  useEffect(() => {
+    if (state.activeQuestion.block_id && state.activeQuestion.question_id) {
+      const block = blocks.find(b => b.block_id === state.activeQuestion.block_id);
+      if (block) {
+        const question = block.questions.find(q => q.question_id === state.activeQuestion.question_id);
+        const isLastQuestion = block.questions[block.questions.length - 1] === question;
+        
+        // If this is the last question, and it's answered, mark the block as complete
+        if (isLastQuestion && state.answeredQuestions.has(state.activeQuestion.question_id)) {
+          markBlockCompleted(state.activeQuestion.block_id);
+        }
+      }
+    }
+  }, [state.activeQuestion, state.answeredQuestions, blocks, markBlockCompleted]);
   
   // Find the current active block and question
   const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
