@@ -251,9 +251,10 @@ function formReducer(state: FormState, action: Action): FormState {
     case "MARK_BLOCK_COMPLETED": {
       // Only add the block if it's not already in the completedBlocks array
       if (state.completedBlocks.includes(action.blockId)) {
+        console.log("[BLOCKS] Block already completed, skipping:", action.blockId);
         return state;
       }
-      console.log(`Marking block as completed: ${action.blockId}, current completed blocks:`, state.completedBlocks);
+      console.log("[BLOCKS] Marking block as completed:", action.blockId);
       return {
         ...state,
         completedBlocks: [...state.completedBlocks, action.blockId]
@@ -451,7 +452,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         answeredQuestions: Array.from(state.answeredQuestions),
         completedBlocks: state.completedBlocks
       };
-      console.log("Saving to localStorage:", JSON.stringify(stateToSave.completedBlocks));
+      console.log("[STORAGE] Saving completedBlocks to localStorage:", state.completedBlocks);
       localStorage.setItem(`form-state-${params.blockType}`, JSON.stringify(stateToSave));
     }
   }, [state, state.completedBlocks, params.blockType]);
@@ -671,11 +672,11 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
 
   // Definire la funzione markBlockCompleted
   const markBlockCompleted = useCallback((blockId: string) => {
-    console.log(`markBlockCompleted called for block: ${blockId}`);
+    console.log("[BLOCKS] markBlockCompleted called for block:", blockId);
     dispatch({ type: "MARK_BLOCK_COMPLETED", blockId });
   }, []);
 
-  // Update navigateToNextQuestion to use the defined markBlockCompleted function
+  // Navigazione alla domanda successiva
   const navigateToNextQuestion = useCallback((currentQuestionId: string, leadsTo: string) => {
     const currentBlockId = state.activeQuestion.block_id;
     
@@ -683,7 +684,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     
     // Check if this is a "next_block" navigation and mark the current block as completed
     if (leadsTo === "next_block") {
-      console.log(`Completing block: ${currentBlockId} due to next_block navigation`);
+      console.log("[NAVIGATION] Completing block due to next_block navigation:", currentBlockId);
       markBlockCompleted(currentBlockId);
       
       let currentBlock = null;
@@ -741,7 +742,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       if (found) {
         // If navigating to another block, mark the current block as completed
         if (found.block.block_id !== currentBlockId) {
-          console.log(`Completing block: ${currentBlockId} due to navigation to different block`);
+          console.log("[NAVIGATION] Completing block due to navigation to different block:", currentBlockId);
           markBlockCompleted(currentBlockId);
         }
         

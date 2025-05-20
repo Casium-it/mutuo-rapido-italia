@@ -1,3 +1,4 @@
+
 import { useForm } from "@/contexts/FormContext";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -8,41 +9,31 @@ export function BlockSidebar() {
   const { blocks, state } = useForm();
   const params = useParams<{ blockType?: string }>();
   
-  // Add debugging to see when the sidebar renders and what completed blocks it knows about
+  // Add debugging with prefix for easier filtering
   useEffect(() => {
-    console.log("BlockSidebar rendering, completedBlocks:", state.completedBlocks);
+    console.log("[SIDEBAR] Rendering with completedBlocks:", state.completedBlocks);
   }, [state.completedBlocks]);
   
   // Filter blocks that are active, not invisible, and sort by priority
   const activeBlocks = blocks
     .filter(block => state.activeBlocks.includes(block.block_id) && !block.invisible)
-    .sort((a, b) => a.priority - b.priority); // Ordinamento per priorità
+    .sort((a, b) => a.priority - b.priority);
 
   const isBlockActive = (blockId: string) => {
     return state.activeQuestion.block_id === blockId;
   };
 
   const isBlockCompleted = (blockId: string) => {
-    // Add debug log to see each check for block completion
-    const isInCompletedArray = state.completedBlocks.includes(blockId);
-    if (isInCompletedArray) {
-      console.log(`Block ${blockId} is explicitly marked as completed`);
-    }
-    
-    // First check if the block is in the completedBlocks array
+    // Single, consolidated check for block completion status
     if (state.completedBlocks.includes(blockId)) {
       return true;
     }
     
-    // Fallback to the old logic for backward compatibility
+    // Fallback to checking if all questions are answered
     const block = blocks.find(b => b.block_id === blockId);
     if (!block) return false;
 
-    const allQuestionsAnswered = block.questions.every(question => state.answeredQuestions.has(question.question_id));
-    if (allQuestionsAnswered) {
-      console.log(`Block ${blockId} is completed by all questions answered`);
-    }
-    return allQuestionsAnswered;
+    return block.questions.every(question => state.answeredQuestions.has(question.question_id));
   };
 
   const getBlockStatus = (blockId: string) => {
