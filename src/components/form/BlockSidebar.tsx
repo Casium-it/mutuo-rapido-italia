@@ -5,30 +5,24 @@ import { cn } from "@/lib/utils";
 import { useParams } from "react-router-dom";
 
 export function BlockSidebar() {
-  const { blocks, state } = useForm();
+  const { blocks, state, isBlockCompleted } = useForm();
   const params = useParams<{ blockType?: string }>();
   
   // Filter blocks that are active, not invisible, and sort by priority
   const activeBlocks = blocks
     .filter(block => state.activeBlocks.includes(block.block_id) && !block.invisible)
-    .sort((a, b) => a.priority - b.priority); // Ordinamento per priorità
+    .sort((a, b) => a.priority - b.priority);
 
   const isBlockActive = (blockId: string) => {
     return state.activeQuestion.block_id === blockId;
   };
 
-  const isBlockCompleted = (blockId: string) => {
-    const block = blocks.find(b => b.block_id === blockId);
-    if (!block) return false;
-
-    return block.questions.every(question => state.answeredQuestions.has(question.question_id));
-  };
-
   const getBlockStatus = (blockId: string) => {
+    // Simplify block status logic to use completedBlocks array
     if (isBlockCompleted(blockId)) return "completato";
     if (isBlockActive(blockId)) return "attivo";
     
-    // Se c'è almeno una domanda risposta ma non tutte
+    // Check if at least one question is answered
     const block = blocks.find(b => b.block_id === blockId);
     if (block) {
       const hasAnyAnswer = block.questions.some(q => state.answeredQuestions.has(q.question_id));

@@ -5,7 +5,7 @@ import { FormQuestion } from "./FormQuestion";
 import { useLocation, useParams } from "react-router-dom";
 
 export function QuestionView() {
-  const { state, blocks, goToQuestion } = useFormExtended();
+  const { state, blocks, goToQuestion, markBlockCompleted } = useFormExtended();
   const location = useLocation();
   const params = useParams<{ blockId?: string, questionId?: string }>();
   const [showStopFlow, setShowStopFlow] = useState<boolean>(false);
@@ -17,10 +17,16 @@ export function QuestionView() {
       // aggiorna lo stato interno per allinearlo all'URL
       if (state.activeQuestion.block_id !== params.blockId || 
           state.activeQuestion.question_id !== params.questionId) {
+        
+        // Mark previous block as completed when navigating to a new block
+        if (state.activeQuestion.block_id !== params.blockId) {
+          markBlockCompleted(state.activeQuestion.block_id);
+        }
+        
         goToQuestion(params.blockId, params.questionId, true);
       }
     }
-  }, [location.pathname, params.blockId, params.questionId, state.activeQuestion, goToQuestion]);
+  }, [location.pathname, params.blockId, params.questionId, state.activeQuestion, goToQuestion, markBlockCompleted]);
   
   // Find the current active block and question
   const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
