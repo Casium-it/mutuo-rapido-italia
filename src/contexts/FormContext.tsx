@@ -19,7 +19,7 @@ type FormContextType = {
   createDynamicBlock: (blockBlueprintId: string) => string | null;
   deleteDynamicBlock: (blockId: string) => boolean;
   deleteQuestionResponses: (questionIds: string[]) => void;
-  markBlockCompleted: (blockId: string) => void; // New function to mark a block as completed
+  markBlockCompleted: (blockId: string) => void; // Definizione della funzione markBlockCompleted
 };
 
 type Action =
@@ -668,7 +668,12 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return null;
   }, [sortedBlocks, state.dynamicBlocks]);
 
-  // Update navigateToNextQuestion to mark blocks as completed when leaving a block
+  // Definire la funzione markBlockCompleted
+  const markBlockCompleted = useCallback((blockId: string) => {
+    dispatch({ type: "MARK_BLOCK_COMPLETED", blockId });
+  }, []);
+
+  // Update navigateToNextQuestion to use the defined markBlockCompleted function
   const navigateToNextQuestion = useCallback((currentQuestionId: string, leadsTo: string) => {
     const currentBlockId = state.activeQuestion.block_id;
     
@@ -832,7 +837,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         createDynamicBlock,
         deleteDynamicBlock,
         deleteQuestionResponses,
-        markBlockCompleted // Export the new function
+        markBlockCompleted // Include the markBlockCompleted function in the context value
       }}
     >
       {children}
