@@ -1,3 +1,4 @@
+
 import { Block, Question, FormResponse } from "@/types/form";
 
 /**
@@ -91,7 +92,64 @@ export const getChainOfInlineQuestions = (
   return chain;
 };
 
-// Presumendo che questo file esista già, aggiungiamo la nuova funzione
+/**
+ * Gets question text with clickable responses for already answered questions
+ * @param question Question object
+ * @param responses Form responses
+ * @returns Object containing parts of the text with type and content
+ */
+export const getQuestionTextWithClickableResponses = (
+  question: Question,
+  responses: FormResponse
+): { parts: Array<{ type: 'text' | 'response', content: string }> } => {
+  let result: Array<{ type: 'text' | 'response', content: string }> = [];
+  let text = question.question_text;
+  let lastIndex = 0;
+  
+  // Find all placeholders in the text
+  const placeholderRegex = /\{\{([^}]+)\}\}/g;
+  let match;
+  
+  while ((match = placeholderRegex.exec(text)) !== null) {
+    // Add the text before the placeholder
+    if (match.index > lastIndex) {
+      result.push({
+        type: 'text',
+        content: text.substring(lastIndex, match.index)
+      });
+    }
+    
+    // Get the placeholder key
+    const key = match[1];
+    const responseValue = responses[question.question_id]?.[key];
+    
+    // Add the placeholder value or the placeholder itself
+    if (responseValue) {
+      result.push({
+        type: 'response',
+        content: responseValue.toString()
+      });
+    } else {
+      result.push({
+        type: 'text',
+        content: match[0]
+      });
+    }
+    
+    lastIndex = match.index + match[0].length;
+  }
+  
+  // Add any remaining text
+  if (lastIndex < text.length) {
+    result.push({
+      type: 'text',
+      content: text.substring(lastIndex)
+    });
+  }
+  
+  return { parts: result };
+};
+
 export const getSafeNavigationTarget = (
   history: any[], 
   currentBlockId: string, 
