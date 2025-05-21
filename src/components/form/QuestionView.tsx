@@ -2,13 +2,12 @@
 import React, { useEffect, useState } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { FormQuestion } from "./FormQuestion";
-import { useLocation, useParams, useNavigate } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 
 export function QuestionView() {
   const { state, blocks, goToQuestion, markBlockAsCompleted } = useFormExtended();
   const location = useLocation();
   const params = useParams<{ blockId?: string, questionId?: string }>();
-  const navigate = useNavigate();
   const [showStopFlow, setShowStopFlow] = useState<boolean>(false);
   
   // Sincronizza il componente con l'URL quando cambia
