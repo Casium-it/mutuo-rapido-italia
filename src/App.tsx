@@ -9,6 +9,7 @@ import { allBlocks } from "./data/blocks"; // Aggiornato per usare la nuova stru
 import Index from "./pages/Index";
 import SimulazioneAvanzata from "./pages/SimulazioneAvanzata";
 import Form from "./pages/Form";
+import FormLoading from "./pages/FormLoading";
 import FormCompleted from "./pages/FormCompleted";
 import NotFound from "./pages/NotFound";
 
@@ -23,6 +24,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/simulazione-avanzata" element={<SimulazioneAvanzata />} />
+          <Route path="/form-loading" element={<FormLoading />} />
           <Route path="/form-completed" element={<FormCompleted />} />
           <Route 
             path="/simulazione/:blockType" 

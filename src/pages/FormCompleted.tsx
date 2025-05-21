@@ -1,14 +1,16 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { Link } from "react-router-dom";
-import { ArrowRight, CheckCircle } from "lucide-react";
+import { ArrowRight, CheckCircle, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { formatCurrency } from "@/lib/utils";
 
 export default function FormCompleted() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [keySummary, setKeySummary] = useState<Record<string, any>>({});
   
   // Controlla se l'utente è arrivato a questa pagina dopo aver completato il form
   const submissionData = location.state?.submissionData;
@@ -17,6 +19,41 @@ export default function FormCompleted() {
     // Se l'utente accede direttamente senza aver completato un form, reindirizza alla home
     if (!submissionData) {
       navigate("/");
+      return;
+    }
+
+    // Estrai i dati principali per il riepilogo
+    if (submissionData.responses) {
+      const summary: Record<string, any> = {};
+      
+      // Mappa delle domande chiave che vogliamo mostrare nel riepilogo
+      const keyQuestions = {
+        'anticipo_disponibile': 'Anticipo disponibile',
+        'importo_mutuo': 'Importo mutuo',
+        'situazione_abitativa': 'Situazione abitativa',
+        'eta': 'Età',
+        'reddito_mensile': 'Reddito mensile',
+        'tipo_contratto': 'Tipo di contratto',
+        'stato_civile': 'Stato civile'
+      };
+      
+      // Estrai le risposte chiave
+      Object.entries(submissionData.responses).forEach(([questionId, placeholders]) => {
+        const keyName = Object.keys(keyQuestions).find(key => questionId.includes(key));
+        if (keyName) {
+          const placeholderKey = Object.keys(placeholders)[0];
+          const value = placeholders[placeholderKey];
+          
+          // Formatta i valori in base al tipo
+          if (typeof value === 'string' && !isNaN(Number(value)) && (questionId.includes('importo') || questionId.includes('reddito') || questionId.includes('anticipo'))) {
+            summary[keyQuestions[keyName]] = formatCurrency(Number(value));
+          } else {
+            summary[keyQuestions[keyName]] = value;
+          }
+        }
+      });
+      
+      setKeySummary(summary);
     }
   }, [submissionData, navigate]);
 
@@ -45,6 +82,25 @@ export default function FormCompleted() {
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Abbiamo ricevuto la tua richiesta e ti contatteremo presto con una proposta personalizzata per il tuo mutuo.
           </p>
+        </div>
+
+        {/* Riepilogo delle risposte */}
+        <div className="bg-[#F8F4EF] p-6 rounded-lg shadow-sm w-full max-w-2xl mb-8">
+          <div className="flex items-center mb-4">
+            <FileText className="h-5 w-5 text-[#245C4F] mr-2" />
+            <h2 className="text-xl font-semibold text-gray-800">
+              Riepilogo della tua richiesta
+            </h2>
+          </div>
+          
+          <div className="divide-y divide-gray-200">
+            {Object.entries(keySummary).map(([key, value], index) => (
+              <div key={index} className="py-3 flex justify-between">
+                <span className="font-medium text-gray-700">{key}</span>
+                <span className="text-gray-900">{value}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="bg-[#F8F4EF] p-6 rounded-lg shadow-sm w-full max-w-2xl mb-8">

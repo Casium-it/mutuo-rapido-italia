@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -11,9 +11,12 @@ export const CompleteFormButton = ({ className }: { className?: string }) => {
   const navigate = useNavigate();
   const { state, blocks } = useForm();
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmitForm = async () => {
     try {
+      setIsSubmitting(true);
+      
       // Retrieve the URL params for referral ID if present
       const searchParams = new URLSearchParams(window.location.search);
       const referralId = searchParams.get('ref');
@@ -70,15 +73,20 @@ export const CompleteFormButton = ({ className }: { className?: string }) => {
         if (responsesError) throw responsesError;
       }
       
-      // Navigate to completion page
-      toast({
-        title: "Modulo inviato con successo!",
-        description: "Grazie per aver completato il questionario."
+      // Navigate to loading page with form data
+      navigate('/form-loading', { 
+        state: { 
+          formData: {
+            responses: state.responses,
+            activeBlocks: state.activeBlocks,
+            submissionId: submission.id
+          }
+        }
       });
       
-      navigate('/form-completed');
     } catch (error) {
       console.error('Error submitting form:', error);
+      setIsSubmitting(false);
       toast({
         variant: "destructive",
         title: "Errore durante l'invio",
@@ -100,9 +108,19 @@ export const CompleteFormButton = ({ className }: { className?: string }) => {
     <Button 
       onClick={handleSubmitForm}
       className={`w-full bg-[#245C4F] hover:bg-[#1b4a3e] text-white ${className}`}
+      disabled={isSubmitting}
     >
-      <Check className="mr-2 h-4 w-4" />
-      Completa form
+      {isSubmitting ? (
+        <>
+          <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-r-transparent"></span>
+          Invio in corso...
+        </>
+      ) : (
+        <>
+          <Check className="mr-2 h-4 w-4" />
+          Completa form
+        </>
+      )}
     </Button>
   );
 };
