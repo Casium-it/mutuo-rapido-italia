@@ -46,7 +46,7 @@ export function BlockSidebar() {
           {activeBlocks.map((block, index) => {
             const isActive = isBlockActive(block.block_id);
             const isCompleted = isBlockCompleted(block.block_id);
-            const isFirstNonCompleted = index === firstNonCompletedIndex;
+            const isFirstNonCompleted = index === firstNonCompletedIndex && !isActive;
             const isClickable = isCompleted || isFirstNonCompleted;
             
             return (
@@ -61,8 +61,8 @@ export function BlockSidebar() {
                     // Completed block styling (dark green with low transparency)
                     "bg-[#245C4F]/20 text-gray-700 hover:bg-[#245C4F]/30": isCompleted && !isActive,
                     
-                    // First non-completed block styling (darker beige)
-                    "bg-[#E8E2D7] text-gray-700": isFirstNonCompleted && !isActive && !isCompleted,
+                    // First non-completed block styling (darker beige) with 1s delay
+                    "bg-[#E8E2D7] text-gray-700 transition-all delay-[1000ms]": isFirstNonCompleted && !isActive && !isCompleted,
                     
                     // Default text color
                     "text-gray-700": !isActive && !isCompleted && !isFirstNonCompleted,
@@ -81,10 +81,10 @@ export function BlockSidebar() {
                   </div>
                 )}
                 
-                {/* First non-completed block icon - AlertCircle (dark red instead of Pencil) */}
+                {/* First non-completed block icon - AlertCircle (dark red instead of Pencil) with 1s delay */}
                 {isFirstNonCompleted && !isCompleted && !isActive && (
-                  <div className="flex-shrink-0 flex items-center justify-center">
-                    <AlertCircle size={18} className="text-red-600" />
+                  <div className="flex-shrink-0 flex items-center justify-center transition-all delay-[1000ms]">
+                    <AlertCircle size={18} className="text-red-600 transition-all delay-[1000ms]" />
                   </div>
                 )}
                 
