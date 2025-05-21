@@ -1,3 +1,4 @@
+
 export type PlaceholderOption = {
   id: string;
   label: string;
@@ -9,8 +10,6 @@ export type SelectPlaceholder = {
   type: "select";
   options: PlaceholderOption[];
   multiple?: boolean;
-  label?: string;
-  placeholder_label?: string;
 };
 
 export type ValidationTypes = "euro" | "month" | "year" | "age" | "city" | "cap" | "free_text";
