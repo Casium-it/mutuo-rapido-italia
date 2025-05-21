@@ -2,7 +2,7 @@
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { cn } from "@/lib/utils";
 import { useParams } from "react-router-dom";
-import { CircleCheck, Pencil } from "lucide-react";
+import { CircleCheck, Pencil, ChevronRight } from "lucide-react";
 
 export function BlockSidebar() {
   const { blocks, state, isBlockCompleted, goToQuestion } = useFormExtended();
@@ -53,7 +53,7 @@ export function BlockSidebar() {
               <div
                 key={block.block_id}
                 className={cn(
-                  "w-full text-left flex items-center py-2 px-3 rounded-md transition-all",
+                  "w-full text-left flex items-center gap-2 py-2 px-3 rounded-md transition-all",
                   {
                     // Active block styling
                     "bg-[#245C4F] text-white font-medium": isActive,
@@ -74,21 +74,28 @@ export function BlockSidebar() {
                 )}
                 onClick={() => isClickable ? handleBlockClick(block.block_id) : null}
               >
-                <div className="truncate text-sm flex-1">{block.title}</div>
-                
-                {/* Completed block icon - CircleCheck */}
+                {/* Completed block icon - CircleCheck (spostato a sinistra) */}
                 {isCompleted && !isActive && (
-                  <div className="ml-2 flex-shrink-0 text-[#245C4F] flex items-center justify-center">
+                  <div className="flex-shrink-0 text-[#245C4F] flex items-center justify-center">
                     <CircleCheck size={18} className="text-[#245C4F] font-bold" />
                   </div>
                 )}
                 
-                {/* First non-completed block icon - Pencil */}
+                {/* First non-completed block icon - Pencil (spostato a sinistra) */}
                 {isFirstNonCompleted && !isCompleted && !isActive && (
-                  <div className="ml-2 flex-shrink-0 text-[#245C4F] flex items-center justify-center">
+                  <div className="flex-shrink-0 text-[#245C4F] flex items-center justify-center">
                     <Pencil size={18} className="text-[#245C4F]" />
                   </div>
                 )}
+                
+                {/* Current block icon - ChevronRight (aggiunto a sinistra) */}
+                {isActive && (
+                  <div className="flex-shrink-0 text-white flex items-center justify-center">
+                    <ChevronRight size={18} className="text-white" />
+                  </div>
+                )}
+                
+                <div className="truncate text-sm flex-1">{block.title}</div>
               </div>
             );
           })}
