@@ -36,7 +36,8 @@ type Action =
   | { type: "ADD_DYNAMIC_BLOCK"; block: Block }
   | { type: "DELETE_DYNAMIC_BLOCK"; blockId: string }
   | { type: "DELETE_QUESTION_RESPONSES"; questionIds: string[] }
-  | { type: "MARK_BLOCK_COMPLETED"; blockId: string };
+  | { type: "MARK_BLOCK_COMPLETED"; blockId: string }
+  | { type: "REMOVE_BLOCK_FROM_COMPLETED"; blockId: string };
 
 const initialState: FormState = {
   activeBlocks: [],
@@ -252,6 +253,12 @@ function formReducer(state: FormState, action: Action): FormState {
       return {
         ...state,
         completedBlocks: [...state.completedBlocks, action.blockId]
+      };
+    }
+    case "REMOVE_BLOCK_FROM_COMPLETED": {
+      return {
+        ...state,
+        completedBlocks: state.completedBlocks.filter(blockId => blockId !== action.blockId)
       };
     }
     default:
@@ -561,6 +568,15 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   const setResponse = useCallback((question_id: string, placeholder_key: string, value: string | string[]) => {
     const previousValue = state.responses[question_id]?.[placeholder_key];
     
+    // Trova il blocco a cui appartiene questa domanda
+    const blockId = findBlockByQuestionId(question_id);
+    
+    // Se il blocco è completato, rimuovilo dalla lista dei completati
+    // perché l'utente sta cambiando una risposta
+    if (blockId && state.completedBlocks.includes(blockId)) {
+      dispatch({ type: "REMOVE_BLOCK_FROM_COMPLETED", blockId });
+    }
+    
     const allBlocks = [
       ...sortedBlocks,
       ...state.dynamicBlocks
@@ -675,7 +691,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         }
       }
     }
-  }, [state.responses, state.dynamicBlocks, state.activeBlocks, sortedBlocks]);
+  }, [state.responses, state.dynamicBlocks, state.activeBlocks, sortedBlocks, state.completedBlocks, findBlockByQuestionId]);
 
   const getResponse = useCallback((question_id: string, placeholder_key: string) => {
     if (!state.responses[question_id]) return undefined;
