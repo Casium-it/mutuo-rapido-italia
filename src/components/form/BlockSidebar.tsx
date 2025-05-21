@@ -53,19 +53,19 @@ export function BlockSidebar() {
               <div
                 key={block.block_id}
                 className={cn(
-                  "w-full text-left flex items-center gap-2 py-2 px-3 rounded-md transition-all duration-300 ease-in-out",
+                  "w-full text-left flex items-center gap-2 py-2 px-3 rounded-md",
                   {
-                    // Active block styling - increased transition duration
-                    "bg-[#245C4F] text-white font-medium": isActive,
+                    // Active block styling - instant transition
+                    "bg-[#245C4F] text-white font-medium transition-all duration-0": isActive,
                     
-                    // Completed block styling - increased transition duration and smoother color
-                    "bg-[#245C4F]/20 text-gray-700 hover:bg-[#245C4F]/30": isCompleted && !isActive,
+                    // Completed block styling - instant transition
+                    "bg-[#245C4F]/20 text-gray-700 hover:bg-[#245C4F]/30 transition-all duration-0": isCompleted && !isActive,
                     
-                    // First non-completed block styling - increased transition duration
-                    "bg-[#E8E2D7] text-gray-700": isFirstNonCompleted && !isActive && !isCompleted,
+                    // First non-completed block styling - slow transition (600ms)
+                    "bg-[#E8E2D7] text-gray-700 transition-all duration-[600ms] ease-in-out": isFirstNonCompleted && !isActive && !isCompleted,
                     
                     // Default text color with transition
-                    "text-gray-700": !isActive && !isCompleted && !isFirstNonCompleted,
+                    "text-gray-700 transition-all duration-300": !isActive && !isCompleted && !isFirstNonCompleted,
                     
                     // Clickable styling with smoother hover transition
                     "cursor-pointer hover:bg-opacity-90": isClickable,
@@ -74,24 +74,44 @@ export function BlockSidebar() {
                 )}
                 onClick={() => isClickable ? handleBlockClick(block.block_id) : null}
               >
-                <div className="flex-shrink-0 w-[18px] h-[18px] flex items-center justify-center transition-all duration-300 ease-in-out">
-                  {/* Completed block icon - CircleCheck with transition */}
+                <div className={cn(
+                  "flex-shrink-0 w-[18px] h-[18px] flex items-center justify-center",
+                  {
+                    // Instant transitions for completed status
+                    "transition-all duration-0": isCompleted && !isActive,
+                    // Slow transitions for first non-completed
+                    "transition-all duration-[600ms] ease-in-out": isFirstNonCompleted && !isActive && !isCompleted,
+                    // Default transition duration
+                    "transition-all duration-300": !isCompleted && !isFirstNonCompleted || isActive
+                  }
+                )}>
+                  {/* Completed block icon - CircleCheck with instant transition */}
                   {isCompleted && !isActive && (
-                    <CircleCheck size={18} className="text-[#245C4F] font-bold transition-all duration-300 ease-in-out" />
+                    <CircleCheck size={18} className="text-[#245C4F] font-bold transition-all duration-0" />
                   )}
                   
-                  {/* First non-completed block icon - AlertCircle with transition */}
+                  {/* First non-completed block icon - AlertCircle with slow transition */}
                   {isFirstNonCompleted && !isCompleted && !isActive && (
-                    <AlertCircle size={18} className="text-red-600 transition-all duration-300 ease-in-out" />
+                    <AlertCircle size={18} className="text-red-600 transition-all duration-[600ms] ease-in-out" />
                   )}
                   
-                  {/* Current block icon - ChevronRight with transition */}
+                  {/* Current block icon - ChevronRight with instant transition */}
                   {isActive && (
-                    <ChevronRight size={18} className="text-white transition-all duration-300 ease-in-out" />
+                    <ChevronRight size={18} className="text-white transition-all duration-0" />
                   )}
                 </div>
                 
-                <div className="truncate text-sm flex-1 transition-all duration-300 ease-in-out">{block.title}</div>
+                <div className={cn(
+                  "truncate text-sm flex-1",
+                  {
+                    // Instant transitions for completed status
+                    "transition-all duration-0": isCompleted && !isActive,
+                    // Slow transitions for first non-completed
+                    "transition-all duration-[600ms] ease-in-out": isFirstNonCompleted && !isActive && !isCompleted,
+                    // Default transition duration
+                    "transition-all duration-300": !isCompleted && !isFirstNonCompleted || isActive
+                  }
+                )}>{block.title}</div>
               </div>
             );
           })}
