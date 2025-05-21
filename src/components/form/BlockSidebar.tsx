@@ -46,77 +46,56 @@ export function BlockSidebar() {
           {activeBlocks.map((block, index) => {
             const isActive = isBlockActive(block.block_id);
             const isCompleted = isBlockCompleted(block.block_id);
-            
-            // Modificato: un blocco non può essere contemporaneamente attivo e primo non completato
-            // Se è attivo, non può essere considerato il primo non completato anche se lo è tecnicamente
-            const isFirstNonCompleted = index === firstNonCompletedIndex && !isActive;
-            
-            const isClickable = isCompleted || isFirstNonCompleted || isActive;
+            const isFirstNonCompleted = index === firstNonCompletedIndex;
+            const isClickable = isCompleted || isFirstNonCompleted;
             
             return (
               <div
                 key={block.block_id}
                 className={cn(
-                  "w-full text-left flex items-center gap-2 py-2 px-3 rounded-md",
+                  "w-full text-left flex items-center gap-2 py-2 px-3 rounded-md transition-all",
                   {
-                    // Active block styling - instant transition
-                    "bg-[#245C4F] text-white font-medium transition-all duration-0": isActive,
+                    // Active block styling
+                    "bg-[#245C4F] text-white font-medium": isActive,
                     
-                    // Completed block styling - instant transition
-                    "bg-[#245C4F]/20 text-gray-700 hover:bg-[#245C4F]/30 transition-all duration-0": isCompleted && !isActive,
+                    // Completed block styling (dark green with low transparency)
+                    "bg-[#245C4F]/20 text-gray-700 hover:bg-[#245C4F]/30": isCompleted && !isActive,
                     
-                    // First non-completed block styling - slow transition (600ms)
-                    "bg-[#E8E2D7] text-gray-700 transition-all duration-[600ms] ease-in-out": isFirstNonCompleted,
+                    // First non-completed block styling (darker beige)
+                    "bg-[#E8E2D7] text-gray-700": isFirstNonCompleted && !isActive && !isCompleted,
                     
-                    // Default text color with transition
-                    "text-gray-700 transition-all duration-300": !isActive && !isCompleted && !isFirstNonCompleted,
+                    // Default text color
+                    "text-gray-700": !isActive && !isCompleted && !isFirstNonCompleted,
                     
-                    // Clickable styling with smoother hover transition
+                    // Clickable styling
                     "cursor-pointer hover:bg-opacity-90": isClickable,
                     "cursor-default opacity-70": !isClickable
                   }
                 )}
                 onClick={() => isClickable ? handleBlockClick(block.block_id) : null}
               >
-                <div className={cn(
-                  "flex-shrink-0 w-[18px] h-[18px] flex items-center justify-center",
-                  {
-                    // Instant transitions for active and completed status
-                    "transition-all duration-0": isActive || (isCompleted && !isActive),
-                    // Slow transitions for first non-completed
-                    "transition-all duration-[600ms] ease-in-out": isFirstNonCompleted,
-                    // Default transition duration
-                    "transition-all duration-300": !isActive && !isCompleted && !isFirstNonCompleted
-                  }
-                )}>
-                  {/* Mostro un solo icona in base alla priorità: Active > Completed > First Non-Completed */}
-                  {/* Current block icon - ChevronRight con transizione istantanea */}
-                  {isActive && (
-                    <ChevronRight size={18} className="text-white transition-all duration-0" />
-                  )}
-                  
-                  {/* Completed block icon - CircleCheck con transizione istantanea - solo se non è active */}
-                  {!isActive && isCompleted && (
-                    <CircleCheck size={18} className="text-[#245C4F] font-bold transition-all duration-0" />
-                  )}
-                  
-                  {/* First non-completed block icon - AlertCircle con transizione lenta */}
-                  {!isActive && !isCompleted && isFirstNonCompleted && (
-                    <AlertCircle size={18} className="text-red-600 transition-all duration-[600ms] ease-in-out" />
-                  )}
-                </div>
+                {/* Completed block icon - CircleCheck (spostato a sinistra) */}
+                {isCompleted && !isActive && (
+                  <div className="flex-shrink-0 text-[#245C4F] flex items-center justify-center group-hover:text-[#1b4a3e] transition-colors">
+                    <CircleCheck size={18} className="text-[#245C4F] font-bold hover:text-[#1b4a3e] transition-colors" />
+                  </div>
+                )}
                 
-                <div className={cn(
-                  "truncate text-sm flex-1",
-                  {
-                    // Instant transitions for active and completed status
-                    "transition-all duration-0": isActive || (isCompleted && !isActive),
-                    // Slow transitions for first non-completed
-                    "transition-all duration-[600ms] ease-in-out": isFirstNonCompleted,
-                    // Default transition duration
-                    "transition-all duration-300": !isActive && !isCompleted && !isFirstNonCompleted
-                  }
-                )}>{block.title}</div>
+                {/* First non-completed block icon - AlertCircle (dark red instead of Pencil) */}
+                {isFirstNonCompleted && !isCompleted && !isActive && (
+                  <div className="flex-shrink-0 flex items-center justify-center">
+                    <AlertCircle size={18} className="text-red-600" />
+                  </div>
+                )}
+                
+                {/* Current block icon - ChevronRight (aggiunto a sinistra) */}
+                {isActive && (
+                  <div className="flex-shrink-0 text-white flex items-center justify-center">
+                    <ChevronRight size={18} className="text-white" />
+                  </div>
+                )}
+                
+                <div className="truncate text-sm flex-1">{block.title}</div>
               </div>
             );
           })}
