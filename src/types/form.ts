@@ -40,6 +40,7 @@ export type Question = {
   question_notes?: string;
   block_id?: string;
   inline?: boolean;
+  endOfForm?: boolean; // New attribute for end-of-form question
   leads_to_placeholder_priority: string;
   placeholders: Record<string, Placeholder>;
 };

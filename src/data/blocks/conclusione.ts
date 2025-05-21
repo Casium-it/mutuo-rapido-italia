@@ -33,8 +33,24 @@ export const conclusione: Block = {
           type: "input",
           input_type: "number",
           placeholder_label: "Disponibilità residua",
-          leads_to: "next_block",
+          leads_to: "form_summary",
           input_validation: "euro"
+        }
+      }
+    },
+    {
+      question_number: "10.3",
+      question_id: "form_summary",
+      question_text: "Riepilogo del form",
+      endOfForm: true,  // Special attribute for end-of-form question
+      leads_to_placeholder_priority: "placeholder1",
+      placeholders: {
+        placeholder1: {
+          type: "input",
+          input_type: "text",
+          placeholder_label: "Questo campo non verrà mostrato",
+          leads_to: "next_block",
+          input_validation: "free_text"
         }
       }
     }
