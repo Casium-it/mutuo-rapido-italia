@@ -46,8 +46,12 @@ export function BlockSidebar() {
           {activeBlocks.map((block, index) => {
             const isActive = isBlockActive(block.block_id);
             const isCompleted = isBlockCompleted(block.block_id);
+            
+            // Modificato: Un blocco non può essere sia attivo che il primo non completato
+            // Se un blocco è attivo, non dovrebbe essere considerato come primo non completato
             const isFirstNonCompleted = index === firstNonCompletedIndex && !isActive;
-            const isClickable = isCompleted || isFirstNonCompleted;
+            
+            const isClickable = isCompleted || isActive || isFirstNonCompleted;
             
             return (
               <div
@@ -62,7 +66,7 @@ export function BlockSidebar() {
                     "bg-[#245C4F]/20 text-gray-700 hover:bg-[#245C4F]/30": isCompleted && !isActive,
                     
                     // First non-completed block styling (darker beige) with 1s delay
-                    "bg-[#E8E2D7] text-gray-700 transition-all delay-[1000ms]": isFirstNonCompleted && !isActive && !isCompleted,
+                    "bg-[#E8E2D7] text-gray-700 transition-all delay-[1000ms]": isFirstNonCompleted && !isCompleted,
                     
                     // Default text color
                     "text-gray-700": !isActive && !isCompleted && !isFirstNonCompleted,
@@ -82,7 +86,7 @@ export function BlockSidebar() {
                 )}
                 
                 {/* First non-completed block icon - AlertCircle (dark red instead of Pencil) with 1s delay */}
-                {isFirstNonCompleted && !isCompleted && !isActive && (
+                {isFirstNonCompleted && !isCompleted && (
                   <div className="flex-shrink-0 flex items-center justify-center transition-all delay-[1000ms]">
                     <AlertCircle size={18} className="text-red-600 transition-all delay-[1000ms]" />
                   </div>
