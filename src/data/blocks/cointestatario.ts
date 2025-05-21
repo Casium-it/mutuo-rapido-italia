@@ -72,15 +72,15 @@ export const cointestatario: Block = {
     {
       question_number: "22.3",
       question_id: "spesa_affitto_coint",
-      question_text: "che paga {{placeholder1}} euro al mese, compreso condominio",
-      question_notes: "Indica la sua quota dell'affitto se la casa è condivisa",
+      question_text: "che paga {{placeholder1}} euro al mese",
+      question_notes: "Indica la sua quota dell'affitto se la casa è condivisa, includi anchen le spese condominiali",
       inline: true,
       leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "input",
           input_type: "number",
-          placeholder_label: "Importo mensile",
+          placeholder_label: "Importo",
           leads_to: "casa_proprieta_coint",
           input_validation: "euro"
         }

@@ -73,15 +73,15 @@ export const la_tua_situazione: Block = {
     {
       question_number: "2.4",
       question_id: "spesa_affitto",
-      question_text: "che pago {{placeholder1}} euro al mese, compreso condominio",
-      question_notes: "Indica la tua quota dell'affitto se la casa è condivisa",
+      question_text: "che pago {{placeholder1}} euro al mese",
+      question_notes: "Indica la tua quota dell'affitto se la casa è condivisa, ed includi il condominio",
       inline: true,
       leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "input",
           input_type: "number",
-          placeholder_label: "Importo mensile",
+          placeholder_label: "Importo",
           leads_to: "casa_proprieta",
           input_validation: "euro"
         }
