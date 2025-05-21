@@ -1,9 +1,9 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { MultiBlockManagerPlaceholder } from "@/types/form";
 import { Plus, ArrowRight, Trash } from "lucide-react";
-import { Card } from "@/components/ui/card";
 
 interface MultiBlockManagerProps {
   questionId: string;
@@ -22,8 +22,6 @@ export function MultiBlockManager({
     deleteDynamicBlock, 
     navigateToNextQuestion,
     getDynamicBlocksByBlueprint,
-    areAllDynamicBlocksComplete,
-    isBlockComplete,
     getBlockResponseSummary
   } = useFormExtended();
   
@@ -31,7 +29,6 @@ export function MultiBlockManager({
   
   // Ottieni tutti i blocchi dinamici basati su questo blueprint
   const dynamicBlocks = getDynamicBlocksByBlueprint(placeholder.blockBlueprint);
-  const allBlocksComplete = areAllDynamicBlocksComplete(placeholder.blockBlueprint);
   
   // Crea un nuovo blocco basato sul blueprint
   const handleAddBlock = () => {
@@ -90,7 +87,6 @@ export function MultiBlockManager({
             
             <ul className="space-y-3">
               {dynamicBlocks.map((block) => {
-                const isComplete = isBlockComplete(block.block_id);
                 const responseSummary = getBlockResponseSummary(block.block_id);
                 
                 return (
@@ -117,12 +113,10 @@ export function MultiBlockManager({
                           type="button"
                           size="sm"
                           onClick={() => handleNavigateToBlock(block.block_id)}
-                          className={isComplete 
-                            ? "bg-white border border-[#245C4F] text-[#245C4F] hover:bg-[#F8F4EF] rounded-[10px] px-3 py-1.5 flex items-center shadow-[0_2px_0_0_#245C4F] hover:translate-y-[1px] hover:shadow-[0_1px_0_0_#245C4F] transition-all"
-                            : "bg-[#245C4F] text-white hover:bg-[#1e4f44] rounded-[10px] px-3 py-1.5 flex items-center shadow-[0_2px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_1px_0_0_#1a3f37] transition-all"}
+                          className="bg-[#245C4F] text-white hover:bg-[#1e4f44] rounded-[10px] px-3 py-1.5 flex items-center shadow-[0_2px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_1px_0_0_#1a3f37] transition-all"
                         >
                           <ArrowRight className="h-4 w-4 mr-1" />
-                          {isComplete ? "Modifica" : "Completa"}
+                          Modifica
                         </Button>
                         <Button
                           type="button"
@@ -154,16 +148,14 @@ export function MultiBlockManager({
             {isCreating ? "Creazione in corso..." : placeholder.add_block_label}
           </Button>
           
-          {/* Avanti button second */}
-          {(dynamicBlocks.length === 0 || allBlocksComplete) && (
-            <Button
-              type="button"
-              onClick={handleContinue}
-              className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-[16px] py-[10px] rounded-[10px] text-[16px] font-medium shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all"
-            >
-              Avanti
-            </Button>
-          )}
+          {/* Avanti button always shown */}
+          <Button
+            type="button"
+            onClick={handleContinue}
+            className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-[16px] py-[10px] rounded-[10px] text-[16px] font-medium shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all"
+          >
+            Avanti
+          </Button>
         </div>
       </div>
     </div>
