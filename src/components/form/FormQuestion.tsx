@@ -44,7 +44,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
     state, 
     addActiveBlock, 
     goToQuestion,
-    markBlockAsCompleted
+    markBlockAsCompleted,
+    blocks // Get blocks from the context, not from state
   } = useFormExtended();
   
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});
@@ -599,7 +600,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
                     <ul className="mt-1 pl-5 text-sm list-disc text-amber-700">
                       {incompleteBlocks.map(blockId => {
                         const block = state.dynamicBlocks.find(b => b.block_id === blockId) || 
-                                    state.blocks.find(b => b.block_id === blockId);
+                                     blocks.find(b => b.block_id === blockId);
                         return block ? (
                           <li key={blockId} className="cursor-pointer hover:underline" 
                               onClick={() => {
