@@ -477,7 +477,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
             if (validationType === "euro") {
               return "w-[100px]"; // Keep euro width at 100px
             } else if (validationType === "month") {
-              return "w-[100px]"; // Set month width to 100px (half the previous size)
+              return "w-[120px]"; // Set month width to 100px (half the previous size)
             } else if (placeholder.input_type === "number") {
               return "w-[70px]";
             } else if (placeholder.input_type === "text" && placeholder.placeholder_label?.toLowerCase().includes("cap")) {
