@@ -475,11 +475,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
           const getInputWidth = () => {
             const label = placeholder.placeholder_label || "";
             if (validationType === "euro") {
-              // Dynamic width based on placeholder label length with a minimum
-              const charWidth = 8; // Average character width in pixels
-              const minWidth = 100;
-              const calculatedWidth = Math.max(label.length * charWidth, minWidth);
-              return `min-w-[${calculatedWidth}px]`;
+              // Reduced width for euro inputs - approximately half the previous size
+              return "w-[100px]"; // Changed from dynamic calculation to fixed smaller width
             } else if (placeholder.input_type === "number") {
               return "w-[70px]";
             } else if (placeholder.input_type === "text" && placeholder.placeholder_label?.toLowerCase().includes("cap")) {
