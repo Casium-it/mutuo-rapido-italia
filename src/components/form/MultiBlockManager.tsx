@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { MultiBlockManagerPlaceholder } from "@/types/form";
 import { Plus, ArrowRight, Trash } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface MultiBlockManagerProps {
   questionId: string;
@@ -26,6 +27,7 @@ export function MultiBlockManager({
   } = useFormExtended();
   
   const [isCreating, setIsCreating] = useState(false);
+  const isMobile = useIsMobile();
   
   // Ottieni tutti i blocchi dinamici basati su questo blueprint
   const dynamicBlocks = getDynamicBlocksByBlueprint(placeholder.blockBlueprint);
@@ -94,7 +96,7 @@ export function MultiBlockManager({
                     key={block.block_id} 
                     className="bg-[#F8F4EF] border border-[#BEB8AE] rounded-lg p-3 shadow-[0_3px_0_0_#AFA89F] hover:shadow-[0_3px_6px_rgba(175,168,159,0.3)] transition-all"
                   >
-                    <div className="flex items-center justify-between">
+                    <div className={`flex ${isMobile ? 'flex-col' : 'items-center justify-between'}`}>
                       <div className="flex items-center">
                         <div>
                           <span className="text-gray-800 font-medium">
@@ -108,7 +110,7 @@ export function MultiBlockManager({
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2 self-end">
+                      <div className={`flex ${isMobile ? 'mt-3 w-full justify-between' : 'items-center space-x-2 self-end'}`}>
                         <Button
                           type="button"
                           size="sm"
