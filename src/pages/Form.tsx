@@ -79,7 +79,7 @@ export default function Form() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-[280px] p-0">
-                <div className="h-full bg-[#FAF9F6] p-4">
+                <div className="h-full bg-[#FAF9F6] p-4 py-0 px-0">
                   <BlockSidebar />
                 </div>
               </SheetContent>
