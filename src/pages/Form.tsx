@@ -7,12 +7,20 @@ import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
+import { Menu } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { 
+  Sheet,
+  SheetContent, 
+  SheetTrigger 
+} from "@/components/ui/sheet";
 
 export default function Form() {
   const { state, blocks, getProgress, resetForm, goToQuestion } = useForm();
   const params = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const isMobile = useIsMobile();
   
   // Trova il blocco attivo corrente
   const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
@@ -63,9 +71,26 @@ export default function Form() {
         </div>
       </header>
 
-      {/* Progress bar */}
-      <div className="bg-white px-4 py-1">
+      {/* Progress bar - Added more top padding (py-2 instead of py-1) */}
+      <div className="bg-white px-4 py-2">
         <div className="max-w-4xl mx-auto flex items-center gap-3">
+          {/* Mobile sidebar trigger */}
+          {isMobile && (
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="mr-1">
+                  <Menu size={20} className="text-gray-700" />
+                  <span className="sr-only">Apri navigazione</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[280px] p-0">
+                <div className="h-full bg-[#FAF9F6] p-4">
+                  <BlockSidebar />
+                </div>
+              </SheetContent>
+            </Sheet>
+          )}
+          
           <Progress 
             value={progress} 
             className="h-1 bg-gray-100 rounded-full" 
