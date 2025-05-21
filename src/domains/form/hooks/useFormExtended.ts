@@ -206,6 +206,23 @@ export const useFormExtended = () => {
     return true;
   };
 
+  /**
+   * Ottiene tutti i blocchi dinamici di un tipo specifico di blueprint
+   * @param blueprintId ID del blueprint dei blocchi da cercare
+   * @returns Array di blocchi dinamici che corrispondono al blueprint specificato
+   */
+  const getDynamicBlocksByBlueprint = (blueprintId: string): Block[] => {
+    if (!blueprintId) return [];
+    
+    const dynamicBlueprint = blueprintId.includes("{copyNumber}") ? 
+      blueprintId : 
+      `${blueprintId}{copyNumber}`;
+      
+    return formContext.state.dynamicBlocks
+      .filter(block => block.blueprint_id === blueprintId || 
+                      block.blueprint_id === dynamicBlueprint);
+  };
+
   return {
     ...formContext,
     getPreviousQuestionText,
@@ -214,6 +231,8 @@ export const useFormExtended = () => {
     isBlockInvisible,
     navigateToDynamicBlock,
     getBlockResponseSummary,
-    areAllDynamicBlocksComplete
+    areAllDynamicBlocksComplete,
+    getDynamicBlocksByBlueprint
   };
 };
+

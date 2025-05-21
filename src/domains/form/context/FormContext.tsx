@@ -74,9 +74,10 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   // Mantieni traccia della navigazione per completare correttamente i blocchi
   useEffect(() => {
     // Esegui solo quando isNavigating passa da true a false (navigazione completata)
-    if (previousBlockIdRef.current === true && state.isNavigating === false) {
+    const wasNavigating = previousBlockIdRef.current === true;
+    if (wasNavigating && state.isNavigating === false) {
       // Memorizziamo l'ID del blocco da cui stiamo arrivando (blocco precedente)
-      const blockWeLeavingFrom = previousBlockIdRef.current;
+      const blockWeLeavingFrom = previousBlockIdRef.current as string;
       
       // Assicurati di avere un blocco precedente valido e diverso da quello attuale
       if (blockWeLeavingFrom && 
