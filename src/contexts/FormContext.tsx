@@ -285,6 +285,27 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     completedBlocks: []
   });
 
+  // Funzione per trovare a quale blocco appartiene una domanda specifica
+  const findBlockByQuestionId = useCallback((questionId: string): string | null => {
+    // Cerca prima nei blocchi normali
+    for (const block of sortedBlocks) {
+      const hasQuestion = block.questions.some(q => q.question_id === questionId);
+      if (hasQuestion) {
+        return block.block_id;
+      }
+    }
+    
+    // Se non trovato, cerca nei blocchi dinamici
+    for (const block of state.dynamicBlocks) {
+      const hasQuestion = block.questions.some(q => q.question_id === questionId);
+      if (hasQuestion) {
+        return block.block_id;
+      }
+    }
+    
+    return null;
+  }, [sortedBlocks, state.dynamicBlocks]);
+
   // Mark a block as completed
   const markBlockAsCompleted = useCallback((blockId: string) => {
     if (blockId && !state.completedBlocks.includes(blockId)) {
