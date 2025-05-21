@@ -476,7 +476,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
             const label = placeholder.placeholder_label || "";
             if (validationType === "euro") {
               // Reduced width for euro inputs - approximately half the previous size
-              return "w-[50px]"; // Changed from w-[100px] to w-[50px]
+              return "w-[100px]"; // Changed from dynamic calculation to fixed smaller width
             } else if (placeholder.input_type === "number") {
               return "w-[70px]";
             } else if (placeholder.input_type === "text" && placeholder.placeholder_label?.toLowerCase().includes("cap")) {
