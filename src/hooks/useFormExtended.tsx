@@ -1,6 +1,7 @@
+
 import { useForm } from "@/contexts/FormContext";
 import { useCallback } from "react";
-import { Block } from "@/types/form";
+import { Block, Question } from "@/types/form";
 
 export function useFormExtended() {
   const formContext = useForm();
@@ -31,13 +32,13 @@ export function useFormExtended() {
                   value.forEach(val => {
                     const option = placeholder.options.find(o => o.id === val);
                     if (option) {
-                      summary += `<div><b>${placeholder.label}:</b> ${option.label}</div>`;
+                      summary += `<div><b>${placeholder.label || placeholder.placeholder_label || "Opzione"}:</b> ${option.label}</div>`;
                     }
                   });
                 } else {
                   const option = placeholder.options.find(o => o.id === value);
                   if (option) {
-                    summary += `<div><b>${placeholder.label}:</b> ${option.label}</div>`;
+                    summary += `<div><b>${placeholder.label || placeholder.placeholder_label || "Opzione"}:</b> ${option.label}</div>`;
                   }
                 }
               } else if (placeholder?.type === "input") {
@@ -83,11 +84,117 @@ export function useFormExtended() {
     [formContext.blocks, formContext.state.dynamicBlocks]
   );
   
+  // Funzioni mancanti per la gestione delle catene di domande
+  
+  // Ottieni il testo della domanda precedente
+  const getPreviousQuestionText = useCallback(
+    (blockId: string, questionId: string): string | null => {
+      const block = [...formContext.blocks, ...formContext.state.dynamicBlocks].find(
+        b => b.block_id === blockId
+      );
+      
+      if (!block) return null;
+      
+      // Trova l'indice della domanda corrente
+      const currentQuestionIndex = block.questions.findIndex(q => q.question_id === questionId);
+      
+      // Se non c'è una domanda precedente, restituisci null
+      if (currentQuestionIndex <= 0) return null;
+      
+      // Restituisci il testo della domanda precedente
+      return block.questions[currentQuestionIndex - 1].question_text;
+    },
+    [formContext.blocks, formContext.state.dynamicBlocks]
+  );
+  
+  // Ottieni l'intero oggetto domanda precedente
+  const getPreviousQuestion = useCallback(
+    (blockId: string, questionId: string): Question | null => {
+      const block = [...formContext.blocks, ...formContext.state.dynamicBlocks].find(
+        b => b.block_id === blockId
+      );
+      
+      if (!block) return null;
+      
+      // Trova l'indice della domanda corrente
+      const currentQuestionIndex = block.questions.findIndex(q => q.question_id === questionId);
+      
+      // Se non c'è una domanda precedente, restituisci null
+      if (currentQuestionIndex <= 0) return null;
+      
+      // Restituisci la domanda precedente
+      return block.questions[currentQuestionIndex - 1];
+    },
+    [formContext.blocks, formContext.state.dynamicBlocks]
+  );
+  
+  // Ottieni la catena di domande inline che porta alla domanda corrente
+  const getInlineQuestionChain = useCallback(
+    (blockId: string, questionId: string): Question[] => {
+      const block = [...formContext.blocks, ...formContext.state.dynamicBlocks].find(
+        b => b.block_id === blockId
+      );
+      
+      if (!block) return [];
+      
+      // Trova l'indice della domanda corrente
+      const currentQuestionIndex = block.questions.findIndex(q => q.question_id === questionId);
+      
+      if (currentQuestionIndex <= 0) return [];
+      
+      // Costruisci la catena di domande inline
+      const chain: Question[] = [];
+      
+      // Parti dalla prima domanda non inline del blocco
+      let firstNonInlineIndex = 0;
+      for (let i = currentQuestionIndex - 1; i >= 0; i--) {
+        if (!block.questions[i].inline) {
+          firstNonInlineIndex = i;
+          break;
+        }
+      }
+      
+      // Aggiungi la prima domanda non inline
+      chain.push(block.questions[firstNonInlineIndex]);
+      
+      // Aggiungi le domande inline che seguono fino alla domanda corrente (esclusa)
+      for (let i = firstNonInlineIndex + 1; i < currentQuestionIndex; i++) {
+        if (block.questions[i].inline) {
+          chain.push(block.questions[i]);
+        } else {
+          // Se troviamo una domanda non inline, ricominciamo la catena
+          chain.length = 0;
+          chain.push(block.questions[i]);
+        }
+      }
+      
+      return chain;
+    },
+    [formContext.blocks, formContext.state.dynamicBlocks]
+  );
+  
+  // Funzione per navigare a un blocco dinamico specifico
+  const navigateToDynamicBlock = useCallback(
+    (blockId: string) => {
+      const block = formContext.state.dynamicBlocks.find(b => b.block_id === blockId);
+      
+      if (!block || block.questions.length === 0) return;
+      
+      // Naviga alla prima domanda del blocco
+      formContext.goToQuestion(blockId, block.questions[0].question_id);
+    },
+    [formContext.state.dynamicBlocks, formContext.goToQuestion]
+  );
+  
   // Aggiorniamo i tipi per QuestionView.tsx
   return {
     ...formContext,
     getBlockResponseSummary,
     getDynamicBlocksByBlueprint,
-    findBlockByQuestionId
+    findBlockByQuestionId,
+    getPreviousQuestionText,
+    getPreviousQuestion,
+    getInlineQuestionChain,
+    navigateToDynamicBlock
   };
 }

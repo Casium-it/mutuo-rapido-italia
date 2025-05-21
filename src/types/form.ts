@@ -10,6 +10,8 @@ export type SelectPlaceholder = {
   type: "select";
   options: PlaceholderOption[];
   multiple?: boolean;
+  label?: string;  // Aggiungiamo la proprietà label che mancava
+  placeholder_label?: string;  // Aggiungiamo anche placeholder_label per consistenza
 };
 
 export type ValidationTypes = "euro" | "month" | "year" | "age" | "city" | "cap" | "free_text";
