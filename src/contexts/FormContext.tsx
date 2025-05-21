@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback, useRef } from "react";
 import { Block, FormState, FormResponse, NavigationHistory, Placeholder, SelectPlaceholder } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
@@ -312,24 +313,63 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     completedBlocks: []
   });
 
-  const findBlockByQuestionId = useCallback((questionId: string): string | null => {
-    for (const block of sortedBlocks) {
-      const hasQuestion = block.questions.some(q => q.question_id === questionId);
-      if (hasQuestion) {
-        return block.block_id;
+  // Implementa la funzione createDynamicBlock
+  const createDynamicBlock = useCallback((blockBlueprintId: string): string | null => {
+    try {
+      // Trova blueprint
+      const blueprintBase = blockBlueprintId.replace('{copyNumber}', '');
+      
+      // Calcola il numero della copia
+      const existingCopies = state.dynamicBlocks
+        .filter(b => b.blueprint_id && b.blueprint_id.startsWith(blueprintBase))
+        .map(b => b.copy_number || 0);
+      
+      // Se non ci sono copie, inizia da 1, altrimenti prendi il massimo + 1
+      const nextCopyNumber = existingCopies.length > 0 
+        ? Math.max(...existingCopies) + 1 
+        : 1;
+      
+      // Crea l'ID del blocco
+      const blockId = blockBlueprintId.replace('{copyNumber}', nextCopyNumber.toString());
+      
+      // Trova il blueprint originale nei blocchi esistenti
+      let blueprintBlock: Block | undefined;
+      for (const block of blocks) {
+        if (block.block_id.startsWith(blueprintBase)) {
+          blueprintBlock = { ...block };
+          break;
+        }
       }
-    }
-    
-    for (const block of state.dynamicBlocks) {
-      const hasQuestion = block.questions.some(q => q.question_id === questionId);
-      if (hasQuestion) {
-        return block.block_id;
+      
+      if (!blueprintBlock) {
+        console.error(`Blueprint ${blockBlueprintId} non trovato`);
+        return null;
       }
+      
+      // Crea una copia del blocco
+      const blockCopy: Block = {
+        ...blueprintBlock,
+        block_id: blockId,
+        blueprint_id: blockBlueprintId,
+        copy_number: nextCopyNumber,
+        questions: blueprintBlock.questions.map(q => ({
+          ...q,
+          question_id: q.question_id.replace('{copyNumber}', nextCopyNumber.toString())
+        }))
+      };
+      
+      // Aggiungi il blocco dinamico
+      dispatch({ type: "ADD_DYNAMIC_BLOCK", block: blockCopy });
+      
+      console.log(`Blocco dinamico creato: ${blockId}`);
+      return blockId;
+    } catch (error) {
+      console.error("Errore nella creazione del blocco dinamico:", error);
+      return null;
     }
-    
-    return null;
-  }, [sortedBlocks, state.dynamicBlocks]);
+  }, [blocks, state.dynamicBlocks]);
 
+  // Helper functions per il context
   const getInlineQuestionChain = useCallback((blockId: string, questionId: string): any[] => {
     const allBlocks = [...sortedBlocks, ...state.dynamicBlocks];
     const block = allBlocks.find(b => b.block_id === blockId);
@@ -366,6 +406,24 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     
     return prevQuestion.question_text || "";
   }, [getPreviousQuestion]);
+
+  const findBlockByQuestionId = useCallback((questionId: string): string | null => {
+    for (const block of sortedBlocks) {
+      const hasQuestion = block.questions.some(q => q.question_id === questionId);
+      if (hasQuestion) {
+        return block.block_id;
+      }
+    }
+    
+    for (const block of state.dynamicBlocks) {
+      const hasQuestion = block.questions.some(q => q.question_id === questionId);
+      if (hasQuestion) {
+        return block.block_id;
+      }
+    }
+    
+    return null;
+  }, [sortedBlocks, state.dynamicBlocks]);
 
   const markBlockAsCompleted = useCallback((blockId: string) => {
     if (blockId && !state.completedBlocks.includes(blockId)) {
