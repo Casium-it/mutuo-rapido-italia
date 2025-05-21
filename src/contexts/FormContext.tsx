@@ -264,6 +264,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   const params = useParams<{ blockType?: string; blockId?: string; questionId?: string }>();
   const location = useLocation();
   const previousBlockIdRef = useRef<string | null>(null);
+  const previousQuestionIdRef = useRef<string | null>(null);
   const isNavigatingRef = useRef<boolean | undefined>(false);
   
   const sortedBlocks = [...blocks].sort((a, b) => a.priority - b.priority);
@@ -283,16 +284,19 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       const currentBlockId = state.activeQuestion.block_id;
       
       // If we have a previous block and it's different from the current one
-      if (previousBlockIdRef.current && previousBlockIdRef.current !== currentBlockId) {
-        // Mark previous block as completed
+      if (previousBlockIdRef.current && 
+          previousBlockIdRef.current !== currentBlockId && 
+          previousBlockIdRef.current !== null) {
+        // Mark previous block as completed, but not the current one
         markBlockAsCompleted(previousBlockIdRef.current);
       }
     }
     
     // Update refs for next comparison
+    previousQuestionIdRef.current = state.activeQuestion.question_id;
     previousBlockIdRef.current = state.activeQuestion.block_id;
     isNavigatingRef.current = state.isNavigating;
-  }, [state.isNavigating, state.activeQuestion.block_id]);
+  }, [state.isNavigating, state.activeQuestion.block_id, state.activeQuestion.question_id]);
 
   const createDynamicBlock = useCallback((blockBlueprintId: string): string | null => {
     const blueprintBlock = blocks.find(b => b.block_id === blockBlueprintId && b.multiBlock === true);
@@ -503,6 +507,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   }, [state.completedBlocks]);
 
   const goToQuestion = useCallback((block_id: string, question_id: string, replace = false) => {
+    dispatch({ type: "SET_NAVIGATING", isNavigating: true });
+    
     const previousBlockId = state.activeQuestion.block_id;
     const previousQuestionId = state.activeQuestion.question_id;
 
@@ -518,8 +524,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         timestamp: Date.now()
       }
     });
-    
-    dispatch({ type: "SET_NAVIGATING", isNavigating: true });
     
     const blockType = params.blockType || "funnel";
     const newPath = `/simulazione/${blockType}/${block_id}/${question_id}`;

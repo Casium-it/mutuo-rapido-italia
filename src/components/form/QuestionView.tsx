@@ -5,7 +5,7 @@ import { FormQuestion } from "./FormQuestion";
 import { useLocation, useParams } from "react-router-dom";
 
 export function QuestionView() {
-  const { state, blocks, goToQuestion, markBlockAsCompleted } = useFormExtended();
+  const { state, blocks, goToQuestion } = useFormExtended();
   const location = useLocation();
   const params = useParams<{ blockId?: string, questionId?: string }>();
   const [showStopFlow, setShowStopFlow] = useState<boolean>(false);
@@ -36,12 +36,10 @@ export function QuestionView() {
       // Pulisci la variabile di sessione dopo l'utilizzo
       sessionStorage.removeItem("stopFlowActivated");
       
-      // Marca il blocco corrente come completato quando stop_flow è attivato
-      if (activeBlock) {
-        markBlockAsCompleted(activeBlock.block_id);
-      }
+      // Non marchiamo più il blocco come completato qui, lasciamo che sia
+      // la navigazione a gestirlo correttamente
     }
-  }, [state.activeQuestion, activeBlock, markBlockAsCompleted]);
+  }, [state.activeQuestion]);
 
   if (!activeBlock || !activeQuestion) {
     return (
