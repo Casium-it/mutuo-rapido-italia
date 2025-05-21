@@ -525,7 +525,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
                           "inline-block align-middle text-center",
                           "border-[1.5px] rounded-[8px]",
                           "text-[16px] text-[#222222] font-['Inter']",
-                          "h-[38px] px-[12px] py-[8px]", 
+                          "h-[32px] px-[12px] py-[6px]", // Changed from h-[38px] to h-[32px] and py-[8px] to py-[6px]
                           "outline-none focus:ring-0",
                           "placeholder:text-[#E7E1D9] placeholder:font-normal",
                           "appearance-none",
