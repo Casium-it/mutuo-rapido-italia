@@ -22,23 +22,6 @@ export function QuestionView() {
     }
   }, [location.pathname, params.blockId, params.questionId, state.activeQuestion, goToQuestion]);
   
-  // Ensure only previous block is marked as completed when navigating
-  useEffect(() => {
-    // If we have navigation history, mark ONLY the previous block as completed
-    if (state.navigationHistory.length > 0) {
-      const latestNavigation = state.navigationHistory[state.navigationHistory.length - 1];
-      const fromBlockId = latestNavigation.from_block_id;
-      
-      // Mark ONLY the block we navigated FROM as completed
-      if (fromBlockId && fromBlockId !== state.activeQuestion.block_id) {
-        markBlockAsCompleted(fromBlockId);
-      }
-    }
-    
-    // Rimuoviamo la parte che marca il primo blocco come completato automaticamente
-    // Questo verrà completato solo quando si naviga via da esso
-  }, [state.navigationHistory, state.activeQuestion.block_id, markBlockAsCompleted]);
-  
   // Find the current active block and question
   const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
   const activeQuestion = activeBlock?.questions.find(
