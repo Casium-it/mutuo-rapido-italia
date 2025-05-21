@@ -8,19 +8,20 @@ import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import { Menu } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { 
-  Sheet,
-  SheetContent, 
-  SheetTrigger 
-} from "@/components/ui/sheet";
-
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 export default function Form() {
-  const { state, blocks, getProgress, resetForm, goToQuestion } = useForm();
+  const {
+    state,
+    blocks,
+    getProgress,
+    resetForm,
+    goToQuestion
+  } = useForm();
   const params = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
-  
+
   // Trova il blocco attivo corrente
   const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
 
@@ -48,9 +49,7 @@ export default function Form() {
     // Questo effetto verrà eseguito ogni volta che cambia l'URL (location.pathname)
     // Poiché dipende da location.pathname, forza un ri-rendering del componente
   }, [location.pathname]);
-
-  return (
-    <div className="min-h-screen flex flex-col bg-white">
+  return <div className="min-h-screen flex flex-col bg-white">
       {/* Header */}
       <header className="py-3 px-4 md:px-6 flex justify-between items-center bg-white border-b border-gray-200">
         <div className="flex items-center">
@@ -59,12 +58,7 @@ export default function Form() {
           </Link>
         </div>
         <div className="flex items-center gap-4">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="text-gray-700 border-gray-300 hover:bg-gray-100 text-sm" 
-            onClick={handleSaveAndExit}
-          >
+          <Button variant="outline" size="sm" className="text-gray-700 border-gray-300 hover:bg-gray-100 text-sm" onClick={handleSaveAndExit}>
             Salva ed esci
           </Button>
         </div>
@@ -73,22 +67,13 @@ export default function Form() {
       {/* Progress bar - With increased top padding (py-3 on desktop) and mobile sidebar on the right */}
       <div className="bg-white px-4 py-2 md:py-3">
         <div className="max-w-4xl mx-auto flex items-center gap-3">
-          <Progress 
-            value={progress} 
-            className="h-1 bg-gray-100 rounded-full" 
-            indicatorClassName="bg-black" 
-          />
+          <Progress value={progress} className="h-1 bg-gray-100 rounded-full" indicatorClassName="bg-black" />
           <span className="text-xs font-medium text-gray-500">{progress}%</span>
           
           {/* Mobile sidebar trigger - moved to the right */}
-          {isMobile && (
-            <Sheet>
+          {isMobile && <Sheet>
               <SheetTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="ml-auto hover:bg-[#F0EAE0]"
-                >
+                <Button variant="ghost" size="icon" className="ml-auto hover:bg-[#F0EAE0]">
                   <Menu size={20} className="text-gray-700" />
                   <span className="sr-only">Apri navigazione</span>
                 </Button>
@@ -98,8 +83,7 @@ export default function Form() {
                   <BlockSidebar />
                 </div>
               </SheetContent>
-            </Sheet>
-          )}
+            </Sheet>}
         </div>
       </div>
 
@@ -107,7 +91,7 @@ export default function Form() {
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar - increased width from 240px to 280px */}
         <div className="hidden md:block w-[280px] bg-white border-r border-gray-200 overflow-y-auto">
-          <div className="p-4 h-full">
+          <div className="p-4 h-full py-0 px-0">
             <BlockSidebar />
           </div>
         </div>
@@ -127,6 +111,5 @@ export default function Form() {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 }
