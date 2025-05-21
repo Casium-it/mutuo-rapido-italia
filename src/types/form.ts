@@ -87,5 +87,5 @@ export type FormState = {
   navigationHistory: NavigationHistory[];
   dynamicBlocks: Block[];
   blockActivations: Record<string, BlockActivationSource[]>; // Track which questions activated which blocks
-  completedBlocks: string[]; // New property to track completed blocks
+  completedBlocks: string[]; // Track completed blocks
 };

@@ -24,7 +24,8 @@ export function MultiBlockManager({
     navigateToNextQuestion,
     getDynamicBlocksByBlueprint,
     getBlockResponseSummary,
-    markBlockCompleted
+    markBlockCompleted,
+    findBlockByQuestionId
   } = useFormExtended();
   
   const isMobile = useIsMobile();
@@ -65,11 +66,15 @@ export function MultiBlockManager({
   const handleContinue = () => {
     // Special case for stop_flow: mark the parent block as completed
     if (placeholder.leads_to === "stop_flow") {
-      // Get the current block ID from the question ID
-      // This assumes that the questionId follows the convention of blockId_questionName
-      const blockId = questionId.split('_').slice(0, -1).join('_');
+      // Usa il metodo findBlockByQuestionId per trovare il blocco corretto
+      const blockId = findBlockByQuestionId(questionId);
+      console.log(`MultiBlockManager - Found block for question ${questionId}: ${blockId}`);
+      
       if (blockId) {
+        console.log(`MultiBlockManager - Marking block as completed: ${blockId}`);
         markBlockCompleted(blockId);
+      } else {
+        console.error(`MultiBlockManager - Could not find block for question ${questionId}`);
       }
     }
     
