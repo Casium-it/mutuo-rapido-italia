@@ -9,7 +9,68 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      form_responses: {
+        Row: {
+          block_id: string
+          created_at: string
+          id: string
+          question_id: string
+          question_text: string
+          response_value: Json
+          submission_id: string
+        }
+        Insert: {
+          block_id: string
+          created_at?: string
+          id?: string
+          question_id: string
+          question_text: string
+          response_value: Json
+          submission_id: string
+        }
+        Update: {
+          block_id?: string
+          created_at?: string
+          id?: string
+          question_id?: string
+          question_text?: string
+          response_value?: Json
+          submission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_responses_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "form_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_submissions: {
+        Row: {
+          completed_at: string
+          form_type: string
+          id: string
+          metadata: Json | null
+          user_identifier: string | null
+        }
+        Insert: {
+          completed_at?: string
+          form_type: string
+          id?: string
+          metadata?: Json | null
+          user_identifier?: string | null
+        }
+        Update: {
+          completed_at?: string
+          form_type?: string
+          id?: string
+          metadata?: Json | null
+          user_identifier?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
