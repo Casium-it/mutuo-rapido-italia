@@ -471,12 +471,13 @@ export function FormQuestion({ question }: FormQuestionProps) {
           const validationType = placeholder.input_validation;
           const isValid = validateInput(value, validationType);
           
-          // Determine width dynamically based on placeholder label
+          // Determine width dynamically based on placeholder label and type
           const getInputWidth = () => {
             const label = placeholder.placeholder_label || "";
             if (validationType === "euro") {
-              // Reduced width for euro inputs - approximately half the previous size
-              return "w-[100px]"; // Changed from dynamic calculation to fixed smaller width
+              return "w-[100px]"; // Keep euro width at 100px
+            } else if (validationType === "month") {
+              return "w-[100px]"; // Set month width to 100px (half the previous size)
             } else if (placeholder.input_type === "number") {
               return "w-[70px]";
             } else if (placeholder.input_type === "text" && placeholder.placeholder_label?.toLowerCase().includes("cap")) {
