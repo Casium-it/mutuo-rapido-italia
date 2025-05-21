@@ -2,7 +2,7 @@
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { cn } from "@/lib/utils";
 import { useParams } from "react-router-dom";
-import { CircleCheck, Hand } from "lucide-react";
+import { CircleCheck, Pencil } from "lucide-react";
 
 export function BlockSidebar() {
   const { blocks, state, isBlockCompleted, goToQuestion } = useFormExtended();
@@ -61,8 +61,8 @@ export function BlockSidebar() {
                     // Completed block styling (dark green with low transparency)
                     "bg-[#245C4F]/20 text-gray-700": isCompleted && !isActive,
                     
-                    // First non-completed block styling
-                    "bg-[#245C4F]/10 text-gray-700": isFirstNonCompleted && !isActive && !isCompleted,
+                    // First non-completed block styling (darker beige)
+                    "bg-[#E8E2D7] text-gray-700": isFirstNonCompleted && !isActive && !isCompleted,
                     
                     // Default text color
                     "text-gray-700": !isActive && !isCompleted && !isFirstNonCompleted,
@@ -83,10 +83,10 @@ export function BlockSidebar() {
                   </div>
                 )}
                 
-                {/* First non-completed block icon - Hand */}
+                {/* First non-completed block icon - Pencil */}
                 {isFirstNonCompleted && !isCompleted && !isActive && (
                   <div className="ml-2 flex-shrink-0 text-[#245C4F] flex items-center justify-center">
-                    <Hand size={18} className="text-[#245C4F]" />
+                    <Pencil size={18} className="text-[#245C4F]" />
                   </div>
                 )}
               </div>
