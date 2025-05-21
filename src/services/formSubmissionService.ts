@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { FormResponse } from "@/types/form";
+import { FormResponse, FormState } from "@/types/form";
 
 type SubmissionResult = {
   success: boolean;
@@ -68,5 +68,33 @@ export async function submitFormResponses(
   } catch (error) {
     console.error("Errore imprevisto:", error);
     return { success: false, error: "Errore imprevisto durante il salvataggio" };
+  }
+}
+
+/**
+ * Invia i dati del form completato a Supabase
+ * @param state - Lo stato attuale del form
+ * @returns Risultato dell'operazione con l'ID della submission
+ */
+export async function submitFormToSupabase(
+  state: FormState
+): Promise<SubmissionResult> {
+  try {
+    // Estrai le risposte dal form state
+    const { responses } = state;
+    
+    // Determina il tipo di form in base all'URL o altro criterio
+    const formType = window.location.pathname.includes("mutuo") ? "mutuo" : "simulazione";
+    
+    // Usa la funzione esistente per inviare i dati
+    const result = await submitFormResponses(responses, formType);
+    
+    return result;
+  } catch (error) {
+    console.error("Errore durante l'invio del form:", error);
+    return { 
+      success: false, 
+      error: "Si è verificato un errore durante l'invio del form" 
+    };
   }
 }
