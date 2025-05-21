@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { BlockSidebar } from "@/components/form/BlockSidebar";
@@ -71,14 +70,21 @@ export default function Form() {
         </div>
       </header>
 
-      {/* Progress bar - Added more top padding (py-2 instead of py-1) */}
-      <div className="bg-white px-4 py-2">
+      {/* Progress bar - With increased top padding (py-3 on desktop) and mobile sidebar on the right */}
+      <div className="bg-white px-4 py-2 md:py-3">
         <div className="max-w-4xl mx-auto flex items-center gap-3">
-          {/* Mobile sidebar trigger */}
+          <Progress 
+            value={progress} 
+            className="h-1 bg-gray-100 rounded-full" 
+            indicatorClassName="bg-black" 
+          />
+          <span className="text-xs font-medium text-gray-500">{progress}%</span>
+          
+          {/* Mobile sidebar trigger - moved to the right */}
           {isMobile && (
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="mr-1">
+                <Button variant="ghost" size="icon" className="ml-auto">
                   <Menu size={20} className="text-gray-700" />
                   <span className="sr-only">Apri navigazione</span>
                 </Button>
@@ -90,13 +96,6 @@ export default function Form() {
               </SheetContent>
             </Sheet>
           )}
-          
-          <Progress 
-            value={progress} 
-            className="h-1 bg-gray-100 rounded-full" 
-            indicatorClassName="bg-black" 
-          />
-          <span className="text-xs font-medium text-gray-500">{progress}%</span>
         </div>
       </div>
 
