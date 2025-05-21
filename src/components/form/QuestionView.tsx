@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { FormQuestion } from "./FormQuestion";
@@ -87,10 +88,25 @@ export function QuestionView() {
 
     try {
       setIsSubmitting(true);
-      // This will use the same service function used by CompleteFormButton
-      await submitFormToSupabase(state);
-      // Navigate to form-loading page
-      navigate("/form-loading");
+      const result = await submitFormToSupabase(state);
+      
+      if (result.success) {
+        // Passa i dati rilevanti alla pagina di caricamento
+        navigate("/form-loading", {
+          state: { 
+            formData: {
+              responses: state.responses,
+              activeBlocks: state.activeBlocks,
+              submissionId: result.submissionId
+            }
+          }
+        });
+      } else {
+        toast.error("Si è verificato un errore durante l'invio del form", {
+          description: result.error || "Riprova più tardi o contattaci per assistenza",
+        });
+        setIsSubmitting(false);
+      }
     } catch (error) {
       console.error("Errore durante l'invio del form:", error);
       toast.error("Si è verificato un errore durante l'invio del form", {
