@@ -125,7 +125,7 @@ export const cointestatario: Block = {
               id: "casa_proprieta_coint",
               label: "intende",
               leads_to: "convivenza_cointestatario",
-              add_block: "casa_cointestatario_vendere"
+              add_block: "la_sua_da_vendere"
             },
             {
               id: "no_casa_proprieta_coint",
