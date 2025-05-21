@@ -59,7 +59,7 @@ export function BlockSidebar() {
                     "bg-[#245C4F] text-white font-medium": isActive,
                     
                     // Completed block styling (dark green with low transparency)
-                    "bg-[#245C4F]/20 text-gray-700": isCompleted && !isActive,
+                    "bg-[#245C4F]/20 text-gray-700 hover:bg-[#245C4F]/30": isCompleted && !isActive,
                     
                     // First non-completed block styling (darker beige)
                     "bg-[#E8E2D7] text-gray-700": isFirstNonCompleted && !isActive && !isCompleted,
@@ -76,8 +76,8 @@ export function BlockSidebar() {
               >
                 {/* Completed block icon - CircleCheck (spostato a sinistra) */}
                 {isCompleted && !isActive && (
-                  <div className="flex-shrink-0 text-[#245C4F] flex items-center justify-center">
-                    <CircleCheck size={18} className="text-[#245C4F] font-bold" />
+                  <div className="flex-shrink-0 text-[#245C4F] flex items-center justify-center group-hover:text-[#1b4a3e] transition-colors">
+                    <CircleCheck size={18} className="text-[#245C4F] font-bold hover:text-[#1b4a3e] transition-colors" />
                   </div>
                 )}
                 
