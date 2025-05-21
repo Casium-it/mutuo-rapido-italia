@@ -1,5 +1,5 @@
 
-import { useForm, useFormState, useFormNavigation, useFormResponses, useFormBlocks, useFormDynamicBlocks } from "@/contexts/FormContext";
+import { useForm as useOriginalForm } from "@/contexts/FormContext";
 import { 
   getPreviousQuestion as getPreviousQuestionUtil, 
   getQuestionTextWithResponses,
@@ -10,16 +10,9 @@ import { formatCurrency, formatNumberWithThousandSeparator, capitalizeWords } fr
 
 /**
  * Extended hook for the form context with additional functionality
- * This hook combines all specialized hooks and provides backward compatibility
  */
 export const useFormExtended = () => {
-  // Utilizziamo i nostri hooks specializzati
-  const formContext = useForm();
-  const { state, blocks, getProgress, resetForm, isQuestionAnswered, dispatch } = useFormState();
-  const { goToQuestion, navigateToNextQuestion, getNavigationHistoryFor, findQuestionById } = useFormNavigation();
-  const { getResponse, setResponse, deleteQuestionResponses } = useFormResponses();
-  const { addActiveBlock, removeActiveBlock, isBlockInvisible } = useFormBlocks();
-  const { createDynamicBlock, deleteDynamicBlock, navigateToDynamicBlock, getDynamicBlocksByBlueprint } = useFormDynamicBlocks();
+  const formContext = useOriginalForm();
   
   /**
    * Gets the text of the previous question with responses filled in
@@ -29,14 +22,14 @@ export const useFormExtended = () => {
    */
   const getPreviousQuestionText = (blockId: string, questionId: string): string => {
     const previousQuestion = getPreviousQuestionUtil(
-      blocks,
+      formContext.blocks,
       blockId,
       questionId
     );
     
     if (!previousQuestion) return "";
     
-    return getQuestionTextWithResponses(previousQuestion, state.responses);
+    return getQuestionTextWithResponses(previousQuestion, formContext.state.responses);
   };
   
   /**
@@ -46,7 +39,7 @@ export const useFormExtended = () => {
    * @returns The previous question object or undefined
    */
   const getPreviousQuestion = (blockId: string, questionId: string) => {
-    return getPreviousQuestionUtil(blocks, blockId, questionId);
+    return getPreviousQuestionUtil(formContext.blocks, blockId, questionId);
   };
 
   /**
@@ -57,17 +50,17 @@ export const useFormExtended = () => {
    */
   const getInlineQuestionChain = (blockId: string, questionId: string): Question[] => {
     // Se la domanda è inline, troviamo da dove viene l'utente attraverso la cronologia
-    const question = blocks
+    const question = formContext.blocks
       .find(b => b.block_id === blockId)
       ?.questions.find(q => q.question_id === questionId);
     
     if (question?.inline) {
       // Cerca nella cronologia di navigazione da dove l'utente è arrivato a questa domanda
-      const navigationHistory = getNavigationHistoryFor(questionId);
+      const navigationHistory = formContext.getNavigationHistoryFor(questionId);
       
       if (navigationHistory) {
         // Trova la domanda da cui l'utente è arrivato
-        const sourceQuestion = blocks
+        const sourceQuestion = formContext.blocks
           .find(b => b.block_id === navigationHistory.from_block_id)
           ?.questions.find(q => q.question_id === navigationHistory.from_question_id);
         
@@ -79,7 +72,90 @@ export const useFormExtended = () => {
     }
     
     // Fallback al comportamento precedente se non troviamo una cronologia
-    return getChainOfInlineQuestions(blocks, blockId, questionId);
+    return getChainOfInlineQuestions(formContext.blocks, blockId, questionId);
+  };
+  
+  /**
+   * Checks if a block is invisible
+   * @param blockId Block ID
+   * @returns True if the block is invisible, false otherwise
+   */
+  const isBlockInvisible = (blockId: string): boolean => {
+    const block = formContext.blocks.find(b => b.block_id === blockId);
+    return !!block?.invisible;
+  };
+  
+  /**
+   * Creates a dynamic block based on a blueprint without navigating to it
+   * @param blockBlueprintId The ID of the block blueprint to use
+   * @returns The ID of the created block or null if creation failed
+   */
+  const createDynamicBlock = (blockBlueprintId: string): string | null => {
+    console.log(`Creazione blocco dinamico dal blueprint: ${blockBlueprintId}`);
+    
+    try {
+      // Create the dynamic block
+      const newBlockId = formContext.createDynamicBlock(blockBlueprintId);
+      console.log(`Nuovo blocco creato con ID: ${newBlockId}`);
+      
+      return newBlockId;
+    } catch (error) {
+      console.error("Errore nella creazione del blocco dinamico:", error);
+      return null;
+    }
+  };
+  
+  /**
+   * Navigate to a specific dynamic block
+   * @param blockId The ID of the block to navigate to
+   * @returns True if navigation was successful, false otherwise
+   */
+  const navigateToDynamicBlock = (blockId: string): boolean => {
+    // Trova il blocco dinamico per ID
+    const dynamicBlock = formContext.state.dynamicBlocks.find(b => b.block_id === blockId);
+    
+    if (!dynamicBlock || dynamicBlock.questions.length === 0) {
+      console.error("Blocco dinamico non trovato o senza domande:", blockId);
+      return false;
+    }
+    
+    const firstQuestionId = dynamicBlock.questions[0].question_id;
+    console.log(`Navigazione al blocco: ${blockId}, domanda: ${firstQuestionId}`);
+    formContext.goToQuestion(blockId, firstQuestionId);
+    return true;
+  };
+
+  /**
+   * Delete a specific dynamic block
+   * @param blockId The ID of the dynamic block to delete
+   */
+  const deleteDynamicBlock = (blockId: string): boolean => {
+    return formContext.deleteDynamicBlock(blockId);
+  };
+
+  /**
+   * Remove a block from active blocks
+   * @param blockId The ID of the block to remove
+   */
+  const removeActiveBlock = (blockId: string): void => {
+    return formContext.removeActiveBlock(blockId);
+  };
+
+  /**
+   * Get all dynamic blocks of a specific blueprint type
+   * @param blueprintId The blueprint ID to filter by
+   * @returns Array of dynamic blocks matching the blueprint type
+   */
+  const getDynamicBlocksByBlueprint = (blueprintId: string): Block[] => {
+    if (!blueprintId) return [];
+    
+    const dynamicBlueprint = blueprintId.includes("{copyNumber}") ? 
+      blueprintId : 
+      `${blueprintId}{copyNumber}`;
+      
+    return formContext.state.dynamicBlocks
+      .filter(block => block.blueprint_id === blueprintId || 
+                       block.blueprint_id === dynamicBlueprint);
   };
 
   /**
@@ -93,7 +169,7 @@ export const useFormExtended = () => {
     
     try {
       // Create the dynamic block
-      const newBlockId = createDynamicBlock(blockBlueprintId);
+      const newBlockId = formContext.createDynamicBlock(blockBlueprintId);
       console.log(`Nuovo blocco creato con ID: ${newBlockId}`);
       
       if (newBlockId && navigateToBlock) {
@@ -113,14 +189,14 @@ export const useFormExtended = () => {
    * @returns HTML string with responses formatted (bold for answers)
    */
   const getBlockResponseSummary = (blockId: string): string => {
-    const block = blocks.find(b => b.block_id === blockId) || 
-                  state.dynamicBlocks.find(b => b.block_id === blockId);
+    const block = formContext.blocks.find(b => b.block_id === blockId) || 
+                  formContext.state.dynamicBlocks.find(b => b.block_id === blockId);
                   
     if (!block || block.questions.length === 0) return "";
     
     // Cerchiamo le domande che hanno risposte
     const answeredQuestions = block.questions.filter(q => 
-      state.answeredQuestions.has(q.question_id)
+      formContext.state.answeredQuestions.has(q.question_id)
     );
     
     if (answeredQuestions.length === 0) return "";
@@ -134,7 +210,7 @@ export const useFormExtended = () => {
       
       Object.keys(question.placeholders || {}).forEach(key => {
         const placeholder = `{{${key}}}`;
-        const responseValue = state.responses[question.question_id]?.[key];
+        const responseValue = formContext.state.responses[question.question_id]?.[key];
         
         if (responseValue) {
           let displayValue = "";
@@ -199,33 +275,29 @@ export const useFormExtended = () => {
     return summaryParts.join("<br>");
   };
 
+  /**
+   * Delete responses for specific questions
+   * @param questionIds Array of question IDs to remove responses for
+   */
+  const deleteQuestionResponses = (questionIds: string[]) => {
+    return formContext.deleteQuestionResponses(questionIds);
+  };
+
   // For compatibility, provide a dummy implementation that always returns true
-  const areAllDynamicBlocksComplete = (): boolean => {
+  const areAllDynamicBlocksComplete = (blueprintId: string): boolean => {
     return true;
   };
 
   return {
     ...formContext,
-    state,
-    blocks,
-    goToQuestion,
-    setResponse,
-    getResponse,
-    addActiveBlock,
-    removeActiveBlock,
-    isQuestionAnswered,
-    navigateToNextQuestion,
-    getProgress,
-    resetForm,
-    getNavigationHistoryFor,
-    createDynamicBlock,
-    deleteDynamicBlock,
-    removeActiveBlock,
     getPreviousQuestionText,
     getPreviousQuestion,
     getInlineQuestionChain,
     isBlockInvisible,
+    createDynamicBlock,
     navigateToDynamicBlock,
+    deleteDynamicBlock,
+    removeActiveBlock,
     getDynamicBlocksByBlueprint,
     areAllDynamicBlocksComplete,
     createAndNavigateToBlock,
