@@ -283,6 +283,23 @@ export const useFormExtended = () => {
     return formContext.deleteQuestionResponses(questionIds);
   };
 
+  /**
+   * Checks if a block is marked as completed
+   * @param blockId The ID of the block to check
+   * @returns True if the block is completed, false otherwise
+   */
+  const isBlockCompleted = (blockId: string): boolean => {
+    return formContext.isBlockCompleted(blockId);
+  };
+
+  /**
+   * Manually mark a block as completed
+   * @param blockId The ID of the block to mark as completed
+   */
+  const markBlockAsCompleted = (blockId: string): void => {
+    formContext.markBlockAsCompleted(blockId);
+  };
+
   // For compatibility, provide a dummy implementation that always returns true
   const areAllDynamicBlocksComplete = (blueprintId: string): boolean => {
     return true;
@@ -302,6 +319,8 @@ export const useFormExtended = () => {
     areAllDynamicBlocksComplete,
     createAndNavigateToBlock,
     getBlockResponseSummary,
-    deleteQuestionResponses
+    deleteQuestionResponses,
+    isBlockCompleted,
+    markBlockAsCompleted
   };
 };
