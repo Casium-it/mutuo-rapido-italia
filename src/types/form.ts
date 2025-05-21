@@ -1,3 +1,4 @@
+
 export type PlaceholderOption = {
   id: string;
   label: string;
@@ -30,14 +31,7 @@ export type MultiBlockManagerPlaceholder = {
   leads_to: string;
 };
 
-export type FineFormPlaceholder = {
-  type: "FineForm";
-  button_text?: string;
-  warning_text?: string;
-  leads_to: string;
-};
-
-export type Placeholder = SelectPlaceholder | InputPlaceholder | MultiBlockManagerPlaceholder | FineFormPlaceholder;
+export type Placeholder = SelectPlaceholder | InputPlaceholder | MultiBlockManagerPlaceholder;
 
 export type Question = {
   question_id: string;

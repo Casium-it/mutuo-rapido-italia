@@ -102,7 +102,7 @@ export const i_suoi_finanziamenti_blueprint: Block = {
           input_type: "text",
           placeholder_label: "Nome istituto",
           input_validation: "free_text",
-          leads_to: "manager_suoi_finanziamenti"  // Questo punta direttamente alla domanda MultiBlockManager
+          leads_to: "manager_suoi_finanziamenti"
         }
       }
     }

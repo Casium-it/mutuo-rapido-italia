@@ -88,23 +88,3 @@ export const validateInput = (value: string, validationType: string): boolean =>
       return false; // Se il tipo di validazione non è riconosciuto, consideriamo l'input non valido
   }
 };
-
-/**
- * Formatta un valore in base al tipo di validazione
- */
-export const formatInputValue = (value: string, validationType: string): string => {
-  if (validationType === "euro") {
-    return value + " €";
-  }
-  return value;
-};
-
-/**
- * Restituisce un oggetto con funzioni di validazione e formattazione per un tipo specifico
- */
-export const getInputValidationBehavior = (validationType: string) => {
-  return {
-    validate: (value: string) => validateInput(value, validationType),
-    format: (value: string) => formatInputValue(value, validationType)
-  };
-};
