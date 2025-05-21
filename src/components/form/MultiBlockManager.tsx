@@ -119,18 +119,10 @@ export function MultiBlockManager({
                 const responseSummary = getBlockResponseSummary(block.block_id);
                 const isComplete = isDynamicBlockComplete(block.block_id);
                 
-                // Determina lo stile in base allo stato di completamento
-                const blockBgColor = isComplete ? "bg-[#F2FCE2]" : "bg-[#FFF5EB]";
-                const blockBorderColor = isComplete ? "border-[#A3D097]" : "border-[#FEC6A1]";
-                const blockShadowColor = isComplete ? "shadow-[0_3px_0_0_#8DBC82]" : "shadow-[0_3px_0_0_#FBB073]";
-                const blockHoverShadow = isComplete 
-                  ? "hover:shadow-[0_3px_6px_rgba(141,188,130,0.3)]" 
-                  : "hover:shadow-[0_3px_6px_rgba(251,176,115,0.3)]";
-                
                 return (
                   <li 
                     key={block.block_id} 
-                    className={`${blockBgColor} border ${blockBorderColor} rounded-lg p-3 ${blockShadowColor} ${blockHoverShadow} transition-all`}
+                    className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm hover:shadow-md transition-all"
                   >
                     <div className={`flex ${isMobile ? 'flex-col' : 'items-center justify-between'}`}>
                       <div className="flex items-center">
@@ -147,7 +139,7 @@ export function MultiBlockManager({
                           </div>
                           {responseSummary && (
                             <div 
-                              className={`text-sm mt-1 ${isComplete ? 'text-[#245C4F]' : 'text-[#7D5C40]'}`}
+                              className={`text-sm mt-1 ${isComplete ? 'text-gray-700' : 'text-gray-600'}`}
                               dangerouslySetInnerHTML={{ __html: responseSummary }}
                             />
                           )}
@@ -161,11 +153,7 @@ export function MultiBlockManager({
                           className={`${isComplete 
                               ? "bg-[#245C4F] hover:bg-[#1e4f44]" 
                               : "bg-[#F97316] hover:bg-[#ea6c15]"
-                            } text-white rounded-[10px] px-3 py-1.5 flex items-center ${
-                              isComplete 
-                                ? "shadow-[0_2px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_1px_0_0_#1a3f37]" 
-                                : "shadow-[0_2px_0_0_#c55c13] hover:translate-y-[1px] hover:shadow-[0_1px_0_0_#c55c13]"
-                            } transition-all`}
+                            } text-white rounded-[10px] px-3 py-1.5 flex items-center shadow-[0_2px_0_0_rgba(0,0,0,0.1)] transition-all`}
                         >
                           <ArrowRight className="h-4 w-4 mr-1" />
                           {isComplete ? "Modifica" : "Completa"}
@@ -175,7 +163,7 @@ export function MultiBlockManager({
                           size="sm"
                           variant="outline"
                           onClick={() => handleDeleteBlock(block.block_id)}
-                          className="bg-white border border-red-500 text-red-500 hover:bg-red-50 rounded-[10px] px-2 py-1.5 flex items-center shadow-[0_2px_0_0_#dc2626] hover:translate-y-[1px] hover:shadow-[0_1px_0_0_#dc2626] transition-all"
+                          className="bg-white border border-red-500 text-red-500 hover:bg-red-50 rounded-[10px] px-2 py-1.5 flex items-center shadow-[0_2px_0_0_rgba(220,38,38,0.1)] transition-all"
                         >
                           <Trash className="h-4 w-4" />
                         </Button>
@@ -233,4 +221,3 @@ export function MultiBlockManager({
     </div>
   );
 }
-
