@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback, useRef } from "react";
 import { Block, FormState, FormResponse, NavigationHistory, Placeholder, SelectPlaceholder } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
@@ -717,23 +716,9 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     
     dispatch({ type: "SET_NAVIGATING", isNavigating: true });
     
-    // Check for stop_flow case with dynamic blocks
-    if (leadsTo === "stop_flow") {
-      // We don't mark as completed for stop_flow
-      
-      // Set a flag that QuestionView will check to display the stop flow message
-      sessionStorage.setItem("stopFlowActivated", "true");
-      
-      // We don't navigate to another question in stop_flow case
-      setTimeout(() => {
-        dispatch({ type: "SET_NAVIGATING", isNavigating: false });
-      }, 300);
-      return;
-    }
-    
+    // Check for both "next_block" and "stop_flow" cases to set the flag
     if (leadsTo === "next_block") {
       // Set the flag that we're using "next_block" navigation
-      // This will be used in the navigation useEffect to determine if we should mark the block as completed
       usedNextBlockNavRef.current = true;
       
       let currentBlock = null;
@@ -788,8 +773,20 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
           }
         }
       }
+    } else if (leadsTo === "stop_flow") {
+      // Also set the flag for stop_flow to mark the block as completed
+      usedNextBlockNavRef.current = true;
+      
+      // Set a flag that QuestionView will check to display the stop flow message
+      sessionStorage.setItem("stopFlowActivated", "true");
+      
+      // We don't navigate to another question in stop_flow case
+      setTimeout(() => {
+        dispatch({ type: "SET_NAVIGATING", isNavigating: false });
+      }, 300);
+      return;
     } else {
-      // For direct question navigation (not next_block), set the flag to false
+      // For direct question navigation (not next_block or stop_flow), set the flag to false
       usedNextBlockNavRef.current = false;
       
       const found = findQuestionById(leadsTo);

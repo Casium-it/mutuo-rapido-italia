@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useFormExtended } from "@/hooks/useFormExtended";
@@ -61,6 +62,7 @@ export function MultiBlockManager({
 
   // Naviga alla prossima domanda senza creare un nuovo blocco
   const handleContinue = () => {
+    // Usa usedNextBlockNavRef.current = true come in navigateToNextQuestion
     navigateToNextQuestion(questionId, placeholder.leads_to);
   };
 
