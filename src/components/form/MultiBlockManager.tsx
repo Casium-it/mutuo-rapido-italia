@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useFormExtended } from "@/hooks/useFormExtended";
@@ -131,7 +130,7 @@ export function MultiBlockManager({
                             {isComplete ? (
                               <CheckCircle2 className="h-4 w-4 text-[#245C4F] mr-2 flex-shrink-0" />
                             ) : (
-                              <AlertCircle className="h-4 w-4 text-orange-500 mr-2 flex-shrink-0" />
+                              <AlertCircle className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" />
                             )}
                             <span className={`font-medium ${isComplete ? 'text-[#245C4F]' : 'text-gray-800'}`}>
                               {block.title}
@@ -150,10 +149,7 @@ export function MultiBlockManager({
                           type="button"
                           size="sm"
                           onClick={() => handleNavigateToBlock(block.block_id)}
-                          className={`${isComplete 
-                              ? "bg-[#245C4F] hover:bg-[#1e4f44]" 
-                              : "bg-[#F97316] hover:bg-[#ea6c15]"
-                            } text-white rounded-[10px] px-3 py-1.5 flex items-center shadow-[0_3px_0_0_rgba(0,0,0,0.2)] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_rgba(0,0,0,0.2)] transition-all`}
+                          className={`bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-[10px] px-3 py-1.5 flex items-center shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all`}
                         >
                           <ArrowRight className="h-4 w-4 mr-1" />
                           {isComplete ? "Modifica" : "Completa"}
@@ -163,7 +159,7 @@ export function MultiBlockManager({
                           size="sm"
                           variant="outline"
                           onClick={() => handleDeleteBlock(block.block_id)}
-                          className="bg-white border border-red-500 text-red-500 hover:bg-red-50 rounded-[10px] px-2 py-1.5 flex items-center shadow-[0_3px_0_0_rgba(220,38,38,0.2)] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_rgba(220,38,38,0.2)] transition-all"
+                          className="bg-white border border-red-500 text-red-500 hover:bg-red-50 rounded-[10px] px-2 py-1.5 flex items-center shadow-[0_3px_0_0_#b71c1c] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#b71c1c] transition-all"
                         >
                           <Trash className="h-4 w-4" />
                         </Button>
