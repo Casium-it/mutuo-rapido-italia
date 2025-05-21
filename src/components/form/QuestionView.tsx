@@ -35,9 +35,6 @@ export function QuestionView() {
       setShowStopFlow(true);
       // Pulisci la variabile di sessione dopo l'utilizzo
       sessionStorage.removeItem("stopFlowActivated");
-      
-      // Non marchiamo più il blocco come completato qui, lasciamo che sia
-      // la navigazione a gestirlo correttamente
     }
   }, [state.activeQuestion]);
 
