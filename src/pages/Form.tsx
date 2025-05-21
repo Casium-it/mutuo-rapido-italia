@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { BlockSidebar } from "@/components/form/BlockSidebar";
@@ -9,6 +10,8 @@ import { Progress } from "@/components/ui/progress";
 import { Menu } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { CompleteFormButton } from "@/components/form/CompleteFormButton";
+
 export default function Form() {
   const {
     state,
@@ -27,6 +30,11 @@ export default function Form() {
 
   // Calcola il progresso del form
   const progress = getProgress();
+
+  // Check if all active blocks are completed
+  const areAllBlocksCompleted = state.activeBlocks?.every(
+    blockId => state.completedBlocks?.includes(blockId)
+  );
 
   // Gestisci il salvataggio e l'uscita
   const handleSaveAndExit = () => {
@@ -49,6 +57,7 @@ export default function Form() {
     // Questo effetto verrà eseguito ogni volta che cambia l'URL (location.pathname)
     // Poiché dipende da location.pathname, forza un ri-rendering del componente
   }, [location.pathname]);
+  
   return <div className="min-h-screen flex flex-col bg-white">
       {/* Header */}
       <header className="py-3 px-4 md:px-6 flex justify-between items-center bg-white border-b border-gray-200">
@@ -86,6 +95,15 @@ export default function Form() {
             </Sheet>}
         </div>
       </div>
+
+      {/* Mobile Complete Form button (shown below progress bar) */}
+      {isMobile && areAllBlocksCompleted && (
+        <div className="bg-white px-4 pb-2">
+          <div className="max-w-4xl mx-auto">
+            <CompleteFormButton className="mt-2" />
+          </div>
+        </div>
+      )}
 
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden">

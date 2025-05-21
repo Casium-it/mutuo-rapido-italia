@@ -33,29 +33,10 @@ export const conclusione: Block = {
           type: "input",
           input_type: "number",
           placeholder_label: "Disponibilità residua",
-          leads_to: "invia_richiesta",
+          leads_to: "next_block",
           input_validation: "euro"
-        }
-      }
-    },
-    {
-      question_number: "10.3",
-      question_id: "invia_richiesta",
-      question_text: "Clicca sul pulsante per inviare la tua richiesta e ricevere assistenza personalizzata",
-      leads_to_placeholder_priority: "placeholder1",
-      placeholders: {
-        placeholder1: {
-          type: "select",
-          options: [
-            {
-              id: "submit_form",
-              label: "Invia la richiesta",
-              leads_to: "next_block"
-            }
-          ]
         }
       }
     }
   ]
 };
-

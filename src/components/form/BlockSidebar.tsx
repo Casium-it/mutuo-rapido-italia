@@ -1,7 +1,10 @@
+
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { cn } from "@/lib/utils";
 import { useParams } from "react-router-dom";
 import { CircleCheck, ChevronRight, Lock } from "lucide-react";
+import { CompleteFormButton } from "./CompleteFormButton"; 
+
 export function BlockSidebar() {
   const {
     blocks,
@@ -34,8 +37,14 @@ export function BlockSidebar() {
 
   // Trova l'indice del primo blocco non completato
   const firstNonCompletedIndex = activeBlocks.findIndex(block => !isBlockCompleted(block.block_id));
-  return <div className="w-full bg-[#FAF9F6] h-full py-6 overflow-y-auto border-r border-gray-200 px-[16px]">
-      <div className="px-4">
+  
+  // Check if all blocks are completed
+  const areAllBlocksCompleted = state.activeBlocks?.every(
+    blockId => state.completedBlocks?.includes(blockId)
+  );
+
+  return <div className="w-full bg-[#FAF9F6] h-full py-6 overflow-y-auto border-r border-gray-200 px-[16px] flex flex-col">
+      <div className="px-4 flex-1">
         <h2 className="text-base font-semibold text-gray-800 mb-6">Il tuo percorso</h2>
         <div className="space-y-1">
           {activeBlocks.map((block, index) => {
@@ -77,5 +86,12 @@ export function BlockSidebar() {
         })}
         </div>
       </div>
+
+      {/* Complete Form button - displayed at bottom when all blocks are completed */}
+      {areAllBlocksCompleted && (
+        <div className="px-4 mt-6 mb-2">
+          <CompleteFormButton />
+        </div>
+      )}
     </div>;
 }
