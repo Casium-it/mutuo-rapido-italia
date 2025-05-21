@@ -53,49 +53,45 @@ export function BlockSidebar() {
               <div
                 key={block.block_id}
                 className={cn(
-                  "w-full text-left flex items-center gap-2 py-2 px-3 rounded-md transition-all",
+                  "w-full text-left flex items-center gap-2 py-2 px-3 rounded-md transition-all duration-300 ease-in-out",
                   {
-                    // Active block styling
+                    // Active block styling - increased transition duration
                     "bg-[#245C4F] text-white font-medium": isActive,
                     
-                    // Completed block styling (dark green with low transparency)
+                    // Completed block styling - increased transition duration and smoother color
                     "bg-[#245C4F]/20 text-gray-700 hover:bg-[#245C4F]/30": isCompleted && !isActive,
                     
-                    // First non-completed block styling (darker beige)
+                    // First non-completed block styling - increased transition duration
                     "bg-[#E8E2D7] text-gray-700": isFirstNonCompleted && !isActive && !isCompleted,
                     
-                    // Default text color
+                    // Default text color with transition
                     "text-gray-700": !isActive && !isCompleted && !isFirstNonCompleted,
                     
-                    // Clickable styling
+                    // Clickable styling with smoother hover transition
                     "cursor-pointer hover:bg-opacity-90": isClickable,
                     "cursor-default opacity-70": !isClickable
                   }
                 )}
                 onClick={() => isClickable ? handleBlockClick(block.block_id) : null}
               >
-                {/* Completed block icon - CircleCheck (spostato a sinistra) */}
-                {isCompleted && !isActive && (
-                  <div className="flex-shrink-0 text-[#245C4F] flex items-center justify-center group-hover:text-[#1b4a3e] transition-colors">
-                    <CircleCheck size={18} className="text-[#245C4F] font-bold hover:text-[#1b4a3e] transition-colors" />
-                  </div>
-                )}
+                <div className="flex-shrink-0 w-[18px] h-[18px] flex items-center justify-center transition-all duration-300 ease-in-out">
+                  {/* Completed block icon - CircleCheck with transition */}
+                  {isCompleted && !isActive && (
+                    <CircleCheck size={18} className="text-[#245C4F] font-bold transition-all duration-300 ease-in-out" />
+                  )}
+                  
+                  {/* First non-completed block icon - AlertCircle with transition */}
+                  {isFirstNonCompleted && !isCompleted && !isActive && (
+                    <AlertCircle size={18} className="text-red-600 transition-all duration-300 ease-in-out" />
+                  )}
+                  
+                  {/* Current block icon - ChevronRight with transition */}
+                  {isActive && (
+                    <ChevronRight size={18} className="text-white transition-all duration-300 ease-in-out" />
+                  )}
+                </div>
                 
-                {/* First non-completed block icon - AlertCircle (dark red instead of Pencil) */}
-                {isFirstNonCompleted && !isCompleted && !isActive && (
-                  <div className="flex-shrink-0 flex items-center justify-center">
-                    <AlertCircle size={18} className="text-red-600" />
-                  </div>
-                )}
-                
-                {/* Current block icon - ChevronRight (aggiunto a sinistra) */}
-                {isActive && (
-                  <div className="flex-shrink-0 text-white flex items-center justify-center">
-                    <ChevronRight size={18} className="text-white" />
-                  </div>
-                )}
-                
-                <div className="truncate text-sm flex-1">{block.title}</div>
+                <div className="truncate text-sm flex-1 transition-all duration-300 ease-in-out">{block.title}</div>
               </div>
             );
           })}
