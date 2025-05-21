@@ -2,7 +2,7 @@
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { cn } from "@/lib/utils";
 import { useParams } from "react-router-dom";
-import { CircleCheck, Pencil, ChevronRight } from "lucide-react";
+import { CircleCheck, ChevronRight, AlertCircle } from "lucide-react";
 
 export function BlockSidebar() {
   const { blocks, state, isBlockCompleted, goToQuestion } = useFormExtended();
@@ -81,10 +81,10 @@ export function BlockSidebar() {
                   </div>
                 )}
                 
-                {/* First non-completed block icon - Pencil (spostato a sinistra) */}
+                {/* First non-completed block icon - AlertCircle (dark red instead of Pencil) */}
                 {isFirstNonCompleted && !isCompleted && !isActive && (
-                  <div className="flex-shrink-0 text-[#245C4F] flex items-center justify-center">
-                    <Pencil size={18} className="text-[#245C4F]" />
+                  <div className="flex-shrink-0 flex items-center justify-center">
+                    <AlertCircle size={18} className="text-red-600" />
                   </div>
                 )}
                 
