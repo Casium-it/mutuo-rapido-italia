@@ -21,6 +21,43 @@ type FormContextType = {
   deleteQuestionResponses: (questionIds: string[]) => void;
   isBlockCompleted: (blockId: string) => boolean;
   markBlockAsCompleted: (blockId: string) => void;
+  getInlineQuestionChain: (blockId: string, questionId: string) => any[];
+  getPreviousQuestion: (blockId: string, questionId: string) => any;
+  getPreviousQuestionText: (blockId: string, questionId: string) => string;
+};
+
+// Helper functions
+const isDynamicBlock = (state: FormState, blockId: string): boolean => {
+  return state.dynamicBlocks.some(block => block.block_id === blockId);
+};
+
+const findParentMultiBlockManager = (blocks: Block[], state: FormState, blockId: string): { questionId: string, placeholderKey: string } | null => {
+  const block = state.dynamicBlocks.find(b => b.block_id === blockId);
+  if (!block || !block.blueprint_id) return null;
+  
+  const allBlocks = [
+    ...blocks,
+    ...state.dynamicBlocks
+  ];
+  
+  for (const parentBlock of allBlocks) {
+    for (const question of parentBlock.questions) {
+      for (const [placeholderKey, placeholder] of Object.entries(question.placeholders)) {
+        if (placeholder.type === "MultiBlockManager") {
+          const multiBlockPlaceholder = placeholder as any;
+          if (multiBlockPlaceholder.blockBlueprint && 
+              block.blueprint_id === multiBlockPlaceholder.blockBlueprint) {
+            return {
+              questionId: question.question_id,
+              placeholderKey: placeholderKey
+            };
+          }
+        }
+      }
+    }
+  }
+  
+  return null;
 };
 
 type Action =
@@ -50,8 +87,8 @@ const initialState: FormState = {
   isNavigating: false,
   navigationHistory: [],
   dynamicBlocks: [],
-  blockActivations: {}, // Track which questions/placeholders activated which blocks
-  completedBlocks: [] // Track completed blocks
+  blockActivations: {},
+  completedBlocks: []
 };
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
@@ -82,14 +119,12 @@ function formReducer(state: FormState, action: Action): FormState {
         return state;
       }
       
-      // Track which question/placeholder activated this block
       const updatedBlockActivations = { ...state.blockActivations };
       if (action.sourceQuestionId && action.sourcePlaceholderId) {
         if (!updatedBlockActivations[action.block_id]) {
           updatedBlockActivations[action.block_id] = [];
         }
         
-        // Check if this activation source is already recorded
         const exists = updatedBlockActivations[action.block_id].some(
           source => source.questionId === action.sourceQuestionId && 
                    source.placeholderId === action.sourcePlaceholderId
@@ -114,32 +149,26 @@ function formReducer(state: FormState, action: Action): FormState {
         return state;
       }
       
-      // Find block to get its questions
       const allBlocks = [...state.dynamicBlocks];
       const blockToRemove = allBlocks.find(b => b.block_id === action.block_id);
       
-      // Create updated state
       const updatedState = {
         ...state,
         activeBlocks: state.activeBlocks.filter(id => id !== action.block_id),
         blockActivations: { ...state.blockActivations }
       };
       
-      // Remove from blockActivations
       delete updatedState.blockActivations[action.block_id];
       
-      // If it's a static block, we need to clean up responses and answered questions manually
       if (blockToRemove) {
         const questionIdsToRemove = blockToRemove.questions.map(q => q.question_id);
         
-        // Remove responses
         const updatedResponses = { ...state.responses };
         questionIdsToRemove.forEach(questionId => {
           delete updatedResponses[questionId];
         });
         updatedState.responses = updatedResponses;
         
-        // Remove from answered questions
         const updatedAnsweredQuestions = new Set(state.answeredQuestions);
         questionIdsToRemove.forEach(questionId => {
           updatedAnsweredQuestions.delete(questionId);
@@ -215,7 +244,6 @@ function formReducer(state: FormState, action: Action): FormState {
         updatedAnsweredQuestions.delete(questionId);
       });
       
-      // Also clean up blockActivations
       const updatedBlockActivations = { ...state.blockActivations };
       delete updatedBlockActivations[action.blockId];
       
@@ -245,7 +273,6 @@ function formReducer(state: FormState, action: Action): FormState {
       };
     }
     case "MARK_BLOCK_COMPLETED": {
-      // Don't add duplicates
       if (state.completedBlocks.includes(action.blockId)) {
         return state;
       }
@@ -285,9 +312,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     completedBlocks: []
   });
 
-  // Funzione per trovare a quale blocco appartiene una domanda specifica
   const findBlockByQuestionId = useCallback((questionId: string): string | null => {
-    // Cerca prima nei blocchi normali
     for (const block of sortedBlocks) {
       const hasQuestion = block.questions.some(q => q.question_id === questionId);
       if (hasQuestion) {
@@ -295,7 +320,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       }
     }
     
-    // Se non trovato, cerca nei blocchi dinamici
     for (const block of state.dynamicBlocks) {
       const hasQuestion = block.questions.some(q => q.question_id === questionId);
       if (hasQuestion) {
@@ -306,7 +330,43 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return null;
   }, [sortedBlocks, state.dynamicBlocks]);
 
-  // Mark a block as completed
+  const getInlineQuestionChain = useCallback((blockId: string, questionId: string): any[] => {
+    const allBlocks = [...sortedBlocks, ...state.dynamicBlocks];
+    const block = allBlocks.find(b => b.block_id === blockId);
+    if (!block) return [];
+    
+    const questionIndex = block.questions.findIndex(q => q.question_id === questionId);
+    if (questionIndex === -1) return [];
+    
+    const result = [];
+    for (let i = 0; i < questionIndex; i++) {
+      const q = block.questions[i];
+      if (q.inline === true) {
+        result.push(q);
+      }
+    }
+    
+    return result;
+  }, [sortedBlocks, state.dynamicBlocks]);
+  
+  const getPreviousQuestion = useCallback((blockId: string, questionId: string): any => {
+    const allBlocks = [...sortedBlocks, ...state.dynamicBlocks];
+    const block = allBlocks.find(b => b.block_id === blockId);
+    if (!block) return null;
+    
+    const questionIndex = block.questions.findIndex(q => q.question_id === questionId);
+    if (questionIndex <= 0) return null;
+    
+    return block.questions[questionIndex - 1];
+  }, [sortedBlocks, state.dynamicBlocks]);
+  
+  const getPreviousQuestionText = useCallback((blockId: string, questionId: string): string => {
+    const prevQuestion = getPreviousQuestion(blockId, questionId);
+    if (!prevQuestion) return "";
+    
+    return prevQuestion.question_text || "";
+  }, [getPreviousQuestion]);
+
   const markBlockAsCompleted = useCallback((blockId: string) => {
     if (blockId && !state.completedBlocks.includes(blockId)) {
       console.log(`Marking block as completed: ${blockId}`);
@@ -314,95 +374,25 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     }
   }, [state.completedBlocks]);
 
-  // Keep track of navigation for correct block completion
   useEffect(() => {
-    // Only execute when isNavigating transitions from true to false (navigation completed)
     if (isNavigatingRef.current === true && state.isNavigating === false) {
-      // We store the blockId that we're coming FROM (previous block)
       const blockWeLeavingFrom = previousBlockIdRef.current;
-      
-      // Make sure we have a valid previous block and it's different from the current one
       if (blockWeLeavingFrom && 
           blockWeLeavingFrom !== state.activeQuestion.block_id && 
           blockWeLeavingFrom !== null &&
           usedNextBlockNavRef.current) {
-        // Mark the block we're coming from as completed - but only if we used "next_block" navigation
         markBlockAsCompleted(blockWeLeavingFrom);
-        
-        // Reset the flag after completion
         usedNextBlockNavRef.current = false;
       }
     }
     
-    // Update refs for next comparison - these should run AFTER the above completion logic
     if (state.isNavigating === false) {
       previousQuestionIdRef.current = state.activeQuestion.question_id;
       previousBlockIdRef.current = state.activeQuestion.block_id;
     }
     
-    // Always update the navigation state ref
     isNavigatingRef.current = state.isNavigating;
   }, [state.isNavigating, state.activeQuestion.block_id, state.activeQuestion.question_id, markBlockAsCompleted]);
-
-  const createDynamicBlock = useCallback((blockBlueprintId: string): string | null => {
-    const blueprintBlock = blocks.find(b => b.block_id === blockBlueprintId && b.multiBlock === true);
-    
-    if (!blueprintBlock) {
-      console.error(`Blueprint block ${blockBlueprintId} not found or is not a multiBlock`);
-      return null;
-    }
-    
-    const existingCopies = state.dynamicBlocks
-      .filter(block => block.blueprint_id === blockBlueprintId)
-      .map(block => block.copy_number || 0);
-    
-    const nextCopyNumber = existingCopies.length > 0 ? Math.max(...existingCopies) + 1 : 1;
-    
-    const newBlockId = blockBlueprintId.replace('{copyNumber}', nextCopyNumber.toString());
-    
-    const newBlock: Block = {
-      ...JSON.parse(JSON.stringify(blueprintBlock)),
-      block_id: newBlockId,
-      blueprint_id: blockBlueprintId,
-      copy_number: nextCopyNumber,
-      title: `${blueprintBlock.title} ${nextCopyNumber}`,
-    };
-    
-    newBlock.questions = newBlock.questions.map(question => {
-      const updatedQuestion = {
-        ...question,
-        question_id: question.question_id.replace('{copyNumber}', nextCopyNumber.toString())
-      };
-      
-      for (const placeholderKey in updatedQuestion.placeholders) {
-        const placeholder = updatedQuestion.placeholders[placeholderKey];
-        
-        if (placeholder.type === "select") {
-          placeholder.options = placeholder.options.map(option => ({
-            ...option,
-            leads_to: option.leads_to.replace('{copyNumber}', nextCopyNumber.toString())
-          }));
-        }
-        
-        if (placeholder.type === "input" && placeholder.leads_to) {
-          placeholder.leads_to = placeholder.leads_to.replace('{copyNumber}', nextCopyNumber.toString());
-        }
-        
-        if (placeholder.type === "MultiBlockManager" && placeholder.leads_to) {
-          placeholder.leads_to = placeholder.leads_to.replace('{copyNumber}', nextCopyNumber.toString());
-        }
-      }
-      
-      return updatedQuestion;
-    });
-    
-    dispatch({ type: "ADD_DYNAMIC_BLOCK", block: newBlock });
-    
-    const blockWithPriority = ensureBlockHasPriority(newBlock);
-    dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: newBlockId });
-    
-    return newBlockId;
-  }, [blocks, state.dynamicBlocks]);
 
   useEffect(() => {
     const defaultActiveBlockIds = blocks
@@ -542,23 +532,18 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     }
   };
 
-  // Check if a block is completed
   const isBlockCompleted = useCallback((blockId: string): boolean => {
     return state.completedBlocks.includes(blockId);
   }, [state.completedBlocks]);
 
   const goToQuestion = useCallback((block_id: string, question_id: string, replace = false) => {
-    // Set navigating state to true
     dispatch({ type: "SET_NAVIGATING", isNavigating: true });
     
-    // Store the current question and block before changing
     const fromBlockId = state.activeQuestion.block_id;
     const fromQuestionId = state.activeQuestion.question_id;
 
-    // Update active question
     dispatch({ type: "GO_TO_QUESTION", block_id, question_id });
     
-    // Record navigation history
     dispatch({ 
       type: "ADD_NAVIGATION_HISTORY", 
       history: {
@@ -570,7 +555,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       }
     });
     
-    // Handle URL navigation
     const blockType = params.blockType || "funnel";
     const newPath = `/simulazione/${blockType}/${block_id}/${question_id}`;
     
@@ -580,7 +564,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       navigate(newPath);
     }
     
-    // Set navigating to false after a short delay to allow for rendering
     setTimeout(() => {
       dispatch({ type: "SET_NAVIGATING", isNavigating: false });
     }, 300);
@@ -589,11 +572,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   const setResponse = useCallback((question_id: string, placeholder_key: string, value: string | string[]) => {
     const previousValue = state.responses[question_id]?.[placeholder_key];
     
-    // Trova il blocco a cui appartiene questa domanda
     const blockId = findBlockByQuestionId(question_id);
     
-    // Se il blocco è completato, rimuovilo dalla lista dei completati
-    // perché l'utente sta cambiando una risposta
     if (blockId && state.completedBlocks.includes(blockId)) {
       dispatch({ type: "REMOVE_BLOCK_FROM_COMPLETED", blockId });
     }
@@ -642,11 +622,9 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
               const blockToRemove = prevOption.add_block;
               const isDynamicBlock = state.dynamicBlocks.some(b => b.block_id === blockToRemove);
               
-              // Handle both dynamic and static blocks
               if (isDynamicBlock) {
                 dispatch({ type: "DELETE_DYNAMIC_BLOCK", blockId: blockToRemove });
               } else if (state.activeBlocks.includes(blockToRemove)) {
-                // For static blocks, we just need to remove them from activeBlocks
                 dispatch({ type: "REMOVE_ACTIVE_BLOCK", block_id: blockToRemove });
               }
             }
@@ -666,7 +644,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
                 const blockToRemove = option.add_block;
                 const isDynamicBlock = state.dynamicBlocks.some(b => b.block_id === blockToRemove);
                 
-                // Handle both dynamic and static blocks
                 if (isDynamicBlock) {
                   dispatch({ type: "DELETE_DYNAMIC_BLOCK", blockId: blockToRemove });
                 } else if (state.activeBlocks.includes(blockToRemove)) {
@@ -682,12 +659,10 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     dispatch({ type: "SET_RESPONSE", question_id, placeholder_key, value });
     dispatch({ type: "MARK_QUESTION_ANSWERED", question_id });
     
-    // Check if the current response should add a block
     if (questionObj && questionObj.placeholders[placeholder_key].type === "select") {
       const placeholder = questionObj.placeholders[placeholder_key] as SelectPlaceholder;
       
       if (Array.isArray(value)) {
-        // Handle multi-select
         value.forEach(optionId => {
           const option = placeholder.options.find(opt => opt.id === optionId);
           if (option?.add_block) {
@@ -700,7 +675,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
           }
         });
       } else {
-        // Handle single-select
         const selectedOption = placeholder.options.find(opt => opt.id === value);
         if (selectedOption?.add_block) {
           dispatch({ 
@@ -748,41 +722,31 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   }, [sortedBlocks, state.dynamicBlocks]);
 
   const navigateToNextQuestion = useCallback((currentQuestionId: string, leadsTo: string) => {
-    // Store the current block ID before navigation starts
     const sourceBlockId = state.activeQuestion.block_id;
     
     dispatch({ type: "SET_NAVIGATING", isNavigating: true });
     
-    // Check if we're navigating from a dynamic block
-    if (isDynamicBlock(sourceBlockId)) {
-      // Find the question we're coming from
+    if (isDynamicBlock(state, sourceBlockId)) {
       const currentQuestionResult = findQuestionById(currentQuestionId);
       
       if (currentQuestionResult) {
         const currentQuestion = currentQuestionResult.question;
         
-        // Check if this is the last question of the dynamic block
         const isLastQuestion = currentQuestionResult.block.questions[
           currentQuestionResult.block.questions.length - 1
         ].question_id === currentQuestionId;
         
-        // If this is the last question, check if we're going back to a MultiBlockManager
         if (isLastQuestion) {
           const leadsToQuestion = findQuestionById(leadsTo);
           
           if (leadsToQuestion) {
-            // Check if the target question has a MultiBlockManager placeholder
             const hasMultiBlockManager = Object.values(leadsToQuestion.question.placeholders).some(
               (placeholder: any) => placeholder.type === "MultiBlockManager"
             );
             
-            // Find the parent MultiBlockManager for this dynamic block
-            const parentManager = findParentMultiBlockManager(sourceBlockId);
+            const parentManager = findParentMultiBlockManager(sortedBlocks, state, sourceBlockId);
             
-            // If navigating to a MultiBlockManager question that is the parent of this dynamic block
             if (hasMultiBlockManager && parentManager && parentManager.questionId === leadsTo) {
-              // Mark this dynamic block as completed
-              console.log(`Marking dynamic block ${sourceBlockId} as completed because it leads back to its parent MultiBlockManager`);
               markBlockAsCompleted(sourceBlockId);
             }
           }
@@ -790,9 +754,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       }
     }
     
-    // Check for both "next_block" and "stop_flow" cases to set the flag
     if (leadsTo === "next_block") {
-      // Set the flag that we're using "next_block" navigation
       usedNextBlockNavRef.current = true;
       
       let currentBlock = null;
@@ -809,8 +771,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       }
 
       if (currentBlockIndex !== -1 && currentBlock) {
-        // We don't mark as completed here - the navigation useEffect will handle it based on the usedNextBlockNavRef flag
-        
         let foundNextActiveBlock = false;
         
         const allBlocks = [
@@ -848,25 +808,17 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         }
       }
     } else if (leadsTo === "stop_flow") {
-      // Also set the flag for stop_flow to mark the block as completed
       usedNextBlockNavRef.current = true;
-      
-      // Set a flag that QuestionView will check to display the stop flow message
       sessionStorage.setItem("stopFlowActivated", "true");
-      
-      // We don't navigate to another question in stop_flow case
       setTimeout(() => {
         dispatch({ type: "SET_NAVIGATING", isNavigating: false });
       }, 300);
       return;
     } else {
-      // For direct question navigation (not next_block or stop_flow), set the flag to false
       usedNextBlockNavRef.current = false;
       
       const found = findQuestionById(leadsTo);
       if (found) {
-        // We don't mark as completed for direct question navigation
-        
         dispatch({ 
           type: "ADD_NAVIGATION_HISTORY", 
           history: {
@@ -885,40 +837,31 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     setTimeout(() => {
       dispatch({ type: "SET_NAVIGATING", isNavigating: false });
     }, 300);
-  }, [sortedBlocks, state.activeBlocks, goToQuestion, findQuestionById, state.activeQuestion.block_id, state.dynamicBlocks, isDynamicBlock, findParentMultiBlockManager, markBlockAsCompleted]);
+  }, [sortedBlocks, state, goToQuestion, findQuestionById, markBlockAsCompleted]);
 
   const getProgress = useCallback(() => {
-    // Filter out invisible blocks from active blocks
     const visibleActiveBlocks = state.activeBlocks
       .map(blockId => [...sortedBlocks, ...state.dynamicBlocks].find(b => b.block_id === blockId))
       .filter(block => block && !block.invisible) as Block[];
     
-    // If no visible blocks, return 0
     if (visibleActiveBlocks.length === 0) return 0;
     
-    // Calculate the weight of each block (equal contribution)
     const blockWeight = 100 / visibleActiveBlocks.length;
-    
-    // Calculate the total progress
     let totalProgress = 0;
     
     visibleActiveBlocks.forEach(block => {
-      // If block is marked as completed, add full block weight
       if (state.completedBlocks.includes(block.block_id)) {
         totalProgress += blockWeight;
       } else {
-        // Otherwise calculate partial contribution based on answered questions
         const totalQuestions = block.questions.length;
         let answeredQuestions = 0;
         
-        // Count answered questions in this block
         block.questions.forEach(question => {
           if (state.answeredQuestions.has(question.question_id)) {
             answeredQuestions++;
           }
         });
         
-        // Add partial block progress if there are any questions
         if (totalQuestions > 0) {
           const blockProgress = (answeredQuestions / totalQuestions) * blockWeight;
           totalProgress += blockProgress;
@@ -926,7 +869,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       }
     });
     
-    // Return rounded progress
     return Math.round(totalProgress);
   }, [state.activeBlocks, state.answeredQuestions, state.completedBlocks, state.dynamicBlocks, sortedBlocks]);
 
@@ -958,41 +900,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     dispatch({ type: "DELETE_QUESTION_RESPONSES", questionIds });
   }, []);
 
-  const isDynamicBlock = useCallback((blockId: string): boolean => {
-    return state.dynamicBlocks.some(block => block.block_id === blockId);
-  }, [state.dynamicBlocks]);
-
-  const findParentMultiBlockManager = useCallback((blockId: string): { questionId: string, placeholderKey: string } | null => {
-    // Get the block object
-    const block = state.dynamicBlocks.find(b => b.block_id === blockId);
-    if (!block || !block.blueprint_id) return null;
-    
-    // Find all blocks with questions that have MultiBlockManager placeholders
-    const allBlocks = [
-      ...sortedBlocks,
-      ...state.dynamicBlocks
-    ];
-    
-    for (const parentBlock of allBlocks) {
-      for (const question of parentBlock.questions) {
-        for (const [placeholderKey, placeholder] of Object.entries(question.placeholders)) {
-          if (placeholder.type === "MultiBlockManager") {
-            const multiBlockPlaceholder = placeholder as any; // Type cast for easier access
-            if (multiBlockPlaceholder.blockBlueprint && 
-                block.blueprint_id === multiBlockPlaceholder.blockBlueprint) {
-              return {
-                questionId: question.question_id,
-                placeholderKey: placeholderKey
-              };
-            }
-          }
-        }
-      }
-    }
-    
-    return null;
-  }, [sortedBlocks, state.dynamicBlocks]);
-
   return (
     <FormContext.Provider
       value={{
@@ -1015,7 +922,10 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         deleteDynamicBlock,
         deleteQuestionResponses,
         isBlockCompleted,
-        markBlockAsCompleted
+        markBlockAsCompleted,
+        getInlineQuestionChain,
+        getPreviousQuestion,
+        getPreviousQuestionText
       }}
     >
       {children}

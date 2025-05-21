@@ -37,15 +37,13 @@ export function FormQuestion({ question }: FormQuestionProps) {
   const { 
     getResponse, 
     setResponse, 
-    navigateToNextQuestion, 
-    getPreviousQuestionText,
-    getPreviousQuestion, 
-    getInlineQuestionChain,
+    navigateToNextQuestion,
     state, 
     addActiveBlock, 
     goToQuestion,
     markBlockAsCompleted,
-    blocks // Get blocks from the context, not from state
+    blocks,
+    getInlineQuestionChain
   } = useFormExtended();
   
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});

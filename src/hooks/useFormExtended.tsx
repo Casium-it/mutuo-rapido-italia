@@ -8,7 +8,15 @@ import { getInputValidationBehavior } from "@/utils/validationUtils";
 export const useFormExtended = () => {
   const formContext = useForm();
   const navigate = useNavigate();
-  const { state, blocks, goToQuestion, isBlockCompleted } = formContext;
+  const { 
+    state, 
+    blocks, 
+    goToQuestion, 
+    isBlockCompleted, 
+    getInlineQuestionChain,
+    getPreviousQuestion,
+    getPreviousQuestionText
+  } = formContext;
 
   // Get all available blocks
   const getBlocks = useCallback(() => {
