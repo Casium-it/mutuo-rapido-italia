@@ -33,7 +33,7 @@ export function BlockSidebar() {
                   "w-full text-left flex items-center py-2 px-3 rounded-md transition-all cursor-default",
                   {
                     "bg-[#245C4F] text-white font-medium": isActive,
-                    "bg-[#F2FCE2] text-gray-700": isCompleted && !isActive,
+                    "bg-[#245C4F]/20 text-gray-700": isCompleted && !isActive, // Semi-transparent dark green
                     "text-gray-700": !isActive && !isCompleted
                   }
                 )}

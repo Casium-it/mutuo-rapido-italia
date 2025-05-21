@@ -22,6 +22,26 @@ export function QuestionView() {
     }
   }, [location.pathname, params.blockId, params.questionId, state.activeQuestion, goToQuestion]);
   
+  // Ensure previous block is marked as completed when navigating
+  useEffect(() => {
+    // If we have navigation history, mark the previous block as completed
+    if (state.navigationHistory.length > 0) {
+      const latestNavigation = state.navigationHistory[state.navigationHistory.length - 1];
+      const fromBlockId = latestNavigation.from_block_id;
+      
+      // Mark the block we navigated from as completed
+      if (fromBlockId && fromBlockId !== state.activeQuestion.block_id) {
+        markBlockAsCompleted(fromBlockId);
+      }
+    }
+    
+    // Also ensure the first block gets marked as completed if it's the only one
+    if (blocks.length > 0 && state.activeBlocks.length === 1 && 
+        blocks[0].block_id === state.activeQuestion.block_id) {
+      markBlockAsCompleted(blocks[0].block_id);
+    }
+  }, [state.navigationHistory, state.activeQuestion.block_id, blocks, state.activeBlocks, markBlockAsCompleted]);
+  
   // Find the current active block and question
   const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
   const activeQuestion = activeBlock?.questions.find(
