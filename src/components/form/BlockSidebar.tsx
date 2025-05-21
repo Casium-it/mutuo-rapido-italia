@@ -46,8 +46,12 @@ export function BlockSidebar() {
           {activeBlocks.map((block, index) => {
             const isActive = isBlockActive(block.block_id);
             const isCompleted = isBlockCompleted(block.block_id);
-            const isFirstNonCompleted = index === firstNonCompletedIndex;
-            const isClickable = isCompleted || isFirstNonCompleted;
+            
+            // Modificato: un blocco non può essere contemporaneamente attivo e primo non completato
+            // Se è attivo, non può essere considerato il primo non completato anche se lo è tecnicamente
+            const isFirstNonCompleted = index === firstNonCompletedIndex && !isActive;
+            
+            const isClickable = isCompleted || isFirstNonCompleted || isActive;
             
             return (
               <div
@@ -62,7 +66,7 @@ export function BlockSidebar() {
                     "bg-[#245C4F]/20 text-gray-700 hover:bg-[#245C4F]/30 transition-all duration-0": isCompleted && !isActive,
                     
                     // First non-completed block styling - slow transition (600ms)
-                    "bg-[#E8E2D7] text-gray-700 transition-all duration-[600ms] ease-in-out": isFirstNonCompleted && !isActive && !isCompleted,
+                    "bg-[#E8E2D7] text-gray-700 transition-all duration-[600ms] ease-in-out": isFirstNonCompleted,
                     
                     // Default text color with transition
                     "text-gray-700 transition-all duration-300": !isActive && !isCompleted && !isFirstNonCompleted,
@@ -77,39 +81,40 @@ export function BlockSidebar() {
                 <div className={cn(
                   "flex-shrink-0 w-[18px] h-[18px] flex items-center justify-center",
                   {
-                    // Instant transitions for completed status
-                    "transition-all duration-0": isCompleted && !isActive,
+                    // Instant transitions for active and completed status
+                    "transition-all duration-0": isActive || (isCompleted && !isActive),
                     // Slow transitions for first non-completed
-                    "transition-all duration-[600ms] ease-in-out": isFirstNonCompleted && !isActive && !isCompleted,
+                    "transition-all duration-[600ms] ease-in-out": isFirstNonCompleted,
                     // Default transition duration
-                    "transition-all duration-300": !isCompleted && !isFirstNonCompleted || isActive
+                    "transition-all duration-300": !isActive && !isCompleted && !isFirstNonCompleted
                   }
                 )}>
-                  {/* Completed block icon - CircleCheck with instant transition */}
-                  {isCompleted && !isActive && (
+                  {/* Mostro un solo icona in base alla priorità: Active > Completed > First Non-Completed */}
+                  {/* Current block icon - ChevronRight con transizione istantanea */}
+                  {isActive && (
+                    <ChevronRight size={18} className="text-white transition-all duration-0" />
+                  )}
+                  
+                  {/* Completed block icon - CircleCheck con transizione istantanea - solo se non è active */}
+                  {!isActive && isCompleted && (
                     <CircleCheck size={18} className="text-[#245C4F] font-bold transition-all duration-0" />
                   )}
                   
-                  {/* First non-completed block icon - AlertCircle with slow transition */}
-                  {isFirstNonCompleted && !isCompleted && !isActive && (
+                  {/* First non-completed block icon - AlertCircle con transizione lenta */}
+                  {!isActive && !isCompleted && isFirstNonCompleted && (
                     <AlertCircle size={18} className="text-red-600 transition-all duration-[600ms] ease-in-out" />
-                  )}
-                  
-                  {/* Current block icon - ChevronRight with instant transition */}
-                  {isActive && (
-                    <ChevronRight size={18} className="text-white transition-all duration-0" />
                   )}
                 </div>
                 
                 <div className={cn(
                   "truncate text-sm flex-1",
                   {
-                    // Instant transitions for completed status
-                    "transition-all duration-0": isCompleted && !isActive,
+                    // Instant transitions for active and completed status
+                    "transition-all duration-0": isActive || (isCompleted && !isActive),
                     // Slow transitions for first non-completed
-                    "transition-all duration-[600ms] ease-in-out": isFirstNonCompleted && !isActive && !isCompleted,
+                    "transition-all duration-[600ms] ease-in-out": isFirstNonCompleted,
                     // Default transition duration
-                    "transition-all duration-300": !isCompleted && !isFirstNonCompleted || isActive
+                    "transition-all duration-300": !isActive && !isCompleted && !isFirstNonCompleted
                   }
                 )}>{block.title}</div>
               </div>
