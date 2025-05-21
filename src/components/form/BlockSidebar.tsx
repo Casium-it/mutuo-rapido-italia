@@ -2,7 +2,7 @@
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { cn } from "@/lib/utils";
 import { useParams } from "react-router-dom";
-import { CircleCheck, ChevronRight } from "lucide-react";
+import { CircleCheck, ChevronRight, Lock } from "lucide-react";
 
 export function BlockSidebar() {
   const { blocks, state, isBlockCompleted, goToQuestion } = useFormExtended();
@@ -48,6 +48,7 @@ export function BlockSidebar() {
             const isCompleted = isBlockCompleted(block.block_id);
             const isFirstNonCompleted = index === firstNonCompletedIndex;
             const isClickable = isCompleted || isFirstNonCompleted;
+            const isLocked = !isClickable && !isActive;
             
             return (
               <div
@@ -74,17 +75,24 @@ export function BlockSidebar() {
                 )}
                 onClick={() => isClickable ? handleBlockClick(block.block_id) : null}
               >
-                {/* Completed block icon - CircleCheck (spostato a sinistra) */}
+                {/* Completed block icon - CircleCheck */}
                 {isCompleted && !isActive && (
                   <div className="flex-shrink-0 text-[#245C4F] flex items-center justify-center group-hover:text-[#1b4a3e] transition-colors">
                     <CircleCheck size={18} className="text-[#245C4F] font-bold hover:text-[#1b4a3e] transition-colors" />
                   </div>
                 )}
                 
-                {/* Current block icon - ChevronRight (aggiunto a sinistra) */}
+                {/* Current block icon - ChevronRight */}
                 {isActive && (
                   <div className="flex-shrink-0 text-white flex items-center justify-center">
                     <ChevronRight size={18} className="text-white" />
+                  </div>
+                )}
+                
+                {/* Lock icon for non-clickable and non-active blocks */}
+                {isLocked && (
+                  <div className="flex-shrink-0 flex items-center justify-center">
+                    <Lock size={16} className="text-gray-700" />
                   </div>
                 )}
                 
