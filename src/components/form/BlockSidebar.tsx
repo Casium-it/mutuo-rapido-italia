@@ -62,7 +62,7 @@ export function BlockSidebar() {
                     "bg-[#245C4F]/20 text-gray-700 hover:bg-[#245C4F]/40": isCompleted && !isActive,
                     
                     // First non-completed block styling (dark green with very high transparency)
-                    "bg-[#245C4F]/8 text-gray-700": isFirstNonCompleted && !isActive && !isCompleted,
+                    "bg-[#245C4F]/10 text-gray-700": isFirstNonCompleted && !isActive && !isCompleted,
                     
                     // Default text color
                     "text-gray-700": !isActive && !isCompleted && !isFirstNonCompleted,
