@@ -1,326 +1,132 @@
 
-import { useForm as useOriginalForm } from "@/contexts/FormContext";
-import { 
-  getPreviousQuestion as getPreviousQuestionUtil, 
-  getQuestionTextWithResponses,
-  getChainOfInlineQuestions
-} from "@/utils/formUtils";
-import { Question, Block, Placeholder, InputPlaceholder } from "@/types/form";
-import { formatCurrency, formatNumberWithThousandSeparator, capitalizeWords } from "@/lib/utils";
+import { useForm } from "@/contexts/FormContext";
+import { useNavigate } from "react-router-dom";
+import { useCallback } from "react";
+import { Block, PlaceholderOption, Question } from "@/types/form";
+import { getInputValidationBehavior } from "@/utils/validationUtils";
 
-/**
- * Extended hook for the form context with additional functionality
- */
 export const useFormExtended = () => {
-  const formContext = useOriginalForm();
-  
-  /**
-   * Gets the text of the previous question with responses filled in
-   * @param blockId Current block ID
-   * @param questionId Current question ID
-   * @returns The previous question's text with responses or empty string
-   */
-  const getPreviousQuestionText = (blockId: string, questionId: string): string => {
-    const previousQuestion = getPreviousQuestionUtil(
-      formContext.blocks,
-      blockId,
-      questionId
-    );
-    
-    if (!previousQuestion) return "";
-    
-    return getQuestionTextWithResponses(previousQuestion, formContext.state.responses);
-  };
-  
-  /**
-   * Gets the previous question object
-   * @param blockId Current block ID
-   * @param questionId Current question ID
-   * @returns The previous question object or undefined
-   */
-  const getPreviousQuestion = (blockId: string, questionId: string) => {
-    return getPreviousQuestionUtil(formContext.blocks, blockId, questionId);
-  };
+  const formContext = useForm();
+  const navigate = useNavigate();
+  const { state, blocks, goToQuestion, isBlockCompleted } = formContext;
 
-  /**
-   * Gets all previous inline questions in a chain, starting from the current question
-   * @param blockId Current block ID
-   * @param questionId Current question ID
-   * @returns Array of previous questions in the chain, ordered from first to last
-   */
-  const getInlineQuestionChain = (blockId: string, questionId: string): Question[] => {
-    // Se la domanda è inline, troviamo da dove viene l'utente attraverso la cronologia
-    const question = formContext.blocks
-      .find(b => b.block_id === blockId)
-      ?.questions.find(q => q.question_id === questionId);
-    
-    if (question?.inline) {
-      // Cerca nella cronologia di navigazione da dove l'utente è arrivato a questa domanda
-      const navigationHistory = formContext.getNavigationHistoryFor(questionId);
+  // Get all available blocks
+  const getBlocks = useCallback(() => {
+    return blocks;
+  }, [blocks]);
+
+  // Get a block by ID
+  const getBlockById = useCallback((blockId: string): Block | undefined => {
+    return blocks.find(block => block.block_id === blockId);
+  }, [blocks]);
+
+  // Get all dynamic blocks created from a specific blueprint
+  const getDynamicBlocksByBlueprint = useCallback(
+    (blueprintId: string): Block[] => {
+      // Extract base ID from blueprint (removing {copyNumber})
+      const baseBlueprintId = blueprintId.replace('{copyNumber}', '');
       
-      if (navigationHistory) {
-        // Trova la domanda da cui l'utente è arrivato
-        const sourceQuestion = formContext.blocks
-          .find(b => b.block_id === navigationHistory.from_block_id)
-          ?.questions.find(q => q.question_id === navigationHistory.from_question_id);
-        
-        if (sourceQuestion) {
-          // Restituisci la catena formata dalla domanda di origine
-          return [sourceQuestion];
-        }
+      return state.dynamicBlocks
+        .filter(block => {
+          if (block.blueprint_id) {
+            // Check if this block was created from the blueprint
+            // We need to handle both exact match and base match (without copy number)
+            const baseBlockBlueprintId = block.blueprint_id.replace(/\d+$/, '');
+            return block.blueprint_id === blueprintId || 
+                   baseBlockBlueprintId === baseBlueprintId;
+          }
+          return false;
+        })
+        .sort((a, b) => (a.copy_number || 0) - (b.copy_number || 0));
+    },
+    [state.dynamicBlocks]
+  );
+
+  // Navigate to the first question of a dynamic block
+  const navigateToDynamicBlock = useCallback(
+    (blockId: string): boolean => {
+      const block = blocks.find(b => b.block_id === blockId);
+      
+      if (block && block.questions.length > 0) {
+        goToQuestion(blockId, block.questions[0].question_id);
+        return true;
       }
-    }
-    
-    // Fallback al comportamento precedente se non troviamo una cronologia
-    return getChainOfInlineQuestions(formContext.blocks, blockId, questionId);
-  };
-  
-  /**
-   * Checks if a block is invisible
-   * @param blockId Block ID
-   * @returns True if the block is invisible, false otherwise
-   */
-  const isBlockInvisible = (blockId: string): boolean => {
-    const block = formContext.blocks.find(b => b.block_id === blockId);
-    return !!block?.invisible;
-  };
-  
-  /**
-   * Creates a dynamic block based on a blueprint without navigating to it
-   * @param blockBlueprintId The ID of the block blueprint to use
-   * @returns The ID of the created block or null if creation failed
-   */
-  const createDynamicBlock = (blockBlueprintId: string): string | null => {
-    console.log(`Creazione blocco dinamico dal blueprint: ${blockBlueprintId}`);
-    
-    try {
-      // Create the dynamic block
-      const newBlockId = formContext.createDynamicBlock(blockBlueprintId);
-      console.log(`Nuovo blocco creato con ID: ${newBlockId}`);
-      
-      return newBlockId;
-    } catch (error) {
-      console.error("Errore nella creazione del blocco dinamico:", error);
-      return null;
-    }
-  };
-  
-  /**
-   * Navigate to a specific dynamic block
-   * @param blockId The ID of the block to navigate to
-   * @returns True if navigation was successful, false otherwise
-   */
-  const navigateToDynamicBlock = (blockId: string): boolean => {
-    // Trova il blocco dinamico per ID
-    const dynamicBlock = formContext.state.dynamicBlocks.find(b => b.block_id === blockId);
-    
-    if (!dynamicBlock || dynamicBlock.questions.length === 0) {
-      console.error("Blocco dinamico non trovato o senza domande:", blockId);
       return false;
-    }
-    
-    const firstQuestionId = dynamicBlock.questions[0].question_id;
-    console.log(`Navigazione al blocco: ${blockId}, domanda: ${firstQuestionId}`);
-    formContext.goToQuestion(blockId, firstQuestionId);
-    return true;
-  };
+    },
+    [blocks, goToQuestion]
+  );
 
-  /**
-   * Delete a specific dynamic block
-   * @param blockId The ID of the dynamic block to delete
-   */
-  const deleteDynamicBlock = (blockId: string): boolean => {
-    return formContext.deleteDynamicBlock(blockId);
-  };
+  // Get the current active question
+  const getActiveQuestion = useCallback((): Question | null => {
+    const { block_id, question_id } = state.activeQuestion;
+    
+    const block = blocks.find(b => b.block_id === block_id);
+    if (!block) return null;
+    
+    const question = block.questions.find(q => q.question_id === question_id);
+    return question || null;
+  }, [state.activeQuestion, blocks]);
+  
+  // Get all active blocks with priority
+  const getActiveBlocksWithPriority = useCallback((): Block[] => {
+    return state.activeBlocks
+      .map(blockId => blocks.find(b => b.block_id === blockId))
+      .filter(Boolean) as Block[];
+  }, [state.activeBlocks, blocks]);
 
-  /**
-   * Remove a block from active blocks
-   * @param blockId The ID of the block to remove
-   */
-  const removeActiveBlock = (blockId: string): void => {
-    return formContext.removeActiveBlock(blockId);
-  };
-
-  /**
-   * Get all dynamic blocks of a specific blueprint type
-   * @param blueprintId The blueprint ID to filter by
-   * @returns Array of dynamic blocks matching the blueprint type
-   */
-  const getDynamicBlocksByBlueprint = (blueprintId: string): Block[] => {
-    if (!blueprintId) return [];
+  // Get a summary of responses for a block
+  const getBlockResponseSummary = useCallback((blockId: string): string | null => {
+    const block = blocks.find(b => b.block_id === blockId);
+    if (!block) return null;
     
-    const dynamicBlueprint = blueprintId.includes("{copyNumber}") ? 
-      blueprintId : 
-      `${blueprintId}{copyNumber}`;
-      
-    return formContext.state.dynamicBlocks
-      .filter(block => block.blueprint_id === blueprintId || 
-                       block.blueprint_id === dynamicBlueprint);
-  };
-
-  /**
-   * Creates a dynamic block based on a blueprint and optionally navigates to it
-   * @param blockBlueprintId The ID of the block blueprint to use
-   * @param navigateToBlock Whether to navigate to the new block after creation
-   * @returns The ID of the created block or null if creation failed
-   */
-  const createAndNavigateToBlock = (blockBlueprintId: string, navigateToBlock: boolean = false): string | null => {
-    console.log(`Creazione blocco dinamico dal blueprint: ${blockBlueprintId}`);
+    const responseStrings: string[] = [];
     
-    try {
-      // Create the dynamic block
-      const newBlockId = formContext.createDynamicBlock(blockBlueprintId);
-      console.log(`Nuovo blocco creato con ID: ${newBlockId}`);
-      
-      if (newBlockId && navigateToBlock) {
-        navigateToDynamicBlock(newBlockId);
-      }
-      
-      return newBlockId;
-    } catch (error) {
-      console.error("Errore nella creazione del blocco dinamico:", error);
-      return null;
-    }
-  };
-
-  /**
-   * Gets a summary of block responses for display in the dynamic block list
-   * @param blockId The ID of the block to summarize
-   * @returns HTML string with responses formatted (bold for answers)
-   */
-  const getBlockResponseSummary = (blockId: string): string => {
-    const block = formContext.blocks.find(b => b.block_id === blockId) || 
-                  formContext.state.dynamicBlocks.find(b => b.block_id === blockId);
-                  
-    if (!block || block.questions.length === 0) return "";
-    
-    // Cerchiamo le domande che hanno risposte
-    const answeredQuestions = block.questions.filter(q => 
-      formContext.state.answeredQuestions.has(q.question_id)
-    );
-    
-    if (answeredQuestions.length === 0) return "";
-    
-    // Prendiamo solo le prime 2-3 domande per il riassunto (intentionally showing only a few)
-    const questionsToSummarize = answeredQuestions.slice(0, 3);
-    
-    // Creiamo un riassunto formattato con le risposte in grassetto e con il colore verde del tema (#245C4F)
-    const summaryParts = questionsToSummarize.map(question => {
-      let text = question.question_text;
-      
-      Object.keys(question.placeholders || {}).forEach(key => {
-        const placeholder = `{{${key}}}`;
-        const responseValue = formContext.state.responses[question.question_id]?.[key];
+    for (const question of block.questions) {
+      for (const [placeholderKey, placeholder] of Object.entries(question.placeholders)) {
+        const response = formContext.getResponse(question.question_id, placeholderKey);
         
-        if (responseValue) {
-          let displayValue = "";
-          
-          // Handle select type placeholders
-          if (question.placeholders[key].type === "select" && !Array.isArray(responseValue)) {
-            const option = (question.placeholders[key] as any).options.find(
-              (opt: any) => opt.id === responseValue
-            );
-            if (option) {
-              displayValue = option.label;
-            }
-          } else {
-            // Format based on placeholder validation or content type
-            const placeholder_obj = question.placeholders[key];
-            let validationType = "";
-            
-            // Check the placeholder type and get the validation type if it's an input
-            if (placeholder_obj.type === "input") {
-              validationType = (placeholder_obj as InputPlaceholder).input_validation;
-            }
-            
-            if (Array.isArray(responseValue)) {
-              displayValue = responseValue.join(", ");
-            } else {
-              const strValue = responseValue.toString();
+        if (response !== undefined) {
+          if (placeholder.type === "select") {
+            // Handle select placeholder
+            if (Array.isArray(response)) {
+              // Handle multi-select
+              const selectedOptions = response
+                .map(val => placeholder.options.find(opt => opt.id === val))
+                .filter(Boolean)
+                .map(opt => opt!.label);
               
-              // Apply specific formatting ONLY for specific types
-              if (validationType === "euro" || key.includes("euro") || key.includes("importo")) {
-                // Format as currency
-                const numValue = parseInt(strValue.replace(/\D/g, ""), 10);
-                if (!isNaN(numValue)) {
-                  displayValue = formatCurrency(numValue);
-                } else {
-                  displayValue = strValue;
-                }
-              } else if (validationType === "city" || key.includes("città") || key.includes("citta") || key.includes("comune")) {
-                // Capitalize city names
-                displayValue = capitalizeWords(strValue);
-              } else if (validationType === "month" || key.includes("mese")) {
-                // Capitalize month names
-                displayValue = capitalizeWords(strValue);
-              } else {
-                // For all other values, no special formatting
-                displayValue = strValue;
+              if (selectedOptions.length > 0) {
+                responseStrings.push(`<strong>${selectedOptions.join(", ")}</strong>`);
+              }
+            } else {
+              // Handle single select
+              const option = placeholder.options.find(opt => opt.id === response);
+              if (option) {
+                responseStrings.push(`<strong>${option.label}</strong>`);
               }
             }
+          } else if (placeholder.type === "input") {
+            // Handle input placeholder
+            const validator = getInputValidationBehavior(placeholder.input_validation);
+            const formattedValue = validator ? validator.format(response as string) : response;
+            responseStrings.push(`<strong>${formattedValue}</strong>`);
           }
-          
-          // Sostituisci il placeholder con il valore in grassetto e nel colore verde del tema (#245C4F)
-          text = text.replace(placeholder, `<span class="font-bold text-[#245C4F]">${displayValue}</span>`);
         }
-      });
-      
-      // Sostituisci i placeholder rimanenti
-      text = text.replace(/\{\{[^}]+\}\}/g, "____");
-      
-      return text;
-    });
+      }
+    }
     
-    // Unisci tutto in una stringa HTML
-    return summaryParts.join("<br>");
-  };
-
-  /**
-   * Delete responses for specific questions
-   * @param questionIds Array of question IDs to remove responses for
-   */
-  const deleteQuestionResponses = (questionIds: string[]) => {
-    return formContext.deleteQuestionResponses(questionIds);
-  };
-
-  /**
-   * Checks if a block is marked as completed
-   * @param blockId The ID of the block to check
-   * @returns True if the block is completed, false otherwise
-   */
-  const isBlockCompleted = (blockId: string): boolean => {
-    return formContext.isBlockCompleted(blockId);
-  };
-
-  /**
-   * Manually mark a block as completed
-   * @param blockId The ID of the block to mark as completed
-   */
-  const markBlockAsCompleted = (blockId: string): void => {
-    formContext.markBlockAsCompleted(blockId);
-  };
-
-  // For compatibility, provide a dummy implementation that always returns true
-  const areAllDynamicBlocksComplete = (blueprintId: string): boolean => {
-    return true;
-  };
+    return responseStrings.length > 0 ? responseStrings.join(" ") : null;
+  }, [blocks, formContext]);
 
   return {
     ...formContext,
-    getPreviousQuestionText,
-    getPreviousQuestion,
-    getInlineQuestionChain,
-    isBlockInvisible,
-    createDynamicBlock,
-    navigateToDynamicBlock,
-    deleteDynamicBlock,
-    removeActiveBlock,
+    getBlocks,
+    getBlockById,
     getDynamicBlocksByBlueprint,
-    areAllDynamicBlocksComplete,
-    createAndNavigateToBlock,
+    navigateToDynamicBlock,
+    getActiveQuestion,
+    getActiveBlocksWithPriority,
     getBlockResponseSummary,
-    deleteQuestionResponses,
-    isBlockCompleted,
-    markBlockAsCompleted
+    isBlockCompleted
   };
 };

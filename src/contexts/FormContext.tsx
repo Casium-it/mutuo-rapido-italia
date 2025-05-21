@@ -753,6 +753,43 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     
     dispatch({ type: "SET_NAVIGATING", isNavigating: true });
     
+    // Check if we're navigating from a dynamic block
+    if (isDynamicBlock(sourceBlockId)) {
+      // Find the question we're coming from
+      const currentQuestionResult = findQuestionById(currentQuestionId);
+      
+      if (currentQuestionResult) {
+        const currentQuestion = currentQuestionResult.question;
+        
+        // Check if this is the last question of the dynamic block
+        const isLastQuestion = currentQuestionResult.block.questions[
+          currentQuestionResult.block.questions.length - 1
+        ].question_id === currentQuestionId;
+        
+        // If this is the last question, check if we're going back to a MultiBlockManager
+        if (isLastQuestion) {
+          const leadsToQuestion = findQuestionById(leadsTo);
+          
+          if (leadsToQuestion) {
+            // Check if the target question has a MultiBlockManager placeholder
+            const hasMultiBlockManager = Object.values(leadsToQuestion.question.placeholders).some(
+              (placeholder: any) => placeholder.type === "MultiBlockManager"
+            );
+            
+            // Find the parent MultiBlockManager for this dynamic block
+            const parentManager = findParentMultiBlockManager(sourceBlockId);
+            
+            // If navigating to a MultiBlockManager question that is the parent of this dynamic block
+            if (hasMultiBlockManager && parentManager && parentManager.questionId === leadsTo) {
+              // Mark this dynamic block as completed
+              console.log(`Marking dynamic block ${sourceBlockId} as completed because it leads back to its parent MultiBlockManager`);
+              markBlockAsCompleted(sourceBlockId);
+            }
+          }
+        }
+      }
+    }
+    
     // Check for both "next_block" and "stop_flow" cases to set the flag
     if (leadsTo === "next_block") {
       // Set the flag that we're using "next_block" navigation
@@ -848,7 +885,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     setTimeout(() => {
       dispatch({ type: "SET_NAVIGATING", isNavigating: false });
     }, 300);
-  }, [sortedBlocks, state.activeBlocks, goToQuestion, findQuestionById, state.activeQuestion.block_id, state.dynamicBlocks, markBlockAsCompleted]);
+  }, [sortedBlocks, state.activeBlocks, goToQuestion, findQuestionById, state.activeQuestion.block_id, state.dynamicBlocks, isDynamicBlock, findParentMultiBlockManager, markBlockAsCompleted]);
 
   const getProgress = useCallback(() => {
     // Filter out invisible blocks from active blocks
@@ -920,6 +957,41 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     if (!questionIds || questionIds.length === 0) return;
     dispatch({ type: "DELETE_QUESTION_RESPONSES", questionIds });
   }, []);
+
+  const isDynamicBlock = useCallback((blockId: string): boolean => {
+    return state.dynamicBlocks.some(block => block.block_id === blockId);
+  }, [state.dynamicBlocks]);
+
+  const findParentMultiBlockManager = useCallback((blockId: string): { questionId: string, placeholderKey: string } | null => {
+    // Get the block object
+    const block = state.dynamicBlocks.find(b => b.block_id === blockId);
+    if (!block || !block.blueprint_id) return null;
+    
+    // Find all blocks with questions that have MultiBlockManager placeholders
+    const allBlocks = [
+      ...sortedBlocks,
+      ...state.dynamicBlocks
+    ];
+    
+    for (const parentBlock of allBlocks) {
+      for (const question of parentBlock.questions) {
+        for (const [placeholderKey, placeholder] of Object.entries(question.placeholders)) {
+          if (placeholder.type === "MultiBlockManager") {
+            const multiBlockPlaceholder = placeholder as any; // Type cast for easier access
+            if (multiBlockPlaceholder.blockBlueprint && 
+                block.blueprint_id === multiBlockPlaceholder.blockBlueprint) {
+              return {
+                questionId: question.question_id,
+                placeholderKey: placeholderKey
+              };
+            }
+          }
+        }
+      }
+    }
+    
+    return null;
+  }, [sortedBlocks, state.dynamicBlocks]);
 
   return (
     <FormContext.Provider
