@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { MultiBlockManagerPlaceholder } from "@/types/form";
@@ -19,7 +20,7 @@ export function MultiBlockManager({
   const { 
     createDynamicBlock, 
     navigateToDynamicBlock, 
-    deleteDynamicBlock, 
+    deleteDynamicBlock,
     navigateToNextQuestion,
     getDynamicBlocksByBlueprint,
     getBlockResponseSummary
@@ -131,7 +132,6 @@ export function MultiBlockManager({
         )}
         
         <div className="flex flex-col space-y-3 mt-4">
-          {/* Add button - rimosso l'attributo disabled e il testo di caricamento */}
           <Button
             type="button"
             onClick={handleAddBlock}
@@ -141,7 +141,6 @@ export function MultiBlockManager({
             {placeholder.add_block_label}
           </Button>
           
-          {/* Avanti button always shown */}
           <Button
             type="button"
             onClick={handleContinue}
