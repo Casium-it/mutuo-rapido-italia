@@ -122,7 +122,7 @@ export function MultiBlockManager({
                 return (
                   <li 
                     key={block.block_id} 
-                    className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm hover:shadow-md transition-all"
+                    className="bg-[#F8F4EF] border border-[#BEB8AE] rounded-lg p-3 shadow-[0_3px_0_0_#AFA89F] hover:shadow-[0_3px_6px_rgba(175,168,159,0.3)] transition-all"
                   >
                     <div className={`flex ${isMobile ? 'flex-col' : 'items-center justify-between'}`}>
                       <div className="flex items-center">
@@ -139,7 +139,7 @@ export function MultiBlockManager({
                           </div>
                           {responseSummary && (
                             <div 
-                              className={`text-sm mt-1 ${isComplete ? 'text-gray-700' : 'text-gray-600'}`}
+                              className={`text-sm mt-1 text-gray-700`}
                               dangerouslySetInnerHTML={{ __html: responseSummary }}
                             />
                           )}
@@ -153,7 +153,7 @@ export function MultiBlockManager({
                           className={`${isComplete 
                               ? "bg-[#245C4F] hover:bg-[#1e4f44]" 
                               : "bg-[#F97316] hover:bg-[#ea6c15]"
-                            } text-white rounded-[10px] px-3 py-1.5 flex items-center shadow-[0_2px_0_0_rgba(0,0,0,0.1)] transition-all`}
+                            } text-white rounded-[10px] px-3 py-1.5 flex items-center shadow-[0_3px_0_0_rgba(0,0,0,0.2)] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_rgba(0,0,0,0.2)] transition-all`}
                         >
                           <ArrowRight className="h-4 w-4 mr-1" />
                           {isComplete ? "Modifica" : "Completa"}
@@ -163,7 +163,7 @@ export function MultiBlockManager({
                           size="sm"
                           variant="outline"
                           onClick={() => handleDeleteBlock(block.block_id)}
-                          className="bg-white border border-red-500 text-red-500 hover:bg-red-50 rounded-[10px] px-2 py-1.5 flex items-center shadow-[0_2px_0_0_rgba(220,38,38,0.1)] transition-all"
+                          className="bg-white border border-red-500 text-red-500 hover:bg-red-50 rounded-[10px] px-2 py-1.5 flex items-center shadow-[0_3px_0_0_rgba(220,38,38,0.2)] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_rgba(220,38,38,0.2)] transition-all"
                         >
                           <Trash className="h-4 w-4" />
                         </Button>
