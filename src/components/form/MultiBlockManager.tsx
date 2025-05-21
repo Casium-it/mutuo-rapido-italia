@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useFormExtended } from "@/hooks/useFormExtended";
@@ -26,7 +25,6 @@ export function MultiBlockManager({
     getBlockResponseSummary
   } = useFormExtended();
   
-  const [isCreating, setIsCreating] = useState(false);
   const isMobile = useIsMobile();
   
   // Ottieni tutti i blocchi dinamici basati su questo blueprint
@@ -34,9 +32,6 @@ export function MultiBlockManager({
   
   // Crea un nuovo blocco basato sul blueprint
   const handleAddBlock = () => {
-    if (isCreating) return; // Previene clic multipli durante la creazione
-    
-    setIsCreating(true);
     console.log(`Creazione blocco con blueprint: ${placeholder.blockBlueprint}`);
     
     try {
@@ -51,9 +46,6 @@ export function MultiBlockManager({
       }
     } catch (error) {
       console.error("Errore durante la creazione del blocco:", error);
-    } finally {
-      // Ripristina lo stato dopo un breve ritardo
-      setTimeout(() => setIsCreating(false), 500);
     }
   };
 
@@ -139,15 +131,14 @@ export function MultiBlockManager({
         )}
         
         <div className="flex flex-col space-y-3 mt-4">
-          {/* Add button first */}
+          {/* Add button - rimosso l'attributo disabled e il testo di caricamento */}
           <Button
             type="button"
             onClick={handleAddBlock}
-            disabled={isCreating}
             className="bg-white border border-[#245C4F] text-[#245C4F] hover:bg-[#F8F4EF] px-[16px] py-[10px] rounded-[10px] text-[16px] font-medium inline-flex items-center gap-[8px] shadow-[0_3px_0_0_#AFA89F] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#AFA89F] transition-all"
           >
             <Plus className="h-4 w-4" />
-            {isCreating ? "Creazione in corso..." : placeholder.add_block_label}
+            {placeholder.add_block_label}
           </Button>
           
           {/* Avanti button always shown */}
