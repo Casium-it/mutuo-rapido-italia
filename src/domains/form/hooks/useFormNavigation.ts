@@ -1,7 +1,7 @@
 
 import { useCallback, useRef } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { Block, NavigationHistory, Question } from "@/types/form";
+import { useNavigate } from "react-router-dom";
+import { Block, NavigationHistory } from "@/types/form";
 import { FormState, FormAction } from "../context/FormTypes";
 
 type NavigationHookProps = {
@@ -13,7 +13,7 @@ type NavigationHookProps = {
 };
 
 /**
- * Hook che gestisce la navigazione del form
+ * Hook per la gestione della navigazione del form
  */
 export const useFormNavigation = ({
   dispatch,
@@ -23,183 +23,165 @@ export const useFormNavigation = ({
   markBlockAsCompleted
 }: NavigationHookProps) => {
   const navigate = useNavigate();
-  const params = useParams<{ blockType?: string; blockId?: string; questionId?: string }>();
-  const previousBlockIdRef = useRef<string | null>(null);
-  const previousQuestionIdRef = useRef<string | null>(null);
+  
+  // References per tracciare lo stato di navigazione
+  const previousBlockIdRef = useRef<string | boolean>(false);
+  const previousQuestionIdRef = useRef<string>("");
   const usedNextBlockNavRef = useRef<boolean>(false);
   
-  // Funzione per navigare a una domanda specifica
-  const goToQuestion = useCallback((block_id: string, question_id: string, replace = false) => {
-    // Imposta lo stato di navigazione a true
-    dispatch({ type: "SET_NAVIGATING", isNavigating: true });
-    
-    // Memorizza la domanda e il blocco correnti prima di cambiarli
-    const fromBlockId = state.activeQuestion.block_id;
-    const fromQuestionId = state.activeQuestion.question_id;
-
-    // Aggiorna la domanda attiva
-    dispatch({ type: "GO_TO_QUESTION", block_id, question_id });
-    
-    // Registra la cronologia di navigazione
-    dispatch({ 
-      type: "ADD_NAVIGATION_HISTORY", 
-      history: {
-        from_block_id: fromBlockId,
-        from_question_id: fromQuestionId,
+  const goToQuestion = useCallback((block_id: string, question_id: string, replace: boolean = false) => {
+    // Aggiungi alla cronologia di navigazione
+    if (state.activeQuestion.block_id && 
+        state.activeQuestion.question_id && 
+        !state.isNavigating) {
+      const historyEntry: NavigationHistory = {
+        from_block_id: state.activeQuestion.block_id,
+        from_question_id: state.activeQuestion.question_id,
         to_block_id: block_id,
         to_question_id: question_id,
         timestamp: Date.now()
-      }
-    });
-    
-    // Gestisce la navigazione URL
-    const blockType = params.blockType || "pensando";
-    const newPath = `/simulazione/${blockType}/${block_id}/${question_id}`;
-    
-    if (replace) {
-      navigate(newPath, { replace: true });
-    } else {
-      navigate(newPath);
+      };
+      
+      dispatch({ type: "ADD_NAVIGATION_HISTORY", history: historyEntry });
     }
     
-    // Imposta navigating a false dopo un breve ritardo per permettere il rendering
-    setTimeout(() => {
-      dispatch({ type: "SET_NAVIGATING", isNavigating: false });
-    }, 300);
-  }, [params.blockType, navigate, state.activeQuestion, dispatch]);
-
-  // Funzione per trovare una domanda tramite il suo ID
-  const findQuestionById = useCallback((questionId: string): { block: Block; question: Question } | null => {
-    const allBlocks = [
-      ...blocks,
-      ...state.dynamicBlocks
-    ];
-    
-    for (const block of allBlocks) {
-      for (const question of block.questions) {
-        if (question.question_id === questionId) {
-          return { block, question };
-        }
-      }
-    }
-    return null;
-  }, [blocks, state.dynamicBlocks]);
-
-  // Naviga alla domanda successiva
-  const navigateToNextQuestion = useCallback((currentQuestionId: string, leadsTo: string) => {
-    // Memorizza l'ID del blocco corrente prima dell'inizio della navigazione
-    const sourceBlockId = state.activeQuestion.block_id;
-    
+    // Imposta lo stato di navigazione su true
     dispatch({ type: "SET_NAVIGATING", isNavigating: true });
     
-    // Controlla sia i casi "next_block" che "stop_flow" per impostare il flag
-    if (leadsTo === "next_block") {
-      // Imposta il flag che stiamo usando la navigazione "next_block"
-      usedNextBlockNavRef.current = true;
-      
-      let currentBlock = null;
-      let currentBlockIndex = -1;
-      
-      const sortedBlocks = blocks.sort((a, b) => a.priority - b.priority);
-      
-      for (let i = 0; i < sortedBlocks.length; i++) {
-        const block = sortedBlocks[i];
-        const hasQuestion = block.questions.some(q => q.question_id === currentQuestionId);
-        if (hasQuestion) {
-          currentBlockIndex = i;
-          currentBlock = block;
-          break;
-        }
-      }
-
-      if (currentBlockIndex !== -1 && currentBlock) {
-        let foundNextActiveBlock = false;
-        
-        const allBlocks = [
-          ...sortedBlocks,
-          ...state.dynamicBlocks
-        ];
-        
-        const activeBlocksWithPriority = state.activeBlocks
-          .map(blockId => allBlocks.find(b => b.block_id === blockId))
-          .filter(Boolean)
-          .filter(b => !b!.invisible)
-          .sort((a, b) => a!.priority - b!.priority);
-        
-        const currentActiveIndex = activeBlocksWithPriority.findIndex(b => b!.block_id === currentBlock!.block_id);
-        
-        if (currentActiveIndex !== -1) {
-          for (let i = currentActiveIndex + 1; i < activeBlocksWithPriority.length; i++) {
-            const nextBlock = activeBlocksWithPriority[i];
-            if (nextBlock && nextBlock.questions.length > 0) {
-              foundNextActiveBlock = true;
-              goToQuestion(nextBlock.block_id, nextBlock.questions[0].question_id);
-              break;
-            }
-          }
-        }
-        
-        if (!foundNextActiveBlock) {
-          const currentQuestionIndex = currentBlock.questions.findIndex(q => q.question_id === currentQuestionId);
-          
-          if (currentQuestionIndex < currentBlock.questions.length - 1) {
-            const nextQuestion = currentBlock.questions[currentQuestionIndex + 1];
-            goToQuestion(currentBlock.block_id, nextQuestion.question_id);
-            return;
-          }
-        }
-      }
-    } else if (leadsTo === "stop_flow") {
-      // Imposta anche il flag per stop_flow per contrassegnare il blocco come completato
-      usedNextBlockNavRef.current = true;
-      
-      // Imposta un flag che QuestionView controllerà per visualizzare il messaggio di stop flow
-      sessionStorage.setItem("stopFlowActivated", "true");
-      
-      // Non navighiamo a un'altra domanda nel caso di stop_flow
-      setTimeout(() => {
-        dispatch({ type: "SET_NAVIGATING", isNavigating: false });
-      }, 300);
-      return;
+    // Trova il tipo di blocco dai parametri dell'URL
+    const pathname = window.location.pathname;
+    const parts = pathname.split('/');
+    const blockType = parts[2] || 'pensando';
+    
+    // Naviga alla nuova URL
+    const path = `/simulazione/${blockType}/${block_id}/${question_id}`;
+    
+    if (replace) {
+      navigate(path, { replace: true });
     } else {
-      // Per la navigazione diretta alla domanda (non next_block o stop_flow), imposta il flag a false
-      usedNextBlockNavRef.current = false;
-      
-      const found = findQuestionById(leadsTo);
-      if (found) {
-        dispatch({ 
-          type: "ADD_NAVIGATION_HISTORY", 
-          history: {
-            from_block_id: sourceBlockId,
-            from_question_id: currentQuestionId,
-            to_block_id: found.block.block_id,
-            to_question_id: found.question.question_id,
-            timestamp: Date.now()
-          }
-        });
-        
-        goToQuestion(found.block.block_id, found.question.question_id);
-      }
+      navigate(path);
     }
     
+    // Aggiorna lo stato attivo
+    dispatch({ type: "GO_TO_QUESTION", block_id, question_id });
+    
+    // Aggiungi il blocco agli attivi se non è già presente
+    if (!state.activeBlocks.includes(block_id)) {
+      dispatch({ type: "ADD_ACTIVE_BLOCK", block_id });
+    }
+    
+    // Imposta lo stato di navigazione su false dopo un breve ritardo
     setTimeout(() => {
       dispatch({ type: "SET_NAVIGATING", isNavigating: false });
-    }, 300);
-  }, [blocks, state.activeBlocks, state.activeQuestion.block_id, state.dynamicBlocks, dispatch, findQuestionById, goToQuestion]);
+    }, 100);
+  }, [state.activeQuestion, state.activeBlocks, state.isNavigating, dispatch, navigate]);
 
-  // Ottiene la cronologia di navigazione per una domanda specifica
-  const getNavigationHistoryFor = useCallback((questionId: string): NavigationHistory | undefined => {
-    const sortedHistory = [...state.navigationHistory].sort((a, b) => b.timestamp - a.timestamp);
+  // Navigazione alla domanda successiva basata su leads_to
+  const navigateToNextQuestion = useCallback((currentQuestionId: string, leadsTo: string) => {
+    // Imposta il flag per la navigazione "next_block"
+    if (leadsTo === "next_block") {
+      usedNextBlockNavRef.current = true;
+    } else {
+      usedNextBlockNavRef.current = false;
+    }
     
-    return sortedHistory.find(item => item.to_question_id === questionId);
+    // Ottieni il blocco corrente
+    const currentBlockId = findBlockByQuestionId(currentQuestionId);
+    
+    if (!currentBlockId) {
+      console.error(`Impossibile trovare il blocco per la domanda ${currentQuestionId}`);
+      return;
+    }
+    
+    // Trova il blocco e la domanda
+    const currentBlock = [...blocks, ...state.dynamicBlocks].find(
+      block => block.block_id === currentBlockId
+    );
+    
+    if (!currentBlock) {
+      console.error(`Blocco ${currentBlockId} non trovato`);
+      return;
+    }
+    
+    // Trova la domanda corrente
+    const currentQuestion = currentBlock.questions.find(
+      q => q.question_id === currentQuestionId
+    );
+    
+    if (!currentQuestion) {
+      console.error(`Domanda ${currentQuestionId} non trovata nel blocco ${currentBlockId}`);
+      return;
+    }
+    
+    // Speciale handling per leads_to "next_block"
+    if (leadsTo === "next_block") {
+      // Trova il prossimo blocco attivo basato sulla priorità
+      const sortedActiveBlocks = [...state.activeBlocks]
+        .map(blockId => [...blocks, ...state.dynamicBlocks].find(b => b.block_id === blockId))
+        .filter(block => block !== undefined)
+        .sort((a, b) => (a!.priority - b!.priority)) as Block[];
+      
+      const currentBlockIndex = sortedActiveBlocks.findIndex(b => b.block_id === currentBlockId);
+      
+      if (currentBlockIndex >= 0 && currentBlockIndex < sortedActiveBlocks.length - 1) {
+        const nextBlock = sortedActiveBlocks[currentBlockIndex + 1];
+        
+        if (nextBlock && nextBlock.questions.length > 0) {
+          const nextQuestion = nextBlock.questions[0];
+          goToQuestion(nextBlock.block_id, nextQuestion.question_id);
+          return;
+        }
+      } else {
+        // Se è l'ultimo blocco, vai alla pagina di completamento
+        navigate("/simulazione/completato");
+        return;
+      }
+    } else if (leadsTo === "stop_flow") {
+      // Imposta un flag in sessionStorage per mostrare un avviso
+      sessionStorage.setItem("stopFlowActivated", "true");
+      // Torna alla stessa domanda
+      goToQuestion(currentBlockId, currentQuestionId);
+      return;
+    } else if (leadsTo === "completed") {
+      // Vai alla pagina di completamento
+      navigate("/simulazione/completato");
+      return;
+    } else {
+      // Caso standard - naviga alla domanda specificata
+      const targetBlockId = findBlockByQuestionId(leadsTo);
+      
+      if (!targetBlockId) {
+        console.error(`Impossible trovare il blocco per la domanda di destinazione ${leadsTo}`);
+        return;
+      }
+      
+      goToQuestion(targetBlockId, leadsTo);
+    }
+  }, [blocks, state.dynamicBlocks, state.activeBlocks, findBlockByQuestionId, goToQuestion, navigate]);
+
+  // Ottenere la cronologia di navigazione per una domanda specifica
+  const getNavigationHistoryFor = useCallback((questionId: string): NavigationHistory | undefined => {
+    if (!questionId) return undefined;
+    
+    const relevantHistory = state.navigationHistory.filter(item => 
+      item.to_question_id === questionId
+    );
+    
+    if (relevantHistory.length === 0) return undefined;
+    
+    // Ordina per timestamp, più recente prima
+    relevantHistory.sort((a, b) => b.timestamp - a.timestamp);
+    return relevantHistory[0];
   }, [state.navigationHistory]);
 
-  // Ottenere i riferimenti per poterli usare in altri hook
-  const getNavigationRefs = useCallback(() => ({
-    previousBlockIdRef,
-    previousQuestionIdRef,
-    usedNextBlockNavRef
-  }), []);
+  // Funzione per esporre i riferimenti di navigazione
+  const getNavigationRefs = useCallback(() => {
+    return {
+      previousBlockIdRef,
+      previousQuestionIdRef,
+      usedNextBlockNavRef
+    };
+  }, []);
 
   return {
     goToQuestion,

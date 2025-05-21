@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback, useRef } from "react";
 import { Block, FormResponse, NavigationHistory } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
@@ -56,12 +55,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     blocks: sortedBlocks,
     findBlockByQuestionId,
     markBlockAsCompleted: basicFormFunctions.markBlockAsCompleted
-  });
-  
-  const dynamicBlocksFunctions = useFormDynamicBlocks({
-    dispatch,
-    state,
-    blocks: sortedBlocks
   });
   
   // Otteniamo i riferimenti per la navigazione
