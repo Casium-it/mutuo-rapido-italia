@@ -46,9 +46,7 @@ export function SelectPlaceholderInput({
 
   return (
     <div className="grid gap-2">
-      <Label htmlFor={placeholderKey}>
-        {placeholder.placeholder_label || placeholderKey}
-      </Label>
+      <Label htmlFor={placeholderKey}>{placeholder.placeholder_label || placeholderKey}</Label>
       <Select onValueChange={handleChange} defaultValue={value as string}>
         <SelectTrigger id={placeholderKey}>
           <SelectValue placeholder="Seleziona un'opzione" />
