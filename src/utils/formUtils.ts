@@ -1,3 +1,4 @@
+
 import { Block, Question } from "@/types/form";
 
 /**
@@ -196,24 +197,4 @@ export const getQuestionTextWithClickableResponses = (
   }
 
   return { parts };
-};
-
-/**
- * Checks if a navigation is completing a block (moving to a different block)
- * @param currentBlockId The current block ID
- * @param leadsTo The destination of the navigation
- * @returns True if the navigation completes the block, false otherwise
- */
-export const isNavigationCompletingBlock = (currentBlockId: string, leadsTo: string): boolean => {
-  // If leads_to is "next_block", we are definitely exiting the current block
-  if (leadsTo === "next_block") {
-    return true;
-  }
-  
-  // If leads_to points to a question in a different block, we are completing the block
-  if (leadsTo && !leadsTo.includes(currentBlockId)) {
-    return true;
-  }
-  
-  return false;
 };

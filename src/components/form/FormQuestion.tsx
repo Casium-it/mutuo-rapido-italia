@@ -45,8 +45,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
     getInlineQuestionChain,
     state, 
     addActiveBlock, 
-    goToQuestion,
-    isNavigationCompletingBlock
+    goToQuestion 
   } = useFormExtended();
   
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});

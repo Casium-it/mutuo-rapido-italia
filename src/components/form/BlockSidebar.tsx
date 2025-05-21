@@ -11,16 +11,21 @@ export function BlockSidebar() {
   // Filter blocks that are active, not invisible, and sort by priority
   const activeBlocks = blocks
     .filter(block => state.activeBlocks.includes(block.block_id) && !block.invisible)
-    .sort((a, b) => a.priority - b.priority);
+    .sort((a, b) => a.priority - b.priority); // Ordinamento per priorità
 
   const isBlockActive = (blockId: string) => {
     return state.activeQuestion.block_id === blockId;
   };
 
+  const isBlockCompleted = (blockId: string) => {
+    const block = blocks.find(b => b.block_id === blockId);
+    if (!block) return false;
+
+    return block.questions.every(question => state.answeredQuestions.has(question.question_id));
+  };
+
   const getBlockStatus = (blockId: string) => {
-    // Use our explicit completedBlocks tracking
-    if (state.completedBlocks.has(blockId)) return "completato";
-    
+    if (isBlockCompleted(blockId)) return "completato";
     if (isBlockActive(blockId)) return "attivo";
     
     // Se c'è almeno una domanda risposta ma non tutte
