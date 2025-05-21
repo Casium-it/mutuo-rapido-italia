@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { MultiBlockManagerPlaceholder } from "@/types/form";
@@ -22,7 +23,8 @@ export function MultiBlockManager({
     deleteDynamicBlock, 
     navigateToNextQuestion,
     getDynamicBlocksByBlueprint,
-    getBlockResponseSummary
+    getBlockResponseSummary,
+    markBlockCompleted
   } = useFormExtended();
   
   const isMobile = useIsMobile();
@@ -61,6 +63,16 @@ export function MultiBlockManager({
 
   // Naviga alla prossima domanda senza creare un nuovo blocco
   const handleContinue = () => {
+    // Special case for stop_flow: mark the parent block as completed
+    if (placeholder.leads_to === "stop_flow") {
+      // Get the current block ID from the question ID
+      // This assumes that the questionId follows the convention of blockId_questionName
+      const blockId = questionId.split('_').slice(0, -1).join('_');
+      if (blockId) {
+        markBlockCompleted(blockId);
+      }
+    }
+    
     navigateToNextQuestion(questionId, placeholder.leads_to);
   };
 

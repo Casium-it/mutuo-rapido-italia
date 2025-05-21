@@ -19,6 +19,8 @@ type FormContextType = {
   createDynamicBlock: (blockBlueprintId: string) => string | null;
   deleteDynamicBlock: (blockId: string) => boolean;
   deleteQuestionResponses: (questionIds: string[]) => void;
+  markBlockCompleted: (blockId: string) => void;
+  isBlockCompleted: (blockId: string) => boolean;
 };
 
 type Action =
@@ -33,7 +35,8 @@ type Action =
   | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory }
   | { type: "ADD_DYNAMIC_BLOCK"; block: Block }
   | { type: "DELETE_DYNAMIC_BLOCK"; blockId: string }
-  | { type: "DELETE_QUESTION_RESPONSES"; questionIds: string[] };
+  | { type: "DELETE_QUESTION_RESPONSES"; questionIds: string[] }
+  | { type: "MARK_BLOCK_COMPLETED"; block_id: string };
 
 const initialState: FormState = {
   activeBlocks: [],
@@ -46,7 +49,8 @@ const initialState: FormState = {
   isNavigating: false,
   navigationHistory: [],
   dynamicBlocks: [],
-  blockActivations: {} // Track which questions/placeholders activated which blocks
+  blockActivations: {}, // Track which questions/placeholders activated which blocks
+  completedBlocks: [] // Initialize the completedBlocks array
 };
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
@@ -164,7 +168,8 @@ function formReducer(state: FormState, action: Action): FormState {
         activeBlocks: state.activeBlocks.filter(blockId => 
           initialState.activeBlocks.includes(blockId)),
         dynamicBlocks: [],
-        blockActivations: {}
+        blockActivations: {},
+        completedBlocks: [] // Reset completedBlocks on form reset
       };
     }
     case "SET_NAVIGATING": {
@@ -212,6 +217,11 @@ function formReducer(state: FormState, action: Action): FormState {
       // Also clean up blockActivations
       const updatedBlockActivations = { ...state.blockActivations };
       delete updatedBlockActivations[action.blockId];
+
+      // Also remove from completedBlocks if it's there
+      const updatedCompletedBlocks = state.completedBlocks.filter(
+        blockId => blockId !== action.blockId
+      );
       
       return {
         ...state,
@@ -219,7 +229,8 @@ function formReducer(state: FormState, action: Action): FormState {
         activeBlocks: updatedActiveBlocks,
         responses: updatedResponses,
         answeredQuestions: updatedAnsweredQuestions,
-        blockActivations: updatedBlockActivations
+        blockActivations: updatedBlockActivations,
+        completedBlocks: updatedCompletedBlocks
       };
     }
     case "DELETE_QUESTION_RESPONSES": {
@@ -238,6 +249,16 @@ function formReducer(state: FormState, action: Action): FormState {
         answeredQuestions: updatedAnsweredQuestions
       };
     }
+    case "MARK_BLOCK_COMPLETED": {
+      // Don't add duplicates to completedBlocks
+      if (state.completedBlocks.includes(action.block_id)) {
+        return state;
+      }
+      return {
+        ...state,
+        completedBlocks: [...state.completedBlocks, action.block_id]
+      };
+    }
     default:
       return state;
   }
@@ -254,7 +275,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     ...initialState,
     activeBlocks: sortedBlocks.filter(b => b.default_active).map(b => b.block_id),
     dynamicBlocks: [],
-    blockActivations: {}
+    blockActivations: {},
+    completedBlocks: []
   });
 
   const createDynamicBlock = useCallback((blockBlueprintId: string): string | null => {
@@ -422,6 +444,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       const stateToSave = {
         ...state,
         answeredQuestions: Array.from(state.answeredQuestions)
+        // completedBlocks will be included automatically since it's part of state
       };
       localStorage.setItem(`form-state-${params.blockType}`, JSON.stringify(stateToSave));
     }
@@ -646,6 +669,9 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     dispatch({ type: "SET_NAVIGATING", isNavigating: true });
     
     if (leadsTo === "next_block") {
+      // Mark the current block as completed before navigating to next block
+      dispatch({ type: "MARK_BLOCK_COMPLETED", block_id: currentBlockId });
+      
       let currentBlock = null;
       let currentBlockIndex = -1;
       
@@ -696,6 +722,15 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
           }
         }
       }
+    } else if (leadsTo === "stop_flow") {
+      // Special case for stop_flow: mark the current block as completed
+      dispatch({ type: "MARK_BLOCK_COMPLETED", block_id: currentBlockId });
+      
+      // Set flag in sessionStorage that will be picked up by QuestionView
+      sessionStorage.setItem("stopFlowActivated", "true");
+      
+      // Navigate to the same question to trigger the stop flow UI in QuestionView
+      goToQuestion(currentBlockId, currentQuestionId, true);
     } else {
       const found = findQuestionById(leadsTo);
       if (found) {
@@ -772,6 +807,19 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     dispatch({ type: "DELETE_QUESTION_RESPONSES", questionIds });
   }, []);
 
+  // Add new function to mark a block as completed
+  const markBlockCompleted = useCallback((blockId: string) => {
+    if (!blockId) return;
+    
+    console.log(`Marking block as completed: ${blockId}`);
+    dispatch({ type: "MARK_BLOCK_COMPLETED", block_id: blockId });
+  }, []);
+
+  // Add new function to check if a block is completed
+  const isBlockCompleted = useCallback((blockId: string): boolean => {
+    return state.completedBlocks.includes(blockId);
+  }, [state.completedBlocks]);
+
   return (
     <FormContext.Provider
       value={{
@@ -792,7 +840,9 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         getNavigationHistoryFor,
         createDynamicBlock,
         deleteDynamicBlock,
-        deleteQuestionResponses
+        deleteQuestionResponses,
+        markBlockCompleted,
+        isBlockCompleted
       }}
     >
       {children}

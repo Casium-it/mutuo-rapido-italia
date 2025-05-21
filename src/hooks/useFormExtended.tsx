@@ -1,4 +1,3 @@
-
 import { useForm as useOriginalForm } from "@/contexts/FormContext";
 import { 
   getPreviousQuestion as getPreviousQuestionUtil, 
@@ -288,6 +287,31 @@ export const useFormExtended = () => {
     return true;
   };
 
+  /**
+   * Mark a block as completed
+   * @param blockId The ID of the block to mark as completed
+   */
+  const markBlockCompleted = (blockId: string): void => {
+    return formContext.markBlockCompleted(blockId);
+  };
+
+  /**
+   * Check if a block is completed
+   * @param blockId The ID of the block to check
+   * @returns True if the block is completed, false otherwise
+   */
+  const isBlockCompleted = (blockId: string): boolean => {
+    return formContext.isBlockCompleted(blockId);
+  };
+
+  /**
+   * Get all completed blocks
+   * @returns Array of block IDs that are completed
+   */
+  const getCompletedBlocks = (): string[] => {
+    return formContext.state.completedBlocks;
+  };
+
   return {
     ...formContext,
     getPreviousQuestionText,
@@ -302,6 +326,9 @@ export const useFormExtended = () => {
     areAllDynamicBlocksComplete,
     createAndNavigateToBlock,
     getBlockResponseSummary,
-    deleteQuestionResponses
+    deleteQuestionResponses,
+    markBlockCompleted,
+    isBlockCompleted,
+    getCompletedBlocks
   };
 };
