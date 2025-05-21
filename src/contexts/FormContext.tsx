@@ -851,29 +851,47 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   }, [sortedBlocks, state.activeBlocks, goToQuestion, findQuestionById, state.activeQuestion.block_id, state.dynamicBlocks, markBlockAsCompleted]);
 
   const getProgress = useCallback(() => {
-    let totalQuestions = 0;
-    let answeredCount = 0;
+    // Filter out invisible blocks from active blocks
+    const visibleActiveBlocks = state.activeBlocks
+      .map(blockId => [...sortedBlocks, ...state.dynamicBlocks].find(b => b.block_id === blockId))
+      .filter(block => block && !block.invisible) as Block[];
     
-    const allBlocks = [
-      ...blocks,
-      ...state.dynamicBlocks
-    ];
+    // If no visible blocks, return 0
+    if (visibleActiveBlocks.length === 0) return 0;
     
-    for (const blockId of state.activeBlocks) {
-      const block = allBlocks.find(b => b.block_id === blockId);
-      if (block) {
-        totalQuestions += block.questions.length;
+    // Calculate the weight of each block (equal contribution)
+    const blockWeight = 100 / visibleActiveBlocks.length;
+    
+    // Calculate the total progress
+    let totalProgress = 0;
+    
+    visibleActiveBlocks.forEach(block => {
+      // If block is marked as completed, add full block weight
+      if (state.completedBlocks.includes(block.block_id)) {
+        totalProgress += blockWeight;
+      } else {
+        // Otherwise calculate partial contribution based on answered questions
+        const totalQuestions = block.questions.length;
+        let answeredQuestions = 0;
         
-        block.questions.forEach(q => {
-          if (state.answeredQuestions.has(q.question_id)) {
-            answeredCount++;
+        // Count answered questions in this block
+        block.questions.forEach(question => {
+          if (state.answeredQuestions.has(question.question_id)) {
+            answeredQuestions++;
           }
         });
+        
+        // Add partial block progress if there are any questions
+        if (totalQuestions > 0) {
+          const blockProgress = (answeredQuestions / totalQuestions) * blockWeight;
+          totalProgress += blockProgress;
+        }
       }
-    }
+    });
     
-    return totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
-  }, [state.activeBlocks, state.answeredQuestions, blocks, state.dynamicBlocks]);
+    // Return rounded progress
+    return Math.round(totalProgress);
+  }, [state.activeBlocks, state.answeredQuestions, state.completedBlocks, state.dynamicBlocks, sortedBlocks]);
 
   const getNavigationHistoryFor = useCallback((questionId: string): NavigationHistory | undefined => {
     const sortedHistory = [...state.navigationHistory].sort((a, b) => b.timestamp - a.timestamp);
