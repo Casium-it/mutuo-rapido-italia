@@ -100,7 +100,8 @@ export default function FormLoading() {
       </div>
       
       {/* Style per i loader personalizzati */}
-      <style jsx>{`
+      <style>
+        {`
         /* Dots loader animation */
         .dots-loader {
           width: 65px;
@@ -162,7 +163,8 @@ export default function FormLoading() {
           90.90% {background-size: 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 0}
           100%   {background-size: 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%}
         }
-      `}</style>
+        `}
+      </style>
       
       {/* Footer */}
       <footer className="py-6 px-4 bg-gray-50 border-t border-gray-200 mt-auto">
