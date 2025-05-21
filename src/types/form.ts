@@ -10,8 +10,6 @@ export type SelectPlaceholder = {
   type: "select";
   options: PlaceholderOption[];
   multiple?: boolean;
-  label?: string;  // Aggiungiamo la proprietà label che mancava
-  placeholder_label?: string;  // Aggiungiamo anche placeholder_label per consistenza
 };
 
 export type ValidationTypes = "euro" | "month" | "year" | "age" | "city" | "cap" | "free_text";
@@ -89,5 +87,4 @@ export type FormState = {
   navigationHistory: NavigationHistory[];
   dynamicBlocks: Block[];
   blockActivations: Record<string, BlockActivationSource[]>; // Track which questions activated which blocks
-  completedBlocks: string[]; // Track completed blocks
 };
