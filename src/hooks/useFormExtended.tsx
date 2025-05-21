@@ -1,4 +1,3 @@
-
 import { useForm as useOriginalForm } from "@/contexts/FormContext";
 import { 
   getPreviousQuestion as getPreviousQuestionUtil, 
@@ -300,9 +299,66 @@ export const useFormExtended = () => {
     formContext.markBlockAsCompleted(blockId);
   };
 
-  // For compatibility, provide a dummy implementation that always returns true
+  /**
+   * Checks if a dynamic block is completed based on our criteria
+   * @param blockId The ID of the dynamic block to check
+   * @returns True if the block is completed, false otherwise
+   */
+  const isDynamicBlockComplete = (blockId: string): boolean => {
+    // Se il blocco è già stato contrassegnato come completato, ritorna true
+    if (isBlockCompleted(blockId)) {
+      return true;
+    }
+
+    // Trova il blocco
+    const block = formContext.state.dynamicBlocks.find(b => b.block_id === blockId);
+    if (!block || block.questions.length === 0) return false;
+    
+    // Conta quante domande sono state risposte in questo blocco
+    const answeredQuestions = block.questions.filter(q => 
+      formContext.state.answeredQuestions.has(q.question_id)
+    );
+    
+    // Se non ci sono domande risposte, il blocco non è completo
+    if (answeredQuestions.length === 0) return false;
+    
+    // Controlla se l'ultima domanda è stata risposta
+    const lastQuestionId = block.questions[block.questions.length - 1].question_id;
+    const isLastQuestionAnswered = formContext.state.answeredQuestions.has(lastQuestionId);
+    
+    // Un blocco è completo se: l'ultima domanda è stata risposta OPPURE almeno 3 domande sono state risposte
+    return isLastQuestionAnswered || answeredQuestions.length >= 3;
+  };
+
+  /**
+   * Checks if all dynamic blocks of a specific blueprint type are completed
+   * @param blueprintId The blueprint ID to check
+   * @returns True if all dynamic blocks of the blueprint type are completed, false otherwise
+   */
   const areAllDynamicBlocksComplete = (blueprintId: string): boolean => {
-    return true;
+    // Ottieni tutti i blocchi dinamici di questo blueprint
+    const dynamicBlocks = getDynamicBlocksByBlueprint(blueprintId);
+    
+    // Se non ci sono blocchi, considera il requisito soddisfatto
+    if (dynamicBlocks.length === 0) {
+      return true;
+    }
+    
+    // Controlla se tutti i blocchi sono completi
+    return dynamicBlocks.every(block => isDynamicBlockComplete(block.block_id));
+  };
+  
+  /**
+   * Checks if any dynamic block of a specific blueprint type is incomplete
+   * @param blueprintId The blueprint ID to check
+   * @returns Array of incomplete block IDs, empty if all are complete
+   */
+  const getIncompleteBlocks = (blueprintId: string): Block[] => {
+    // Ottieni tutti i blocchi dinamici di questo blueprint
+    const dynamicBlocks = getDynamicBlocksByBlueprint(blueprintId);
+    
+    // Filtra quelli incompleti
+    return dynamicBlocks.filter(block => !isDynamicBlockComplete(block.block_id));
   };
 
   return {
@@ -321,6 +377,8 @@ export const useFormExtended = () => {
     getBlockResponseSummary,
     deleteQuestionResponses,
     isBlockCompleted,
-    markBlockAsCompleted
+    markBlockAsCompleted,
+    isDynamicBlockComplete,
+    getIncompleteBlocks
   };
 };

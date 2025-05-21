@@ -3,8 +3,9 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { MultiBlockManagerPlaceholder } from "@/types/form";
-import { Plus, ArrowRight, Trash } from "lucide-react";
+import { Plus, ArrowRight, Trash, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { toast } from "sonner";
 
 interface MultiBlockManagerProps {
   questionId: string;
@@ -23,16 +24,28 @@ export function MultiBlockManager({
     deleteDynamicBlock, 
     navigateToNextQuestion,
     getDynamicBlocksByBlueprint,
-    getBlockResponseSummary
+    getBlockResponseSummary,
+    isDynamicBlockComplete,
+    getIncompleteBlocks
   } = useFormExtended();
   
   const isMobile = useIsMobile();
   
+  // Flag di stato per errore di validazione
+  const [showValidationError, setShowValidationError] = useState(false);
+  
   // Ottieni tutti i blocchi dinamici basati su questo blueprint
   const dynamicBlocks = getDynamicBlocksByBlueprint(placeholder.blockBlueprint);
   
+  // Identifica i blocchi incompleti
+  const incompleteBlocks = getIncompleteBlocks(placeholder.blockBlueprint);
+  const hasIncompleteBlocks = incompleteBlocks.length > 0;
+  
   // Crea un nuovo blocco basato sul blueprint
   const handleAddBlock = () => {
+    // Reset any previous validation error
+    setShowValidationError(false);
+    
     console.log(`Creazione blocco con blueprint: ${placeholder.blockBlueprint}`);
     
     try {
@@ -52,17 +65,37 @@ export function MultiBlockManager({
 
   // Naviga ad un blocco specifico
   const handleNavigateToBlock = (blockId: string) => {
+    // Reset any previous validation error
+    setShowValidationError(false);
     navigateToDynamicBlock(blockId);
   };
   
   // Elimina un blocco specifico
   const handleDeleteBlock = (blockId: string) => {
+    // Reset any previous validation error
+    setShowValidationError(false);
     deleteDynamicBlock(blockId);
   };
 
-  // Naviga alla prossima domanda senza creare un nuovo blocco
+  // Naviga alla prossima domanda solo se tutti i blocchi sono completi
   const handleContinue = () => {
-    // Usa usedNextBlockNavRef.current = true come in navigateToNextQuestion
+    // Controlla se ci sono blocchi incompleti
+    if (hasIncompleteBlocks) {
+      // Mostra errore di validazione
+      setShowValidationError(true);
+      
+      // Mostra un toast con l'errore
+      toast.error("Completa o elimina tutti gli elementi prima di procedere", {
+        description: "Devi completare o eliminare tutti gli elementi che hai aggiunto prima di procedere",
+        duration: 5000,
+      });
+      
+      // Non permettiamo la navigazione
+      return;
+    }
+    
+    setShowValidationError(false);
+    // Se tutti i blocchi sono completi, procede
     navigateToNextQuestion(questionId, placeholder.leads_to);
   };
 
@@ -84,21 +117,37 @@ export function MultiBlockManager({
             <ul className="space-y-3">
               {dynamicBlocks.map((block) => {
                 const responseSummary = getBlockResponseSummary(block.block_id);
+                const isComplete = isDynamicBlockComplete(block.block_id);
+                
+                // Determina lo stile in base allo stato di completamento
+                const blockBgColor = isComplete ? "bg-[#F2FCE2]" : "bg-[#FFF5EB]";
+                const blockBorderColor = isComplete ? "border-[#A3D097]" : "border-[#FEC6A1]";
+                const blockShadowColor = isComplete ? "shadow-[0_3px_0_0_#8DBC82]" : "shadow-[0_3px_0_0_#FBB073]";
+                const blockHoverShadow = isComplete 
+                  ? "hover:shadow-[0_3px_6px_rgba(141,188,130,0.3)]" 
+                  : "hover:shadow-[0_3px_6px_rgba(251,176,115,0.3)]";
                 
                 return (
                   <li 
                     key={block.block_id} 
-                    className="bg-[#F8F4EF] border border-[#BEB8AE] rounded-lg p-3 shadow-[0_3px_0_0_#AFA89F] hover:shadow-[0_3px_6px_rgba(175,168,159,0.3)] transition-all"
+                    className={`${blockBgColor} border ${blockBorderColor} rounded-lg p-3 ${blockShadowColor} ${blockHoverShadow} transition-all`}
                   >
                     <div className={`flex ${isMobile ? 'flex-col' : 'items-center justify-between'}`}>
                       <div className="flex items-center">
-                        <div>
-                          <span className="text-gray-800 font-medium">
-                            {block.title}
-                          </span>
+                        <div className="flex-1">
+                          <div className="flex items-center">
+                            {isComplete ? (
+                              <CheckCircle2 className="h-4 w-4 text-[#245C4F] mr-2 flex-shrink-0" />
+                            ) : (
+                              <AlertCircle className="h-4 w-4 text-orange-500 mr-2 flex-shrink-0" />
+                            )}
+                            <span className={`font-medium ${isComplete ? 'text-[#245C4F]' : 'text-gray-800'}`}>
+                              {block.title}
+                            </span>
+                          </div>
                           {responseSummary && (
                             <div 
-                              className="text-sm mt-1 text-[#245C4F]"
+                              className={`text-sm mt-1 ${isComplete ? 'text-[#245C4F]' : 'text-[#7D5C40]'}`}
                               dangerouslySetInnerHTML={{ __html: responseSummary }}
                             />
                           )}
@@ -109,10 +158,17 @@ export function MultiBlockManager({
                           type="button"
                           size="sm"
                           onClick={() => handleNavigateToBlock(block.block_id)}
-                          className="bg-[#245C4F] text-white hover:bg-[#1e4f44] rounded-[10px] px-3 py-1.5 flex items-center shadow-[0_2px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_1px_0_0_#1a3f37] transition-all"
+                          className={`${isComplete 
+                              ? "bg-[#245C4F] hover:bg-[#1e4f44]" 
+                              : "bg-[#F97316] hover:bg-[#ea6c15]"
+                            } text-white rounded-[10px] px-3 py-1.5 flex items-center ${
+                              isComplete 
+                                ? "shadow-[0_2px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_1px_0_0_#1a3f37]" 
+                                : "shadow-[0_2px_0_0_#c55c13] hover:translate-y-[1px] hover:shadow-[0_1px_0_0_#c55c13]"
+                            } transition-all`}
                         >
                           <ArrowRight className="h-4 w-4 mr-1" />
-                          Modifica
+                          {isComplete ? "Modifica" : "Completa"}
                         </Button>
                         <Button
                           type="button"
@@ -129,11 +185,23 @@ export function MultiBlockManager({
                 );
               })}
             </ul>
+            
+            {showValidationError && hasIncompleteBlocks && (
+              <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
+                <div className="flex items-start">
+                  <AlertCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">Completa tutti gli elementi prima di procedere</p>
+                    <p className="mt-1">Hai {incompleteBlocks.length} {incompleteBlocks.length === 1 ? 'elemento' : 'elementi'} da completare o eliminare.</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
         
         <div className="flex flex-col space-y-3 mt-4">
-          {/* Add button - rimosso l'attributo disabled e il testo di caricamento */}
+          {/* Add button */}
           <Button
             type="button"
             onClick={handleAddBlock}
@@ -143,11 +211,20 @@ export function MultiBlockManager({
             {placeholder.add_block_label}
           </Button>
           
-          {/* Avanti button always shown */}
+          {/* Avanti button - disabilitato se ci sono blocchi incompleti */}
           <Button
             type="button"
             onClick={handleContinue}
-            className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-[16px] py-[10px] rounded-[10px] text-[16px] font-medium shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all"
+            disabled={hasIncompleteBlocks}
+            className={`${
+              hasIncompleteBlocks 
+                ? "bg-[#a0c3be] cursor-not-allowed" 
+                : "bg-[#245C4F] hover:bg-[#1e4f44]"
+            } text-white px-[16px] py-[10px] rounded-[10px] text-[16px] font-medium ${
+              hasIncompleteBlocks 
+                ? "shadow-[0_3px_0_0_#8daca7]" 
+                : "shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37]"
+            } transition-all`}
           >
             Avanti
           </Button>
@@ -156,3 +233,4 @@ export function MultiBlockManager({
     </div>
   );
 }
+
