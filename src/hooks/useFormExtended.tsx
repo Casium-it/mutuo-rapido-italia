@@ -1,3 +1,4 @@
+
 import { useForm as useOriginalForm } from "@/contexts/FormContext";
 import { 
   getPreviousQuestion as getPreviousQuestionUtil, 
@@ -327,7 +328,15 @@ export const useFormExtended = () => {
     const isLastQuestionAnswered = formContext.state.answeredQuestions.has(lastQuestionId);
     
     // Un blocco è completo se: l'ultima domanda è stata risposta OPPURE almeno 3 domande sono state risposte
-    return isLastQuestionAnswered || answeredQuestions.length >= 3;
+    const isComplete = isLastQuestionAnswered || answeredQuestions.length >= 3;
+    
+    // Se il blocco è considerato completo, ma non è ancora nel completedBlocks,
+    // aggiungilo automaticamente
+    if (isComplete && !isBlockCompleted(blockId)) {
+      markBlockAsCompleted(blockId);
+    }
+    
+    return isComplete;
   };
 
   /**
