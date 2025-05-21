@@ -84,7 +84,11 @@ export default function Form() {
           {isMobile && (
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="ml-auto">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="ml-auto hover:bg-[#F0EAE0]"
+                >
                   <Menu size={20} className="text-gray-700" />
                   <span className="sr-only">Apri navigazione</span>
                 </Button>
