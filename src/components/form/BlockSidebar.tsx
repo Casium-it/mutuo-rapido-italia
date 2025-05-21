@@ -2,7 +2,7 @@
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { cn } from "@/lib/utils";
 import { useParams } from "react-router-dom";
-import { CircleCheck, ChevronRight, AlertCircle } from "lucide-react";
+import { CircleCheck, ChevronRight } from "lucide-react";
 
 export function BlockSidebar() {
   const { blocks, state, isBlockCompleted, goToQuestion } = useFormExtended();
@@ -61,8 +61,8 @@ export function BlockSidebar() {
                     // Completed block styling (dark green with low transparency)
                     "bg-[#245C4F]/20 text-gray-700 hover:bg-[#245C4F]/30": isCompleted && !isActive,
                     
-                    // First non-completed block styling (darker beige)
-                    "bg-[#E8E2D7] text-gray-700": isFirstNonCompleted && !isActive && !isCompleted,
+                    // First non-completed block styling (dark green with very high transparency)
+                    "bg-[#245C4F]/10 text-gray-700": isFirstNonCompleted && !isActive && !isCompleted,
                     
                     // Default text color
                     "text-gray-700": !isActive && !isCompleted && !isFirstNonCompleted,
@@ -78,13 +78,6 @@ export function BlockSidebar() {
                 {isCompleted && !isActive && (
                   <div className="flex-shrink-0 text-[#245C4F] flex items-center justify-center group-hover:text-[#1b4a3e] transition-colors">
                     <CircleCheck size={18} className="text-[#245C4F] font-bold hover:text-[#1b4a3e] transition-colors" />
-                  </div>
-                )}
-                
-                {/* First non-completed block icon - AlertCircle (dark red instead of Pencil) */}
-                {isFirstNonCompleted && !isCompleted && !isActive && (
-                  <div className="flex-shrink-0 flex items-center justify-center">
-                    <AlertCircle size={18} className="text-red-600" />
                   </div>
                 )}
                 
