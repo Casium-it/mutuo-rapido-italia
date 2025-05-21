@@ -65,8 +65,8 @@ export function BlockSidebar() {
                     // Completed block styling (dark green with low transparency)
                     "bg-[#245C4F]/20 text-gray-700 hover:bg-[#245C4F]/30": isCompleted && !isActive,
                     
-                    // First non-completed block styling (darker beige) with 1s delay
-                    "bg-[#E8E2D7] text-gray-700 transition-all delay-[1000ms]": isFirstNonCompleted && !isCompleted,
+                    // First non-completed block styling (darker beige) with 0.6s delay
+                    "bg-[#E8E2D7] text-gray-700 transition-all delay-[600ms]": isFirstNonCompleted && !isCompleted,
                     
                     // Default text color
                     "text-gray-700": !isActive && !isCompleted && !isFirstNonCompleted,
@@ -85,10 +85,10 @@ export function BlockSidebar() {
                   </div>
                 )}
                 
-                {/* First non-completed block icon - AlertCircle (dark red instead of Pencil) with 1s delay */}
+                {/* First non-completed block icon - AlertCircle (dark red instead of Pencil) with 0.6s delay */}
                 {isFirstNonCompleted && !isCompleted && (
-                  <div className="flex-shrink-0 flex items-center justify-center transition-all delay-[1000ms]">
-                    <AlertCircle size={18} className="text-red-600 transition-all delay-[1000ms]" />
+                  <div className="flex-shrink-0 flex items-center justify-center transition-all delay-[600ms]">
+                    <AlertCircle size={18} className="text-red-600 transition-all delay-[600ms]" />
                   </div>
                 )}
                 
