@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback, useRef } from "react";
 import { Block, FormState, FormResponse, NavigationHistory, Placeholder, SelectPlaceholder } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
@@ -266,6 +267,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   const previousBlockIdRef = useRef<string | null>(null);
   const previousQuestionIdRef = useRef<string | null>(null);
   const isNavigatingRef = useRef<boolean | undefined>(false);
+  const usedNextBlockNavRef = useRef<boolean>(false);
   
   const sortedBlocks = [...blocks].sort((a, b) => a.priority - b.priority);
   
@@ -295,9 +297,13 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       // Make sure we have a valid previous block and it's different from the current one
       if (blockWeLeavingFrom && 
           blockWeLeavingFrom !== state.activeQuestion.block_id && 
-          blockWeLeavingFrom !== null) {
-        // Mark the block we're coming from as completed
+          blockWeLeavingFrom !== null &&
+          usedNextBlockNavRef.current) {
+        // Mark the block we're coming from as completed - but only if we used "next_block" navigation
         markBlockAsCompleted(blockWeLeavingFrom);
+        
+        // Reset the flag after completion
+        usedNextBlockNavRef.current = false;
       }
     }
     
@@ -713,8 +719,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     
     // Check for stop_flow case with dynamic blocks
     if (leadsTo === "stop_flow") {
-      // Mark current block as completed before stopping flow
-      markBlockAsCompleted(sourceBlockId);
+      // We don't mark as completed for stop_flow
       
       // Set a flag that QuestionView will check to display the stop flow message
       sessionStorage.setItem("stopFlowActivated", "true");
@@ -727,6 +732,10 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     }
     
     if (leadsTo === "next_block") {
+      // Set the flag that we're using "next_block" navigation
+      // This will be used in the navigation useEffect to determine if we should mark the block as completed
+      usedNextBlockNavRef.current = true;
+      
       let currentBlock = null;
       let currentBlockIndex = -1;
       
@@ -741,8 +750,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       }
 
       if (currentBlockIndex !== -1 && currentBlock) {
-        // Mark current block as completed explicitly since we're moving to next block
-        markBlockAsCompleted(sourceBlockId);
+        // We don't mark as completed here - the navigation useEffect will handle it based on the usedNextBlockNavRef flag
         
         let foundNextActiveBlock = false;
         
@@ -781,12 +789,12 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         }
       }
     } else {
+      // For direct question navigation (not next_block), set the flag to false
+      usedNextBlockNavRef.current = false;
+      
       const found = findQuestionById(leadsTo);
       if (found) {
-        // If moving to a different block, mark current block as completed
-        if (found.block.block_id !== sourceBlockId) {
-          markBlockAsCompleted(sourceBlockId);
-        }
+        // We don't mark as completed for direct question navigation
         
         dispatch({ 
           type: "ADD_NAVIGATION_HISTORY", 
