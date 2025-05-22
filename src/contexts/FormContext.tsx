@@ -307,6 +307,34 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return null;
   }, [sortedBlocks, state.dynamicBlocks]);
 
+  // Trova il lead_to di un placeholder in una domanda
+  const getPlaceholderLeadsTo = useCallback((question: any, placeholderKey: string, value: string | string[]): string | null => {
+    if (!question || !question.placeholders || !question.placeholders[placeholderKey]) {
+      return null;
+    }
+    
+    const placeholder = question.placeholders[placeholderKey];
+    
+    // Per i placeholder di tipo select
+    if (placeholder.type === "select") {
+      if (Array.isArray(value)) {
+        // Se è una selezione multipla, non gestiamo lead_to (di solito non usato in multi-select)
+        return null;
+      } else {
+        // Trova l'opzione selezionata
+        const selectedOption = placeholder.options.find((opt: any) => opt.id === value);
+        return selectedOption?.leads_to || null;
+      }
+    }
+    
+    // Per i placeholder di tipo input o altro con lead_to diretto
+    if (placeholder.leads_to) {
+      return placeholder.leads_to;
+    }
+    
+    return null;
+  }, []);
+
   // Mark a block as completed
   const markBlockAsCompleted = useCallback((blockId: string) => {
     if (blockId && !state.completedBlocks.includes(blockId)) {
@@ -534,6 +562,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
             const options = (question.placeholders[placeholderKey] as any).options;
             if (!Array.isArray(value)) {
               const selectedOption = options.find((opt: any) => opt.id === value);
+              
               if (selectedOption?.add_block && !state.activeBlocks.includes(selectedOption.add_block)) {
                 dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: selectedOption.add_block });
               }
@@ -624,6 +653,58 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       }
     }
     
+    // Gestione del cambiamento del lead_to
+    if (questionObj && previousValue !== undefined && previousValue !== value) {
+      const previousLeadsTo = getPlaceholderLeadsTo(questionObj, placeholder_key, previousValue);
+      const newLeadsTo = getPlaceholderLeadsTo(questionObj, placeholder_key, value);
+      
+      // Se il lead_to è cambiato, rimuovi la domanda target precedente da answeredQuestions
+      if (previousLeadsTo && previousLeadsTo !== newLeadsTo) {
+        console.log(`Lead_to cambiato da ${previousLeadsTo} a ${newLeadsTo}. Rimuovo ${previousLeadsTo} da answeredQuestions.`);
+        
+        // Rimuovi la domanda dalle domande risposte
+        const updatedAnsweredQuestions = new Set(state.answeredQuestions);
+        updatedAnsweredQuestions.delete(previousLeadsTo);
+        
+        // Trova tutte le domande che potrebbero essere state coinvolte nel vecchio percorso
+        const questionsToRemove = [];
+        questionsToRemove.push(previousLeadsTo);
+        
+        // Rimuovi ricorsivamente le domande risposte che dipendono dal precedente lead_to
+        const findDependentQuestions = (startQuestionId: string) => {
+          const historyItems = state.navigationHistory.filter(item => 
+            item.from_question_id === startQuestionId
+          );
+          
+          historyItems.forEach(item => {
+            if (!questionsToRemove.includes(item.to_question_id)) {
+              questionsToRemove.push(item.to_question_id);
+              updatedAnsweredQuestions.delete(item.to_question_id);
+              findDependentQuestions(item.to_question_id);
+            }
+          });
+        };
+        
+        findDependentQuestions(previousLeadsTo);
+        
+        // Rimuovi tutte le risposte associate alle domande rimosse
+        const updatedResponses = { ...state.responses };
+        questionsToRemove.forEach(qId => {
+          delete updatedResponses[qId];
+        });
+        
+        // Aggiorna lo stato
+        dispatch({ 
+          type: "SET_FORM_STATE", 
+          state: { 
+            answeredQuestions: updatedAnsweredQuestions,
+            responses: updatedResponses
+          } 
+        });
+      }
+    }
+    
+    // Continua con la logica esistente per la gestione di add_block
     if (questionObj && foundBlock && 
         questionObj.placeholders[placeholder_key] && 
         questionObj.placeholders[placeholder_key].type === "select") {
@@ -721,7 +802,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         }
       }
     }
-  }, [state.responses, state.dynamicBlocks, state.activeBlocks, sortedBlocks, state.completedBlocks, findBlockByQuestionId]);
+  }, [state.responses, state.dynamicBlocks, state.activeBlocks, sortedBlocks, state.completedBlocks, findBlockByQuestionId, state.answeredQuestions, state.navigationHistory, getPlaceholderLeadsTo]);
 
   const getResponse = useCallback((question_id: string, placeholder_key: string) => {
     if (!state.responses[question_id]) return undefined;

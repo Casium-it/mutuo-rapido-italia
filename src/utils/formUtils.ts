@@ -192,3 +192,41 @@ export const getQuestionTextWithClickableResponses = (
 
   return { parts };
 };
+
+/**
+ * Gets the leads_to value for a specific question, placeholder, and response value
+ * @param question The question object
+ * @param placeholderKey The placeholder key
+ * @param value The response value
+ * @returns The leads_to value or null if not found
+ */
+export const getPlaceholderLeadsTo = (
+  question: Question,
+  placeholderKey: string,
+  value: string | string[]
+): string | null => {
+  if (!question || !question.placeholders || !question.placeholders[placeholderKey]) {
+    return null;
+  }
+  
+  const placeholder = question.placeholders[placeholderKey];
+  
+  // Per i placeholder di tipo select
+  if (placeholder.type === "select") {
+    if (Array.isArray(value)) {
+      // Se è una selezione multipla, non gestiamo lead_to (di solito non usato in multi-select)
+      return null;
+    } else {
+      // Trova l'opzione selezionata
+      const selectedOption = (placeholder as any).options.find((opt: any) => opt.id === value);
+      return selectedOption?.leads_to || null;
+    }
+  }
+  
+  // Per i placeholder di tipo input o altro con lead_to diretto
+  if ((placeholder as any).leads_to) {
+    return (placeholder as any).leads_to;
+  }
+  
+  return null;
+};
