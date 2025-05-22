@@ -44,7 +44,10 @@ type Action =
   | { type: "DELETE_DYNAMIC_BLOCK"; blockId: string }
   | { type: "DELETE_QUESTION_RESPONSES"; questionIds: string[] }
   | { type: "MARK_BLOCK_COMPLETED"; blockId: string }
-  | { type: "REMOVE_BLOCK_FROM_COMPLETED"; blockId: string };
+  | { type: "REMOVE_BLOCK_FROM_COMPLETED"; blockId: string }
+  | { type: "ADD_PENDING_REMOVAL"; questionId: string; blockId: string }
+  | { type: "REMOVE_FROM_PENDING_REMOVAL"; questionId: string }
+  | { type: "PROCESS_PENDING_REMOVALS"; currentBlockId: string };
 
 const initialState: FormState = {
   activeBlocks: [],
@@ -58,7 +61,8 @@ const initialState: FormState = {
   navigationHistory: [],
   dynamicBlocks: [],
   blockActivations: {}, // Track which questions/placeholders activated which blocks
-  completedBlocks: [] // Track completed blocks
+  completedBlocks: [], // Track completed blocks
+  pendingRemovals: {} // Track questions pending removal
 };
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
@@ -66,12 +70,20 @@ const FormContext = createContext<FormContextType | undefined>(undefined);
 function formReducer(state: FormState, action: Action): FormState {
   switch (action.type) {
     case "GO_TO_QUESTION":
+      const pendingRemovals = { ...state.pendingRemovals };
+      Object.keys(pendingRemovals).forEach(blockId => {
+        pendingRemovals[blockId] = pendingRemovals[blockId].filter(
+          qId => qId !== action.question_id
+        );
+      });
+      
       return {
         ...state,
         activeQuestion: {
           block_id: action.block_id,
           question_id: action.question_id
-        }
+        },
+        pendingRemovals
       };
     case "SET_RESPONSE": {
       const newResponses = { ...state.responses };
@@ -84,19 +96,74 @@ function formReducer(state: FormState, action: Action): FormState {
         responses: newResponses
       };
     }
+    case "ADD_PENDING_REMOVAL": {
+      const pendingRemovals = { ...state.pendingRemovals };
+      if (!pendingRemovals[action.blockId]) {
+        pendingRemovals[action.blockId] = [];
+      }
+      if (!pendingRemovals[action.blockId].includes(action.questionId)) {
+        pendingRemovals[action.blockId] = [...pendingRemovals[action.blockId], action.questionId];
+      }
+      return {
+        ...state,
+        pendingRemovals
+      };
+    }
+    case "REMOVE_FROM_PENDING_REMOVAL": {
+      const pendingRemovals = { ...state.pendingRemovals };
+      Object.keys(pendingRemovals).forEach(blockId => {
+        pendingRemovals[blockId] = pendingRemovals[blockId].filter(
+          qId => qId !== action.questionId
+        );
+      });
+      return {
+        ...state,
+        pendingRemovals
+      };
+    }
+    case "PROCESS_PENDING_REMOVALS": {
+      const pendingRemovals = { ...state.pendingRemovals };
+      let questionsToRemove: string[] = [];
+      
+      Object.keys(pendingRemovals).forEach(blockId => {
+        if (blockId !== action.currentBlockId) {
+          questionsToRemove = [...questionsToRemove, ...pendingRemovals[blockId]];
+          delete pendingRemovals[blockId];
+        }
+      });
+      
+      if (questionsToRemove.length === 0) {
+        return state;
+      }
+      
+      const updatedResponses = { ...state.responses };
+      questionsToRemove.forEach(questionId => {
+        delete updatedResponses[questionId];
+      });
+      
+      const updatedAnsweredQuestions = new Set(state.answeredQuestions);
+      questionsToRemove.forEach(questionId => {
+        updatedAnsweredQuestions.delete(questionId);
+      });
+      
+      return {
+        ...state,
+        responses: updatedResponses,
+        answeredQuestions: updatedAnsweredQuestions,
+        pendingRemovals
+      };
+    }
     case "ADD_ACTIVE_BLOCK": {
       if (state.activeBlocks.includes(action.block_id)) {
         return state;
       }
       
-      // Track which question/placeholder activated this block
       const updatedBlockActivations = { ...state.blockActivations };
       if (action.sourceQuestionId && action.sourcePlaceholderId) {
         if (!updatedBlockActivations[action.block_id]) {
           updatedBlockActivations[action.block_id] = [];
         }
         
-        // Check if this activation source is already recorded
         const exists = updatedBlockActivations[action.block_id].some(
           source => source.questionId === action.sourceQuestionId && 
                    source.placeholderId === action.sourcePlaceholderId
@@ -121,32 +188,26 @@ function formReducer(state: FormState, action: Action): FormState {
         return state;
       }
       
-      // Find block to get its questions
       const allBlocks = [...state.dynamicBlocks];
       const blockToRemove = allBlocks.find(b => b.block_id === action.block_id);
       
-      // Create updated state
       const updatedState = {
         ...state,
         activeBlocks: state.activeBlocks.filter(id => id !== action.block_id),
         blockActivations: { ...state.blockActivations }
       };
       
-      // Remove from blockActivations
       delete updatedState.blockActivations[action.block_id];
       
-      // If it's a static block, we need to clean up responses and answered questions manually
       if (blockToRemove) {
         const questionIdsToRemove = blockToRemove.questions.map(q => q.question_id);
         
-        // Remove responses
         const updatedResponses = { ...state.responses };
         questionIdsToRemove.forEach(questionId => {
           delete updatedResponses[questionId];
         });
         updatedState.responses = updatedResponses;
         
-        // Remove from answered questions
         const updatedAnsweredQuestions = new Set(state.answeredQuestions);
         questionIdsToRemove.forEach(questionId => {
           updatedAnsweredQuestions.delete(questionId);
@@ -222,7 +283,6 @@ function formReducer(state: FormState, action: Action): FormState {
         updatedAnsweredQuestions.delete(questionId);
       });
       
-      // Also clean up blockActivations
       const updatedBlockActivations = { ...state.blockActivations };
       delete updatedBlockActivations[action.blockId];
       
@@ -252,7 +312,6 @@ function formReducer(state: FormState, action: Action): FormState {
       };
     }
     case "MARK_BLOCK_COMPLETED": {
-      // Don't add duplicates
       if (state.completedBlocks.includes(action.blockId)) {
         return state;
       }
@@ -292,9 +351,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     completedBlocks: []
   });
 
-  // Funzione per trovare a quale blocco appartiene una domanda specifica
   const findBlockByQuestionId = useCallback((questionId: string): string | null => {
-    // Cerca prima nei blocchi normali
     for (const block of sortedBlocks) {
       const hasQuestion = block.questions.some(q => q.question_id === questionId);
       if (hasQuestion) {
@@ -302,7 +359,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       }
     }
     
-    // Se non trovato, cerca nei blocchi dinamici
     for (const block of state.dynamicBlocks) {
       const hasQuestion = block.questions.some(q => q.question_id === questionId);
       if (hasQuestion) {
@@ -313,239 +369,17 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return null;
   }, [sortedBlocks, state.dynamicBlocks]);
 
-  // Trova il lead_to di un placeholder in una domanda
-  const getPlaceholderLeadsTo = useCallback((question: any, placeholderKey: string, value: string | string[]): string | null => {
-    if (!question || !question.placeholders || !question.placeholders[placeholderKey]) {
-      return null;
-    }
-    
-    const placeholder = question.placeholders[placeholderKey];
-    
-    // Per i placeholder di tipo select
-    if (placeholder.type === "select") {
-      if (Array.isArray(value)) {
-        // Se è una selezione multipla, non gestiamo lead_to (di solito non usato in multi-select)
-        return null;
-      } else {
-        // Trova l'opzione selezionata
-        const selectedOption = placeholder.options.find((opt: any) => opt.id === value);
-        return selectedOption?.leads_to || null;
-      }
-    }
-    
-    // Per i placeholder di tipo input o altro con lead_to diretto
-    if (placeholder.leads_to) {
-      return placeholder.leads_to;
-    }
-    
-    return null;
-  }, []);
-
-  // Mark a block as completed
   const markBlockAsCompleted = useCallback((blockId: string) => {
     if (blockId && !state.completedBlocks.includes(blockId)) {
-      console.log(`Marking block as completed: ${blockId}`);
       dispatch({ type: "MARK_BLOCK_COMPLETED", blockId });
     }
   }, [state.completedBlocks]);
 
-  // Remove a block from completed blocks
   const removeBlockFromCompleted = useCallback((blockId: string) => {
     if (blockId && state.completedBlocks.includes(blockId)) {
-      console.log(`Removing block from completed: ${blockId}`);
       dispatch({ type: "REMOVE_BLOCK_FROM_COMPLETED", blockId });
     }
   }, [state.completedBlocks]);
-
-  // Keep track of navigation for correct block completion
-  useEffect(() => {
-    // Only execute when isNavigating transitions from true to false (navigation completed)
-    if (isNavigatingRef.current === true && state.isNavigating === false) {
-      // We store the blockId that we're coming FROM (previous block)
-      const blockWeLeavingFrom = previousBlockIdRef.current;
-      
-      // Make sure we have a valid previous block and it's different from the current one
-      if (blockWeLeavingFrom && 
-          blockWeLeavingFrom !== state.activeQuestion.block_id && 
-          blockWeLeavingFrom !== null &&
-          usedNextBlockNavRef.current) {
-        // Mark the block we're coming from as completed - but only if we used "next_block" navigation
-        markBlockAsCompleted(blockWeLeavingFrom);
-        
-        // Reset the flag after completion
-        usedNextBlockNavRef.current = false;
-      }
-    }
-    
-    // Update refs for next comparison - these should run AFTER the above completion logic
-    if (state.isNavigating === false) {
-      previousQuestionIdRef.current = state.activeQuestion.question_id;
-      previousBlockIdRef.current = state.activeQuestion.block_id;
-    }
-    
-    // Always update the navigation state ref
-    isNavigatingRef.current = state.isNavigating;
-  }, [state.isNavigating, state.activeQuestion.block_id, state.activeQuestion.question_id, markBlockAsCompleted]);
-
-  const createDynamicBlock = useCallback((blockBlueprintId: string): string | null => {
-    const blueprintBlock = blocks.find(b => b.block_id === blockBlueprintId && b.multiBlock === true);
-    
-    if (!blueprintBlock) {
-      console.error(`Blueprint block ${blockBlueprintId} not found or is not a multiBlock`);
-      return null;
-    }
-    
-    const existingCopies = state.dynamicBlocks
-      .filter(block => block.blueprint_id === blockBlueprintId)
-      .map(block => block.copy_number || 0);
-    
-    const nextCopyNumber = existingCopies.length > 0 ? Math.max(...existingCopies) + 1 : 1;
-    
-    const newBlockId = blockBlueprintId.replace('{copyNumber}', nextCopyNumber.toString());
-    
-    const newBlock: Block = {
-      ...JSON.parse(JSON.stringify(blueprintBlock)),
-      block_id: newBlockId,
-      blueprint_id: blockBlueprintId,
-      copy_number: nextCopyNumber,
-      title: `${blueprintBlock.title} ${nextCopyNumber}`,
-    };
-    
-    newBlock.questions = newBlock.questions.map(question => {
-      const updatedQuestion = {
-        ...question,
-        question_id: question.question_id.replace('{copyNumber}', nextCopyNumber.toString())
-      };
-      
-      for (const placeholderKey in updatedQuestion.placeholders) {
-        const placeholder = updatedQuestion.placeholders[placeholderKey];
-        
-        if (placeholder.type === "select") {
-          placeholder.options = placeholder.options.map(option => ({
-            ...option,
-            leads_to: option.leads_to.replace('{copyNumber}', nextCopyNumber.toString())
-          }));
-        }
-        
-        if (placeholder.type === "input" && placeholder.leads_to) {
-          placeholder.leads_to = placeholder.leads_to.replace('{copyNumber}', nextCopyNumber.toString());
-        }
-        
-        if (placeholder.type === "MultiBlockManager" && placeholder.leads_to) {
-          placeholder.leads_to = placeholder.leads_to.replace('{copyNumber}', nextCopyNumber.toString());
-        }
-      }
-      
-      return updatedQuestion;
-    });
-    
-    dispatch({ type: "ADD_DYNAMIC_BLOCK", block: newBlock });
-    
-    const blockWithPriority = ensureBlockHasPriority(newBlock);
-    dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: newBlockId });
-    
-    return newBlockId;
-  }, [blocks, state.dynamicBlocks]);
-
-  useEffect(() => {
-    const defaultActiveBlockIds = blocks
-      .filter(b => b.default_active)
-      .map(b => b.block_id);
-    
-    defaultActiveBlockIds.forEach(blockId => {
-      if (!state.activeBlocks.includes(blockId)) {
-        dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
-      }
-    });
-  }, [blocks]);
-
-  const resetForm = useCallback(() => {
-    if (params.blockType) {
-      localStorage.removeItem(`form-state-${params.blockType}`);
-    }
-    
-    dispatch({ type: "RESET_FORM" });
-    
-    navigate("/simulazione/pensando/introduzione/soggetto_acquisto", { replace: true });
-  }, [params.blockType, navigate]);
-
-  useEffect(() => {
-    const { blockId, questionId } = params;
-    
-    if (blockId && questionId) {
-      dispatch({ 
-        type: "GO_TO_QUESTION", 
-        block_id: blockId, 
-        question_id: questionId 
-      });
-      
-      if (!state.activeBlocks.includes(blockId)) {
-        dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
-      }
-    } else if (blockId) {
-      const block = blocks.find(b => b.block_id === blockId);
-      if (block && block.questions.length > 0) {
-        const firstQuestionId = block.questions[0].question_id;
-        dispatch({ 
-          type: "GO_TO_QUESTION", 
-          block_id: blockId, 
-          question_id: firstQuestionId 
-        });
-        
-        if (!state.activeBlocks.includes(blockId)) {
-          dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
-        }
-        
-        navigate(`/simulazione/${params.blockType}/${blockId}/${firstQuestionId}`, { replace: true });
-      }
-    } else if (params.blockType) {
-      const entryBlock = blocks.find(b => b.block_id === "introduzione");
-      if (entryBlock && entryBlock.questions.length > 0) {
-        dispatch({ 
-          type: "GO_TO_QUESTION", 
-          block_id: "introduzione", 
-          question_id: "soggetto_acquisto" 
-        });
-      }
-    }
-    
-    const savedState = localStorage.getItem(`form-state-${params.blockType}`);
-    if (savedState) {
-      try {
-        const parsedState = JSON.parse(savedState);
-        
-        if (Array.isArray(parsedState.answeredQuestions)) {
-          parsedState.answeredQuestions = new Set(parsedState.answeredQuestions);
-        } else {
-          parsedState.answeredQuestions = new Set();
-        }
-        
-        if (Array.isArray(parsedState.dynamicBlocks)) {
-          parsedState.dynamicBlocks = parsedState.dynamicBlocks.map(block => 
-            ensureBlockHasPriority(block)
-          );
-        } else {
-          parsedState.dynamicBlocks = [];
-        }
-        
-        dispatch({ type: "SET_FORM_STATE", state: parsedState });
-        
-        if (parsedState.activeBlocks) {
-          parsedState.activeBlocks.forEach((blockId: string) => {
-            if (!state.activeBlocks.includes(blockId)) {
-              dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
-            }
-          });
-        }
-        
-        if (parsedState.responses) {
-          activateRequiredBlocksBasedOnResponses(parsedState.responses);
-        }
-      } catch (e) {
-        console.error("Errore nel caricamento dello stato salvato:", e);
-      }
-    }
-  }, [params.blockId, params.questionId, params.blockType, blocks, navigate]);
 
   useEffect(() => {
     if (params.blockType) {
@@ -557,52 +391,24 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     }
   }, [state, params.blockType]);
 
-  const activateRequiredBlocksBasedOnResponses = (responses: FormResponse) => {
-    for (const questionId of Object.keys(responses)) {
-      for (const blockObj of blocks) {
-        const question = blockObj.questions.find(q => q.question_id === questionId);
-        if (!question) continue;
-
-        for (const [placeholderKey, value] of Object.entries(responses[questionId])) {
-          if (question.placeholders[placeholderKey].type === "select") {
-            const options = (question.placeholders[placeholderKey] as any).options;
-            if (!Array.isArray(value)) {
-              const selectedOption = options.find((opt: any) => opt.id === value);
-              
-              if (selectedOption?.add_block && !state.activeBlocks.includes(selectedOption.add_block)) {
-                dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: selectedOption.add_block });
-              }
-            } else {
-              for (const optionId of value) {
-                const selectedOption = options.find((opt: any) => opt.id === optionId);
-                if (selectedOption?.add_block && !state.activeBlocks.includes(selectedOption.add_block)) {
-                  dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: selectedOption.add_block });
-                }
-              }
-            }
-          }
-        }
-      }
+  const resetForm = useCallback(() => {
+    if (params.blockType) {
+      localStorage.removeItem(`form-state-${params.blockType}`);
     }
-  };
-
-  // Check if a block is completed
-  const isBlockCompleted = useCallback((blockId: string): boolean => {
-    return state.completedBlocks.includes(blockId);
-  }, [state.completedBlocks]);
+    
+    dispatch({ type: "RESET_FORM" });
+    
+    navigate("/simulazione/pensando/introduzione/soggetto_acquisto", { replace: true });
+  }, [params.blockType, navigate]);
 
   const goToQuestion = useCallback((block_id: string, question_id: string, replace = false) => {
-    // Set navigating state to true
     dispatch({ type: "SET_NAVIGATING", isNavigating: true });
     
-    // Store the current question and block before changing
     const fromBlockId = state.activeQuestion.block_id;
     const fromQuestionId = state.activeQuestion.question_id;
 
-    // Update active question
     dispatch({ type: "GO_TO_QUESTION", block_id, question_id });
     
-    // Record navigation history
     dispatch({ 
       type: "ADD_NAVIGATION_HISTORY", 
       history: {
@@ -614,7 +420,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       }
     });
     
-    // Handle URL navigation
     const blockType = params.blockType || "funnel";
     const newPath = `/simulazione/${blockType}/${block_id}/${question_id}`;
     
@@ -624,7 +429,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       navigate(newPath);
     }
     
-    // Set navigating to false after a short delay to allow for rendering
     setTimeout(() => {
       dispatch({ type: "SET_NAVIGATING", isNavigating: false });
     }, 300);
@@ -633,11 +437,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   const setResponse = useCallback((question_id: string, placeholder_key: string, value: string | string[]) => {
     const previousValue = state.responses[question_id]?.[placeholder_key];
     
-    // Trova il blocco a cui appartiene questa domanda
     const blockId = findBlockByQuestionId(question_id);
     
-    // Se il blocco è completato, rimuovilo dalla lista dei completati
-    // perché l'utente sta cambiando una risposta
     if (blockId && state.completedBlocks.includes(blockId)) {
       dispatch({ type: "REMOVE_BLOCK_FROM_COMPLETED", blockId });
     }
@@ -659,187 +460,50 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       }
     }
     
-    // Gestione del cambiamento del lead_to
     if (questionObj && previousValue !== undefined && previousValue !== value) {
       const previousLeadsTo = getPlaceholderLeadsTo(questionObj, placeholder_key, previousValue);
       const newLeadsTo = getPlaceholderLeadsTo(questionObj, placeholder_key, value);
       
-      // Log per il debug
-      console.log(`Cambio risposta rilevato in questione ${question_id}, blocco ${blockId || "sconosciuto"}`);
-      console.log(`Valore precedente: ${previousValue}, Nuovo valore: ${value}`);
-      console.log(`Lead_to precedente: ${previousLeadsTo}, Nuovo lead_to: ${newLeadsTo}`);
-      
-      // Se il lead_to è cambiato, rimuovi la domanda target precedente da answeredQuestions
       if (previousLeadsTo && previousLeadsTo !== newLeadsTo) {
-        console.log(`Lead_to cambiato da ${previousLeadsTo} a ${newLeadsTo}`);
-        
-        // Verifica se siamo in un blocco dinamico
         const isInDynamicBlock = blockId && isDynamicBlock(blockId);
-        console.log(`Siamo in un blocco dinamico? ${isInDynamicBlock ? "Sì" : "No"}`);
         
-        // Verifica se la domanda lead_to precedente è un multiblockmanager
         const isMultiBlockManager = isMultiBlockManagerQuestion(allBlocks, previousLeadsTo);
-        console.log(`La domanda lead_to precedente è un MultiBlockManager? ${isMultiBlockManager ? "Sì" : "No"}`);
         
         let shouldSkipRemoval = false;
         
-        // Se siamo in un blocco dinamico e il lead_to precedente è un multiblockmanager,
-        // verifichiamo se è il parent multiblockmanager di questo blocco dinamico
         if (isInDynamicBlock && isMultiBlockManager && blockId) {
           const parentManagerId = getParentMultiBlockManager(allBlocks, blockId);
-          console.log(`Parent MultiBlockManager per questo blocco dinamico: ${parentManagerId}`);
           
           if (parentManagerId === previousLeadsTo) {
-            console.log(`PROTEZIONE ATTIVATA: Non rimuoveremo ${previousLeadsTo} da answeredQuestions perché è il parent manager di questo blocco dinamico`);
             shouldSkipRemoval = true;
           }
         }
         
         if (!shouldSkipRemoval) {
-          console.log(`Rimuovo ${previousLeadsTo} da answeredQuestions.`);
+          let targetBlockId = null;
+          for (const block of allBlocks) {
+            if (block.questions.some(q => q.question_id === previousLeadsTo)) {
+              targetBlockId = block.block_id;
+              break;
+            }
+          }
           
-          // Rimuovi la domanda dalle domande risposte
-          const updatedAnsweredQuestions = new Set(state.answeredQuestions);
-          updatedAnsweredQuestions.delete(previousLeadsTo);
-          
-          // Trova tutte le domande che potrebbero essere state coinvolte nel vecchio percorso
-          const questionsToRemove = [];
-          questionsToRemove.push(previousLeadsTo);
-          
-          // Rimuovi ricorsivamente le domande risposte che dipendono dal precedente lead_to
-          const findDependentQuestions = (startQuestionId: string) => {
-            const historyItems = state.navigationHistory.filter(item => 
-              item.from_question_id === startQuestionId
-            );
-            
-            historyItems.forEach(item => {
-              if (!questionsToRemove.includes(item.to_question_id)) {
-                questionsToRemove.push(item.to_question_id);
-                updatedAnsweredQuestions.delete(item.to_question_id);
-                findDependentQuestions(item.to_question_id);
-              }
+          if (targetBlockId) {
+            dispatch({ 
+              type: "ADD_PENDING_REMOVAL", 
+              questionId: previousLeadsTo,
+              blockId: targetBlockId
             });
-          };
-          
-          findDependentQuestions(previousLeadsTo);
-          
-          // Rimuovi tutte le risposte associate alle domande rimosse
-          const updatedResponses = { ...state.responses };
-          questionsToRemove.forEach(qId => {
-            delete updatedResponses[qId];
-          });
-          
-          // Aggiorna lo stato
-          dispatch({ 
-            type: "SET_FORM_STATE", 
-            state: { 
-              answeredQuestions: updatedAnsweredQuestions,
-              responses: updatedResponses
-            } 
-          });
+          }
         }
       }
     }
     
-    // Continua con la logica esistente per la gestione di add_block
-    if (questionObj && foundBlock && 
-        questionObj.placeholders[placeholder_key] && 
-        questionObj.placeholders[placeholder_key].type === "select") {
-      
-      const placeholder = questionObj.placeholders[placeholder_key] as SelectPlaceholder;
-      
-      if (previousValue && previousValue !== value) {
-        if (typeof previousValue === 'string') {
-          const prevOption = placeholder.options.find(opt => opt.id === previousValue);
-          
-          if (prevOption?.add_block) {
-            let newOptionKeepsBlock = false;
-            
-            if (Array.isArray(value)) {
-              newOptionKeepsBlock = value.some(optId => {
-                const option = placeholder.options.find(opt => opt.id === optId);
-                return option?.add_block === prevOption.add_block;
-              });
-            } else {
-              const newOption = placeholder.options.find(opt => opt.id === value);
-              newOptionKeepsBlock = newOption?.add_block === prevOption.add_block;
-            }
-            
-            if (!newOptionKeepsBlock) {
-              const blockToRemove = prevOption.add_block;
-              const isDynamicBlock = state.dynamicBlocks.some(b => b.block_id === blockToRemove);
-              
-              // Handle both dynamic and static blocks
-              if (isDynamicBlock) {
-                dispatch({ type: "DELETE_DYNAMIC_BLOCK", blockId: blockToRemove });
-              } else if (state.activeBlocks.includes(blockToRemove)) {
-                // For static blocks, we just need to remove them from activeBlocks
-                dispatch({ type: "REMOVE_ACTIVE_BLOCK", block_id: blockToRemove });
-              }
-            }
-          }
-        } else if (Array.isArray(previousValue) && Array.isArray(value)) {
-          const removedOptionIds = previousValue.filter(id => !value.includes(id));
-          
-          removedOptionIds.forEach(optId => {
-            const option = placeholder.options.find(opt => opt.id === optId);
-            if (option?.add_block) {
-              const blockStillNeeded = value.some(remainingId => {
-                const remainingOpt = placeholder.options.find(opt => opt.id === remainingId);
-                return remainingOpt?.add_block === option.add_block;
-              });
-              
-              if (!blockStillNeeded) {
-                const blockToRemove = option.add_block;
-                const isDynamicBlock = state.dynamicBlocks.some(b => b.block_id === blockToRemove);
-                
-                // Handle both dynamic and static blocks
-                if (isDynamicBlock) {
-                  dispatch({ type: "DELETE_DYNAMIC_BLOCK", blockId: blockToRemove });
-                } else if (state.activeBlocks.includes(blockToRemove)) {
-                  dispatch({ type: "REMOVE_ACTIVE_BLOCK", block_id: blockToRemove });
-                }
-              }
-            }
-          });
-        }
-      }
-    }
+    dispatch({ type: "REMOVE_FROM_PENDING_REMOVAL", questionId: question_id });
     
     dispatch({ type: "SET_RESPONSE", question_id, placeholder_key, value });
     dispatch({ type: "MARK_QUESTION_ANSWERED", question_id });
-    
-    // Check if the current response should add a block
-    if (questionObj && questionObj.placeholders[placeholder_key].type === "select") {
-      const placeholder = questionObj.placeholders[placeholder_key] as SelectPlaceholder;
-      
-      if (Array.isArray(value)) {
-        // Handle multi-select
-        value.forEach(optionId => {
-          const option = placeholder.options.find(opt => opt.id === optionId);
-          if (option?.add_block) {
-            dispatch({ 
-              type: "ADD_ACTIVE_BLOCK", 
-              block_id: option.add_block,
-              sourceQuestionId: question_id,
-              sourcePlaceholderId: placeholder_key
-            });
-          }
-        });
-      } else {
-        // Handle single-select
-        const selectedOption = placeholder.options.find(opt => opt.id === value);
-        if (selectedOption?.add_block) {
-          dispatch({ 
-            type: "ADD_ACTIVE_BLOCK", 
-            block_id: selectedOption.add_block,
-            sourceQuestionId: question_id,
-            sourcePlaceholderId: placeholder_key
-          });
-        }
-      }
-    }
-  }, [state.responses, state.dynamicBlocks, state.activeBlocks, sortedBlocks, state.completedBlocks, findBlockByQuestionId, state.answeredQuestions, state.navigationHistory, getPlaceholderLeadsTo]);
+  }, [state.responses, state.dynamicBlocks, state.activeBlocks, sortedBlocks, state.completedBlocks, findBlockByQuestionId]);
 
   const getResponse = useCallback((question_id: string, placeholder_key: string) => {
     if (!state.responses[question_id]) return undefined;
@@ -858,157 +522,30 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return state.answeredQuestions.has(question_id);
   }, [state.answeredQuestions]);
 
-  const findQuestionById = useCallback((questionId: string): { block: Block; question: any } | null => {
-    const allBlocks = [
-      ...sortedBlocks,
-      ...state.dynamicBlocks
-    ];
-    
-    for (const block of allBlocks) {
-      for (const question of block.questions) {
-        if (question.question_id === questionId) {
-          return { block, question };
-        }
-      }
-    }
-    return null;
-  }, [sortedBlocks, state.dynamicBlocks]);
-
-  const navigateToNextQuestion = useCallback((currentQuestionId: string, leadsTo: string) => {
-    // Store the current block ID before navigation starts
-    const sourceBlockId = state.activeQuestion.block_id;
-    
-    dispatch({ type: "SET_NAVIGATING", isNavigating: true });
-    
-    // Check for both "next_block" and "stop_flow" cases to set the flag
-    if (leadsTo === "next_block") {
-      // Set the flag that we're using "next_block" navigation
-      usedNextBlockNavRef.current = true;
-      
-      let currentBlock = null;
-      let currentBlockIndex = -1;
-      
-      for (let i = 0; i < sortedBlocks.length; i++) {
-        const block = sortedBlocks[i];
-        const hasQuestion = block.questions.some(q => q.question_id === currentQuestionId);
-        if (hasQuestion) {
-          currentBlockIndex = i;
-          currentBlock = block;
-          break;
-        }
-      }
-
-      if (currentBlockIndex !== -1 && currentBlock) {
-        // We don't mark as completed here - the navigation useEffect will handle it based on the usedNextBlockNavRef flag
-        
-        let foundNextActiveBlock = false;
-        
-        const allBlocks = [
-          ...sortedBlocks,
-          ...state.dynamicBlocks
-        ];
-        
-        const activeBlocksWithPriority = state.activeBlocks
-          .map(blockId => allBlocks.find(b => b.block_id === blockId))
-          .filter(Boolean)
-          .filter(b => !b!.invisible)
-          .sort((a, b) => a!.priority - b!.priority);
-        
-        const currentActiveIndex = activeBlocksWithPriority.findIndex(b => b!.block_id === currentBlock.block_id);
-        
-        if (currentActiveIndex !== -1) {
-          for (let i = currentActiveIndex + 1; i < activeBlocksWithPriority.length; i++) {
-            const nextBlock = activeBlocksWithPriority[i];
-            if (nextBlock && nextBlock.questions.length > 0) {
-              foundNextActiveBlock = true;
-              goToQuestion(nextBlock.block_id, nextBlock.questions[0].question_id);
-              break;
-            }
-          }
-        }
-        
-        if (!foundNextActiveBlock) {
-          const currentQuestionIndex = currentBlock.questions.findIndex(q => q.question_id === currentQuestionId);
-          
-          if (currentQuestionIndex < currentBlock.questions.length - 1) {
-            const nextQuestion = currentBlock.questions[currentQuestionIndex + 1];
-            goToQuestion(currentBlock.block_id, nextQuestion.question_id);
-            return;
-          }
-        }
-      }
-    } else if (leadsTo === "stop_flow") {
-      // Also set the flag for stop_flow to mark the block as completed
-      usedNextBlockNavRef.current = true;
-      
-      // Set a flag that QuestionView will check to display the stop flow message
-      sessionStorage.setItem("stopFlowActivated", "true");
-      
-      // We don't navigate to another question in stop_flow case
-      setTimeout(() => {
-        dispatch({ type: "SET_NAVIGATING", isNavigating: false });
-      }, 300);
-      return;
-    } else {
-      // For direct question navigation (not next_block or stop_flow), set the flag to false
-      usedNextBlockNavRef.current = false;
-      
-      const found = findQuestionById(leadsTo);
-      if (found) {
-        // We don't mark as completed for direct question navigation
-        
-        dispatch({ 
-          type: "ADD_NAVIGATION_HISTORY", 
-          history: {
-            from_block_id: sourceBlockId,
-            from_question_id: currentQuestionId,
-            to_block_id: found.block.block_id,
-            to_question_id: found.question.question_id,
-            timestamp: Date.now()
-          }
-        });
-        
-        goToQuestion(found.block.block_id, found.question.question_id);
-      }
-    }
-    
-    setTimeout(() => {
-      dispatch({ type: "SET_NAVIGATING", isNavigating: false });
-    }, 300);
-  }, [sortedBlocks, state.activeBlocks, goToQuestion, findQuestionById, state.activeQuestion.block_id, state.dynamicBlocks, markBlockAsCompleted]);
-
   const getProgress = useCallback(() => {
-    // Filter out invisible blocks from active blocks
     const visibleActiveBlocks = state.activeBlocks
       .map(blockId => [...sortedBlocks, ...state.dynamicBlocks].find(b => b.block_id === blockId))
       .filter(block => block && !block.invisible) as Block[];
     
-    // If no visible blocks, return 0
     if (visibleActiveBlocks.length === 0) return 0;
     
-    // Calculate the weight of each block (equal contribution)
     const blockWeight = 100 / visibleActiveBlocks.length;
     
-    // Calculate the total progress
     let totalProgress = 0;
     
     visibleActiveBlocks.forEach(block => {
-      // If block is marked as completed, add full block weight
       if (state.completedBlocks.includes(block.block_id)) {
         totalProgress += blockWeight;
       } else {
-        // Otherwise calculate partial contribution based on answered questions
         const totalQuestions = block.questions.length;
         let answeredQuestions = 0;
         
-        // Count answered questions in this block
         block.questions.forEach(question => {
           if (state.answeredQuestions.has(question.question_id)) {
             answeredQuestions++;
           }
         });
         
-        // Add partial block progress if there are any questions
         if (totalQuestions > 0) {
           const blockProgress = (answeredQuestions / totalQuestions) * blockWeight;
           totalProgress += blockProgress;
@@ -1016,7 +553,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       }
     });
     
-    // Return rounded progress
     return Math.round(totalProgress);
   }, [state.activeBlocks, state.answeredQuestions, state.completedBlocks, state.dynamicBlocks, sortedBlocks]);
 
@@ -1031,14 +567,12 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       const blockExists = state.dynamicBlocks.some(b => b.block_id === blockId);
       
       if (!blockExists) {
-        console.error(`Il blocco dinamico ${blockId} non esiste`);
         return false;
       }
       
       dispatch({ type: "DELETE_DYNAMIC_BLOCK", blockId });
       return true;
     } catch (error) {
-      console.error("Errore nell'eliminazione del blocco dinamico:", error);
       return false;
     }
   }, [state.dynamicBlocks]);

@@ -298,3 +298,28 @@ export const getParentMultiBlockManager = (
   
   return null;
 };
+
+/**
+ * Finds the direct target question of a leads_to value
+ * @param blocks All form blocks
+ * @param leadsTo The leads_to value
+ * @returns Object with block and question, or null if not found
+ */
+export const findTargetQuestion = (
+  blocks: Block[],
+  leadsTo: string
+): { block: Block, question: Question } | null => {
+  if (!leadsTo || leadsTo === "next_block" || leadsTo === "stop_flow") {
+    return null;
+  }
+
+  for (const block of blocks) {
+    for (const question of block.questions) {
+      if (question.question_id === leadsTo) {
+        return { block, question };
+      }
+    }
+  }
+  
+  return null;
+};
