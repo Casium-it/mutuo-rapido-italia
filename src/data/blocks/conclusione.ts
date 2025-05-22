@@ -17,7 +17,7 @@ export const conclusione: Block = {
         placeholder1: {
           type: "input",
           input_type: "number",
-          placeholder_label: "Importo anticipo",
+          placeholder_label: "importo",
           leads_to: "saldo_rimanente",
           input_validation: "euro"
         }
@@ -32,7 +32,7 @@ export const conclusione: Block = {
         placeholder1: {
           type: "input",
           input_type: "number",
-          placeholder_label: "Disponibilità residua",
+          placeholder_label: "importo",
           leads_to: "form_summary",
           input_validation: "euro"
         }
