@@ -1037,21 +1037,23 @@ export function FormQuestion({ question }: FormQuestionProps) {
         </div>
       )}
       
-      {/* Nuovo Pulsante Indietro - sempre visibile */}
-      <div className="mt-4">
-        <button
-          type="button"
-          className={cn(
-            "text-[#BEB8AE] hover:text-[#AFA89F] text-[15px] font-medium underline",
-            "inline-flex items-center transition-colors"
-          )}
-          onClick={handleBackNavigation}
-          disabled={isNavigating}
-        >
-          <ArrowLeft className="mr-1 h-3.5 w-3.5" />
-          indietro
-        </button>
-      </div>
+      {/* Nuovo Pulsante Indietro - visibile solo se non è la prima domanda del primo blocco */}
+      {!(state.activeQuestion.block_id === "introduzione" && 
+         state.activeQuestion.question_id === blocks.find(b => b.block_id === "introduzione")?.questions[0].question_id) && (
+        <div className="mt-4">
+          <button
+            type="button"
+            className={cn(
+              "text-[#BEB8AE] hover:text-[#AFA89F] text-[15px] font-medium underline",
+              "transition-colors"
+            )}
+            onClick={handleBackNavigation}
+            disabled={isNavigating}
+          >
+            indietro
+          </button>
+        </div>
+      )}
     </div>
   );
 }
