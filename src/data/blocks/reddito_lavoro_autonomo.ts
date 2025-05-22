@@ -11,7 +11,7 @@ export const reddito_lavoro_autonomo: Block = {
     {
       question_number: "4.1",
       question_id: "reddito_guadagno_autonomo",
-      question_text: "Il reddito {{placeholder1}} dalla mia professione principale",
+      question_text: "Il mio reddito {{placeholder1}}, {{placeholder2}} dalla mia professione principale",
       leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
@@ -20,29 +20,30 @@ export const reddito_lavoro_autonomo: Block = {
             { id: "mensilmente", label: "annuale", leads_to: "reddito_importo_lordo" },
             { id: "annualmente", label: "mensile", leads_to: "reddito_importo_lordo" }
           ]
+        },
+        placeholder2: {
+          type: "select",
+          options: [
+            { id: "lordo", label: "lordi", leads_to: "reddito_importo_lordo" },
+            { id: "netto", label: "netti", leads_to: "reddito_importo_lordo" }
+          ]
         }
       }
     },
     {
       question_number: "4.2",
       question_id: "reddito_importo_lordo",
-      question_text: "è di {{placeholder1}}, {{placeholder2}}",
-      question_notes: "Indica il reddito medio percepito negli ultimi 3 anni",
+      question_text: "è di {{placeholder1}} euro",
+      question_notes: "Indica il reddito medio percepito negli ultimi 3 anni, solo dalla tua attività principale",
       inline: true,
-      leads_to_placeholder_priority: "placeholder2",
+      leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "input",
           input_type: "number",
-          placeholder_label: "Importo",
-          input_validation: "euro"
-        },
-        placeholder2: {
-          type: "select",
-          options: [
-            { id: "lordo", label: "lordi", leads_to: "reddito_netto_annuo" },
-            { id: "netto", label: "netti", leads_to: "reddito_stabilita" }
-          ]
+          placeholder_label: "importo",
+          input_validation: "euro",
+          leads_to: "reddito_netto_annuo"
         }
       }
     },
@@ -51,11 +52,12 @@ export const reddito_lavoro_autonomo: Block = {
       question_id: "reddito_netto_annuo",
       question_text: "Al netto dei costi legati all'attività e alle tasse che sostengo, annualmente in media mi rimangono {{placeholder1}}",
       leads_to_placeholder_priority: "placeholder1",
+      skippableWithNotSure: true,
       placeholders: {
         placeholder1: {
           type: "input",
           input_type: "number",
-          placeholder_label: "Importo netto annuo",
+          placeholder_label: "importo",
           leads_to: "reddito_stabilita",
           input_validation: "euro"
         }
@@ -81,8 +83,10 @@ export const reddito_lavoro_autonomo: Block = {
     {
       question_number: "4.6",
       question_id: "reddito_previsione",
-      question_text: "Infatti prevedo che l'anno prossimo al netto di tasse e costi per attività percepirò {{placeholder1}} euro",
+      question_text: "Infatti prevedo che l'anno prossimo il mio reddito sara invece di {{placeholder1}} euro",
       leads_to_placeholder_priority: "placeholder1",
+      question_notes: "Indica un importo annuale netto",
+      skippableWithNotSure: true,
       placeholders: {
         placeholder1: {
           type: "input",
