@@ -1,5 +1,6 @@
 
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -88,15 +89,15 @@
 
 @layer components {
   .gradient-text {
-    @apply bg-gradient-to-r from-vibe-green to-emerald-600 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-[#245C4F] to-[#1e4f44] bg-clip-text text-transparent;
   }
   
   .gradient-bg {
-    @apply bg-gradient-to-r from-vibe-green to-emerald-600 text-white;
+    @apply bg-gradient-to-r from-[#245C4F] to-[#1e4f44] text-white;
   }
   
   .gradient-bg-alt {
-    @apply bg-gradient-to-r from-emerald-600 to-vibe-green text-white;
+    @apply bg-gradient-to-r from-[#1e4f44] to-[#245C4F] text-white;
   }
 
   .hover-lift {
@@ -104,7 +105,7 @@
   }
 
   .hover-grow {
-    @apply transition-transform duration-300 hover:scale-[1.03];
+    @apply transition-transform duration-300 hover:scale-[1.02];
   }
 
   .animated-border {
@@ -120,7 +121,7 @@
     bottom: 0;
     border-radius: inherit;
     padding: 1px;
-    background: linear-gradient(90deg, #00853E, #C6FF00, #00853E);
+    background: linear-gradient(90deg, #245C4F, #F0EAE0, #245C4F);
     -webkit-mask: 
       linear-gradient(#fff 0 0) content-box, 
       linear-gradient(#fff 0 0);

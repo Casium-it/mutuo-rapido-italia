@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Percent, Building2, Sparkles, Calculator, Check, File } from "lucide-react";
+import { LucideIcon } from "lucide-react";
 
 interface KeyPoint {
   icon: React.ElementType;
@@ -17,6 +17,7 @@ interface PathOptionProps {
   keyPoints: KeyPoint[];
   ctaLabel: string;
   variant: "primary" | "secondary";
+  onClick?: () => void;
 }
 
 export function PathOption({ 
@@ -24,30 +25,29 @@ export function PathOption({
   description, 
   keyPoints,
   ctaLabel,
-  variant 
+  variant,
+  onClick
 }: PathOptionProps) {
   return (
-    <Card className={`shadow-sm hover-grow ${
+    <Card className={`hover-grow transition-all duration-300 ${
       variant === "primary" 
-        ? "border border-vibe-green/30 bg-white" 
-        : "bg-vibe-green-light/50 animated-border"
-    } w-full max-w-sm`}>
+        ? "border border-[#BEB8AE] bg-white shadow-[0_3px_0_0_#AFA89F]" 
+        : "bg-[#F8F4EF] border-2 border-[#245C4F] shadow-[0_3px_8px_rgba(36,92,79,0.15)]"
+    } w-full max-w-sm rounded-[12px]`}>
       <CardHeader className={`${
         variant === "primary" 
-          ? "bg-white border-b border-vibe-green/10" 
-          : "bg-gradient-to-r from-vibe-green-light to-vibe-green/10 border-b border-vibe-green/20"
-      } rounded-t-lg pb-3`}>
+          ? "bg-white border-b border-[#BEB8AE]" 
+          : "bg-gradient-to-r from-[#F8F4EF] to-[#F0EAE0] border-b border-[#245C4F]"
+      } rounded-t-[10px] pb-3`}>
         <div className="flex justify-between items-center">
-          <CardTitle className={`text-xl font-bold ${variant === "secondary" ? "text-vibe-green" : "text-gray-700"}`}>
+          <CardTitle className={`text-xl font-bold ${variant === "secondary" ? "text-[#245C4F]" : "text-gray-700"}`}>
             {title}
           </CardTitle>
-          <Badge variant={variant === "primary" ? "outline" : "default"} className={
-            variant === "primary" 
-              ? "border-gray-400 text-gray-600 hover:bg-gray-100" 
-              : "bg-vibe-green text-white hover:bg-vibe-green/90"
-          }>
-            {variant === "primary" ? "Base" : "Consigliato"}
-          </Badge>
+          {variant === "secondary" && (
+            <Badge variant="outline" className="bg-[#245C4F] text-white border-[#245C4F] hover:bg-[#1e4f44] hover:border-[#1e4f44]">
+              Consigliato
+            </Badge>
+          )}
         </div>
         <CardDescription className={`text-sm pt-1 ${variant === "secondary" ? "text-gray-700" : "text-gray-500"}`}>
           {description}
@@ -59,8 +59,8 @@ export function PathOption({
             <li key={index} className="flex items-start gap-2.5">
               <div className={`rounded-full p-1 flex-shrink-0 ${
                 variant === "primary" 
-                  ? "text-vibe-green bg-vibe-green/10" 
-                  : "text-vibe-green bg-vibe-green/20"
+                  ? "text-[#245C4F] bg-[#F8F4EF]" 
+                  : "text-[#245C4F] bg-white"
               } mt-0.5`}>
                 <point.icon className="h-3.5 w-3.5" />
               </div>
@@ -79,13 +79,13 @@ export function PathOption({
       </CardContent>
       <CardFooter className="flex justify-center pb-4">
         <Button 
-          className={`w-full font-medium ${
+          className={`w-full font-medium px-[32px] py-[16px] text-[16px] rounded-[12px] transition-all ${
             variant === "primary" 
-              ? "border border-vibe-green bg-white text-vibe-green hover:bg-vibe-green/5" 
-              : "bg-vibe-green text-white hover:bg-vibe-green-dark"
+              ? "border border-[#245C4F] bg-white text-[#245C4F] hover:bg-[#F8F4EF] shadow-[0_3px_0_0_#AFA89F]" 
+              : "bg-[#245C4F] text-white hover:bg-[#1e4f44] shadow-[0_6px_12px_rgba(36,92,79,0.2)] hover:shadow-[0_8px_16px_rgba(36,92,79,0.25)]"
           }`}
           size="sm"
-          onClick={() => variant === "secondary" ? window.location.href = "/simulazione-avanzata" : null}
+          onClick={onClick}
         >
           {ctaLabel}
         </Button>
