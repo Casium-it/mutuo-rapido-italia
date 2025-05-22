@@ -52,11 +52,72 @@ export function FormQuestion({ question }: FormQuestionProps) {
   const [isNavigating, setIsNavigating] = useState(false);
   // Stato per tenere traccia di quali placeholder hanno opzioni visibili
   const [visibleOptions, setVisibleOptions] = useState<{ [key: string]: boolean }>({});
-  // Nuovo stato per tenere traccia degli errori di validazione
+  // Stato per tenere traccia degli errori di validazione
   const [validationErrors, setValidationErrors] = useState<{ [key: string]: boolean }>({});
-  // Nuovo stato per tenere traccia dei campi in fase di editing
+  // Stato per tenere traccia dei campi in fase di editing
   const [editingFields, setEditingFields] = useState<{ [key: string]: boolean }>({});
+  // Nuovo stato per "Non lo so" button
+  const [showNonLoSoButton, setShowNonLoSoButton] = useState(false);
   const params = useParams();
+
+  // Nuova funzione per verificare se ci sono campi di input mancanti o non validi
+  const hasMissingOrInvalidInputs = () => {
+    const inputPlaceholders = Object.keys(question.placeholders).filter(
+      key => question.placeholders[key].type === "input"
+    );
+    
+    if (inputPlaceholders.length === 0) {
+      return false;
+    }
+    
+    return inputPlaceholders.some(key => {
+      const value = responses[key] || getResponse(question.question_id, key);
+      
+      // Se manca un valore, è considerato "mancante"
+      if (value === undefined || value === "") {
+        return true;
+      }
+      
+      // Se c'è un errore di validazione, è "non valido"
+      if (validationErrors[key]) {
+        return true;
+      }
+      
+      // Verifica anche la validazione per i valori esistenti
+      if (value !== "") {
+        const placeholder = question.placeholders[key];
+        if (placeholder.type === "input") {
+          const validationType = (placeholder as any).input_validation;
+          if (!validateInput(value as string, validationType)) {
+            return true;
+          }
+        }
+      }
+      
+      return false;
+    });
+  };
+
+  // Nuovo timer effect per mostrare il pulsante "Non lo so" dopo 6 secondi
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+
+    // Verifica se ci sono campi di input mancanti o non validi
+    if (hasMissingOrInvalidInputs()) {
+      // Imposta un timer per mostrare il pulsante dopo 6 secondi
+      timer = setTimeout(() => {
+        setShowNonLoSoButton(true);
+      }, 6000);
+    } else {
+      // Se tutti i campi sono validi, nascondi il pulsante
+      setShowNonLoSoButton(false);
+    }
+
+    return () => {
+      // Pulisci il timer quando il componente si smonta o quando l'effetto viene richiamato
+      clearTimeout(timer);
+    };
+  }, [responses, validationErrors]);
 
   // Effetto per caricare le risposte esistenti e impostare visibilità iniziale delle opzioni
   useEffect(() => {
@@ -88,7 +149,139 @@ export function FormQuestion({ question }: FormQuestionProps) {
     setValidationErrors(initialValidationErrors);
     setEditingFields({});
     setIsNavigating(false);
+    // Reset dello stato del pulsante "Non lo so" quando cambia la domanda
+    setShowNonLoSoButton(false);
   }, [question.question_id, getResponse, question.placeholders]);
+
+  // Nuova funzione per gestire il click sul pulsante "Non lo so"
+  const handleNonLoSoClick = () => {
+    if (isNavigating) return;
+    setIsNavigating(true);
+    
+    // Trova tutti i placeholder di tipo input che sono vuoti o non validi
+    const inputPlaceholders = Object.keys(question.placeholders).filter(
+      key => question.placeholders[key].type === "input"
+    );
+    
+    // Imposta "non_lo_so" per tutti i campi input mancanti o non validi
+    inputPlaceholders.forEach(key => {
+      const value = responses[key] || getResponse(question.question_id, key);
+      const isValid = !validationErrors[key];
+      
+      if (!value || value === "" || !isValid) {
+        setResponse(question.question_id, key, "non_lo_so");
+        
+        // Aggiorna anche lo stato locale
+        setResponses(prev => ({
+          ...prev,
+          [key]: "non_lo_so"
+        }));
+        
+        // Resetta gli errori di validazione
+        setValidationErrors(prev => ({
+          ...prev,
+          [key]: false
+        }));
+      }
+    });
+    
+    // Procedi con la navigazione come nel handleNextQuestion
+    // Se c'è un placeholder prioritario specificato, lo usa come in handleNextQuestion
+    if (question.leads_to_placeholder_priority && 
+        question.placeholders[question.leads_to_placeholder_priority]) {
+      
+      const priorityPlaceholder = question.placeholders[question.leads_to_placeholder_priority];
+      const priorityResponse = getResponse(question.question_id, question.leads_to_placeholder_priority);
+      
+      if (priorityResponse && priorityPlaceholder.type === "select" && !Array.isArray(priorityResponse)) {
+        const selectedOption = (priorityPlaceholder as any).options.find(
+          (opt: any) => opt.id === priorityResponse
+        );
+        
+        if (selectedOption?.leads_to) {
+          if (selectedOption.leads_to === "stop_flow") {
+            sessionStorage.setItem("stopFlowActivated", "true");
+            setTimeout(() => {
+              window.location.reload();
+              setIsNavigating(false);
+            }, 50);
+            return;
+          }
+          
+          setTimeout(() => {
+            navigateToNextQuestion(question.question_id, selectedOption.leads_to);
+            setIsNavigating(false);
+          }, 50);
+          return;
+        }
+      } 
+      else if (priorityResponse && priorityPlaceholder.type === "input" && (priorityPlaceholder as any).leads_to) {
+        if ((priorityPlaceholder as any).leads_to === "stop_flow") {
+          sessionStorage.setItem("stopFlowActivated", "true");
+          setTimeout(() => {
+            window.location.reload();
+            setIsNavigating(false);
+          }, 50);
+          return;
+        }
+        
+        setTimeout(() => {
+          navigateToNextQuestion(question.question_id, (priorityPlaceholder as any).leads_to);
+          setIsNavigating(false);
+        }, 50);
+        return;
+      }
+    }
+    
+    // Logica di fallback come in handleNextQuestion
+    for (const key of Object.keys(question.placeholders)) {
+      const response = getResponse(question.question_id, key);
+      
+      if (response && question.placeholders[key].type === "select" && !Array.isArray(response)) {
+        const selectedOption = (question.placeholders[key] as any).options.find(
+          (opt: any) => opt.id === response
+        );
+        
+        if (selectedOption?.leads_to) {
+          if (selectedOption.leads_to === "stop_flow") {
+            sessionStorage.setItem("stopFlowActivated", "true");
+            setTimeout(() => {
+              window.location.reload();
+              setIsNavigating(false);
+            }, 50);
+            return;
+          }
+          
+          setTimeout(() => {
+            navigateToNextQuestion(question.question_id, selectedOption.leads_to);
+            setIsNavigating(false);
+          }, 50);
+          return;
+        }
+      } else if (response && question.placeholders[key].type === "input" && (question.placeholders[key] as any).leads_to) {
+        if ((question.placeholders[key] as any).leads_to === "stop_flow") {
+          sessionStorage.setItem("stopFlowActivated", "true");
+          setTimeout(() => {
+            window.location.reload();
+            setIsNavigating(false);
+          }, 50);
+          return;
+        }
+        
+        setTimeout(() => {
+          navigateToNextQuestion(question.question_id, (question.placeholders[key] as any).leads_to);
+          setIsNavigating(false);
+        }, 50);
+        return;
+      }
+    }
+    
+    // Se tutto il resto fallisce, passa al blocco successivo
+    setTimeout(() => {
+      navigateToNextQuestion(question.question_id, "next_block");
+      setIsNavigating(false);
+    }, 50);
+  };
 
   // Funzione per gestire il cambio di risposta con validazione
   const handleResponseChange = (key: string, value: string | string[]) => {
@@ -698,6 +891,24 @@ export function FormQuestion({ question }: FormQuestionProps) {
       
       {/* Nuovo contenitore per i MultiBlockManager placeholder */}
       {renderMultiBlockManagers()}
+      
+      {/* Pulsante "Non lo so" - mostrato solo quando ci sono input mancanti o non validi, dopo 6 secondi */}
+      {showNonLoSoButton && hasMissingOrInvalidInputs() && (
+        <div className="mt-5">
+          <button
+            type="button"
+            className={cn(
+              "text-left px-[18px] py-[12px] border-[1.5px] rounded-[10px] transition-all font-['Inter'] text-[16px] font-normal",
+              "shadow-[0_3px_0_0_#AFA89F] mb-[10px] cursor-pointer w-fit",
+              "hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)]",
+              "border-[#BEB8AE] bg-[#F8F4EF] text-[#222222]"
+            )}
+            onClick={handleNonLoSoClick}
+          >
+            <div className="font-medium">Non lo so</div>
+          </button>
+        </div>
+      )}
       
       {/* Pulsante Avanti - mostrato solo se ci sono risposte valide e tutti gli input hanno contenuto valido */}
       {hasValidResponses && !Object.values(question.placeholders).some(p => p.type === "MultiBlockManager") && (
