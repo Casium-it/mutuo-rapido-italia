@@ -11,7 +11,6 @@ import { Menu } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { CompleteFormButton } from "@/components/form/CompleteFormButton";
-import { useFormExtended } from "@/hooks/useFormExtended";
 
 export default function Form() {
   const {
@@ -20,7 +19,7 @@ export default function Form() {
     getProgress,
     resetForm,
     goToQuestion
-  } = useFormExtended();
+  } = useForm();
   const params = useParams();
   const navigate = useNavigate();
   const location = useLocation();
