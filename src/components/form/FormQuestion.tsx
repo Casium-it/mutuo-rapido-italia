@@ -231,7 +231,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
     setCursorPositions({});
   }, [question.question_id, getResponse, question.placeholders]);
 
-  // Nuova funzione per gestire la navigazione indietro (completamente nuova implementazione)
+  // Funzione per gestire la navigazione indietro con gestione del caso speciale
   const handleBackNavigation = () => {
     if (isNavigating) return;
     setIsNavigating(true);
@@ -239,7 +239,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
     // Ottieni array di domande risposte dal set
     const answeredQuestionsArray = Array.from(state.answeredQuestions);
     
-    if (answeredQuestionsArray.length <= 1) {
+    if (answeredQuestionsArray.length === 0) {
       // Se non ci sono domande precedenti, non possiamo andare indietro
       setIsNavigating(false);
       return;
@@ -248,19 +248,22 @@ export function FormQuestion({ question }: FormQuestionProps) {
     // Trova l'indice della domanda corrente nell'array delle domande risposte
     const currentQuestionIndex = answeredQuestionsArray.indexOf(state.activeQuestion.question_id);
     
+    let targetQuestionIndex;
+    
     if (currentQuestionIndex <= 0) {
-      // Se la domanda corrente non è nell'array o è la prima, non possiamo andare indietro
-      setIsNavigating(false);
-      return;
+      // Se la domanda corrente non è nell'array o è la prima,
+      // considera la domanda corrente come se fosse dopo l'ultima dell'array
+      targetQuestionIndex = answeredQuestionsArray.length - 1;
+    } else {
+      // Altrimenti vai alla domanda precedente nell'array
+      targetQuestionIndex = currentQuestionIndex - 1;
     }
     
     // Ottieni l'ID della domanda precedente
-    const previousQuestionId = answeredQuestionsArray[currentQuestionIndex - 1];
+    const previousQuestionId = answeredQuestionsArray[targetQuestionIndex];
     
     // Trova il blocco che contiene questa domanda
-    const blockWithPreviousQuestion = blocks.find(block => 
-      block.questions.some(q => q.question_id === previousQuestionId)
-    );
+    const blockWithPreviousQuestion = findBlockByQuestionId(blocks, previousQuestionId);
     
     if (!blockWithPreviousQuestion) {
       console.error("Blocco della domanda precedente non trovato:", previousQuestionId);
@@ -1051,4 +1054,9 @@ export function FormQuestion({ question }: FormQuestionProps) {
       </div>
     </div>
   );
+}
+
+// Funzione per trovare un blocco di domande per una domanda specifica
+const findBlockByQuestionId = (blocks: any[], questionId: string): any => {
+  return blocks.find(block => block.questions.some(q => q.question_id === questionId));
 }
