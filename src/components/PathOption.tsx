@@ -31,8 +31,8 @@ export function PathOption({
   return (
     <Card className={`hover-grow transition-all duration-300 ${
       variant === "primary" 
-        ? "border border-[#BEB8AE] bg-white shadow-[0_3px_0_0_#AFA89F]" 
-        : "bg-[#F8F4EF] border-2 border-[#245C4F] shadow-[0_3px_8px_rgba(36,92,79,0.15)]"
+        ? "border border-[#BEB8AE] bg-white shadow-[0_3px_0_0_#AFA89F] hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)]" 
+        : "bg-[#F8F4EF] border-2 border-[#245C4F] shadow-[0_3px_8px_rgba(36,92,79,0.15)] hover:shadow-[0_3px_12px_rgba(36,92,79,0.25)]"
     } w-full max-w-sm rounded-[12px]`}>
       <CardHeader className={`${
         variant === "primary" 
@@ -81,8 +81,8 @@ export function PathOption({
         <Button 
           className={`w-full font-medium px-[32px] py-[16px] text-[16px] rounded-[12px] transition-all ${
             variant === "primary" 
-              ? "border border-[#245C4F] bg-white text-[#245C4F] hover:bg-[#F8F4EF] shadow-[0_3px_0_0_#AFA89F]" 
-              : "bg-[#245C4F] text-white hover:bg-[#1e4f44] shadow-[0_6px_12px_rgba(36,92,79,0.2)] hover:shadow-[0_8px_16px_rgba(36,92,79,0.25)]"
+              ? "border border-[#245C4F] bg-white text-[#245C4F] hover:bg-[#F8F4EF] shadow-[0_3px_0_0_#AFA89F] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#AFA89F]" 
+              : "bg-[#245C4F] text-white hover:bg-[#1e4f44] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37]"
           }`}
           size="sm"
           onClick={onClick}
