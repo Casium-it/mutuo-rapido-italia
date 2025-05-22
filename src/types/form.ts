@@ -1,3 +1,4 @@
+
 export type PlaceholderOption = {
   id: string;
   label: string;
@@ -77,7 +78,7 @@ export type BlockActivationSource = {
   placeholderId: string;
 };
 
-export interface FormState {
+export type FormState = {
   activeBlocks: string[];
   activeQuestion: {
     block_id: string;
@@ -85,17 +86,9 @@ export interface FormState {
   };
   responses: FormResponse;
   answeredQuestions: Set<string>;
-  isNavigating: boolean;
+  isNavigating?: boolean;
   navigationHistory: NavigationHistory[];
   dynamicBlocks: Block[];
-  blockActivations: { 
-    [blockId: string]: Array<{ 
-      questionId: string; 
-      placeholderId: string;
-    }> 
-  };
-  completedBlocks: string[];
-  pendingRemovals: {
-    [blockId: string]: string[];
-  };
-}
+  blockActivations: Record<string, BlockActivationSource[]>; // Track which questions activated which blocks
+  completedBlocks: string[]; // Track completed blocks
+};
