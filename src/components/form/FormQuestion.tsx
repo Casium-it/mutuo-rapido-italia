@@ -250,7 +250,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
     
     // Se siamo alla prima domanda del blocco
     if (currentQuestionIndex <= 0) {
-      // Troviamo il blocco attivo precedente
+      // Troviamo il blocco attivo precedente nell'array di blocchi attivi
       const activeBlockIndex = state.activeBlocks.findIndex(
         blockId => blockId === state.activeQuestion.block_id
       );
@@ -261,7 +261,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
         const previousBlock = blocks.find(b => b.block_id === previousBlockId);
         
         if (previousBlock && previousBlock.questions.length > 0) {
-          // Trova l'ultima domanda risposta in questo blocco o l'ultima domanda del blocco
+          // Trova l'ultima domanda risposta in questo blocco
           const answeredQuestions = previousBlock.questions.filter(q => 
             state.answeredQuestions.has(q.question_id)
           );
@@ -276,10 +276,11 @@ export function FormQuestion({ question }: FormQuestionProps) {
             }, 50);
             return;
           } else {
-            // Se non ci sono domande risposte, vai alla prima domanda del blocco
+            // Se non ci sono domande risposte, vai all'ultima domanda del blocco
+            const lastQuestion = previousBlock.questions[previousBlock.questions.length - 1];
             setTimeout(() => {
               // Non aggiornare la cronologia di navigazione
-              goToQuestion(previousBlockId, previousBlock.questions[0].question_id, false);
+              goToQuestion(previousBlockId, lastQuestion.question_id, false);
               setIsNavigating(false);
             }, 50);
             return;
