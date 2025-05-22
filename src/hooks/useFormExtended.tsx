@@ -6,6 +6,7 @@ import {
 } from "@/utils/formUtils";
 import { Question, Block, Placeholder, InputPlaceholder } from "@/types/form";
 import { formatCurrency, formatNumberWithThousandSeparator, capitalizeWords } from "@/lib/utils";
+import { sortBlocksByPriority } from "@/utils/blockUtils";
 
 /**
  * Extended hook for the form context with additional functionality
@@ -72,6 +73,34 @@ export const useFormExtended = () => {
     
     // Fallback al comportamento precedente se non troviamo una cronologia
     return getChainOfInlineQuestions(formContext.blocks, blockId, questionId);
+  };
+  
+  /**
+   * Gets the previous block in the active blocks array, ordered by priority
+   * @returns The ID of the previous block or null if there is no previous block
+   */
+  const getPreviousBlockByPriority = (currentBlockId: string): string | null => {
+    // Prima otteniamo tutti i blocchi attivi
+    const activeBlockIds = formContext.state.activeBlocks;
+    if (!activeBlockIds || activeBlockIds.length <= 1) return null;
+    
+    // Troviamo i blocchi attivi completi
+    const activeBlocks = activeBlockIds
+      .map(id => formContext.blocks.find(block => block.block_id === id) || 
+                formContext.state.dynamicBlocks.find(block => block.block_id === id))
+      .filter((block): block is Block => block !== undefined);
+    
+    // Ordiniamo i blocchi per priorità
+    const sortedActiveBlocks = sortBlocksByPriority(activeBlocks);
+    
+    // Troviamo l'indice del blocco corrente nell'array ordinato
+    const currentBlockIndex = sortedActiveBlocks.findIndex(block => block.block_id === currentBlockId);
+    
+    // Se siamo al primo blocco o non abbiamo trovato il blocco corrente
+    if (currentBlockIndex <= 0) return null;
+    
+    // Restituiamo l'ID del blocco precedente
+    return sortedActiveBlocks[currentBlockIndex - 1].block_id;
   };
   
   /**
@@ -387,6 +416,7 @@ export const useFormExtended = () => {
     isBlockCompleted,
     markBlockAsCompleted,
     isDynamicBlockComplete,
-    getIncompleteBlocks
+    getIncompleteBlocks,
+    getPreviousBlockByPriority
   };
 };

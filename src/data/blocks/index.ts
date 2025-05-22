@@ -1,5 +1,6 @@
 
 import { Block } from "@/types/form";
+import { sortBlocksByPriority } from "@/utils/blockUtils";
 import { introduzione } from "./introduzione";
 import { la_tua_situazione } from "./la_tua_situazione";
 import { la_tua_professione } from "./la_tua_professione";
@@ -52,7 +53,7 @@ export {
 };
 
 // Esportare l'array completo di tutti i blocchi, ordinato per priorità
-export const allBlocks: Block[] = [
+export const allBlocks: Block[] = sortBlocksByPriority([
   introduzione,
   la_tua_situazione,
   la_tua_professione,
@@ -76,4 +77,4 @@ export const allBlocks: Block[] = [
   i_suoi_finanziamenti,
   i_suoi_finanziamenti_blueprint,
   la_sua_da_vendere
-].sort((a, b) => a.priority - b.priority); // Ordina i blocchi per priorità
+]); // Ordina i blocchi per priorità

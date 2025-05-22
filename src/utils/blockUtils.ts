@@ -31,7 +31,11 @@ export function ensureBlockHasPriority(block: Block): Block {
  * Ordina i blocchi per priorità
  */
 export function sortBlocksByPriority(blocks: Block[]): Block[] {
-  return [...blocks].sort((a, b) => a.priority - b.priority);
+  // Assicuriamoci prima che ogni blocco abbia una priorità valida
+  const blocksWithPriority = blocks.map(block => ensureBlockHasPriority(block));
+  
+  // Ordina i blocchi per priorità
+  return [...blocksWithPriority].sort((a, b) => a.priority - b.priority);
 }
 
 /**
