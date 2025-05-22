@@ -11,7 +11,9 @@ export const validateInput = (value: string, type: ValidationTypes): boolean => 
   switch (type) {
     case "euro":
       // Should be a positive number (integer)
-      return /^[1-9][0-9]*$/.test(value);
+      // Prima rimuovi tutti i separatori delle migliaia
+      const cleanValue = value.replace(/\D/g, "");
+      return /^[1-9][0-9]*$/.test(cleanValue) || cleanValue === "0";
     case "month":
       // Italian month names validation
       const italianMonths = [
