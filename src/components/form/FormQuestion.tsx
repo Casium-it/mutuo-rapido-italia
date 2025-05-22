@@ -1040,12 +1040,12 @@ export function FormQuestion({ question }: FormQuestionProps) {
       {/* Nuovo Pulsante Indietro - visibile solo se non è la prima domanda del primo blocco */}
       {!(state.activeQuestion.block_id === "introduzione" && 
          state.activeQuestion.question_id === blocks.find(b => b.block_id === "introduzione")?.questions[0].question_id) && (
-        <div className="mt-4 flex justify-center">
+        <div className="mt-4">
           <button
             type="button"
             className={cn(
               "text-[#BEB8AE] hover:text-[#AFA89F] text-[15px] font-medium underline",
-              "transition-colors text-center"
+              "transition-colors"
             )}
             onClick={handleBackNavigation}
             disabled={isNavigating}
