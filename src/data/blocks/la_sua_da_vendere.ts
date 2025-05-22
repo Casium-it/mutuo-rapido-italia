@@ -78,7 +78,7 @@ export const la_sua_da_vendere: Block = {
         placeholder3: {
           type: "input",
           input_type: "number",
-          placeholder_label: "Percentuale",
+          placeholder_label: "tasso",
           input_validation: "free_text"
         },
         placeholder4: {
