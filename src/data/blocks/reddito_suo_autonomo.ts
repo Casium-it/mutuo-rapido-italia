@@ -24,8 +24,8 @@ export const reddito_suo_autonomo: Block = {
         placeholder2: {
           type: "select",
           options: [
-            { id: "lordo", label: "lordi", leads_to: "reddito_importo_lordo_coint" },
-            { id: "netto", label: "netti", leads_to: "reddito_importo_lordo_coint" }
+            { id: "lordo", label: "lordo", leads_to: "reddito_importo_lordo_coint" },
+            { id: "netto", label: "netto", leads_to: "reddito_importo_lordo_coint" }
           ]
         }
       }
