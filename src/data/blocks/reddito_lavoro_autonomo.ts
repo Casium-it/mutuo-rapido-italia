@@ -40,7 +40,7 @@ export const reddito_lavoro_autonomo: Block = {
         placeholder2: {
           type: "select",
           options: [
-            { id: "lordo", label: "lordi", leads_to: "importo_netto_annuo" },
+            { id: "lordo", label: "lordi", leads_to: "reddito_netto_annuo" },
             { id: "netto", label: "netti", leads_to: "reddito_stabilita" }
           ]
         }
