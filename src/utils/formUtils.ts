@@ -1,3 +1,4 @@
+
 import { Block, Question } from "@/types/form";
 
 /**
@@ -226,6 +227,73 @@ export const getPlaceholderLeadsTo = (
   // Per i placeholder di tipo input o altro con lead_to diretto
   if ((placeholder as any).leads_to) {
     return (placeholder as any).leads_to;
+  }
+  
+  return null;
+};
+
+/**
+ * Checks if a question ID is a MultiBlockManager question
+ * @param blocks All form blocks
+ * @param questionId Question ID to check
+ * @returns Boolean indicating if the question is a MultiBlockManager
+ */
+export const isMultiBlockManagerQuestion = (
+  blocks: Block[],
+  questionId: string
+): boolean => {
+  for (const block of blocks) {
+    const question = block.questions.find(q => q.question_id === questionId);
+    if (question) {
+      // Controlla se c'è un placeholder di tipo MultiBlockManager
+      for (const key in question.placeholders) {
+        if (question.placeholders[key].type === "MultiBlockManager") {
+          return true;
+        }
+      }
+      return false;
+    }
+  }
+  return false;
+};
+
+/**
+ * Determines if a block is a dynamic block based on its ID
+ * @param blockId Block ID to check
+ * @returns Boolean indicating if the block is dynamic
+ */
+export const isDynamicBlock = (blockId: string): boolean => {
+  // I blocchi dinamici tipicamente hanno un numero alla fine del loro ID
+  return /^.+?\d+$/.test(blockId);
+};
+
+/**
+ * Gets the parent multiblock manager question for a dynamic block
+ * @param blocks All form blocks
+ * @param dynamicBlockId Dynamic block ID
+ * @returns The parent multiblock manager question ID or null
+ */
+export const getParentMultiBlockManager = (
+  blocks: Block[],
+  dynamicBlockId: string
+): string | null => {
+  // Trova il blocco dinamico
+  const dynamicBlock = blocks.find(b => b.block_id === dynamicBlockId);
+  if (!dynamicBlock || !dynamicBlock.blueprint_id) return null;
+  
+  // Cerca in tutti i blocchi per trovare domande con MultiBlockManager che utilizzano questo blueprint
+  for (const block of blocks) {
+    for (const question of block.questions) {
+      for (const key in question.placeholders) {
+        const placeholder = question.placeholders[key];
+        if (
+          placeholder.type === "MultiBlockManager" &&
+          (placeholder as any).blockBlueprint === dynamicBlock.blueprint_id
+        ) {
+          return question.question_id;
+        }
+      }
+    }
   }
   
   return null;

@@ -2,6 +2,12 @@ import React, { createContext, useContext, useReducer, ReactNode, useEffect, use
 import { Block, FormState, FormResponse, NavigationHistory, Placeholder, SelectPlaceholder } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { ensureBlockHasPriority } from "@/utils/blockUtils";
+import { 
+  getPlaceholderLeadsTo, 
+  isMultiBlockManagerQuestion, 
+  isDynamicBlock, 
+  getParentMultiBlockManager 
+} from "@/utils/formUtils";
 
 type FormContextType = {
   state: FormState;
@@ -658,49 +664,80 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       const previousLeadsTo = getPlaceholderLeadsTo(questionObj, placeholder_key, previousValue);
       const newLeadsTo = getPlaceholderLeadsTo(questionObj, placeholder_key, value);
       
+      // Log per il debug
+      console.log(`Cambio risposta rilevato in questione ${question_id}, blocco ${blockId || "sconosciuto"}`);
+      console.log(`Valore precedente: ${previousValue}, Nuovo valore: ${value}`);
+      console.log(`Lead_to precedente: ${previousLeadsTo}, Nuovo lead_to: ${newLeadsTo}`);
+      
       // Se il lead_to è cambiato, rimuovi la domanda target precedente da answeredQuestions
       if (previousLeadsTo && previousLeadsTo !== newLeadsTo) {
-        console.log(`Lead_to cambiato da ${previousLeadsTo} a ${newLeadsTo}. Rimuovo ${previousLeadsTo} da answeredQuestions.`);
+        console.log(`Lead_to cambiato da ${previousLeadsTo} a ${newLeadsTo}`);
         
-        // Rimuovi la domanda dalle domande risposte
-        const updatedAnsweredQuestions = new Set(state.answeredQuestions);
-        updatedAnsweredQuestions.delete(previousLeadsTo);
+        // Verifica se siamo in un blocco dinamico
+        const isInDynamicBlock = blockId && isDynamicBlock(blockId);
+        console.log(`Siamo in un blocco dinamico? ${isInDynamicBlock ? "Sì" : "No"}`);
         
-        // Trova tutte le domande che potrebbero essere state coinvolte nel vecchio percorso
-        const questionsToRemove = [];
-        questionsToRemove.push(previousLeadsTo);
+        // Verifica se la domanda lead_to precedente è un multiblockmanager
+        const isMultiBlockManager = isMultiBlockManagerQuestion(allBlocks, previousLeadsTo);
+        console.log(`La domanda lead_to precedente è un MultiBlockManager? ${isMultiBlockManager ? "Sì" : "No"}`);
         
-        // Rimuovi ricorsivamente le domande risposte che dipendono dal precedente lead_to
-        const findDependentQuestions = (startQuestionId: string) => {
-          const historyItems = state.navigationHistory.filter(item => 
-            item.from_question_id === startQuestionId
-          );
+        let shouldSkipRemoval = false;
+        
+        // Se siamo in un blocco dinamico e il lead_to precedente è un multiblockmanager,
+        // verifichiamo se è il parent multiblockmanager di questo blocco dinamico
+        if (isInDynamicBlock && isMultiBlockManager && blockId) {
+          const parentManagerId = getParentMultiBlockManager(allBlocks, blockId);
+          console.log(`Parent MultiBlockManager per questo blocco dinamico: ${parentManagerId}`);
           
-          historyItems.forEach(item => {
-            if (!questionsToRemove.includes(item.to_question_id)) {
-              questionsToRemove.push(item.to_question_id);
-              updatedAnsweredQuestions.delete(item.to_question_id);
-              findDependentQuestions(item.to_question_id);
-            }
+          if (parentManagerId === previousLeadsTo) {
+            console.log(`PROTEZIONE ATTIVATA: Non rimuoveremo ${previousLeadsTo} da answeredQuestions perché è il parent manager di questo blocco dinamico`);
+            shouldSkipRemoval = true;
+          }
+        }
+        
+        if (!shouldSkipRemoval) {
+          console.log(`Rimuovo ${previousLeadsTo} da answeredQuestions.`);
+          
+          // Rimuovi la domanda dalle domande risposte
+          const updatedAnsweredQuestions = new Set(state.answeredQuestions);
+          updatedAnsweredQuestions.delete(previousLeadsTo);
+          
+          // Trova tutte le domande che potrebbero essere state coinvolte nel vecchio percorso
+          const questionsToRemove = [];
+          questionsToRemove.push(previousLeadsTo);
+          
+          // Rimuovi ricorsivamente le domande risposte che dipendono dal precedente lead_to
+          const findDependentQuestions = (startQuestionId: string) => {
+            const historyItems = state.navigationHistory.filter(item => 
+              item.from_question_id === startQuestionId
+            );
+            
+            historyItems.forEach(item => {
+              if (!questionsToRemove.includes(item.to_question_id)) {
+                questionsToRemove.push(item.to_question_id);
+                updatedAnsweredQuestions.delete(item.to_question_id);
+                findDependentQuestions(item.to_question_id);
+              }
+            });
+          };
+          
+          findDependentQuestions(previousLeadsTo);
+          
+          // Rimuovi tutte le risposte associate alle domande rimosse
+          const updatedResponses = { ...state.responses };
+          questionsToRemove.forEach(qId => {
+            delete updatedResponses[qId];
           });
-        };
-        
-        findDependentQuestions(previousLeadsTo);
-        
-        // Rimuovi tutte le risposte associate alle domande rimosse
-        const updatedResponses = { ...state.responses };
-        questionsToRemove.forEach(qId => {
-          delete updatedResponses[qId];
-        });
-        
-        // Aggiorna lo stato
-        dispatch({ 
-          type: "SET_FORM_STATE", 
-          state: { 
-            answeredQuestions: updatedAnsweredQuestions,
-            responses: updatedResponses
-          } 
-        });
+          
+          // Aggiorna lo stato
+          dispatch({ 
+            type: "SET_FORM_STATE", 
+            state: { 
+              answeredQuestions: updatedAnsweredQuestions,
+              responses: updatedResponses
+            } 
+          });
+        }
       }
     }
     
