@@ -959,6 +959,15 @@ export function FormQuestion({ question }: FormQuestionProps) {
     return null;
   };
   
+  // Funzione per verificare se questa è la prima domanda del blocco
+  const isFirstQuestionInBlock = () => {
+    const currentBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
+    if (!currentBlock || currentBlock.questions.length === 0) return true;
+    
+    // Se l'ID della domanda attuale è uguale all'ID della prima domanda del blocco
+    return currentBlock.questions[0].question_id === state.activeQuestion.question_id;
+  };
+
   return (
     <div className="max-w-xl animate-fade-in">
       {/* Note banner per le question notes - Design migliorato */}
@@ -1003,41 +1012,41 @@ export function FormQuestion({ question }: FormQuestionProps) {
         </div>
       )}
       
-      {/* Pulsanti di navigazione - Mostra pulsanti Indietro e Avanti fianco a fianco */}
-      {hasValidResponses && !Object.values(question.placeholders).some(p => p.type === "MultiBlockManager") && (
-        <div className="mt-8 flex flex-row gap-3 items-center">
-          {/* Nuovo bottone Indietro - mostrato solo se c'è una domanda precedente */}
-          {hasPreviousQuestion && (
-            <Button
-              type="button"
-              className={cn(
-                "bg-[#E7E1D9] hover:bg-[#D9D2C7] text-[#333] rounded-[12px] aspect-square w-14 h-14",
-                "transition-all shadow-[0_3px_0_0_#BEB8AE] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#BEB8AE]",
-                "flex items-center justify-center"
-              )}
-              onClick={handlePreviousQuestion}
-              disabled={isNavigating}
-              aria-label="Torna alla domanda precedente"
-            >
-              <ArrowLeft className="h-5 w-5 transition-transform duration-200 hover:scale-125" />
-            </Button>
-          )}
-          
-          {/* Pulsante Avanti - mostrato solo se ci sono risposte valide */}
+      {/* Pulsanti di navigazione */}
+      <div className="mt-8 flex flex-row gap-3 items-center">
+        {/* Pulsante Indietro - mostrato sempre tranne per la prima domanda del blocco */}
+        {!isFirstQuestionInBlock() && (
           <Button
             type="button"
             className={cn(
-              "bg-[#245C4F] hover:bg-[#1e4f44] text-white px-[32px] py-[16px] rounded-[12px] text-[17px] font-medium",
+              "bg-[#E7E1D9] hover:bg-[#D9D2C7] text-[#333] rounded-[12px] h-[56px] w-[80px]",
+              "transition-all shadow-[0_3px_0_0_#BEB8AE] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#BEB8AE]",
+              "flex items-center justify-center"
+            )}
+            onClick={handlePreviousQuestion}
+            disabled={isNavigating}
+            aria-label="Torna alla domanda precedente"
+          >
+            <ArrowLeft className="h-5 w-5 transition-transform duration-200 hover:scale-125" />
+          </Button>
+        )}
+        
+        {/* Pulsante Avanti - mostrato solo se ci sono risposte valide */}
+        {hasValidResponses && !Object.values(question.placeholders).some(p => p.type === "MultiBlockManager") && (
+          <Button
+            type="button"
+            className={cn(
+              "bg-[#245C4F] hover:bg-[#1e4f44] text-white px-[32px] py-[16px] rounded-[12px] text-[17px] font-medium h-[56px]",
               "transition-all shadow-[0_6px_12px_rgba(36,92,79,0.2)] hover:shadow-[0_8px_16px_rgba(36,92,79,0.25)]",
-              "inline-flex items-center gap-[12px] flex-1"
+              "inline-flex items-center gap-[12px]"
             )}
             onClick={handleNextQuestion}
             disabled={isNavigating || Object.keys(question.placeholders).length === 0}
           >
             Avanti <ArrowRight className="ml-1 h-4 w-4" />
           </Button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
