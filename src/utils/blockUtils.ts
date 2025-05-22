@@ -73,3 +73,15 @@ export function cloneBlockForDynamicCreation(block: Block, copyNumber: number): 
 export function isBlockBlueprint(block: Block): boolean {
   return block.multiBlock === true;
 }
+
+/**
+ * Trova il blocco che contiene una specifica domanda
+ * @param blocks Tutti i blocchi disponibili
+ * @param questionId ID della domanda da cercare
+ * @returns Il blocco che contiene la domanda o undefined se non trovato
+ */
+export function findBlockByQuestionId(blocks: Block[], questionId: string): Block | undefined {
+  return blocks.find(block => 
+    block.questions.some(question => question.question_id === questionId)
+  );
+}

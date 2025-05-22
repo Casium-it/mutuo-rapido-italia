@@ -35,12 +35,6 @@ export function QuestionView() {
     }
   }, [location.pathname, params.blockId, params.questionId, state.activeQuestion, goToQuestion]);
   
-  // Find the current active block and question
-  const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
-  const activeQuestion = activeBlock?.questions.find(
-    question => question.question_id === state.activeQuestion.question_id
-  );
-
   // Rileva se la navigazione è stata impostata su "stop_flow"
   useEffect(() => {
     const stopFlowStatus = sessionStorage.getItem("stopFlowActivated");
@@ -53,6 +47,12 @@ export function QuestionView() {
 
   // Handle end of form question
   useEffect(() => {
+    // Find the current active block and question
+    const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
+    const activeQuestion = activeBlock?.questions.find(
+      question => question.question_id === state.activeQuestion.question_id
+    );
+    
     // Check if current question is an end-of-form question
     if (activeQuestion?.endOfForm && activeBlock) {
       // Automatically mark the current block as completed
@@ -60,7 +60,7 @@ export function QuestionView() {
         markBlockAsCompleted(activeBlock.block_id);
       }
     }
-  }, [activeQuestion, activeBlock, isBlockCompleted, markBlockAsCompleted]);
+  }, [state.activeQuestion, blocks, isBlockCompleted, markBlockAsCompleted]);
 
   // Check if all blocks are completed
   const allActiveBlocks = [...state.activeBlocks];
@@ -73,6 +73,12 @@ export function QuestionView() {
     .filter(blockId => !state.completedBlocks.includes(blockId))
     .map(blockId => blocks.find(block => block.block_id === blockId))
     .filter(Boolean);
+  
+  // Find the current active block and question
+  const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
+  const activeQuestion = activeBlock?.questions.find(
+    question => question.question_id === state.activeQuestion.question_id
+  );
 
   // Check if there are any dynamic blocks that are not completed
   const isEndOfFormQuestion = activeQuestion?.endOfForm === true;

@@ -231,74 +231,48 @@ export function FormQuestion({ question }: FormQuestionProps) {
     setCursorPositions({});
   }, [question.question_id, getResponse, question.placeholders]);
 
-  // Nuova funzione per gestire la navigazione indietro
+  // Nuova funzione per gestire la navigazione indietro (completamente nuova implementazione)
   const handleBackNavigation = () => {
     if (isNavigating) return;
     setIsNavigating(true);
     
-    // Cerchiamo il blocco corrente
-    const currentBlock = blocks.find(b => b.block_id === state.activeQuestion.block_id);
-    if (!currentBlock) {
+    // Ottieni array di domande risposte dal set
+    const answeredQuestionsArray = Array.from(state.answeredQuestions);
+    
+    if (answeredQuestionsArray.length <= 1) {
+      // Se non ci sono domande precedenti, non possiamo andare indietro
       setIsNavigating(false);
       return;
     }
     
-    // Troviamo l'indice della domanda corrente nel blocco
-    const currentQuestionIndex = currentBlock.questions.findIndex(q => 
-      q.question_id === state.activeQuestion.question_id
-    );
+    // Trova l'indice della domanda corrente nell'array delle domande risposte
+    const currentQuestionIndex = answeredQuestionsArray.indexOf(state.activeQuestion.question_id);
     
-    // Se siamo alla prima domanda del blocco
     if (currentQuestionIndex <= 0) {
-      // Troviamo il blocco attivo precedente
-      const activeBlockIndex = state.activeBlocks.findIndex(
-        blockId => blockId === state.activeQuestion.block_id
-      );
-      
-      if (activeBlockIndex > 0) {
-        // C'è un blocco precedente attivo
-        const previousBlockId = state.activeBlocks[activeBlockIndex - 1];
-        const previousBlock = blocks.find(b => b.block_id === previousBlockId);
-        
-        if (previousBlock && previousBlock.questions.length > 0) {
-          // Trova l'ultima domanda risposta in questo blocco o l'ultima domanda del blocco
-          const answeredQuestions = previousBlock.questions.filter(q => 
-            state.answeredQuestions.has(q.question_id)
-          );
-          
-          if (answeredQuestions.length > 0) {
-            // Vai all'ultima domanda risposta
-            const lastAnsweredQuestion = answeredQuestions[answeredQuestions.length - 1];
-            setTimeout(() => {
-              // Non aggiornare la cronologia di navigazione per evitare loop
-              goToQuestion(previousBlockId, lastAnsweredQuestion.question_id, false);
-              setIsNavigating(false);
-            }, 50);
-            return;
-          } else {
-            // Se non ci sono domande risposte, vai alla prima domanda del blocco
-            setTimeout(() => {
-              // Non aggiornare la cronologia di navigazione
-              goToQuestion(previousBlockId, previousBlock.questions[0].question_id, false);
-              setIsNavigating(false);
-            }, 50);
-            return;
-          }
-        }
-      }
-    } else {
-      // Non siamo alla prima domanda, quindi torniamo alla domanda precedente nello stesso blocco
-      const previousQuestion = currentBlock.questions[currentQuestionIndex - 1];
-      setTimeout(() => {
-        // Non aggiornare la cronologia di navigazione
-        goToQuestion(currentBlock.block_id, previousQuestion.question_id, false);
-        setIsNavigating(false);
-      }, 50);
+      // Se la domanda corrente non è nell'array o è la prima, non possiamo andare indietro
+      setIsNavigating(false);
       return;
     }
     
-    // Se arriviamo qui, non abbiamo trovato una domanda precedente
-    setIsNavigating(false);
+    // Ottieni l'ID della domanda precedente
+    const previousQuestionId = answeredQuestionsArray[currentQuestionIndex - 1];
+    
+    // Trova il blocco che contiene questa domanda
+    const blockWithPreviousQuestion = blocks.find(block => 
+      block.questions.some(q => q.question_id === previousQuestionId)
+    );
+    
+    if (!blockWithPreviousQuestion) {
+      console.error("Blocco della domanda precedente non trovato:", previousQuestionId);
+      setIsNavigating(false);
+      return;
+    }
+    
+    // Naviga alla domanda precedente
+    setTimeout(() => {
+      goToQuestion(blockWithPreviousQuestion.block_id, previousQuestionId);
+      setIsNavigating(false);
+    }, 50);
   };
 
   // Funzione aggiornata per gestire il click sul pulsante "Non lo so"
