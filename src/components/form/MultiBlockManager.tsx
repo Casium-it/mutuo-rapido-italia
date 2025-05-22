@@ -58,10 +58,14 @@ export function MultiBlockManager({
       // Usa il blueprint completo con il placeholder {copyNumber}
       const blockBlueprint = placeholder.blockBlueprint;
       
+      // Ottieni il parent block ID direttamente dall'active question nel form context
+      const parentBlockId = formContext.state.activeQuestion.block_id;
+      
+      console.log(`Blocco genitore attualmente attivo: ${parentBlockId}`);
+      console.log(`Il blocco è completato? ${isBlockCompleted(parentBlockId) ? 'Sì' : 'No'}`);
+      
       // Controlla se il blocco corrente (parent) è marcato come completo
       // Se sì, rimuovilo dalla lista dei blocchi completati perché stiamo aggiungendo un nuovo blocco dinamico
-      const parentBlockId = questionId.split("_")[0]; // Estrazione dell'ID del blocco padre dalla domanda
-      
       if (isBlockCompleted(parentBlockId)) {
         // Rimuovi il blocco padre dai completati perché ora ha un nuovo blocco figlio incompleto
         console.log(`Rimuovendo il blocco ${parentBlockId} dalla lista dei completati`);
