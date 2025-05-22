@@ -174,16 +174,16 @@ export function FormQuestion({ question }: FormQuestionProps) {
     });
   };
 
-  // Nuovo timer effect per mostrare il pulsante "Non lo so" dopo 5 secondi
+  // Nuovo timer effect per mostrare il pulsante "Non lo so" dopo 1.5 secondi invece di 5
   useEffect(() => {
     let timer: NodeJS.Timeout;
 
     // Verifica se la domanda è skippable e se ci sono campi di input mancanti o non validi
     if (question.skippableWithNotSure && hasMissingOrInvalidInputs()) {
-      // Imposta un timer per mostrare il pulsante dopo 5 secondi
+      // Imposta un timer per mostrare il pulsante dopo 1.5 secondi invece di 5
       timer = setTimeout(() => {
         setShowNonLoSoButton(true);
-      }, 5000);
+      }, 1500);
     } else {
       // Se tutti i campi sono validi o la domanda non è skippable, nascondi il pulsante
       setShowNonLoSoButton(false);
@@ -763,7 +763,12 @@ export function FormQuestion({ question }: FormQuestionProps) {
           const hasError = validationErrors[placeholderKey];
           const isEditing = editingFields[placeholderKey];
           const validationType = placeholder.input_validation;
-          const isValid = validateInput(
+          
+          // Modifica qui: verifichiamo esplicitamente se il valore è "non lo so" per gestirlo correttamente
+          const isNonLoSo = value === "non lo so";
+          
+          // Per i valori normali usiamo la validazione standard, ma per "non lo so" consideriamo sempre valido
+          const isValid = isNonLoSo || validateInput(
             validationType === "euro" ? cleanEuroValue(value) : value, 
             validationType
           );
@@ -788,7 +793,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
           // e l'utente ha terminato di digitare (non è attualmente in focus)
           if (isValid && value && !isEditing && !hasError) {
             // Formatta il valore in base al tipo di validazione prima di mostrarlo
-            const formattedValue = formatDisplayValue(value, validationType);
+            // Per "non lo so" manteniamo il valore originale senza formattazione
+            const formattedValue = isNonLoSo ? "non lo so" : formatDisplayValue(value, validationType);
             
             // Renderizza uno span styled che assomiglia a una risposta completata
             parts.push(
@@ -1001,7 +1007,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
       {/* Nuovo contenitore per i MultiBlockManager placeholder */}
       {renderMultiBlockManagers()}
       
-      {/* Pulsante "Non lo so" - mostrato solo quando ci sono input mancanti o non validi, dopo 5 secondi */}
+      {/* Pulsante "Non lo so" - mostrato solo quando ci sono input mancanti o non validi, dopo 1.5 secondi */}
       {showNonLoSoButton && question.skippableWithNotSure && hasMissingOrInvalidInputs() && (
         <div className="mt-5 animate-fade-in">
           <button
