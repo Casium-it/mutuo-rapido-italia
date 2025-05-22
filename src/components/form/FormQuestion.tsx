@@ -98,18 +98,18 @@ export function FormQuestion({ question }: FormQuestionProps) {
     });
   };
 
-  // Nuovo timer effect per mostrare il pulsante "Non lo so" dopo 6 secondi
+  // Nuovo timer effect per mostrare il pulsante "Non lo so" dopo 5 secondi
   useEffect(() => {
     let timer: NodeJS.Timeout;
 
-    // Verifica se ci sono campi di input mancanti o non validi
-    if (hasMissingOrInvalidInputs()) {
-      // Imposta un timer per mostrare il pulsante dopo 6 secondi
+    // Verifica se la domanda è skippable e se ci sono campi di input mancanti o non validi
+    if (question.skippableWithNotSure && hasMissingOrInvalidInputs()) {
+      // Imposta un timer per mostrare il pulsante dopo 5 secondi
       timer = setTimeout(() => {
         setShowNonLoSoButton(true);
-      }, 6000);
+      }, 5000);
     } else {
-      // Se tutti i campi sono validi, nascondi il pulsante
+      // Se tutti i campi sono validi o la domanda non è skippable, nascondi il pulsante
       setShowNonLoSoButton(false);
     }
 
@@ -117,7 +117,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
       // Pulisci il timer quando il componente si smonta o quando l'effetto viene richiamato
       clearTimeout(timer);
     };
-  }, [responses, validationErrors]);
+  }, [responses, validationErrors, question.skippableWithNotSure]);
 
   // Effetto per caricare le risposte esistenti e impostare visibilità iniziale delle opzioni
   useEffect(() => {
@@ -163,18 +163,18 @@ export function FormQuestion({ question }: FormQuestionProps) {
       key => question.placeholders[key].type === "input"
     );
     
-    // Imposta "non_lo_so" per tutti i campi input mancanti o non validi
+    // Imposta "non lo so" per tutti i campi input mancanti o non validi
     inputPlaceholders.forEach(key => {
       const value = responses[key] || getResponse(question.question_id, key);
       const isValid = !validationErrors[key];
       
       if (!value || value === "" || !isValid) {
-        setResponse(question.question_id, key, "non_lo_so");
+        setResponse(question.question_id, key, "non lo so");
         
         // Aggiorna anche lo stato locale
         setResponses(prev => ({
           ...prev,
-          [key]: "non_lo_so"
+          [key]: "non lo so"
         }));
         
         // Resetta gli errori di validazione
@@ -892,8 +892,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
       {/* Nuovo contenitore per i MultiBlockManager placeholder */}
       {renderMultiBlockManagers()}
       
-      {/* Pulsante "Non lo so" - mostrato solo quando ci sono input mancanti o non validi, dopo 6 secondi */}
-      {showNonLoSoButton && hasMissingOrInvalidInputs() && (
+      {/* Pulsante "Non lo so" - mostrato solo quando ci sono input mancanti o non validi, dopo 5 secondi */}
+      {showNonLoSoButton && question.skippableWithNotSure && hasMissingOrInvalidInputs() && (
         <div className="mt-5 animate-fade-in">
           <button
             type="button"

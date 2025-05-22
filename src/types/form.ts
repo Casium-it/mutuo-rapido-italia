@@ -40,7 +40,8 @@ export type Question = {
   question_notes?: string;
   block_id?: string;
   inline?: boolean;
-  endOfForm?: boolean; // New attribute for end-of-form question
+  endOfForm?: boolean; // End-of-form question attribute
+  skippableWithNotSure?: boolean; // Nuovo attributo che indica se la domanda può essere saltata con "non lo so"
   leads_to_placeholder_priority: string;
   placeholders: Record<string, Placeholder>;
 };

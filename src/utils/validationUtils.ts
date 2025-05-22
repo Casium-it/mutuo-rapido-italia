@@ -3,8 +3,8 @@ import { ValidationTypes } from "@/types/form";
 
 // Function for validating input based on type
 export const validateInput = (value: string, type: ValidationTypes): boolean => {
-  // If the value is "non_lo_so", it's always considered valid
-  if (value === "non_lo_so") {
+  // Se il valore è "non lo so", è sempre considerato valido
+  if (value === "non lo so") {
     return true;
   }
   
