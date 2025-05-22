@@ -3,7 +3,7 @@ import { useFormExtended } from "@/hooks/useFormExtended";
 import { Question, ValidationTypes } from "@/types/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ArrowLeft } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { cn, formatNumberWithThousandSeparator, capitalizeWords } from "@/lib/utils";
 import { SelectPlaceholderBox } from "./SelectPlaceholderBox";
@@ -133,6 +133,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
   const [showNonLoSoButton, setShowNonLoSoButton] = useState(false);
   // Nuovo stato per tenere traccia delle posizioni del cursore
   const [cursorPositions, setCursorPositions] = useState<{ [key: string]: number | null }>({});
+  // Nuovo stato per tenere traccia se è possibile tornare alla domanda precedente
+  const [hasPreviousQuestion, setHasPreviousQuestion] = useState(false);
   const params = useParams();
 
   // Nuova funzione per verificare se ci sono campi di input mancanti o non validi
@@ -229,6 +231,36 @@ export function FormQuestion({ question }: FormQuestionProps) {
     // Reset delle posizioni del cursore
     setCursorPositions({});
   }, [question.question_id, getResponse, question.placeholders]);
+
+  // Effetto per controllare se esiste una domanda precedente
+  useEffect(() => {
+    const previousQuestion = getPreviousQuestion(
+      state.activeQuestion.block_id,
+      state.activeQuestion.question_id
+    );
+    setHasPreviousQuestion(!!previousQuestion);
+  }, [state.activeQuestion, getPreviousQuestion]);
+
+  // Nuova funzione per gestire il ritorno alla domanda precedente
+  const handlePreviousQuestion = () => {
+    if (isNavigating) return;
+    setIsNavigating(true);
+    
+    const previousQuestion = getPreviousQuestion(
+      state.activeQuestion.block_id,
+      state.activeQuestion.question_id
+    );
+    
+    if (previousQuestion) {
+      // Naviga alla domanda precedente direttamente, evitando di aggiornare la cronologia
+      setTimeout(() => {
+        goToQuestion(state.activeQuestion.block_id, previousQuestion.question_id);
+        setIsNavigating(false);
+      }, 50);
+    } else {
+      setIsNavigating(false);
+    }
+  };
 
   // Nuova funzione per gestire il click sul pulsante "Non lo so"
   const handleNonLoSoClick = () => {
@@ -971,15 +1003,33 @@ export function FormQuestion({ question }: FormQuestionProps) {
         </div>
       )}
       
-      {/* Pulsante Avanti - mostrato solo se ci sono risposte valide e tutti gli input hanno contenuto valido */}
+      {/* Pulsanti di navigazione - Mostra pulsanti Indietro e Avanti fianco a fianco */}
       {hasValidResponses && !Object.values(question.placeholders).some(p => p.type === "MultiBlockManager") && (
-        <div className="mt-8">
+        <div className="mt-8 flex flex-row gap-3 items-center">
+          {/* Nuovo bottone Indietro - mostrato solo se c'è una domanda precedente */}
+          {hasPreviousQuestion && (
+            <Button
+              type="button"
+              className={cn(
+                "bg-[#E7E1D9] hover:bg-[#D9D2C7] text-[#333] rounded-[12px] aspect-square w-14 h-14",
+                "transition-all shadow-[0_3px_0_0_#BEB8AE] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#BEB8AE]",
+                "flex items-center justify-center"
+              )}
+              onClick={handlePreviousQuestion}
+              disabled={isNavigating}
+              aria-label="Torna alla domanda precedente"
+            >
+              <ArrowLeft className="h-5 w-5 transition-transform duration-200 hover:scale-125" />
+            </Button>
+          )}
+          
+          {/* Pulsante Avanti - mostrato solo se ci sono risposte valide */}
           <Button
             type="button"
             className={cn(
               "bg-[#245C4F] hover:bg-[#1e4f44] text-white px-[32px] py-[16px] rounded-[12px] text-[17px] font-medium",
               "transition-all shadow-[0_6px_12px_rgba(36,92,79,0.2)] hover:shadow-[0_8px_16px_rgba(36,92,79,0.25)]",
-              "inline-flex items-center gap-[12px]"
+              "inline-flex items-center gap-[12px] flex-1"
             )}
             onClick={handleNextQuestion}
             disabled={isNavigating || Object.keys(question.placeholders).length === 0}
