@@ -21,6 +21,7 @@ type FormContextType = {
   deleteQuestionResponses: (questionIds: string[]) => void;
   isBlockCompleted: (blockId: string) => boolean;
   markBlockAsCompleted: (blockId: string) => void;
+  removeBlockFromCompleted: (blockId: string) => void;
 };
 
 type Action =
@@ -311,6 +312,14 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     if (blockId && !state.completedBlocks.includes(blockId)) {
       console.log(`Marking block as completed: ${blockId}`);
       dispatch({ type: "MARK_BLOCK_COMPLETED", blockId });
+    }
+  }, [state.completedBlocks]);
+
+  // Remove a block from completed blocks
+  const removeBlockFromCompleted = useCallback((blockId: string) => {
+    if (blockId && state.completedBlocks.includes(blockId)) {
+      console.log(`Removing block from completed: ${blockId}`);
+      dispatch({ type: "REMOVE_BLOCK_FROM_COMPLETED", blockId });
     }
   }, [state.completedBlocks]);
 
@@ -943,7 +952,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         deleteDynamicBlock,
         deleteQuestionResponses,
         isBlockCompleted,
-        markBlockAsCompleted
+        markBlockAsCompleted,
+        removeBlockFromCompleted
       }}
     >
       {children}
