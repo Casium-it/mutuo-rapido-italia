@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useFormExtended } from "@/hooks/useFormExtended";
+import { useForm as useOriginalForm } from "@/contexts/FormContext";
 import { MultiBlockManagerPlaceholder } from "@/types/form";
 import { Plus, ArrowRight, Trash, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -18,6 +19,9 @@ export function MultiBlockManager({
   placeholderKey,
   placeholder
 }: MultiBlockManagerProps) {
+  // Importa il form context originale
+  const formContext = useOriginalForm();
+  
   const { 
     createDynamicBlock, 
     navigateToDynamicBlock, 
@@ -62,8 +66,7 @@ export function MultiBlockManager({
         // Rimuovi il blocco padre dai completati perché ora ha un nuovo blocco figlio incompleto
         console.log(`Rimuovendo il blocco ${parentBlockId} dalla lista dei completati`);
         
-        // Utilizziamo il context principale per rimuovere il blocco dai completati
-        const formContext = useOriginalForm();
+        // Utilizziamo il context già importato per rimuovere il blocco dai completati
         formContext.removeBlockFromCompleted(parentBlockId);
       }
       
