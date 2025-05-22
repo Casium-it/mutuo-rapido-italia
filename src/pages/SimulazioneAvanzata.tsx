@@ -89,7 +89,7 @@ const SimulazioneAvanzata = () => {
           <OptionCard
             icon={Check}
             title="Ho fatto un'offerta"
-            description="Sono in attesa che l'offerta venga accettata"
+            description="Sono in attesa dell'accettazione"
             href="/simulazione/offerta/introduzione/soggetto_acquisto"
             onClick={() => startNewForm("/simulazione/offerta/introduzione/soggetto_acquisto", ["la_tua_offerta"])}
           />
