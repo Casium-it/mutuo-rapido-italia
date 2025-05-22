@@ -1,4 +1,3 @@
-
 import { Block, Question } from "@/types/form";
 
 /**
@@ -24,9 +23,7 @@ export const getPreviousQuestion = (
 
 /**
  * Gets a chain of all connected inline questions, starting from the first non-inline question
- * and including the specified question (unless includeCurrent is false)
- * 
- * Note: This function should ideally be used as a fallback when navigation history isn't available
+ * and including all inline questions up to (but not including) the specified question
  * 
  * @param blocks All form blocks
  * @param blockId Current block ID
@@ -48,26 +45,23 @@ export const getChainOfInlineQuestions = (
 
   const currentQuestion = currentBlock.questions[questionIndex];
   
-  // Se questa è la prima domanda o non è inline, restituisci solo la domanda attuale
+  // Se non è una domanda inline o è la prima domanda del blocco, restituisci solo la domanda corrente
   if (questionIndex === 0 || !currentQuestion.inline) {
     return includeCurrent ? [currentQuestion] : [];
   }
+
+  // Trova l'indice della prima domanda non inline nella catena
+  let startIndex = questionIndex - 1;
+  while (startIndex > 0 && currentBlock.questions[startIndex].inline) {
+    startIndex--;
+  }
   
-  // Inizia la catena con la domanda precedente
-  const chain: Question[] = [];
-  let currentIndex = questionIndex - 1;
+  // Inizia la catena con la prima domanda non inline (o la prima del blocco)
+  const chain: Question[] = [currentBlock.questions[startIndex]];
   
-  // Continua ad aggiungere domande precedenti finché non troviamo una non inline
-  while (currentIndex >= 0) {
-    const question = currentBlock.questions[currentIndex];
-    chain.unshift(question); // Aggiungi all'inizio dell'array
-    
-    // Se questa domanda non è inline, abbiamo raggiunto l'inizio della catena
-    if (!question.inline) {
-      break;
-    }
-    
-    currentIndex--;
+  // Aggiungi tutte le domande inline successive fino alla domanda corrente (esclusa)
+  for (let i = startIndex + 1; i < questionIndex; i++) {
+    chain.push(currentBlock.questions[i]);
   }
   
   // Aggiungi la domanda corrente alla fine se richiesto

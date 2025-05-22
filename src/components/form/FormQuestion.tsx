@@ -485,8 +485,12 @@ export function FormQuestion({ question }: FormQuestionProps) {
   // Funzione modificata per navigare alla domanda specifica quando si fa click su una risposta
   const handleQuestionClick = (questionId: string) => {
     // Naviga direttamente alla domanda con l'ID specificato
-    if (questionId) {
-      goToQuestion(state.activeQuestion.block_id, questionId);
+    if (questionId && !isNavigating) {
+      setIsNavigating(true);
+      setTimeout(() => {
+        goToQuestion(state.activeQuestion.block_id, questionId);
+        setIsNavigating(false);
+      }, 50);
     }
   };
 
@@ -644,13 +648,11 @@ export function FormQuestion({ question }: FormQuestionProps) {
         // Renderizza la catena di domande inline
         return (
           <div className="inline">
-            {/* Prima domanda (non inline) o inizio della catena */}
-            {renderQuestionWithResponses(inlineChain[0])}
-            
-            {/* Domande inline intermedie */}
-            {inlineChain.slice(1).map((q, index) => (
-              <span key={`inline-${q.question_id}`}>
+            {/* Renderizza ogni domanda nella catena */}
+            {inlineChain.map((q, index) => (
+              <span key={`inline-${q.question_id}`} className={index > 0 ? "ml-1" : ""}>
                 {renderQuestionWithResponses(q)}
+                {index < inlineChain.length - 1 ? " " : ""}
               </span>
             ))}
             
