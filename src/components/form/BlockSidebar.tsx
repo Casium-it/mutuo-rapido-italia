@@ -1,9 +1,9 @@
+
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { cn } from "@/lib/utils";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { CircleCheck, ChevronRight, Lock } from "lucide-react";
 import { CompleteFormButton } from "./CompleteFormButton"; 
-import "./BackArrow.css";
 
 export function BlockSidebar() {
   const {
@@ -45,14 +45,7 @@ export function BlockSidebar() {
 
   return <div className="w-full bg-[#FAF9F6] h-full py-6 overflow-y-auto border-r border-gray-200 px-[16px] flex flex-col">
       <div className="px-4 flex-1">
-        <div className="flex items-center gap-2 mb-6">
-          <Link to="/" className="group flex items-center">
-            <div className="back-arrow-container">
-              <div className="back-arrow"></div>
-            </div>
-          </Link>
-          <h2 className="text-base font-semibold text-gray-800">Il tuo percorso</h2>
-        </div>
+        <h2 className="text-base font-semibold text-gray-800 mb-6">Il tuo percorso</h2>
         <div className="space-y-1">
           {activeBlocks.map((block, index) => {
           const isActive = isBlockActive(block.block_id);
