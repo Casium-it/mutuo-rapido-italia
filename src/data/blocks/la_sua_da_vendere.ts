@@ -5,7 +5,7 @@ export const la_sua_da_vendere: Block = {
   block_number: "9",
   block_id: "la_sua_da_vendere",
   title: "La casa da vendere",
-  priority: 1800, // Priorità aggiunta
+  priority: 1800,
   default_active: false,
   questions: [
     {
@@ -13,12 +13,12 @@ export const la_sua_da_vendere: Block = {
       question_id: "valore_casa_vendita",
       question_text: "Il valore della casa da vendere oggi è circa {{placeholder1}} euro",
       leads_to_placeholder_priority: "placeholder1",
-      skippableWithNotSure: true, // Aggiunto skippableWithNotSure
+      skippableWithNotSure: true,
       placeholders: {
         placeholder1: {
           type: "input",
           input_type: "number",
-          placeholder_label: "Valore stimato",
+          placeholder_label: "Valore",
           leads_to: "presenza_mutuo_casa_vendita",
           input_validation: "euro"
         }
@@ -52,12 +52,12 @@ export const la_sua_da_vendere: Block = {
       question_id: "dettagli_mutuo_casa_vendita",
       question_text: "Al mutuo mancano {{placeholder1}} euro da saldare. Il mutuo ha un tasso {{placeholder2}} del {{placeholder3}}%, e finirà nel {{placeholder4}}",
       leads_to_placeholder_priority: "placeholder4",
-      skippableWithNotSure: true, // Aggiunto skippableWithNotSure
+      skippableWithNotSure: true,
       placeholders: {
         placeholder1: {
           type: "input",
           input_type: "number",
-          placeholder_label: "Importo residuo",
+          placeholder_label: "Importo",
           input_validation: "euro"
         },
         placeholder2:{
@@ -70,7 +70,7 @@ export const la_sua_da_vendere: Block = {
             },
             {
               id: "variabile",
-              label: "non ha un mutuo",
+              label: "variabile",
               leads_to: "next_block"
             }
           ]
@@ -78,7 +78,7 @@ export const la_sua_da_vendere: Block = {
         placeholder3: {
           type: "input",
           input_type: "number",
-          placeholder_label: "Tasso percentuale",
+          placeholder_label: "Percentuale",
           input_validation: "free_text"
         },
         placeholder4: {

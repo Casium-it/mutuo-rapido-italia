@@ -30,10 +30,10 @@ export const finanziamenti_blueprint: Block = {
     {
       question_id: "finanziamenti_importo{copyNumber}",
       question_number: "14.2",
-      question_text: "L'importo della rata mensile è di {{placeholder1}}",
+      question_text: "L'importo della rata mensile è di {{placeholder1}} euro",
       question_notes: "Indica l'importo della rata mensile che paghi attualmente",
       leads_to_placeholder_priority: "placeholder1",
-      skippableWithNotSure: true, // Aggiunto skippableWithNotSure
+      skippableWithNotSure: true,
       placeholders: {
         placeholder1: {
           type: "input",
@@ -47,14 +47,14 @@ export const finanziamenti_blueprint: Block = {
     {
       question_id: "remaining_amount{copyNumber}",
       question_number: "14.3",
-      question_text: "Il capitale residuo è di {{placeholder1}}",
+      question_text: "Il capitale residuo è di {{placeholder1}} euro",
       leads_to_placeholder_priority: "placeholder1",
-      skippableWithNotSure: true, // Aggiunto skippableWithNotSure
+      skippableWithNotSure: true,
       placeholders: {
         placeholder1: {
           type: "input",
           input_type: "number",
-          placeholder_label: "Importo residuo",
+          placeholder_label: "Importo",
           input_validation: "euro",
           leads_to: "financing_end_date{copyNumber}"
         }
@@ -66,7 +66,7 @@ export const finanziamenti_blueprint: Block = {
       question_text: "Terminerò di pagare questo finanziamento {{placeholder1}}, {{placeholder2}}",
       leads_to_placeholder_priority: "placeholder2",
       inline: false,
-      skippableWithNotSure: true, // Aggiunto skippableWithNotSure
+      skippableWithNotSure: true,
       placeholders: {
         placeholder1: {
           type: "select",
@@ -99,12 +99,12 @@ export const finanziamenti_blueprint: Block = {
       question_number: "14.5",
       question_text: "Il finanziamento è con {{placeholder1}}",
       leads_to_placeholder_priority: "placeholder1",
-      skippableWithNotSure: true, // Aggiunto skippableWithNotSure
+      skippableWithNotSure: true,
       placeholders: {
         placeholder1: {
           type: "input",
           input_type: "text",
-          placeholder_label: "Nome istituto",
+          placeholder_label: "Istituto",
           input_validation: "free_text",
           leads_to: "manager_finanziamenti"
         }
