@@ -4,7 +4,7 @@ import { useFormExtended } from "@/hooks/useFormExtended";
 import { FormQuestion } from "./FormQuestion";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, AlertCircle, ArrowLeft } from "lucide-react";
+import { CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { submitFormToSupabase } from "@/services/formSubmissionService";
 
@@ -116,11 +116,6 @@ export function QuestionView() {
     }
   };
 
-  // Funzione per tornare alla home page
-  const handleBackToHome = () => {
-    navigate("/");
-  };
-
   if (!activeBlock || !activeQuestion) {
     return (
       <div className="text-center py-8">
@@ -131,19 +126,6 @@ export function QuestionView() {
 
   return (
     <div className="max-w-2xl">
-      {/* Back to home button */}
-      <div className="mb-6">
-        <Button
-          type="button"
-          onClick={handleBackToHome}
-          variant="ghost"
-          className="flex items-center text-[#333333] hover:bg-transparent hover:text-[#245C4F] p-0 h-auto"
-        >
-          <ArrowLeft className="h-5 w-5 mr-2 transition-transform duration-200 hover:scale-110" />
-          <span className="font-medium">Torna alla Home</span>
-        </Button>
-      </div>
-      
       {showStopFlow && (
         <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-md shadow-sm animate-fade-in">
           <p className="text-red-600 font-medium mb-2">
