@@ -32,7 +32,7 @@ export function PathOption({
     <Card className={`hover-grow transition-all duration-300 ${
       variant === "primary" 
         ? "border border-[#BEB8AE] bg-white shadow-[0_3px_0_0_#AFA89F] hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)]" 
-        : "bg-[#F8F4EF] border-2 border-[#245C4F] shadow-[0_3px_8px_rgba(36,92,79,0.15)] hover:shadow-[0_3px_12px_rgba(36,92,79,0.25)]"
+        : "bg-[#F8F4EF] border-2 border-[#245C4F] shadow-[0_3px_0_0_#1a3f37] hover:shadow-[0_3px_4px_rgba(26,63,55,0.25)]"
     } w-full max-w-sm rounded-[12px]`}>
       <CardHeader className={`${
         variant === "primary" 
