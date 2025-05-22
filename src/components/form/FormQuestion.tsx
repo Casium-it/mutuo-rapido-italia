@@ -335,7 +335,118 @@ export function FormQuestion({ question }: FormQuestionProps) {
     });
     
     // Procedi con la navigazione come nel handleNextQuestion
-    // ... keep existing code (navigazione alla domanda successiva basata su priorità e placeholder)
+    // Verifica se è stata specificata una priorità per i placeholder
+    if (question.leads_to_placeholder_priority && 
+        question.placeholders[question.leads_to_placeholder_priority]) {
+      
+      // Ottieni il placeholder con priorità
+      const priorityPlaceholder = question.placeholders[question.leads_to_placeholder_priority];
+      const priorityResponse = responses[question.leads_to_placeholder_priority] || 
+                              getResponse(question.question_id, question.leads_to_placeholder_priority);
+      
+      // Se il placeholder prioritario è di tipo select
+      if (priorityResponse && priorityPlaceholder.type === "select" && !Array.isArray(priorityResponse)) {
+        const selectedOption = (priorityPlaceholder as any).options.find(
+          (opt: any) => opt.id === priorityResponse
+        );
+        
+        if (selectedOption?.leads_to) {
+          // Check for stop_flow case
+          if (selectedOption.leads_to === "stop_flow") {
+            // Set session storage to indicate stop flow state and trigger the error message
+            sessionStorage.setItem("stopFlowActivated", "true");
+            setTimeout(() => {
+              // Reload the current question to trigger the useEffect in QuestionView
+              window.location.reload();
+              setIsNavigating(false);
+            }, 50);
+            return;
+          }
+          
+          setTimeout(() => {
+            navigateToNextQuestion(question.question_id, selectedOption.leads_to);
+            setIsNavigating(false);
+          }, 50);
+          return;
+        }
+      } 
+      // Se il placeholder prioritario è di tipo input
+      else if (priorityResponse && priorityPlaceholder.type === "input" && (priorityPlaceholder as any).leads_to) {
+        // Check for stop_flow case for input
+        if ((priorityPlaceholder as any).leads_to === "stop_flow") {
+          // Set session storage to indicate stop flow state
+          sessionStorage.setItem("stopFlowActivated", "true");
+          setTimeout(() => {
+            // Reload the current question to trigger the useEffect in QuestionView
+            window.location.reload();
+            setIsNavigating(false);
+          }, 50);
+          return;
+        }
+        
+        setTimeout(() => {
+          navigateToNextQuestion(question.question_id, (priorityPlaceholder as any).leads_to);
+          setIsNavigating(false);
+        }, 50);
+        return;
+      }
+    }
+    
+    // Se non c'è un placeholder prioritario o non ha un leads_to valido,
+    // usa la logica esistente per verificare i placeholder in ordine
+    for (const key of Object.keys(question.placeholders)) {
+      const response = responses[key] || getResponse(question.question_id, key);
+      
+      if (response && question.placeholders[key].type === "select" && !Array.isArray(response)) {
+        const selectedOption = (question.placeholders[key] as any).options.find(
+          (opt: any) => opt.id === response
+        );
+        
+        if (selectedOption?.leads_to) {
+          // Check for stop_flow case
+          if (selectedOption.leads_to === "stop_flow") {
+            // Set session storage to indicate stop flow state
+            sessionStorage.setItem("stopFlowActivated", "true");
+            setTimeout(() => {
+              // Reload the current question to trigger the useEffect in QuestionView
+              window.location.reload();
+              setIsNavigating(false);
+            }, 50);
+            return;
+          }
+          
+          setTimeout(() => {
+            navigateToNextQuestion(question.question_id, selectedOption.leads_to);
+            setIsNavigating(false);
+          }, 50);
+          return;
+        }
+      } else if (response && question.placeholders[key].type === "input" && (question.placeholders[key] as any).leads_to) {
+        // Check for stop_flow case for input
+        if ((question.placeholders[key] as any).leads_to === "stop_flow") {
+          // Set session storage to indicate stop flow state
+          sessionStorage.setItem("stopFlowActivated", "true");
+          setTimeout(() => {
+            // Reload the current question to trigger the useEffect in QuestionView
+            window.location.reload();
+            setIsNavigating(false);
+          }, 50);
+          return;
+        }
+        
+        setTimeout(() => {
+          navigateToNextQuestion(question.question_id, (question.placeholders[key] as any).leads_to);
+          setIsNavigating(false);
+        }, 50);
+        return;
+      }
+    }
+    
+    // Se nessun placeholder ha un leads_to valido, vai al blocco successivo
+    setTimeout(() => {
+      navigateToNextQuestion(question.question_id, "next_block");
+      setIsNavigating(false);
+    }, 50);
   };
 
   // Funzione aggiornata per gestire il cambio di risposta con formattazione per campi euro
