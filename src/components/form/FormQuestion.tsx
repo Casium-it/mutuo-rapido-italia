@@ -894,7 +894,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
       
       {/* Pulsante "Non lo so" - mostrato solo quando ci sono input mancanti o non validi, dopo 6 secondi */}
       {showNonLoSoButton && hasMissingOrInvalidInputs() && (
-        <div className="mt-5">
+        <div className="mt-5 animate-fade-in">
           <button
             type="button"
             className={cn(
