@@ -118,7 +118,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
     getInlineQuestionChain,
     state, 
     addActiveBlock, 
-    goToQuestion 
+    goToQuestion,
+    blocks // Assicuriamoci di estrarre blocks da useFormExtended
   } = useFormExtended();
   
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});
