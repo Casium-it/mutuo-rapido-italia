@@ -138,10 +138,10 @@ const OptionCard = ({ icon: Icon, title, description, href, disabled = false, ba
 
   return (
     <div 
-      className={`flex items-center justify-between p-5 bg-white rounded-md shadow-sm ${
+      className={`flex items-center justify-between p-5 bg-white rounded-[12px] border border-[#BEB8AE] ${
         disabled 
           ? "opacity-80 cursor-not-allowed" 
-          : "hover:shadow-md transition-all group cursor-pointer"
+          : "hover:shadow-md transition-all group cursor-pointer shadow-[0_3px_0_0_#AFA89F] hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)]"
       }`}
       onClick={handleClick}
     >
@@ -152,8 +152,8 @@ const OptionCard = ({ icon: Icon, title, description, href, disabled = false, ba
           </div>
         )}
         <div className="text-left">
-          <h3 className={`text-lg font-semibold ${disabled ? "text-gray-600" : "text-gray-900"}`}>{title}</h3>
-          {description && <p className={`text-sm ${disabled ? "text-gray-500" : "text-gray-500"} mt-0.5`}>{description}</p>}
+          <h3 className={`text-lg font-semibold font-['Inter'] ${disabled ? "text-gray-600" : "text-gray-900"}`}>{title}</h3>
+          {description && <p className={`text-sm font-['Inter'] ${disabled ? "text-gray-500" : "text-gray-500"} mt-0.5`}>{description}</p>}
           {badge && (
             <UIBadge variant="outline" className="mt-2 text-xs bg-gray-100 text-gray-600 font-normal">
               {badge}
@@ -161,7 +161,7 @@ const OptionCard = ({ icon: Icon, title, description, href, disabled = false, ba
           )}
         </div>
       </div>
-      <div className={`${disabled ? "bg-gray-300" : "bg-vibe-green group-hover:bg-vibe-green-dark"} p-3 rounded-md transition-colors flex items-center justify-center ml-2 flex-shrink-0`}>
+      <div className={`${disabled ? "bg-gray-300" : "bg-[#245C4F] hover:bg-[#1e4f44]"} p-3 rounded-[10px] transition-colors flex items-center justify-center ml-2 flex-shrink-0 shadow-[0_3px_0_0_#1a453e]`}>
         <ArrowRight className={`w-5 h-5 ${disabled ? "text-gray-100" : "text-white"}`} />
       </div>
     </div>
