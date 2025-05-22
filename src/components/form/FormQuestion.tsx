@@ -3,7 +3,7 @@ import { useFormExtended } from "@/hooks/useFormExtended";
 import { Question, ValidationTypes } from "@/types/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ArrowLeft } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { cn, formatNumberWithThousandSeparator, capitalizeWords } from "@/lib/utils";
 import { SelectPlaceholderBox } from "./SelectPlaceholderBox";
@@ -116,8 +116,9 @@ export function FormQuestion({ question }: FormQuestionProps) {
     getPreviousQuestionText,
     getPreviousQuestion, 
     getInlineQuestionChain,
-    state, 
-    addActiveBlock, 
+    state,
+    blocks,
+    addActiveBlock,
     goToQuestion 
   } = useFormExtended();
   
@@ -230,7 +231,77 @@ export function FormQuestion({ question }: FormQuestionProps) {
     setCursorPositions({});
   }, [question.question_id, getResponse, question.placeholders]);
 
-  // Nuova funzione per gestire il click sul pulsante "Non lo so"
+  // Nuova funzione per gestire la navigazione indietro
+  const handleBackNavigation = () => {
+    if (isNavigating) return;
+    setIsNavigating(true);
+    
+    // Cerchiamo il blocco corrente
+    const currentBlock = blocks.find(b => b.block_id === state.activeQuestion.block_id);
+    if (!currentBlock) {
+      setIsNavigating(false);
+      return;
+    }
+    
+    // Troviamo l'indice della domanda corrente nel blocco
+    const currentQuestionIndex = currentBlock.questions.findIndex(q => 
+      q.question_id === state.activeQuestion.question_id
+    );
+    
+    // Se siamo alla prima domanda del blocco
+    if (currentQuestionIndex <= 0) {
+      // Troviamo il blocco attivo precedente
+      const activeBlockIndex = state.activeBlocks.findIndex(
+        blockId => blockId === state.activeQuestion.block_id
+      );
+      
+      if (activeBlockIndex > 0) {
+        // C'è un blocco precedente attivo
+        const previousBlockId = state.activeBlocks[activeBlockIndex - 1];
+        const previousBlock = blocks.find(b => b.block_id === previousBlockId);
+        
+        if (previousBlock && previousBlock.questions.length > 0) {
+          // Trova l'ultima domanda risposta in questo blocco o l'ultima domanda del blocco
+          const answeredQuestions = previousBlock.questions.filter(q => 
+            state.answeredQuestions.has(q.question_id)
+          );
+          
+          if (answeredQuestions.length > 0) {
+            // Vai all'ultima domanda risposta
+            const lastAnsweredQuestion = answeredQuestions[answeredQuestions.length - 1];
+            setTimeout(() => {
+              // Non aggiornare la cronologia di navigazione per evitare loop
+              goToQuestion(previousBlockId, lastAnsweredQuestion.question_id, false);
+              setIsNavigating(false);
+            }, 50);
+            return;
+          } else {
+            // Se non ci sono domande risposte, vai alla prima domanda del blocco
+            setTimeout(() => {
+              // Non aggiornare la cronologia di navigazione
+              goToQuestion(previousBlockId, previousBlock.questions[0].question_id, false);
+              setIsNavigating(false);
+            }, 50);
+            return;
+          }
+        }
+      }
+    } else {
+      // Non siamo alla prima domanda, quindi torniamo alla domanda precedente nello stesso blocco
+      const previousQuestion = currentBlock.questions[currentQuestionIndex - 1];
+      setTimeout(() => {
+        // Non aggiornare la cronologia di navigazione
+        goToQuestion(currentBlock.block_id, previousQuestion.question_id, false);
+        setIsNavigating(false);
+      }, 50);
+      return;
+    }
+    
+    // Se arriviamo qui, non abbiamo trovato una domanda precedente
+    setIsNavigating(false);
+  };
+
+  // Funzione aggiornata per gestire il click sul pulsante "Non lo so"
   const handleNonLoSoClick = () => {
     if (isNavigating) return;
     setIsNavigating(true);
@@ -988,6 +1059,22 @@ export function FormQuestion({ question }: FormQuestionProps) {
           </Button>
         </div>
       )}
+      
+      {/* Nuovo Pulsante Indietro - sempre visibile */}
+      <div className="mt-4">
+        <button
+          type="button"
+          className={cn(
+            "text-[#BEB8AE] hover:text-[#AFA89F] text-[15px] font-medium underline",
+            "inline-flex items-center transition-colors"
+          )}
+          onClick={handleBackNavigation}
+          disabled={isNavigating}
+        >
+          <ArrowLeft className="mr-1 h-3.5 w-3.5" />
+          indietro
+        </button>
+      </div>
     </div>
   );
 }
