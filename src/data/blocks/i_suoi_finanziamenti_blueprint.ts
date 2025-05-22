@@ -33,6 +33,7 @@ export const i_suoi_finanziamenti_blueprint: Block = {
       question_text: "L'importo della rata mensile è di {{placeholder1}}",
       question_notes: "Indica l'importo della rata mensile che paga attualmente",
       leads_to_placeholder_priority: "placeholder1",
+      skippableWithNotSure: true, // Aggiunto skippableWithNotSure
       placeholders: {
         placeholder1: {
           type: "input",
@@ -48,6 +49,7 @@ export const i_suoi_finanziamenti_blueprint: Block = {
       question_number: "24.3",
       question_text: "Il capitale residuo è di {{placeholder1}}",
       leads_to_placeholder_priority: "placeholder1",
+      skippableWithNotSure: true, // Aggiunto skippableWithNotSure
       placeholders: {
         placeholder1: {
           type: "input",
@@ -64,6 +66,7 @@ export const i_suoi_finanziamenti_blueprint: Block = {
       question_text: "Terminerà di pagare questo finanziamento {{placeholder1}}, {{placeholder2}}",
       leads_to_placeholder_priority: "placeholder2",
       inline: false,
+      skippableWithNotSure: true, // Aggiunto skippableWithNotSure
       placeholders: {
         placeholder1: {
           type: "select",
@@ -96,6 +99,7 @@ export const i_suoi_finanziamenti_blueprint: Block = {
       question_number: "24.5",
       question_text: "Il finanziamento è con {{placeholder1}}",
       leads_to_placeholder_priority: "placeholder1",
+      skippableWithNotSure: true, // Aggiunto skippableWithNotSure
       placeholders: {
         placeholder1: {
           type: "input",

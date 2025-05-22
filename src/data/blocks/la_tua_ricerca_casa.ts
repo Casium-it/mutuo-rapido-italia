@@ -13,6 +13,7 @@ export const la_tua_ricerca_casa: Block = {
       question_id: "prezzo_casa_ricerca",
       question_text: "Sto cercando una casa dal valore indicativo di {{placeholder1}} euro",
       leads_to_placeholder_priority: "placeholder1",
+      skippableWithNotSure: true, // Aggiunto skippableWithNotSure
       placeholders: {
         placeholder1: {
           type: "input",
@@ -28,6 +29,7 @@ export const la_tua_ricerca_casa: Block = {
         question_id: "localizzazione_immobile_ricerca",
         question_text: "La proprietà si trova a {{placeholder1}}, CAP {{placeholder2}}.",
         leads_to_placeholder_priority: "placeholder2",
+        skippableWithNotSure: true, // Aggiunto skippableWithNotSure
         placeholders: {
           placeholder1: {
             type: "input",

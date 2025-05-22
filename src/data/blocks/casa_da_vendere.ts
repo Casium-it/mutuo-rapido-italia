@@ -13,6 +13,7 @@ export const casa_da_vendere: Block = {
       question_id: "valore_casa_vendita",
       question_text: "Il valore della casa da vendere oggi è circa {{placeholder1}} euro",
       leads_to_placeholder_priority: "placeholder1",
+      skippableWithNotSure: true, // Aggiunto skippableWithNotSure
       placeholders: {
         placeholder1: {
           type: "input",
@@ -51,6 +52,7 @@ export const casa_da_vendere: Block = {
       question_id: "dettagli_mutuo_casa_vendita",
       question_text: "Al mutuo mancano {{placeholder1}} euro da saldare. Il mutuo ha un tasso {{placeholder2}} del {{placeholder3}}%, e finirà nel {{placeholder4}}",
       leads_to_placeholder_priority: "placeholder4",
+      skippableWithNotSure: true, // Aggiunto skippableWithNotSure
       placeholders: {
         placeholder1: {
           type: "input",
