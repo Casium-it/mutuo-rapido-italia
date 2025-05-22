@@ -1,16 +1,15 @@
 
-import { createRoot } from 'react-dom/client'
-import App from './App.tsx'
-import './index.css'
-import { allBlocks } from './data/blocks'
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import './index.css';
+import { setupSlugHeader } from './integrations/supabase/setupSlugHeader';
 
-// Esporre i blocchi alla finestra per la compatibilità con il codice esistente
-declare global {
-  interface Window {
-    formBlocks?: any[];
-  }
-}
+// Configura l'header x-slug per tutte le richieste Supabase
+setupSlugHeader();
 
-window.formBlocks = allBlocks;
-
-createRoot(document.getElementById("root")!).render(<App />);
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);

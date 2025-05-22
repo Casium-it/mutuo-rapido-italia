@@ -21,13 +21,26 @@ export async function submitFormResponses(
   userIdentifier?: string
 ): Promise<SubmissionResult> {
   try {
+    // Ottieni lo slug salvato, se presente
+    const slug = localStorage.getItem('user_slug');
+    
+    // Se esiste uno slug, assicurati che l'header x-slug sia presente nella richiesta
+    let options = {};
+    if (slug) {
+      options = {
+        headers: {
+          'x-slug': slug
+        }
+      };
+    }
+    
     // 1. Crea la submission principale
     const { data: submission, error: submissionError } = await supabase
       .from("form_submissions")
       .insert({
         form_type: formType,
         user_identifier: userIdentifier || null,
-        metadata: { form_version: "1.0" }
+        metadata: { form_version: "1.0", slug: slug || null }
       })
       .select()
       .single();
@@ -61,6 +74,23 @@ export async function submitFormResponses(
       return { success: false, error: "Errore nel salvataggio delle risposte" };
     }
 
+    // 4. Se esiste uno slug, salviamo la simulazione completata nella tabella simulations
+    if (slug) {
+      const { error: simulationError } = await supabase
+        .from("simulations")
+        .insert({
+          slug: slug,
+          answers: formResponses,
+          submitted_at: new Date().toISOString(),
+          completed_at: new Date().toISOString()
+        });
+
+      if (simulationError) {
+        console.error("Errore nel salvataggio della simulazione:", simulationError);
+        // Non facciamo fallire l'intera operazione se fallisce solo l'inserimento in simulations
+      }
+    }
+
     return { 
       success: true, 
       submissionId: submission.id 
@@ -86,8 +116,11 @@ export async function submitFormToSupabase(
     // Determina il tipo di form in base all'URL o altro criterio
     const formType = window.location.pathname.includes("mutuo") ? "mutuo" : "simulazione";
     
+    // Ottieni l'identificatore utente opzionale
+    const userIdentifier = localStorage.getItem('user_slug') || undefined;
+    
     // Usa la funzione esistente per inviare i dati
-    const result = await submitFormResponses(responses, formType);
+    const result = await submitFormResponses(responses, formType, userIdentifier);
     
     return result;
   } catch (error) {

@@ -24,6 +24,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/simulazione-avanzata" element={<SimulazioneAvanzata />} />
+          <Route path="/simulazione-avanzata/:slug" element={<SimulazioneAvanzata />} />
           <Route path="/form-loading" element={<FormLoading />} />
           <Route path="/form-completed" element={<FormCompleted />} />
           <Route 
