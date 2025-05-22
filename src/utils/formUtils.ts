@@ -298,3 +298,25 @@ export const getParentMultiBlockManager = (
   
   return null;
 };
+
+/**
+ * Gets all questions that come after a specific question in the same block
+ * @param blocks All form blocks
+ * @param blockId Block ID to check
+ * @param questionId Question ID to start from
+ * @returns Array of questions that come after the specified question
+ */
+export const getQuestionsAfterInBlock = (
+  blocks: Block[],
+  blockId: string,
+  questionId: string
+): Question[] => {
+  const block = blocks.find(b => b.block_id === blockId);
+  if (!block) return [];
+  
+  const questionIndex = block.questions.findIndex(q => q.question_id === questionId);
+  if (questionIndex === -1 || questionIndex === block.questions.length - 1) return [];
+  
+  // Return all questions after the specified one in this block
+  return block.questions.slice(questionIndex + 1);
+};

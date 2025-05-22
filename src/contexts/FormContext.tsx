@@ -1,12 +1,13 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback, useRef } from "react";
-import { Block, FormState, FormResponse, NavigationHistory, Placeholder, SelectPlaceholder } from "@/types/form";
+import { Block, FormState, FormResponse, NavigationHistory, Placeholder, SelectPlaceholder, PendingRemoval } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { ensureBlockHasPriority } from "@/utils/blockUtils";
 import { 
   getPlaceholderLeadsTo, 
   isMultiBlockManagerQuestion, 
   isDynamicBlock, 
-  getParentMultiBlockManager 
+  getParentMultiBlockManager,
+  getQuestionsAfterInBlock
 } from "@/utils/formUtils";
 
 type FormContextType = {
@@ -28,6 +29,7 @@ type FormContextType = {
   isBlockCompleted: (blockId: string) => boolean;
   markBlockAsCompleted: (blockId: string) => void;
   removeBlockFromCompleted: (blockId: string) => void;
+  isQuestionPendingRemoval: (questionId: string) => boolean;
 };
 
 type Action =
@@ -44,7 +46,10 @@ type Action =
   | { type: "DELETE_DYNAMIC_BLOCK"; blockId: string }
   | { type: "DELETE_QUESTION_RESPONSES"; questionIds: string[] }
   | { type: "MARK_BLOCK_COMPLETED"; blockId: string }
-  | { type: "REMOVE_BLOCK_FROM_COMPLETED"; blockId: string };
+  | { type: "REMOVE_BLOCK_FROM_COMPLETED"; blockId: string }
+  | { type: "ADD_TO_PENDING_REMOVALS"; pendingRemovals: PendingRemoval[] }
+  | { type: "REMOVE_FROM_PENDING_REMOVALS"; questionIds: string[] }
+  | { type: "PROCESS_PENDING_REMOVALS"; currentBlockId: string };
 
 const initialState: FormState = {
   activeBlocks: [],
@@ -58,7 +63,8 @@ const initialState: FormState = {
   navigationHistory: [],
   dynamicBlocks: [],
   blockActivations: {}, // Track which questions/placeholders activated which blocks
-  completedBlocks: [] // Track completed blocks
+  completedBlocks: [], // Track completed blocks
+  pendingRemovals: [] // Track questions pending removal
 };
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
@@ -177,7 +183,8 @@ function formReducer(state: FormState, action: Action): FormState {
           initialState.activeBlocks.includes(blockId)),
         dynamicBlocks: [],
         blockActivations: {},
-        completedBlocks: []
+        completedBlocks: [],
+        pendingRemovals: []
       };
     }
     case "SET_NAVIGATING": {
@@ -268,6 +275,63 @@ function formReducer(state: FormState, action: Action): FormState {
         completedBlocks: state.completedBlocks.filter(blockId => blockId !== action.blockId)
       };
     }
+    // New actions for pending removals
+    case "ADD_TO_PENDING_REMOVALS": {
+      // Add new pending removals, avoiding duplicates
+      const existingIds = state.pendingRemovals.map(item => item.questionId);
+      const newRemovals = action.pendingRemovals.filter(
+        item => !existingIds.includes(item.questionId)
+      );
+      
+      return {
+        ...state,
+        pendingRemovals: [...state.pendingRemovals, ...newRemovals]
+      };
+    }
+    case "REMOVE_FROM_PENDING_REMOVALS": {
+      return {
+        ...state,
+        pendingRemovals: state.pendingRemovals.filter(
+          item => !action.questionIds.includes(item.questionId)
+        )
+      };
+    }
+    case "PROCESS_PENDING_REMOVALS": {
+      // Process pending removals for blocks other than the current one
+      const removalsByBlock = state.pendingRemovals.filter(
+        item => item.blockId !== action.currentBlockId
+      );
+      
+      if (removalsByBlock.length === 0) {
+        return state;
+      }
+      
+      // Get question IDs to remove
+      const questionIdsToRemove = removalsByBlock.map(item => item.questionId);
+      
+      // Update responses and answered questions
+      const updatedResponses = { ...state.responses };
+      const updatedAnsweredQuestions = new Set(state.answeredQuestions);
+      
+      questionIdsToRemove.forEach(questionId => {
+        delete updatedResponses[questionId];
+        updatedAnsweredQuestions.delete(questionId);
+      });
+      
+      console.log(`Removing ${questionIdsToRemove.length} questions from responses and answeredQuestions:`, questionIdsToRemove);
+      
+      // Remove processed items from pendingRemovals
+      const updatedPendingRemovals = state.pendingRemovals.filter(
+        item => item.blockId === action.currentBlockId
+      );
+      
+      return {
+        ...state,
+        responses: updatedResponses,
+        answeredQuestions: updatedAnsweredQuestions,
+        pendingRemovals: updatedPendingRemovals
+      };
+    }
     default:
       return state;
   }
@@ -289,7 +353,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     activeBlocks: sortedBlocks.filter(b => b.default_active).map(b => b.block_id),
     dynamicBlocks: [],
     blockActivations: {},
-    completedBlocks: []
+    completedBlocks: [],
+    pendingRemovals: []
   });
 
   // Funzione per trovare a quale blocco appartiene una domanda specifica
@@ -313,8 +378,25 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     return null;
   }, [sortedBlocks, state.dynamicBlocks]);
 
+  // Find a question by its ID
+  const findQuestionById = useCallback((questionId: string): { block: Block; question: any } | null => {
+    const allBlocks = [
+      ...sortedBlocks,
+      ...state.dynamicBlocks
+    ];
+    
+    for (const block of allBlocks) {
+      for (const question of block.questions) {
+        if (question.question_id === questionId) {
+          return { block, question };
+        }
+      }
+    }
+    return null;
+  }, [sortedBlocks, state.dynamicBlocks]);
+
   // Trova il lead_to di un placeholder in una domanda
-  const getPlaceholderLeadsTo = useCallback((question: any, placeholderKey: string, value: string | string[]): string | null => {
+  const findPlaceholderLeadsTo = useCallback((question: any, placeholderKey: string, value: string | string[]): string | null => {
     if (!question || !question.placeholders || !question.placeholders[placeholderKey]) {
       return null;
     }
@@ -340,6 +422,11 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     
     return null;
   }, []);
+
+  // Check if a question is pending removal
+  const isQuestionPendingRemoval = useCallback((questionId: string): boolean => {
+    return state.pendingRemovals.some(item => item.questionId === questionId);
+  }, [state.pendingRemovals]);
 
   // Mark a block as completed
   const markBlockAsCompleted = useCallback((blockId: string) => {
@@ -528,6 +615,11 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
           parsedState.dynamicBlocks = [];
         }
         
+        // Initialize pendingRemovals if not present
+        if (!parsedState.pendingRemovals) {
+          parsedState.pendingRemovals = [];
+        }
+        
         dispatch({ type: "SET_FORM_STATE", state: parsedState });
         
         if (parsedState.activeBlocks) {
@@ -592,6 +684,18 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   }, [state.completedBlocks]);
 
   const goToQuestion = useCallback((block_id: string, question_id: string, replace = false) => {
+    // Check if the question is in pending removals, if so, remove it
+    if (isQuestionPendingRemoval(question_id)) {
+      console.log(`Question ${question_id} was pending removal but is now being navigated to - removing from pending removals`);
+      dispatch({ type: "REMOVE_FROM_PENDING_REMOVALS", questionIds: [question_id] });
+    }
+    
+    // Check if we're navigating to a new block, if so, process pending removals for other blocks
+    if (block_id !== state.activeQuestion.block_id) {
+      console.log(`Navigating to a new block: ${block_id} - processing pending removals for other blocks`);
+      dispatch({ type: "PROCESS_PENDING_REMOVALS", currentBlockId: block_id });
+    }
+    
     // Set navigating state to true
     dispatch({ type: "SET_NAVIGATING", isNavigating: true });
     
@@ -628,7 +732,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     setTimeout(() => {
       dispatch({ type: "SET_NAVIGATING", isNavigating: false });
     }, 300);
-  }, [params.blockType, navigate, state.activeQuestion]);
+  }, [params.blockType, navigate, state.activeQuestion, isQuestionPendingRemoval]);
 
   const setResponse = useCallback((question_id: string, placeholder_key: string, value: string | string[]) => {
     const previousValue = state.responses[question_id]?.[placeholder_key];
@@ -660,16 +764,16 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     }
     
     // Gestione del cambiamento del lead_to
-    if (questionObj && previousValue !== undefined && previousValue !== value) {
-      const previousLeadsTo = getPlaceholderLeadsTo(questionObj, placeholder_key, previousValue);
-      const newLeadsTo = getPlaceholderLeadsTo(questionObj, placeholder_key, value);
+    if (questionObj && foundBlock && previousValue !== undefined && previousValue !== value) {
+      const previousLeadsTo = findPlaceholderLeadsTo(questionObj, placeholder_key, previousValue);
+      const newLeadsTo = findPlaceholderLeadsTo(questionObj, placeholder_key, value);
       
       // Log per il debug
       console.log(`Cambio risposta rilevato in questione ${question_id}, blocco ${blockId || "sconosciuto"}`);
       console.log(`Valore precedente: ${previousValue}, Nuovo valore: ${value}`);
       console.log(`Lead_to precedente: ${previousLeadsTo}, Nuovo lead_to: ${newLeadsTo}`);
       
-      // Se il lead_to è cambiato, rimuovi la domanda target precedente da answeredQuestions
+      // Se il lead_to è cambiato, gestisci le domande che devono essere rimosse
       if (previousLeadsTo && previousLeadsTo !== newLeadsTo) {
         console.log(`Lead_to cambiato da ${previousLeadsTo} a ${newLeadsTo}`);
         
@@ -696,47 +800,42 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         }
         
         if (!shouldSkipRemoval) {
-          console.log(`Rimuovo ${previousLeadsTo} da answeredQuestions.`);
+          console.log(`Preparando la rimozione di ${previousLeadsTo} e domande successive nello stesso blocco`);
           
-          // Rimuovi la domanda dalle domande risposte
-          const updatedAnsweredQuestions = new Set(state.answeredQuestions);
-          updatedAnsweredQuestions.delete(previousLeadsTo);
+          // Trova il blocco della domanda precedente
+          const targetQuestionInfo = findQuestionById(previousLeadsTo);
           
-          // Trova tutte le domande che potrebbero essere state coinvolte nel vecchio percorso
-          const questionsToRemove = [];
-          questionsToRemove.push(previousLeadsTo);
-          
-          // Rimuovi ricorsivamente le domande risposte che dipendono dal precedente lead_to
-          const findDependentQuestions = (startQuestionId: string) => {
-            const historyItems = state.navigationHistory.filter(item => 
-              item.from_question_id === startQuestionId
+          if (targetQuestionInfo) {
+            const targetBlockId = targetQuestionInfo.block.block_id;
+            
+            // Trova tutte le domande che seguono nella domanda nel blocco
+            const questionsAfter = getQuestionsAfterInBlock(
+              allBlocks,
+              targetBlockId,
+              previousLeadsTo
             );
             
-            historyItems.forEach(item => {
-              if (!questionsToRemove.includes(item.to_question_id)) {
-                questionsToRemove.push(item.to_question_id);
-                updatedAnsweredQuestions.delete(item.to_question_id);
-                findDependentQuestions(item.to_question_id);
-              }
-            });
-          };
-          
-          findDependentQuestions(previousLeadsTo);
-          
-          // Rimuovi tutte le risposte associate alle domande rimosse
-          const updatedResponses = { ...state.responses };
-          questionsToRemove.forEach(qId => {
-            delete updatedResponses[qId];
-          });
-          
-          // Aggiorna lo stato
-          dispatch({ 
-            type: "SET_FORM_STATE", 
-            state: { 
-              answeredQuestions: updatedAnsweredQuestions,
-              responses: updatedResponses
-            } 
-          });
+            // Aggiungi la domanda target e tutte quelle successive nel blocco a pendingRemovals
+            const pendingRemovals: PendingRemoval[] = [
+              {
+                questionId: previousLeadsTo,
+                blockId: targetBlockId,
+                timestamp: Date.now()
+              },
+              ...questionsAfter.map(q => ({
+                questionId: q.question_id,
+                blockId: targetBlockId,
+                timestamp: Date.now()
+              }))
+            ];
+            
+            console.log(`Aggiungendo ${pendingRemovals.length} domande a pendingRemovals:`, 
+              pendingRemovals.map(r => r.questionId));
+            
+            dispatch({ type: "ADD_TO_PENDING_REMOVALS", pendingRemovals });
+          } else {
+            console.log(`Non è stato possibile trovare la domanda ${previousLeadsTo} per prepararne la rimozione`);
+          }
         }
       }
     }
@@ -839,7 +938,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         }
       }
     }
-  }, [state.responses, state.dynamicBlocks, state.activeBlocks, sortedBlocks, state.completedBlocks, findBlockByQuestionId, state.answeredQuestions, state.navigationHistory, getPlaceholderLeadsTo]);
+  }, [state.responses, state.dynamicBlocks, state.activeBlocks, sortedBlocks, state.completedBlocks, findBlockByQuestionId, findQuestionById, findPlaceholderLeadsTo]);
 
   const getResponse = useCallback((question_id: string, placeholder_key: string) => {
     if (!state.responses[question_id]) return undefined;
@@ -857,22 +956,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   const isQuestionAnswered = useCallback((question_id: string) => {
     return state.answeredQuestions.has(question_id);
   }, [state.answeredQuestions]);
-
-  const findQuestionById = useCallback((questionId: string): { block: Block; question: any } | null => {
-    const allBlocks = [
-      ...sortedBlocks,
-      ...state.dynamicBlocks
-    ];
-    
-    for (const block of allBlocks) {
-      for (const question of block.questions) {
-        if (question.question_id === questionId) {
-          return { block, question };
-        }
-      }
-    }
-    return null;
-  }, [sortedBlocks, state.dynamicBlocks]);
 
   const navigateToNextQuestion = useCallback((currentQuestionId: string, leadsTo: string) => {
     // Store the current block ID before navigation starts
@@ -975,7 +1058,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     setTimeout(() => {
       dispatch({ type: "SET_NAVIGATING", isNavigating: false });
     }, 300);
-  }, [sortedBlocks, state.activeBlocks, goToQuestion, findQuestionById, state.activeQuestion.block_id, state.dynamicBlocks, markBlockAsCompleted]);
+  }, [sortedBlocks, state.activeBlocks, goToQuestion, findQuestionById, state.activeQuestion.block_id, state.dynamicBlocks]);
 
   const getProgress = useCallback(() => {
     // Filter out invisible blocks from active blocks
@@ -1071,7 +1154,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         deleteQuestionResponses,
         isBlockCompleted,
         markBlockAsCompleted,
-        removeBlockFromCompleted
+        removeBlockFromCompleted,
+        isQuestionPendingRemoval
       }}
     >
       {children}

@@ -78,6 +78,12 @@ export type BlockActivationSource = {
   placeholderId: string;
 };
 
+export type PendingRemoval = {
+  questionId: string;
+  blockId: string;
+  timestamp: number;
+};
+
 export type FormState = {
   activeBlocks: string[];
   activeQuestion: {
@@ -91,4 +97,5 @@ export type FormState = {
   dynamicBlocks: Block[];
   blockActivations: Record<string, BlockActivationSource[]>; // Track which questions activated which blocks
   completedBlocks: string[]; // Track completed blocks
+  pendingRemovals: PendingRemoval[]; // Track questions pending removal
 };
