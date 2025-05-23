@@ -8,13 +8,10 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Configura le chiavi per i servizi di messaggistica
-const messagingService = Deno.env.get("MESSAGING_SERVICE") || "twilio"; // 'twilio' o 'messagebird'
-const twilioAccountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
-const twilioAuthToken = Deno.env.get("TWILIO_AUTH_TOKEN");
-const twilioPhoneNumber = Deno.env.get("TWILIO_PHONE_NUMBER");
-const messageBirdApiKey = Deno.env.get("MESSAGEBIRD_API_KEY");
-const messageBirdPhoneNumber = Deno.env.get("MESSAGEBIRD_PHONE_NUMBER");
+// Configura le chiavi per WhatsApp Business API
+const whatsappAccessToken = Deno.env.get("WHATSAPP_ACCESS_TOKEN");
+const whatsappPhoneNumberId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID");
+const whatsappBusinessAccountId = Deno.env.get("WHATSAPP_BUSINESS_ACCOUNT_ID");
 
 // URL base dell'applicazione
 const appBaseUrl = Deno.env.get("APP_BASE_URL") || "https://app.gomutuo.it";
@@ -30,68 +27,42 @@ function generateUniqueSlug(): string {
   return nanoid(10); // Genera un ID alfanumerico di 10 caratteri
 }
 
-// Funzione per inviare un messaggio SMS via Twilio
-async function sendTwilioSMS(phoneNumber: string, message: string) {
-  if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
-    throw new Error("Twilio configuration missing");
+// Funzione per inviare un messaggio WhatsApp
+async function sendWhatsAppMessage(phoneNumber: string, message: string) {
+  if (!whatsappAccessToken || !whatsappPhoneNumberId) {
+    throw new Error("WhatsApp Business API configuration missing");
   }
 
-  const url = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
-  const auth = btoa(`${twilioAccountSid}:${twilioAuthToken}`);
+  // Rimuove il prefisso + se presente per WhatsApp API
+  const formattedPhone = phoneNumber.startsWith("+") ? phoneNumber.substring(1) : phoneNumber;
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      "Authorization": `Basic ${auth}`,
-    },
-    body: new URLSearchParams({
-      To: phoneNumber,
-      From: twilioPhoneNumber,
-      Body: message,
-    }),
-  });
+  const url = `https://graph.facebook.com/v18.0/${whatsappPhoneNumberId}/messages`;
+  
+  const messageData = {
+    messaging_product: "whatsapp",
+    to: formattedPhone,
+    type: "text",
+    text: {
+      body: message
+    }
+  };
 
-  return await response.json();
-}
-
-// Funzione per inviare un messaggio SMS via MessageBird
-async function sendMessageBirdSMS(phoneNumber: string, message: string) {
-  if (!messageBirdApiKey || !messageBirdPhoneNumber) {
-    throw new Error("MessageBird configuration missing");
-  }
-
-  const url = "https://rest.messagebird.com/messages";
   const response = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `AccessKey ${messageBirdApiKey}`,
+      "Authorization": `Bearer ${whatsappAccessToken}`,
     },
-    body: JSON.stringify({
-      originator: messageBirdPhoneNumber,
-      recipients: [phoneNumber],
-      body: message,
-    }),
+    body: JSON.stringify(messageData),
   });
 
-  return await response.json();
-}
-
-// Funzione per inviare il messaggio usando il servizio selezionato
-async function sendMessage(phoneNumber: string, message: string) {
-  try {
-    if (messagingService === "twilio") {
-      return await sendTwilioSMS(phoneNumber, message);
-    } else if (messagingService === "messagebird") {
-      return await sendMessageBirdSMS(phoneNumber, message);
-    } else {
-      throw new Error(`Unsupported messaging service: ${messagingService}`);
-    }
-  } catch (error) {
-    console.error("Failed to send message:", error);
-    throw error;
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("WhatsApp API Error:", errorText);
+    throw new Error(`WhatsApp API error: ${response.status} - ${errorText}`);
   }
+
+  return await response.json();
 }
 
 serve(async (req) => {
@@ -159,12 +130,14 @@ serve(async (req) => {
     // Costruisci il link personalizzato
     const personalisedLink = `${appBaseUrl}/simulazione-avanzata/${slug}`;
     
-    // Componi il messaggio da inviare
-    const message = `Ciao ${name}! Grazie per il tuo interesse in GoMutuo. Completa la tua simulazione per un mutuo su misura qui: ${personalisedLink}`;
+    // Componi il messaggio da inviare via WhatsApp
+    const message = `Ciao ${name}! 👋\n\nGrazie per il tuo interesse in GoMutuo.\n\nCompleta la tua simulazione per un mutuo su misura qui:\n${personalisedLink}\n\n🏠 Il tuo percorso verso il mutuo ideale inizia adesso!`;
     
-    // Invia il messaggio
+    // Invia il messaggio WhatsApp
     try {
-      const messagingResult = await sendMessage(formattedPhone, message);
+      const whatsappResult = await sendWhatsAppMessage(formattedPhone, message);
+      
+      console.log("WhatsApp message sent successfully:", whatsappResult);
       
       return new Response(
         JSON.stringify({
@@ -172,24 +145,24 @@ serve(async (req) => {
           lead,
           slug,
           personalisedLink,
-          messagingResult,
+          whatsappResult,
         }),
         {
           status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
-    } catch (messagingError) {
+    } catch (whatsappError) {
       // In caso di errore nell'invio del messaggio, restituiamo comunque l'ID del lead
       // poiché il lead è stato salvato correttamente nel database
-      console.error("Failed to send message:", messagingError);
+      console.error("Failed to send WhatsApp message:", whatsappError);
       return new Response(
         JSON.stringify({
           success: true,
           lead,
           slug,
           personalisedLink,
-          messagingError: messagingError.message,
+          whatsappError: whatsappError.message,
         }),
         {
           status: 200,
