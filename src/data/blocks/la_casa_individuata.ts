@@ -117,11 +117,12 @@ export const la_casa_individuata: Block = {
         question_id: "costo_agenzia_immobile_individuato",
         question_text: "che costerà circa {{placeholder1}} euro",
         leads_to_placeholder_priority: "placeholder1",
+        skippableWithNotSure: true,
         placeholders: {
           placeholder1: {
             type: "input",
             input_type: "number",
-            placeholder_label: "Costo agenzia",
+            placeholder_label: "costo",
             leads_to: "next_block",
             input_validation: "euro"
           }
