@@ -11,13 +11,13 @@ export const la_casa_individuata: Block = {
     {
       question_number: "12.1",
       question_id: "prezzo_casa_individuata",
-      question_text: "La richiesta per la casa individuata è di {{placeholder1}} euro",
+      question_text: "Il prezzo per la casa individuata è di {{placeholder1}} euro",
       leads_to_placeholder_priority: "placeholder1",
       placeholders: {
         placeholder1: {
           type: "input",
           input_type: "number",
-          placeholder_label: "Prezzo annuncio",
+          placeholder_label: "prezzo",
           leads_to: "localizzazione_immobile_individuato",
           input_validation: "euro"
         }
