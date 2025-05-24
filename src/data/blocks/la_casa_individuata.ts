@@ -28,6 +28,7 @@ export const la_casa_individuata: Block = {
         question_id: "localizzazione_immobile_individuato",
         question_text: "La proprietà si trova a {{placeholder1}}, CAP {{placeholder2}}.",
         leads_to_placeholder_priority: "placeholder2",
+        skippableWithNotSure: true,
         placeholders: {
           placeholder1: {
             type: "input",
