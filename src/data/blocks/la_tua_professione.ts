@@ -17,8 +17,8 @@ export const la_tua_professione: Block = {
         placeholder1: {
           type: "select",
           options: [
-            {"id": "impiegato_privato", "label": "impiegato nel settore privato", "leads_to": "tipo_contratto", "add_block": "reddito_principale"},
-            {"id": "impiegato_pubblico", "label": "impiegato nel settore pubblico", "leads_to": "tipo_contratto", "add_block": "reddito_principale"},
+            {"id": "dipendente_privato", "label": "dipendente nel settore privato", "leads_to": "tipo_contratto", "add_block": "reddito_principale"},
+            {"id": "dipendente_pubblico", "label": "dipendente nel settore pubblico", "leads_to": "tipo_contratto", "add_block": "reddito_principale"},
             {"id": "lavoratore_autonomo", "label": "lavoratore autonomo", "leads_to": "tipo_autonomo", "add_block": "reddito_lavoro_autonomo"},
             {"id": "pensionato", "label": "pensionato", "leads_to": "anno_pensione"},
             {"id": "studente", "label": "studente", "leads_to": "periodo_studio"},
