@@ -93,7 +93,7 @@ export function QuestionView() {
 
     try {
       setIsSubmitting(true);
-      const result = await submitFormToSupabase(state);
+      const result = await submitFormToSupabase(state, blocks);
       
       if (result.success) {
         // Passa i dati rilevanti alla pagina di caricamento

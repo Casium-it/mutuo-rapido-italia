@@ -141,17 +141,3 @@ export async function submitFormToSupabase(
     };
   }
 }
-
-/**
- * @deprecated Usa submitFormToSupabase invece
- * Mantienuto per compatibilità ma sarà rimosso
- */
-export async function submitFormResponses(
-  formResponses: FormResponse,
-  formType: string,
-  userIdentifier?: string
-): Promise<SubmissionResult> {
-  console.warn("submitFormResponses è deprecato, usa submitFormToSupabase");
-  // Implementazione minimale per compatibilità
-  return { success: false, error: "Funzione deprecata" };
-}
