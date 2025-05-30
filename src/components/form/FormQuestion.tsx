@@ -119,8 +119,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
     state,
     blocks,
     addActiveBlock,
-    goToQuestion,
-    setBackNavigation
+    goToQuestion 
   } = useFormExtended();
   
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});
@@ -206,13 +205,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
       const existingResponse = getResponse(question.question_id, key);
       if (existingResponse) {
         existingResponses[key] = existingResponse;
-        
-        // Check if this is a back navigation with existing response for select placeholders
-        if (question.placeholders[key].type === "select" && state.isBackNavigation) {
-          initialVisibleOptions[key] = true; // Show options when coming from back navigation
-        } else {
-          initialVisibleOptions[key] = false;
-        }
+        initialVisibleOptions[key] = false;
         
         // Verifica che le risposte esistenti siano ancora valide
         if (question.placeholders[key].type === "input") {
@@ -236,20 +229,12 @@ export function FormQuestion({ question }: FormQuestionProps) {
     setShowNonLoSoButton(false);
     // Reset delle posizioni del cursore
     setCursorPositions({});
-    
-    // Reset the back navigation flag after processing
-    if (state.isBackNavigation) {
-      setBackNavigation(false);
-    }
-  }, [question.question_id, getResponse, question.placeholders, state.isBackNavigation, setBackNavigation]);
+  }, [question.question_id, getResponse, question.placeholders]);
 
   // Funzione per gestire la navigazione indietro con gestione del caso speciale
   const handleBackNavigation = () => {
     if (isNavigating) return;
     setIsNavigating(true);
-    
-    // Set the back navigation flag BEFORE navigating
-    setBackNavigation(true);
     
     // Ottieni array di domande risposte dal set
     const answeredQuestionsArray = Array.from(state.answeredQuestions);
