@@ -12,7 +12,7 @@ import {
   BlockActivationSource,
   PendingRemoval,
 } from "@/types/form";
-import { getFormDefinition } from "@/data/formDefinition";
+import { allBlocks } from "@/data/blocks";
 import { useNavigate } from "react-router-dom";
 import { Block } from "@/types/form";
 
@@ -224,7 +224,7 @@ type FormProviderProps = {
 export const FormProvider: React.FC<FormProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(formReducer, initialState);
   const navigate = useNavigate();
-  const blocks = getFormDefinition();
+  const blocks = allBlocks;
 
   useEffect(() => {
     // Load active blocks from local storage on component mount
@@ -361,3 +361,5 @@ export const useFormContext = () => {
   }
   return context;
 };
+
+export { FormContext };
