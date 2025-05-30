@@ -119,24 +119,19 @@ export function FormQuestion({ question }: FormQuestionProps) {
     state,
     blocks,
     addActiveBlock,
-    goToQuestion 
+    goToQuestion,
+    setBackNavigation 
   } = useFormExtended();
   
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});
   const [isNavigating, setIsNavigating] = useState(false);
-  // Stato per tenere traccia di quali placeholder hanno opzioni visibili
   const [visibleOptions, setVisibleOptions] = useState<{ [key: string]: boolean }>({});
-  // Stato per tenere traccia degli errori di validazione
   const [validationErrors, setValidationErrors] = useState<{ [key: string]: boolean }>({});
-  // Stato per tenere traccia dei campi in fase di editing
   const [editingFields, setEditingFields] = useState<{ [key: string]: boolean }>({});
-  // Stato per "Non lo so" button
   const [showNonLoSoButton, setShowNonLoSoButton] = useState(false);
-  // Nuovo stato per tenere traccia delle posizioni del cursore
   const [cursorPositions, setCursorPositions] = useState<{ [key: string]: number | null }>({});
   const params = useParams();
 
-  // Nuova funzione per verificare se ci sono campi di input mancanti o non validi
   const hasMissingOrInvalidInputs = () => {
     const inputPlaceholders = Object.keys(question.placeholders).filter(
       key => question.placeholders[key].type === "input"
@@ -149,17 +144,14 @@ export function FormQuestion({ question }: FormQuestionProps) {
     return inputPlaceholders.some(key => {
       const value = responses[key] || getResponse(question.question_id, key);
       
-      // Se manca un valore, è considerato "mancante"
       if (value === undefined || value === "") {
         return true;
       }
       
-      // Se c'è un errore di validazione, è "non valido"
       if (validationErrors[key]) {
         return true;
       }
       
-      // Verifica anche la validazione per i valori esistenti
       if (value !== "") {
         const placeholder = question.placeholders[key];
         if (placeholder.type === "input") {
@@ -174,28 +166,22 @@ export function FormQuestion({ question }: FormQuestionProps) {
     });
   };
 
-  // Nuovo timer effect per mostrare il pulsante "Non lo so" dopo 1.5 secondi invece di 5
   useEffect(() => {
     let timer: NodeJS.Timeout;
 
-    // Verifica se la domanda è skippable e se ci sono campi di input mancanti o non validi
     if (question.skippableWithNotSure && hasMissingOrInvalidInputs()) {
-      // Imposta un timer per mostrare il pulsante dopo 1.5 secondi invece di 5
       timer = setTimeout(() => {
         setShowNonLoSoButton(true);
       }, 1500);
     } else {
-      // Se tutti i campi sono validi o la domanda non è skippable, nascondi il pulsante
       setShowNonLoSoButton(false);
     }
 
     return () => {
-      // Pulisci il timer quando il componente si smonta o quando l'effetto viene richiamato
       clearTimeout(timer);
     };
   }, [responses, validationErrors, question.skippableWithNotSure]);
 
-  // Effetto per caricare le risposte esistenti e impostare visibilità iniziale delle opzioni
   useEffect(() => {
     const existingResponses: { [key: string]: string | string[] } = {};
     const initialVisibleOptions: { [key: string]: boolean } = {};
@@ -207,7 +193,10 @@ export function FormQuestion({ question }: FormQuestionProps) {
         existingResponses[key] = existingResponse;
         initialVisibleOptions[key] = false;
         
-        // Verifica che le risposte esistenti siano ancora valide
+        if (state.isBackNavigation && question.placeholders[key].type === "select") {
+          initialVisibleOptions[key] = true;
+        }
+        
         if (question.placeholders[key].type === "input") {
           const placeholder = question.placeholders[key];
           const validationType = (placeholder as any).input_validation as ValidationTypes;
@@ -225,44 +214,39 @@ export function FormQuestion({ question }: FormQuestionProps) {
     setValidationErrors(initialValidationErrors);
     setEditingFields({});
     setIsNavigating(false);
-    // Reset dello stato del pulsante "Non lo so" quando cambia la domanda
     setShowNonLoSoButton(false);
-    // Reset delle posizioni del cursore
     setCursorPositions({});
-  }, [question.question_id, getResponse, question.placeholders]);
+    
+    if (state.isBackNavigation) {
+      setBackNavigation(false);
+    }
+  }, [question.question_id, getResponse, question.placeholders, state.isBackNavigation, setBackNavigation]);
 
-  // Funzione per gestire la navigazione indietro con gestione del caso speciale
   const handleBackNavigation = () => {
     if (isNavigating) return;
     setIsNavigating(true);
     
-    // Ottieni array di domande risposte dal set
+    setBackNavigation(true);
+    
     const answeredQuestionsArray = Array.from(state.answeredQuestions);
     
     if (answeredQuestionsArray.length === 0) {
-      // Se non ci sono domande precedenti, non possiamo andare indietro
       setIsNavigating(false);
       return;
     }
     
-    // Trova l'indice della domanda corrente nell'array delle domande risposte
     const currentQuestionIndex = answeredQuestionsArray.indexOf(state.activeQuestion.question_id);
     
     let targetQuestionIndex;
     
     if (currentQuestionIndex <= 0) {
-      // Se la domanda corrente non è nell'array o è la prima,
-      // considera la domanda corrente come se fosse dopo l'ultima dell'array
       targetQuestionIndex = answeredQuestionsArray.length - 1;
     } else {
-      // Altrimenti vai alla domanda precedente nell'array
       targetQuestionIndex = currentQuestionIndex - 1;
     }
     
-    // Ottieni l'ID della domanda precedente
     const previousQuestionId = answeredQuestionsArray[targetQuestionIndex];
     
-    // Trova il blocco che contiene questa domanda
     const blockWithPreviousQuestion = findBlockByQuestionId(blocks, previousQuestionId);
     
     if (!blockWithPreviousQuestion) {
@@ -271,24 +255,20 @@ export function FormQuestion({ question }: FormQuestionProps) {
       return;
     }
     
-    // Naviga alla domanda precedente
     setTimeout(() => {
       goToQuestion(blockWithPreviousQuestion.block_id, previousQuestionId);
       setIsNavigating(false);
     }, 50);
   };
 
-  // Funzione aggiornata per gestire il click sul pulsante "Non lo so"
   const handleNonLoSoClick = () => {
     if (isNavigating) return;
     setIsNavigating(true);
     
-    // Trova tutti i placeholder di tipo input che sono vuoti o non validi
     const inputPlaceholders = Object.keys(question.placeholders).filter(
       key => question.placeholders[key].type === "input"
     );
     
-    // Imposta "non lo so" per tutti i campi input mancanti o non validi
     inputPlaceholders.forEach(key => {
       const value = responses[key] || getResponse(question.question_id, key);
       const isValid = !validationErrors[key];
@@ -296,13 +276,11 @@ export function FormQuestion({ question }: FormQuestionProps) {
       if (!value || value === "" || !isValid) {
         setResponse(question.question_id, key, "non lo so");
         
-        // Aggiorna anche lo stato locale
         setResponses(prev => ({
           ...prev,
           [key]: "non lo so"
         }));
         
-        // Resetta gli errori di validazione
         setValidationErrors(prev => ({
           ...prev,
           [key]: false
@@ -310,72 +288,57 @@ export function FormQuestion({ question }: FormQuestionProps) {
       }
     });
     
-    // Procedi con la navigazione come nel handleNextQuestion
     // ... keep existing code (navigazione alla domanda successiva basata su priorità e placeholder)
   };
 
-  // Funzione aggiornata per gestire il cambio di risposta con formattazione per campi euro
   const handleResponseChange = (key: string, value: string | string[]) => {
     const placeholder = question.placeholders[key];
     
-    // Gestione speciale per campi di tipo input con validazione "euro"
     if (placeholder.type === "input" && typeof value === 'string') {
       const validationType = (placeholder as any).input_validation as ValidationTypes;
       
       if (validationType === "euro" && value !== "non lo so") {
-        // Ottieni la posizione corrente del cursore
         const selectionStart = cursorPositions[key];
-        
-        // Formatta il valore con separatori delle migliaia
         const { formattedValue, newCursorPosition } = formatEuroInput(value, selectionStart);
         
-        // Aggiorna la posizione del cursore
         setCursorPositions({
           ...cursorPositions,
           [key]: newCursorPosition
         });
         
-        // Salviamo il valore formattato nello stato locale per visualizzazione
         setResponses({
           ...responses,
           [key]: formattedValue
         });
         
-        // Segna il campo come in fase di editing
         setEditingFields(prev => ({
           ...prev,
           [key]: true
         }));
         
-        // Se l'utente cancella il valore, cancelliamo anche dal contesto
         if (value === "") {
           setResponse(question.question_id, key, "");
         }
         
-        return; // Usciamo dalla funzione per evitare di eseguire il codice standard
+        return;
       }
     }
     
-    // Codice standard per altri tipi di campi (non euro)
     setResponses({
       ...responses,
       [key]: value
     });
 
-    // Segna il campo come in fase di editing
     setEditingFields(prev => ({
       ...prev,
       [key]: true
     }));
 
-    // Se è un input, verifichiamo solo se è vuoto per resettare il contesto
     if (question.placeholders[key].type === "input" && typeof value === "string") {
-      // Se l'utente cancella il valore, cancelliamo anche dal contesto
       if (value === "") {
         setResponse(question.question_id, key, value);
       }
     } else {
-      // Per i select o altri tipi, salviamo sempre nel contesto
       setResponse(question.question_id, key, value);
       
       setVisibleOptions(prev => ({
@@ -383,7 +346,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
         [key]: false
       }));
       
-      // Gestione dell'attivazione di blocchi aggiuntivi
       if (question.placeholders[key].type === "select" && !Array.isArray(value)) {
         const selectedOption = (question.placeholders[key] as any).options.find(
           (opt: any) => opt.id === value
@@ -396,25 +358,20 @@ export function FormQuestion({ question }: FormQuestionProps) {
     }
   };
 
-  // Funzione aggiornata per gestire la perdita di focus di un campo
   const handleInputBlur = (key: string, value: string) => {
-    // Rimuoviamo lo stato di editing
     setEditingFields(prev => ({
       ...prev,
       [key]: false
     }));
 
-    // Se il campo è vuoto, mantienilo vuoto
     if (value === "") {
       return;
     }
 
-    // Se è un input, verifichiamo la validazione
     if (question.placeholders[key].type === "input") {
       const placeholder = question.placeholders[key];
       const validationType = (placeholder as any).input_validation as ValidationTypes;
       
-      // Per i campi euro, puliamo il valore prima della validazione
       let valueToValidate = value;
       let valueToStore = value;
       
@@ -422,26 +379,20 @@ export function FormQuestion({ question }: FormQuestionProps) {
         valueToValidate = cleanEuroValue(value);
       }
       
-      // Verifichiamo la validità dell'input
       const isValid = validateInput(valueToValidate, validationType);
       
-      // Aggiorniamo lo stato di errore
       setValidationErrors(prev => ({
         ...prev,
         [key]: !isValid
       }));
       
-      // Salviamo nel contesto del form SOLO se l'input è valido
       if (isValid) {
-        // Per i campi euro, salviamo il valore pulito nel contesto
         if (validationType === "euro" && value !== "non lo so") {
-          // Nel contesto salviamo il valore numerico senza separatori
           setResponse(question.question_id, key, valueToValidate);
         } else {
           setResponse(question.question_id, key, value);
         }
         
-        // Nascondi le opzioni se valido
         setVisibleOptions(prev => ({
           ...prev,
           [key]: false
@@ -450,7 +401,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
     }
   };
 
-  // Funzione per gestire l'evento onFocus dell'input
   const handleInputFocus = (key: string) => {
     setEditingFields(prev => ({
       ...prev,
@@ -458,7 +408,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
     }));
   };
 
-  // Funzione per tenere traccia della posizione del cursore
   const handleInputSelectionChange = (key: string, selectionStart: number | null) => {
     setCursorPositions(prev => ({
       ...prev,
@@ -466,7 +415,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
     }));
   };
 
-  // Funzione per gestire il click sul placeholder
   const handlePlaceholderClick = (key: string) => {
     setVisibleOptions(prev => ({
       ...prev,
@@ -474,7 +422,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
     }));
   };
 
-  // Funzione per attivare la modalità di modifica di un input
   const handleInputClick = (key: string) => {
     setEditingFields(prev => ({
       ...prev,
@@ -482,9 +429,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
     }));
   };
 
-  // Funzione modificata per navigare alla domanda specifica quando si fa click su una risposta
   const handleQuestionClick = (questionId: string) => {
-    // Naviga direttamente alla domanda con l'ID specificato
     if (questionId && !isNavigating) {
       setIsNavigating(true);
       setTimeout(() => {
@@ -494,33 +439,26 @@ export function FormQuestion({ question }: FormQuestionProps) {
     }
   };
 
-  // Funzione modificata per la gestione della navigazione basata sulla priorità
   const handleNextQuestion = () => {
     if (isNavigating) return;
     setIsNavigating(true);
     
-    // Verifica se è stata specificata una priorità per i placeholder
     if (question.leads_to_placeholder_priority && 
         question.placeholders[question.leads_to_placeholder_priority]) {
       
-      // Ottieni il placeholder con priorità
       const priorityPlaceholder = question.placeholders[question.leads_to_placeholder_priority];
       const priorityResponse = responses[question.leads_to_placeholder_priority] || 
                               getResponse(question.question_id, question.leads_to_placeholder_priority);
       
-      // Se il placeholder prioritario è di tipo select
       if (priorityResponse && priorityPlaceholder.type === "select" && !Array.isArray(priorityResponse)) {
         const selectedOption = (priorityPlaceholder as any).options.find(
           (opt: any) => opt.id === priorityResponse
         );
         
         if (selectedOption?.leads_to) {
-          // Check for stop_flow case
           if (selectedOption.leads_to === "stop_flow") {
-            // Set session storage to indicate stop flow state and trigger the error message
             sessionStorage.setItem("stopFlowActivated", "true");
             setTimeout(() => {
-              // Reload the current question to trigger the useEffect in QuestionView
               window.location.reload();
               setIsNavigating(false);
             }, 50);
@@ -534,14 +472,10 @@ export function FormQuestion({ question }: FormQuestionProps) {
           return;
         }
       } 
-      // Se il placeholder prioritario è di tipo input
       else if (priorityResponse && priorityPlaceholder.type === "input" && (priorityPlaceholder as any).leads_to) {
-        // Check for stop_flow case for input
         if ((priorityPlaceholder as any).leads_to === "stop_flow") {
-          // Set session storage to indicate stop flow state
           sessionStorage.setItem("stopFlowActivated", "true");
           setTimeout(() => {
-            // Reload the current question to trigger the useEffect in QuestionView
             window.location.reload();
             setIsNavigating(false);
           }, 50);
@@ -556,8 +490,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
       }
     }
     
-    // Se non c'è un placeholder prioritario o non ha un leads_to valido,
-    // usa la logica esistente per verificare i placeholder in ordine
     for (const key of Object.keys(question.placeholders)) {
       const response = responses[key] || getResponse(question.question_id, key);
       
@@ -567,12 +499,9 @@ export function FormQuestion({ question }: FormQuestionProps) {
         );
         
         if (selectedOption?.leads_to) {
-          // Check for stop_flow case
           if (selectedOption.leads_to === "stop_flow") {
-            // Set session storage to indicate stop flow state
             sessionStorage.setItem("stopFlowActivated", "true");
             setTimeout(() => {
-              // Reload the current question to trigger the useEffect in QuestionView
               window.location.reload();
               setIsNavigating(false);
             }, 50);
@@ -586,12 +515,9 @@ export function FormQuestion({ question }: FormQuestionProps) {
           return;
         }
       } else if (response && question.placeholders[key].type === "input" && (question.placeholders[key] as any).leads_to) {
-        // Check for stop_flow case for input
         if ((question.placeholders[key] as any).leads_to === "stop_flow") {
-          // Set session storage to indicate stop flow state
           sessionStorage.setItem("stopFlowActivated", "true");
           setTimeout(() => {
-            // Reload the current question to trigger the useEffect in QuestionView
             window.location.reload();
             setIsNavigating(false);
           }, 50);
@@ -606,38 +532,30 @@ export function FormQuestion({ question }: FormQuestionProps) {
       }
     }
     
-    // Se nessun placeholder ha un leads_to valido, vai al blocco successivo
     setTimeout(() => {
       navigateToNextQuestion(question.question_id, "next_block");
       setIsNavigating(false);
     }, 50);
   };
 
-  // Funzione per ottenere il testo completo della domanda, includendo la sequenza di domande inline
   const getQuestionText = () => {
-    // Se non è una domanda inline, restituisci semplicemente il testo della domanda
     if (question.inline !== true) {
       return question.question_text;
     }
     
-    // Altrimenti, recupera la catena di domande inline
     const questionChain = getInlineQuestionChain(
       state.activeQuestion.block_id, 
       state.activeQuestion.question_id
     );
     
-    // Se non ci sono domande nella catena, restituisci solo il testo della domanda attuale
     if (questionChain.length === 0) {
       return question.question_text;
     }
     
-    // Altrimenti, restituisci la catena di domande + la domanda attuale
     return question.question_text;
   };
 
-  // Funzione per renderizzare il testo della domanda con placeholders
   const renderQuestionText = () => {
-    // Se questa è una domanda inline, mostriamo la catena di domande precedenti
     if (question.inline === true) {
       const inlineChain = getInlineQuestionChain(
         state.activeQuestion.block_id, 
@@ -645,10 +563,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
       );
       
       if (inlineChain.length > 0) {
-        // Renderizza la catena di domande inline
         return (
           <div className="inline">
-            {/* Renderizza ogni domanda nella catena */}
             {inlineChain.map((q, index) => (
               <span key={`inline-${q.question_id}`} className={index > 0 ? "ml-1" : ""}>
                 {renderQuestionWithResponses(q)}
@@ -656,7 +572,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
               </span>
             ))}
             
-            {/* Domanda corrente */}
             <span className="ml-1">
               {!question.question_text.includes('{{') ? (
                 <span>{question.question_text}</span>
@@ -667,8 +582,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
       }
     }
     
-    // Se non è una domanda inline o non ci sono domande precedenti,
-    // renderizziamo il testo normalmente
     const fullText = getQuestionText();
     if (!fullText.includes('{{')) {
       return <span>{fullText}</span>;
@@ -677,9 +590,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
     return renderQuestionPlaceholders(fullText);
   };
   
-  // Funzione per renderizzare una singola domanda con le sue risposte cliccabili
   const renderQuestionWithResponses = (q: Question) => {
-    // Otteniamo le parti del testo con risposte cliccabili
     const { parts } = getQuestionTextWithClickableResponses(q, state.responses);
     
     return (
@@ -688,7 +599,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
           if (part.type === 'text') {
             return <span key={`part-${q.question_id}-${index}`}>{part.content}</span>;
           } else {
-            // Aggiorniamo lo stile delle risposte cliccabili secondo le specifiche fornite
             return (
               <span 
                 key={`part-${q.question_id}-${index}`}
@@ -704,7 +614,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
     );
   };
   
-  // Funzione per ottenere un messaggio di errore basato sul tipo di validazione
   const getValidationErrorMessage = (validationType: ValidationTypes): string => {
     switch (validationType) {
       case 'euro':
@@ -726,7 +635,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
     }
   };
   
-  // Function for rendering question placeholders
   const renderQuestionPlaceholders = (text: string) => {
     const parts = [];
     let lastIndex = 0;
@@ -734,7 +642,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
     let match;
 
     while ((match = regex.exec(text)) !== null) {
-      // Aggiungi testo prima del placeholder
       if (match.index > lastIndex) {
         parts.push(<span key={`text-${lastIndex}`}>{text.slice(lastIndex, match.index)}</span>);
       }
@@ -742,7 +649,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
       const placeholderKey = match[1];
       if (question.placeholders[placeholderKey]) {
         if (question.placeholders[placeholderKey].type === "select") {
-          // Renderizza box selezionabile per opzioni
           const placeholder = question.placeholders[placeholderKey];
           parts.push(
             <span 
@@ -758,7 +664,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
             </span>
           );
         } else if (question.placeholders[placeholderKey].type === "input") {
-          // Renderizza campo input inline con validazione
           const placeholder = question.placeholders[placeholderKey] as any;
           const existingResponse = getResponse(question.question_id, placeholderKey);
           const value = (responses[placeholderKey] as string) || (existingResponse as string) || "";
@@ -766,22 +671,19 @@ export function FormQuestion({ question }: FormQuestionProps) {
           const isEditing = editingFields[placeholderKey];
           const validationType = placeholder.input_validation;
           
-          // Modifica qui: verifichiamo esplicitamente se il valore è "non lo so" per gestirlo correttamente
           const isNonLoSo = value === "non lo so";
           
-          // Per i valori normali usiamo la validazione standard, ma per "non lo so" consideriamo sempre valido
           const isValid = isNonLoSo || validateInput(
             validationType === "euro" ? cleanEuroValue(value) : value, 
             validationType
           );
           
-          // Determine width dynamically based on placeholder label and type
           const getInputWidth = () => {
             const label = placeholder.placeholder_label || "";
             if (validationType === "euro") {
-              return "w-[100px]"; // Keep euro width at 100px
+              return "w-[100px]";
             } else if (validationType === "month") {
-              return "w-[120px]"; // Set month width to 100px (half the previous size)
+              return "w-[120px]";
             } else if (placeholder.input_type === "number") {
               return "w-[70px]";
             } else if (placeholder.input_type === "text" && placeholder.placeholder_label?.toLowerCase().includes("cap")) {
@@ -791,14 +693,9 @@ export function FormQuestion({ question }: FormQuestionProps) {
             }
           };
           
-          // Mostra un elemento span stilizzato SOLO se il valore è valido, NON in editing mode, 
-          // e l'utente ha terminato di digitare (non è attualmente in focus)
           if (isValid && value && !isEditing && !hasError) {
-            // Formatta il valore in base al tipo di validazione prima di mostrarlo
-            // Per "non lo so" manteniamo il valore originale senza formattazione
             const formattedValue = isNonLoSo ? "non lo so" : formatDisplayValue(value, validationType);
             
-            // Renderizza uno span styled che assomiglia a una risposta completata CON ICONA DI MODIFICA
             parts.push(
               <span 
                 key={`placeholder-${placeholderKey}`}
@@ -814,7 +711,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
               </span>
             );
           } else {
-            // Altrimenti renderizza l'input normale (per editing, invalido o vuoto)
             parts.push(
               <TooltipProvider key={`tooltip-${placeholderKey}`}>
                 <Tooltip open={hasError && !isEditing ? undefined : false}>
@@ -838,16 +734,15 @@ export function FormQuestion({ question }: FormQuestionProps) {
                           "inline-block align-middle text-center",
                           "border-[1.5px] rounded-[8px]",
                           "text-[16px] text-[#222222] font-['Inter']",
-                          "h-[32px] px-[12px] py-[6px]", // Changed from h-[38px] to h-[32px] and py-[8px] to py-[6px]
+                          "h-[32px] px-[12px] py-[6px]",
                           "outline-none focus:ring-0",
                           "placeholder:text-[#E7E1D9] placeholder:font-normal",
                           "appearance-none",
                           getInputWidth(),
                           {
-                            // Stati diversi del bordo
-                            "border-[#E7E1D9]": value === "" && !hasError,  // Vuoto (stato iniziale)
-                            "border-[#245C4F] focus:border-[#245C4F]": isEditing && !hasError, // Durante editing senza errori
-                            "border-red-500": hasError,                     // Errore di validazione
+                            "border-[#E7E1D9]": value === "" && !hasError,
+                            "border-[#245C4F] focus:border-[#245C4F]": isEditing && !hasError,
+                            "border-red-500": hasError,
                           }
                         )}
                         style={{ 
@@ -874,7 +769,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
       lastIndex = match.index + match[0].length;
     }
 
-    // Aggiungi il testo rimanente
     if (lastIndex < text.length) {
       parts.push(<span key={`text-${lastIndex}`}>{text.slice(lastIndex)}</span>);
     }
@@ -882,7 +776,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
     return <>{parts}</>;
   };
 
-  // Renderizza i select options visibili
   const renderVisibleSelectOptions = (key: string, placeholder: any) => {
     const existingResponse = getResponse(question.question_id, key);
     
@@ -917,32 +810,26 @@ export function FormQuestion({ question }: FormQuestionProps) {
     return null;
   };
 
-  // Funzione migliorata per determinare se tutte le input hanno contenuto valido
   const allInputsHaveValidContent = () => {
     const inputPlaceholders = Object.keys(question.placeholders).filter(
       key => question.placeholders[key].type === "input"
     );
     
-    // Se non ci sono input, consideriamo valido (per gestire select e altri tipi)
     if (inputPlaceholders.length === 0) {
       return true;
     }
     
-    // Verifica se tutti gli input hanno un valore NON vuoto e sono validi
     return inputPlaceholders.every(key => {
       const value = responses[key] || getResponse(question.question_id, key);
       
-      // Verifica se il valore esiste e non è vuoto
       if (value === undefined || value === "") {
         return false;
       }
       
-      // Se c'è un errore di validazione, non è valido
       if (validationErrors[key]) {
         return false;
       }
       
-      // Verifica validazione per i valori esistenti nel contesto
       if (value !== "") {
         const placeholder = question.placeholders[key];
         if (placeholder.type === "input") {
@@ -957,13 +844,11 @@ export function FormQuestion({ question }: FormQuestionProps) {
     });
   };
   
-  // Determina se ci sono risposte valide - MODIFICATO per richiedere TUTTE le risposte
   const hasValidResponses = Object.keys(question.placeholders).every(key => 
     (responses[key] !== undefined && responses[key] !== "") || 
     (getResponse(question.question_id, key) !== undefined && getResponse(question.question_id, key) !== "")
   ) && allInputsHaveValidContent();
 
-  // Renderizza i MultiBlockManager placeholder
   const renderMultiBlockManagers = () => {
     const multiBlockManagers = Object.entries(question.placeholders)
       .filter(([_, placeholder]) => placeholder.type === "MultiBlockManager")
@@ -988,18 +873,15 @@ export function FormQuestion({ question }: FormQuestionProps) {
     return null;
   };
   
-  // Check if there are any visible select options
   const hasVisibleSelectOptions = Object.keys(question.placeholders).some(key => 
     question.placeholders[key].type === "select" && visibleOptions[key]
   );
 
-  // Check if back button should be shown
   const showBackButton = !(state.activeQuestion.block_id === "introduzione" && 
     state.activeQuestion.question_id === blocks.find(b => b.block_id === "introduzione")?.questions[0].question_id);
   
   return (
     <div className="max-w-xl animate-fade-in">
-      {/* Note banner per le question notes - Design migliorato */}
       {question.question_notes && (
         <div className="mb-4 bg-[#F8F4EF] rounded-md border-b-4 border-[#BEB8AE] px-4 py-3 text-[14px] font-normal text-gray-700">
           <span className="font-bold">Nota: </span>
@@ -1007,23 +889,18 @@ export function FormQuestion({ question }: FormQuestionProps) {
         </div>
       )}
       
-      {/* Testo della domanda semplificato */}
       <div className="text-[16px] font-normal text-gray-900 mb-5 leading-relaxed">
         {renderQuestionText()}
       </div>
       
-      {/* Linea separatrice beige */}
       <Separator className="h-[1px] bg-[#F0EAE0] mb-5" />
       
-      {/* Contenitore per i select options visibili */}
       <div className="space-y-5">
         {Object.keys(question.placeholders).map(key => renderVisibleSelectOptions(key, question.placeholders[key]))}
       </div>
       
-      {/* Nuovo contenitore per i MultiBlockManager placeholder */}
       {renderMultiBlockManagers()}
       
-      {/* Pulsante "Non lo so" - mostrato solo quando ci sono input mancanti o non validi, dopo 1.5 secondi */}
       {showNonLoSoButton && question.skippableWithNotSure && hasMissingOrInvalidInputs() && (
         <div className="mt-5 animate-fade-in">
           <button
@@ -1041,10 +918,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
         </div>
       )}
       
-      {/* Container per i pulsanti Indietro e Avanti */}
       {(showBackButton || (hasValidResponses && !Object.values(question.placeholders).some(p => p.type === "MultiBlockManager"))) && (
         <div className="mt-8 flex items-center gap-4">
-          {/* Pulsante Indietro */}
           {showBackButton && (
             <Button
               type="button"
@@ -1060,7 +935,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
             </Button>
           )}
           
-          {/* Pulsante Avanti - mostrato solo se ci sono risposte valide e tutti gli input hanno contenuto valido */}
           {hasValidResponses && !Object.values(question.placeholders).some(p => p.type === "MultiBlockManager") && (
             <Button
               type="button"
