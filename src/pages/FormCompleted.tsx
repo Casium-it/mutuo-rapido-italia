@@ -3,60 +3,102 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { Link } from "react-router-dom";
-import { ArrowRight, CheckCircle, TrendingUp, Building2, Target, Percent } from "lucide-react";
+import { ArrowRight, CheckCircle, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { validatePhoneNumber } from "@/utils/validationUtils";
+import { toast } from "sonner";
 
 export default function FormCompleted() {
   const navigate = useNavigate();
   const location = useLocation();
   const [keySummary, setKeySummary] = useState<Record<string, any>>({});
+  
+  // Form state for WhatsApp contact
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [privacyConsent, setPrivacyConsent] = useState(false);
+  const [consultationRequest, setConsultationRequest] = useState(false);
+  const [phoneError, setPhoneError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Controlla se l'utente è arrivato a questa pagina dopo aver completato il form
   const submissionData = location.state?.submissionData;
+  
   useEffect(() => {
     // Se l'utente accede direttamente senza aver completato un form, reindirizza alla home
     if (!submissionData) {
       navigate("/");
       return;
     }
-
-    // Estrai i dati principali per il riepilogo
-    if (submissionData.responses) {
-      const summary: Record<string, any> = {};
-
-      // Mappa delle domande chiave che vogliamo mostrare nel riepilogo
-      const keyQuestions = {
-        'anticipo_disponibile': 'Anticipo disponibile',
-        'importo_mutuo': 'Importo mutuo',
-        'situazione_abitativa': 'Situazione abitativa',
-        'eta': 'Età',
-        'reddito_mensile': 'Reddito mensile',
-        'tipo_contratto': 'Tipo di contratto',
-        'stato_civile': 'Stato civile'
-      };
-
-      // Estrai le risposte chiave
-      Object.entries(submissionData.responses).forEach(([questionId, placeholders]) => {
-        const keyName = Object.keys(keyQuestions).find(key => questionId.includes(key));
-        if (keyName) {
-          const placeholderKey = Object.keys(placeholders)[0];
-          const value = placeholders[placeholderKey];
-
-          // Formatta i valori in base al tipo
-          if (typeof value === 'string' && !isNaN(Number(value)) && (questionId.includes('importo') || questionId.includes('reddito') || questionId.includes('anticipo'))) {
-            summary[keyQuestions[keyName]] = formatCurrency(Number(value));
-          } else {
-            summary[keyQuestions[keyName]] = value;
-          }
-        }
-      });
-      setKeySummary(summary);
-    }
   }, [submissionData, navigate]);
+
+  // Phone number validation
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setPhoneNumber(value);
+    
+    if (value && !validatePhoneNumber(value)) {
+      setPhoneError("Inserisci un numero di telefono valido (10 cifre)");
+    } else {
+      setPhoneError("");
+    }
+  };
+
+  // Form submission
+  const handleWhatsAppSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validatePhoneNumber(phoneNumber)) {
+      setPhoneError("Inserisci un numero di telefono valido (10 cifre)");
+      return;
+    }
+    
+    if (!privacyConsent) {
+      toast.error("Devi accettare la privacy policy per continuare");
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      // Here you would typically send the data to your backend
+      console.log("WhatsApp form submitted:", {
+        phone: phoneNumber,
+        privacyConsent,
+        consultationRequest,
+        submissionId: submissionData?.submissionId
+      });
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast.success("Perfetto!", {
+        description: "Riceverai presto i risultati su WhatsApp"
+      });
+      
+      // Reset form
+      setPhoneNumber("");
+      setPrivacyConsent(false);
+      setConsultationRequest(false);
+      
+    } catch (error) {
+      console.error("Error submitting WhatsApp form:", error);
+      toast.error("Errore durante l'invio", {
+        description: "Riprova più tardi"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const isFormValid = validatePhoneNumber(phoneNumber) && privacyConsent;
+
   if (!submissionData) {
     return null; // Non mostrare nulla durante il reindirizzamento
   }
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       {/* Header */}
@@ -80,123 +122,86 @@ export default function FormCompleted() {
           </p>
         </div>
 
-        {/* Statistiche Mutuo - Individual Boxes */}
-        <div className="w-full max-w-4xl mb-8">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">
-              La tua analisi mutuo personalizzata
-            </h2>
-            <p className="text-gray-600">
-              Basata sui dati forniti, ecco le informazioni preliminari
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Range Mutuo */}
-            <div className="bg-[#F8F4EF] p-6 rounded-lg shadow-sm border border-gray-200">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="bg-[#245C4F] p-2 rounded-lg">
-                  <Target className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">Range mutuo disponibile</h3>
-                  <p className="text-sm text-gray-600">Importo stimato</p>
+        {/* WhatsApp Contact Form */}
+        <div className="w-full max-w-2xl mb-8">
+          <div className="bg-[#F8F4EF] p-8 rounded-lg shadow-sm border border-gray-200">
+            <div className="text-center mb-6">
+              <div className="flex justify-center mb-4">
+                <div className="bg-green-500 p-3 rounded-full">
+                  <Phone className="h-8 w-8 text-white" />
                 </div>
               </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-gray-900">
-                  <span style={{ filter: 'blur(4px)', userSelect: 'none' }}>
-                    €100.000 - €300.000
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                Inserisci il tuo numero e ricevi subito su WhatsApp il risultato della tua simulazione
+              </h2>
+            </div>
+
+            <form onSubmit={handleWhatsAppSubmit} className="space-y-6">
+              {/* Phone Number Input */}
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="text-lg font-medium text-gray-700">
+                  Il tuo numero di telefono
+                </Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="3331234567"
+                  value={phoneNumber}
+                  onChange={handlePhoneChange}
+                  className={`text-lg py-3 ${phoneError ? 'border-red-500' : ''}`}
+                  maxLength={10}
+                />
+                {phoneError && (
+                  <p className="text-red-500 text-sm">{phoneError}</p>
+                )}
+              </div>
+
+              {/* Privacy Policy Checkbox */}
+              <div className="flex items-start space-x-3">
+                <Checkbox
+                  id="privacy"
+                  checked={privacyConsent}
+                  onCheckedChange={(checked) => setPrivacyConsent(checked as boolean)}
+                  className="mt-1"
+                />
+                <Label htmlFor="privacy" className="text-sm text-gray-600 leading-relaxed cursor-pointer">
+                  Accetto la <Link to="/privacy" className="text-[#245C4F] underline hover:text-[#1a453b]">privacy policy</Link> e 
+                  autorizzo il trattamento dei miei dati personali per ricevere comunicazioni commerciali
+                </Label>
+              </div>
+
+              {/* Consultation Checkbox */}
+              <div className="flex items-start space-x-3">
+                <Checkbox
+                  id="consultation"
+                  checked={consultationRequest}
+                  onCheckedChange={(checked) => setConsultationRequest(checked as boolean)}
+                  className="mt-1"
+                />
+                <Label htmlFor="consultation" className="text-sm text-gray-600 leading-relaxed cursor-pointer flex items-center gap-2">
+                  Aggiungi consulenza telefonica gratuita di un esperto di GoMutuo
+                  <span className="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">
+                    GRATIS
                   </span>
-                </div>
+                </Label>
               </div>
-            </div>
 
-            {/* Probabilità Mutuo */}
-            <div className="bg-[#F8F4EF] p-6 rounded-lg shadow-sm border border-gray-200">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="bg-green-600 p-2 rounded-lg">
-                  <Percent className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">Probabilità di approvazione</h3>
-                  <p className="text-sm text-gray-600">Stima preliminare</p>
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-green-600">
-                  <span style={{ filter: 'blur(4px)', userSelect: 'none' }}>
-                    89%
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Banche Possibili */}
-            <div className="bg-[#F8F4EF] p-6 rounded-lg shadow-sm border border-gray-200">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="bg-blue-600 p-2 rounded-lg">
-                  <Building2 className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">Banche disponibili</h3>
-                  <p className="text-sm text-gray-600">Opzioni trovate</p>
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-gray-900">
-                  4
-                </div>
-              </div>
-            </div>
-
-            {/* Banca più conveniente */}
-            <div className="bg-[#F8F4EF] p-6 rounded-lg shadow-sm border border-gray-200">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="bg-orange-600 p-2 rounded-lg">
-                  <TrendingUp className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">Banca più conveniente</h3>
-                  <p className="text-sm text-gray-600">Miglior tasso</p>
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-xl font-semibold text-gray-900">
-                  <span style={{ filter: 'blur(5px)', userSelect: 'none' }}>
-                    Unicredit Bank
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Banca con probabilità più alta - Full Width */}
-          <div className="mt-4 bg-[#F8F4EF] p-6 rounded-lg shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="bg-purple-600 p-2 rounded-lg">
-                  <Percent className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">Banca con probabilità più alta</h3>
-                  <p className="text-sm text-gray-600">Migliore approvazione</p>
-                </div>
-              </div>
-              <div className="text-xl font-semibold text-gray-900">
-                <span style={{ filter: 'blur(5px)', userSelect: 'none' }}>
-                  Intesa Sanpaolo
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Note informativa */}
-          <div className="mt-6 p-4 bg-white bg-opacity-80 rounded-lg border border-gray-200">
-            <p className="text-sm text-gray-500 text-center">
-              * I dati mostrati sono una stima preliminare basata sulle informazioni fornite. 
-              Per informazioni accurate contattaci per una consulenza personalizzata.
-            </p>
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                disabled={!isFormValid || isSubmitting}
+                className="w-full bg-[#245C4F] hover:bg-[#1a453b] text-white py-3 text-lg font-medium"
+              >
+                {isSubmitting ? (
+                  "Invio in corso..."
+                ) : (
+                  <>
+                    Ricevi su WhatsApp
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </>
+                )}
+              </Button>
+            </form>
           </div>
         </div>
 

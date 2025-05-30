@@ -43,3 +43,11 @@ export const validateInput = (value: string, type: ValidationTypes): boolean => 
       return value.trim().length > 0;
   }
 };
+
+// Function for validating Italian phone numbers
+export const validatePhoneNumber = (phone: string): boolean => {
+  // Remove all non-digit characters
+  const cleanPhone = phone.replace(/\D/g, "");
+  // Italian mobile numbers are exactly 10 digits
+  return /^[0-9]{10}$/.test(cleanPhone);
+};
