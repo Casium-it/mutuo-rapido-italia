@@ -3,7 +3,7 @@ import { useFormExtended } from "@/hooks/useFormExtended";
 import { Question, ValidationTypes } from "@/types/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, ArrowLeft } from "lucide-react";
+import { ArrowRight, ArrowLeft, Edit } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { cn, formatNumberWithThousandSeparator, capitalizeWords } from "@/lib/utils";
 import { SelectPlaceholderBox } from "./SelectPlaceholderBox";
@@ -798,14 +798,19 @@ export function FormQuestion({ question }: FormQuestionProps) {
             // Per "non lo so" manteniamo il valore originale senza formattazione
             const formattedValue = isNonLoSo ? "non lo so" : formatDisplayValue(value, validationType);
             
-            // Renderizza uno span styled che assomiglia a una risposta completata
+            // Renderizza uno span styled che assomiglia a una risposta completata CON ICONA DI MODIFICA
             parts.push(
               <span 
                 key={`placeholder-${placeholderKey}`}
-                className="bg-[#F8F4EF] text-[#245C4F] font-semibold px-[10px] py-[4px] rounded-[6px] text-[16px] cursor-pointer mx-1"
+                className="inline-flex items-center bg-[#F8F4EF] text-[#245C4F] font-semibold px-[10px] py-[4px] rounded-[6px] text-[16px] cursor-pointer mx-1 hover:bg-[#F0EAE0] transition-colors group"
                 onClick={() => handleInputClick(placeholderKey)}
+                aria-label={`${formattedValue} - clicca per modificare`}
               >
-                {formattedValue}
+                <span>{formattedValue}</span>
+                <Edit 
+                  className="ml-1 h-3 w-3 text-[#245C4F] opacity-60 group-hover:opacity-100 transition-opacity" 
+                  aria-hidden="true"
+                />
               </span>
             );
           } else {
