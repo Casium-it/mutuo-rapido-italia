@@ -205,14 +205,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
       const existingResponse = getResponse(question.question_id, key);
       if (existingResponse) {
         existingResponses[key] = existingResponse;
-        
-        // Ripristino della logica originale: per i select con risposta esistente, nascondi le opzioni
-        // ma poi aggiungi un override speciale per mostrarle inizialmente
-        if (question.placeholders[key].type === "select") {
-          initialVisibleOptions[key] = false;
-        } else {
-          initialVisibleOptions[key] = false;
-        }
+        initialVisibleOptions[key] = false;
         
         // Verifica che le risposte esistenti siano ancora valide
         if (question.placeholders[key].type === "input") {
@@ -223,16 +216,12 @@ export function FormQuestion({ question }: FormQuestionProps) {
           }
         }
       } else {
-        // Se non c'è una risposta esistente, mostra sempre le opzioni per i select
-        if (question.placeholders[key].type === "select") {
-          initialVisibleOptions[key] = true;
-        } else {
-          initialVisibleOptions[key] = true;
-        }
+        initialVisibleOptions[key] = true;
       }
     });
     
     setResponses(existingResponses);
+    setVisibleOptions(initialVisibleOptions);
     setValidationErrors(initialValidationErrors);
     setEditingFields({});
     setIsNavigating(false);
@@ -240,19 +229,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
     setShowNonLoSoButton(false);
     // Reset delle posizioni del cursore
     setCursorPositions({});
-    
-    // Override speciale: per i select con risposte esistenti, mostra le opzioni inizialmente
-    // Questo simula il comportamento "naviga indietro e mostra opzioni"
-    const selectOptionsOverride: { [key: string]: boolean } = {};
-    Object.keys(question.placeholders).forEach(key => {
-      if (question.placeholders[key].type === "select" && existingResponses[key]) {
-        selectOptionsOverride[key] = true;
-      } else {
-        selectOptionsOverride[key] = initialVisibleOptions[key];
-      }
-    });
-    
-    setVisibleOptions(selectOptionsOverride);
   }, [question.question_id, getResponse, question.placeholders]);
 
   // Funzione per gestire la navigazione indietro con gestione del caso speciale
@@ -402,7 +378,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
       // Per i select o altri tipi, salviamo sempre nel contesto
       setResponse(question.question_id, key, value);
       
-      // RIPRISTINO DEL COMPORTAMENTO ORIGINALE: nascondi le opzioni dopo la selezione
       setVisibleOptions(prev => ({
         ...prev,
         [key]: false
