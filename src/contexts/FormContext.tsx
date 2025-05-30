@@ -30,6 +30,7 @@ type FormContextType = {
   markBlockAsCompleted: (blockId: string) => void;
   removeBlockFromCompleted: (blockId: string) => void;
   isQuestionPendingRemoval: (questionId: string) => boolean;
+  setBackNavigation: (isBack: boolean) => void;
 };
 
 type Action =
@@ -41,6 +42,7 @@ type Action =
   | { type: "SET_FORM_STATE"; state: Partial<FormState> }
   | { type: "RESET_FORM" }
   | { type: "SET_NAVIGATING"; isNavigating: boolean }
+  | { type: "SET_BACK_NAVIGATION"; isBackNavigation: boolean }
   | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory }
   | { type: "ADD_DYNAMIC_BLOCK"; block: Block }
   | { type: "DELETE_DYNAMIC_BLOCK"; blockId: string }
@@ -60,6 +62,7 @@ const initialState: FormState = {
   responses: {},
   answeredQuestions: new Set(),
   isNavigating: false,
+  isBackNavigation: false,
   navigationHistory: [],
   dynamicBlocks: [],
   blockActivations: {}, // Track which questions/placeholders activated which blocks
@@ -88,6 +91,12 @@ function formReducer(state: FormState, action: Action): FormState {
       return {
         ...state,
         responses: newResponses
+      };
+    }
+    case "SET_BACK_NAVIGATION": {
+      return {
+        ...state,
+        isBackNavigation: action.isBackNavigation
       };
     }
     case "ADD_ACTIVE_BLOCK": {
@@ -444,6 +453,11 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     }
   }, [state.completedBlocks]);
 
+  // New function to set back navigation flag
+  const setBackNavigation = useCallback((isBack: boolean) => {
+    dispatch({ type: "SET_BACK_NAVIGATION", isBackNavigation: isBack });
+  }, []);
+
   // Keep track of navigation for correct block completion
   useEffect(() => {
     // Only execute when isNavigating transitions from true to false (navigation completed)
@@ -618,6 +632,11 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         // Initialize pendingRemovals if not present
         if (!parsedState.pendingRemovals) {
           parsedState.pendingRemovals = [];
+        }
+        
+        // Initialize isBackNavigation if not present
+        if (parsedState.isBackNavigation === undefined) {
+          parsedState.isBackNavigation = false;
         }
         
         dispatch({ type: "SET_FORM_STATE", state: parsedState });
@@ -1155,7 +1174,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         isBlockCompleted,
         markBlockAsCompleted,
         removeBlockFromCompleted,
-        isQuestionPendingRemoval
+        isQuestionPendingRemoval,
+        setBackNavigation
       }}
     >
       {children}
