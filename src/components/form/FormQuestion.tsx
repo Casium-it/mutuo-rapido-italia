@@ -1015,30 +1015,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
       {/* Linea separatrice beige */}
       <Separator className="h-[1px] bg-[#F0EAE0] mb-5" />
       
-      {/* Contenitore per i select options visibili con pulsante indietro sempre come prima opzione */}
+      {/* Contenitore per i select options visibili */}
       <div className="space-y-5">
-        {/* Pulsante Indietro - sempre mostrato con il nuovo design se necessario */}
-        {showBackButton && (
-          <div className="mt-5">
-            <button
-              type="button"
-              className={cn(
-                "text-left px-[18px] py-[12px] border-[1.5px] rounded-[10px] transition-all font-['Inter'] text-[16px] font-normal",
-                "shadow-[0_3px_0_0_#AFA89F] mb-[10px] cursor-pointer w-fit",
-                "hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)]",
-                "border-[#BEB8AE] bg-white"
-              )}
-              onClick={handleBackNavigation}
-              disabled={isNavigating}
-            >
-              <div className="font-medium text-black flex items-center gap-2">
-                <span>←</span>
-                <span>indietro</span>
-              </div>
-            </button>
-          </div>
-        )}
-        
         {Object.keys(question.placeholders).map(key => renderVisibleSelectOptions(key, question.placeholders[key]))}
       </div>
       
@@ -1063,21 +1041,40 @@ export function FormQuestion({ question }: FormQuestionProps) {
         </div>
       )}
       
-      {/* Pulsante Avanti - mostrato solo se ci sono risposte valide e tutti gli input hanno contenuto valido */}
-      {hasValidResponses && !Object.values(question.placeholders).some(p => p.type === "MultiBlockManager") && (
-        <div className="mt-8">
-          <Button
-            type="button"
-            className={cn(
-              "bg-[#245C4F] hover:bg-[#1e4f44] text-white px-[32px] py-[16px] rounded-[12px] text-[17px] font-medium",
-              "transition-all shadow-[0_6px_12px_rgba(36,92,79,0.2)] hover:shadow-[0_8px_16px_rgba(36,92,79,0.25)]",
-              "inline-flex items-center gap-[12px]"
-            )}
-            onClick={handleNextQuestion}
-            disabled={isNavigating || Object.keys(question.placeholders).length === 0}
-          >
-            Avanti <ArrowRight className="ml-1 h-4 w-4" />
-          </Button>
+      {/* Container per i pulsanti Indietro e Avanti */}
+      {(showBackButton || (hasValidResponses && !Object.values(question.placeholders).some(p => p.type === "MultiBlockManager"))) && (
+        <div className="mt-8 flex items-center gap-4">
+          {/* Pulsante Indietro */}
+          {showBackButton && (
+            <Button
+              type="button"
+              className={cn(
+                "bg-[#245C4F]/20 hover:bg-[#245C4F]/30 text-[#245C4F] px-[32px] py-[16px] rounded-[12px] text-[17px] font-medium",
+                "transition-all shadow-[0_6px_12px_rgba(36,92,79,0.1)] hover:shadow-[0_8px_16px_rgba(36,92,79,0.15)]",
+                "inline-flex items-center gap-[12px]"
+              )}
+              onClick={handleBackNavigation}
+              disabled={isNavigating}
+            >
+              <ArrowLeft className="h-4 w-4" /> Indietro
+            </Button>
+          )}
+          
+          {/* Pulsante Avanti - mostrato solo se ci sono risposte valide e tutti gli input hanno contenuto valido */}
+          {hasValidResponses && !Object.values(question.placeholders).some(p => p.type === "MultiBlockManager") && (
+            <Button
+              type="button"
+              className={cn(
+                "bg-[#245C4F] hover:bg-[#1e4f44] text-white px-[32px] py-[16px] rounded-[12px] text-[17px] font-medium",
+                "transition-all shadow-[0_6px_12px_rgba(36,92,79,0.2)] hover:shadow-[0_8px_16px_rgba(36,92,79,0.25)]",
+                "inline-flex items-center gap-[12px]"
+              )}
+              onClick={handleNextQuestion}
+              disabled={isNavigating || Object.keys(question.placeholders).length === 0}
+            >
+              Avanti <ArrowRight className="ml-1 h-4 w-4" />
+            </Button>
+          )}
         </div>
       )}
     </div>
