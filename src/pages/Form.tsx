@@ -7,7 +7,7 @@ import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
-import { Menu, ArrowLeft } from "lucide-react";
+import { Menu } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { CompleteFormButton } from "@/components/form/CompleteFormButton";
@@ -18,8 +18,7 @@ export default function Form() {
     blocks,
     getProgress,
     resetForm,
-    goToQuestion,
-    goToPreviousQuestion
+    goToQuestion
   } = useForm();
   const params = useParams();
   const navigate = useNavigate();
@@ -51,11 +50,6 @@ export default function Form() {
       const firstQuestionId = professioneBlock.questions[0].question_id;
       goToQuestion("la_tua_professione", firstQuestionId);
     }
-  };
-
-  // Handle back navigation
-  const handleBackClick = () => {
-    goToPreviousQuestion();
   };
 
   // Assicuriamoci che il componente si ri-renderizzi quando cambia l'URL
@@ -123,17 +117,8 @@ export default function Form() {
         {/* Content area - con key basata sul pathname per forzare il re-rendering */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12">
           <div className="max-w-2xl mx-auto">
-            {/* Block title with back button */}
-            <div className="mb-6 flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleBackClick}
-                className="h-8 w-8 hover:bg-gray-100 rounded-full"
-              >
-                <ArrowLeft size={16} className="text-gray-600" />
-                <span className="sr-only">Indietro</span>
-              </Button>
+            {/* Block title */}
+            <div className="mb-6">
               <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">{activeBlock?.title}</h1>
             </div>
 
