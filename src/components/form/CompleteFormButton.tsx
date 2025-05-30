@@ -5,7 +5,7 @@ import { Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "@/contexts/FormContext";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { submitFormToSupabase } from "@/services/formSubmissionService";
 
 export const CompleteFormButton = ({ className }: { className?: string }) => {
   const navigate = useNavigate();
@@ -16,86 +16,46 @@ export const CompleteFormButton = ({ className }: { className?: string }) => {
   const handleSubmitForm = async () => {
     try {
       setIsSubmitting(true);
+      console.log("Avvio invio form dal CompleteFormButton...");
       
-      // Retrieve the URL params for referral ID if present
-      const searchParams = new URLSearchParams(window.location.search);
-      const referralId = searchParams.get('ref');
+      // Usa il servizio centralizzato
+      const result = await submitFormToSupabase(state, blocks);
       
-      // Submit form data to Supabase
-      const { data: submission, error: submissionError } = await supabase
-        .from('form_submissions')
-        .insert({
-          user_identifier: referralId || null,
-          form_type: 'mutuo',
-          metadata: { blocks: state.activeBlocks }
-        })
-        .select('id')
-        .single();
-
-      if (submissionError) throw submissionError;
-      
-      // Prepare response data
-      const responsesData = [];
-      
-      for (const questionId in state.responses) {
-        const question = blocks
-          .flatMap(block => block.questions)
-          .find(q => q.question_id === questionId);
+      if (result.success) {
+        console.log("Form inviato con successo, ID:", result.submissionId);
         
-        if (question) {
-          const blockId = blocks.find(
-            block => block.questions.some(q => q.question_id === questionId)
-          )?.block_id || '';
-          
-          const responseData = state.responses[questionId];
-          
-          for (const placeholderKey in responseData) {
-            responsesData.push({
-              submission_id: submission.id,
-              question_id: questionId,
-              question_text: question.question_text,
-              block_id: blockId,
-              response_value: { 
-                placeholderKey, 
-                value: responseData[placeholderKey] 
-              }
-            });
+        // Naviga alla pagina di caricamento con i dati del form
+        navigate('/form-loading', { 
+          state: { 
+            formData: {
+              responses: state.responses,
+              activeBlocks: state.activeBlocks,
+              submissionId: result.submissionId
+            }
           }
-        }
+        });
+      } else {
+        console.error("Errore nell'invio:", result.error);
+        toast({
+          variant: "destructive",
+          title: "Errore durante l'invio",
+          description: result.error || "Si è verificato un errore durante l'invio del modulo. Riprova più tardi."
+        });
+        setIsSubmitting(false);
       }
-      
-      // Insert all response data
-      if (responsesData.length > 0) {
-        const { error: responsesError } = await supabase
-          .from('form_responses')
-          .insert(responsesData);
-        
-        if (responsesError) throw responsesError;
-      }
-      
-      // Navigate to loading page with form data
-      navigate('/form-loading', { 
-        state: { 
-          formData: {
-            responses: state.responses,
-            activeBlocks: state.activeBlocks,
-            submissionId: submission.id
-          }
-        }
-      });
       
     } catch (error) {
-      console.error('Error submitting form:', error);
+      console.error('Errore imprevisto durante l\'invio del form:', error);
       setIsSubmitting(false);
       toast({
         variant: "destructive",
         title: "Errore durante l'invio",
-        description: "Si è verificato un errore durante l'invio del modulo. Riprova più tardi."
+        description: "Si è verificato un errore imprevisto. Riprova più tardi."
       });
     }
   };
 
-  // Check if all active blocks are completed
+  // Controlla se tutti i blocchi attivi sono completati
   const areAllBlocksCompleted = state.activeBlocks?.every(
     blockId => state.completedBlocks?.includes(blockId)
   );

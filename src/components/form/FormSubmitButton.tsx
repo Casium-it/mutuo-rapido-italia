@@ -3,45 +3,37 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useForm } from "@/contexts/FormContext";
-import { submitFormResponses } from "@/services/formSubmissionService";
+import { submitFormToSupabase } from "@/services/formSubmissionService";
 import { toast } from "@/hooks/use-toast";
-import { useParams } from "react-router-dom";
 
 export function FormSubmitButton() {
-  const { state } = useForm();
+  const { state, blocks } = useForm();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
-  const params = useParams();
-  
-  // Ottieni il tipo di form dai parametri dell'URL
-  const formType = params.blockType || "simulazione";
-
-  // Estrai l'identificatore dell'utente dall'URL se presente
-  const searchParams = new URLSearchParams(window.location.search);
-  const userIdentifier = searchParams.get('ref') || undefined;
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
+    console.log("Avvio invio form dal FormSubmitButton...");
     
     try {
-      const result = await submitFormResponses(
-        state.responses, 
-        formType,
-        userIdentifier
-      );
+      // Usa il servizio centralizzato
+      const result = await submitFormToSupabase(state, blocks);
       
       if (result.success) {
+        console.log("Form inviato con successo, ID:", result.submissionId);
+        
         // Naviga alla pagina di completamento con i dati della submission
         navigate('/form-completed', { 
           state: { 
             submissionData: {
               id: result.submissionId,
-              formType,
+              formType: window.location.pathname.includes("mutuo") ? "mutuo" : "simulazione",
               date: new Date().toISOString()
             } 
           } 
         });
       } else {
+        console.error("Errore nell'invio:", result.error);
         toast({
           title: "Errore",
           description: result.error || "Si è verificato un errore nell'invio del form. Riprova più tardi.",

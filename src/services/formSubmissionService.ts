@@ -9,85 +9,122 @@ type SubmissionResult = {
 };
 
 /**
- * Salva tutte le risposte del form su Supabase
- * @param formResponses - Le risposte dal form context
- * @param formType - Il tipo di form (es. "mutuo", "simulazione")
- * @param userIdentifier - Identificatore opzionale dell'utente
+ * Invia i dati del form completato a Supabase utilizzando lo stato del form
+ * @param state - Lo stato attuale del form
+ * @param blocks - I blocchi del form per ottenere i testi delle domande
  * @returns Risultato dell'operazione con l'ID della submission
  */
-export async function submitFormResponses(
-  formResponses: FormResponse,
-  formType: string,
-  userIdentifier?: string
+export async function submitFormToSupabase(
+  state: FormState,
+  blocks: any[]
 ): Promise<SubmissionResult> {
   try {
-    // Ottieni lo slug salvato, se presente
+    console.log("Inizio invio form a Supabase...");
+    
+    // Ottieni il parametro referral dall'URL se presente
+    const searchParams = new URLSearchParams(window.location.search);
+    const referralId = searchParams.get('ref');
+    
+    // Ottieni lo slug salvato nel localStorage
     const slug = localStorage.getItem('user_slug');
     
-    // Se esiste uno slug, assicurati che l'header x-slug sia presente nella richiesta
-    let options = {};
-    if (slug) {
-      options = {
-        headers: {
-          'x-slug': slug
-        }
-      };
-    }
+    // Determina il tipo di form dall'URL
+    const formType = window.location.pathname.includes("mutuo") ? "mutuo" : "simulazione";
     
     // 1. Crea la submission principale
     const { data: submission, error: submissionError } = await supabase
-      .from("form_submissions")
+      .from('form_submissions')
       .insert({
+        user_identifier: referralId || null,
         form_type: formType,
-        user_identifier: userIdentifier || null,
-        metadata: { form_version: "1.0", slug: slug || null }
+        metadata: { 
+          blocks: state.activeBlocks,
+          completedBlocks: state.completedBlocks,
+          dynamicBlocks: state.dynamicBlocks?.length || 0,
+          slug: slug || null
+        }
       })
-      .select()
+      .select('id')
       .single();
 
-    if (submissionError || !submission) {
+    if (submissionError) {
       console.error("Errore nella creazione della submission:", submissionError);
-      return { success: false, error: "Errore nel salvataggio dei dati" };
+      throw submissionError;
     }
 
-    // 2. Prepara le risposte individuali per ogni domanda
-    const formResponsesArray = Object.entries(formResponses).map(([questionId, responses]) => {
-      // Ogni questionId ha un oggetto di risposte per i diversi placeholder
-      const blockId = questionId.split(".")[0]; // Assumiamo che il questionId sia nel formato "blockId.questionNumber"
+    console.log("Submission creata con ID:", submission.id);
+
+    // 2. Prepara i dati delle risposte
+    const responsesData = [];
+    
+    for (const questionId in state.responses) {
+      // Trova la domanda nei blocchi statici e dinamici
+      let question = blocks
+        .flatMap(block => block.questions)
+        .find(q => q.question_id === questionId);
       
-      return {
-        submission_id: submission.id,
-        question_id: questionId,
-        question_text: questionId, // Idealmente dovremmo avere il testo reale della domanda
-        block_id: blockId,
-        response_value: responses
-      };
-    });
-
-    // 3. Inserisci tutte le risposte individuali
-    const { error: responsesError } = await supabase
-      .from("form_responses")
-      .insert(formResponsesArray);
-
-    if (responsesError) {
-      console.error("Errore nel salvataggio delle risposte:", responsesError);
-      return { success: false, error: "Errore nel salvataggio delle risposte" };
+      // Se non trovata nei blocchi statici, cerca nei blocchi dinamici
+      if (!question && state.dynamicBlocks) {
+        question = state.dynamicBlocks
+          .flatMap(block => block.questions)
+          .find(q => q.question_id === questionId);
+      }
+      
+      if (question) {
+        // Trova il block_id corretto
+        let blockId = blocks.find(
+          block => block.questions.some(q => q.question_id === questionId)
+        )?.block_id;
+        
+        // Se non trovato nei blocchi statici, cerca nei dinamici
+        if (!blockId && state.dynamicBlocks) {
+          blockId = state.dynamicBlocks.find(
+            block => block.questions.some(q => q.question_id === questionId)
+          )?.block_id;
+        }
+        
+        const responseData = state.responses[questionId];
+        
+        responsesData.push({
+          submission_id: submission.id,
+          question_id: questionId,
+          question_text: question.question_text,
+          block_id: blockId || 'unknown',
+          response_value: responseData
+        });
+      }
     }
-
-    // 4. Se esiste uno slug, salviamo la simulazione completata nella tabella simulations
+    
+    // 3. Inserisci tutte le risposte
+    if (responsesData.length > 0) {
+      const { error: responsesError } = await supabase
+        .from('form_responses')
+        .insert(responsesData);
+      
+      if (responsesError) {
+        console.error("Errore nel salvataggio delle risposte:", responsesError);
+        throw responsesError;
+      }
+      
+      console.log(`Salvate ${responsesData.length} risposte`);
+    }
+    
+    // 4. Se esiste uno slug, salva nella tabella simulations
     if (slug) {
       const { error: simulationError } = await supabase
-        .from("simulations")
+        .from('simulations')
         .insert({
           slug: slug,
-          answers: formResponses,
+          answers: state.responses,
           submitted_at: new Date().toISOString(),
           completed_at: new Date().toISOString()
         });
 
       if (simulationError) {
         console.error("Errore nel salvataggio della simulazione:", simulationError);
-        // Non facciamo fallire l'intera operazione se fallisce solo l'inserimento in simulations
+        // Non facciamo fallire l'intera operazione
+      } else {
+        console.log("Simulazione salvata con slug:", slug);
       }
     }
 
@@ -95,39 +132,26 @@ export async function submitFormResponses(
       success: true, 
       submissionId: submission.id 
     };
-  } catch (error) {
-    console.error("Errore imprevisto:", error);
-    return { success: false, error: "Errore imprevisto durante il salvataggio" };
-  }
-}
-
-/**
- * Invia i dati del form completato a Supabase
- * @param state - Lo stato attuale del form
- * @returns Risultato dell'operazione con l'ID della submission
- */
-export async function submitFormToSupabase(
-  state: FormState
-): Promise<SubmissionResult> {
-  try {
-    // Estrai le risposte dal form state
-    const { responses } = state;
     
-    // Determina il tipo di form in base all'URL o altro criterio
-    const formType = window.location.pathname.includes("mutuo") ? "mutuo" : "simulazione";
-    
-    // Ottieni l'identificatore utente opzionale
-    const userIdentifier = localStorage.getItem('user_slug') || undefined;
-    
-    // Usa la funzione esistente per inviare i dati
-    const result = await submitFormResponses(responses, formType, userIdentifier);
-    
-    return result;
   } catch (error) {
     console.error("Errore durante l'invio del form:", error);
     return { 
       success: false, 
-      error: "Si è verificato un errore durante l'invio del form" 
+      error: error instanceof Error ? error.message : "Errore imprevisto durante il salvataggio" 
     };
   }
+}
+
+/**
+ * @deprecated Usa submitFormToSupabase invece
+ * Mantienuto per compatibilità ma sarà rimosso
+ */
+export async function submitFormResponses(
+  formResponses: FormResponse,
+  formType: string,
+  userIdentifier?: string
+): Promise<SubmissionResult> {
+  console.warn("submitFormResponses è deprecato, usa submitFormToSupabase");
+  // Implementazione minimale per compatibilità
+  return { success: false, error: "Funzione deprecata" };
 }
