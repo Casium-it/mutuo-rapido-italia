@@ -2,9 +2,10 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { Link } from "react-router-dom";
-import { ArrowRight, CheckCircle, FileText } from "lucide-react";
+import { ArrowRight, CheckCircle, FileText, TrendingUp, Building2, Target, Percent } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
+
 export default function FormCompleted() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -55,7 +56,8 @@ export default function FormCompleted() {
   if (!submissionData) {
     return null; // Non mostrare nulla durante il reindirizzamento
   }
-  return <div className="min-h-screen flex flex-col bg-white">
+  return (
+    <div className="min-h-screen flex flex-col bg-white">
       {/* Header */}
       <header className="py-3 px-4 md:px-6 flex justify-between items-center bg-white border-b border-gray-200">
         <Link to="/">
@@ -72,7 +74,9 @@ export default function FormCompleted() {
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
             Grazie per aver completato il form!
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">Abbiamo ricevuto la tue informazioni e abbiamo elaborato una simulazione completa del tuo mutuo personalizzata per te.</p>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Abbiamo ricevuto la tue informazioni e abbiamo elaborato una simulazione completa del tuo mutuo personalizzata per te.
+          </p>
         </div>
 
         {/* Riepilogo delle risposte */}
@@ -85,13 +89,100 @@ export default function FormCompleted() {
           </div>
           
           <div className="divide-y divide-gray-200">
-            {Object.entries(keySummary).map(([key, value], index) => <div key={index} className="py-3 flex justify-between">
+            {Object.entries(keySummary).map(([key, value], index) => (
+              <div key={index} className="py-3 flex justify-between">
                 <span className="font-medium text-gray-700">{key}</span>
                 <span className="text-gray-900">{value}</span>
-              </div>)}
+              </div>
+            ))}
           </div>
         </div>
 
+        {/* Statistiche Mutuo */}
+        <div className="bg-[#F8F4EF] p-6 rounded-lg shadow-sm w-full max-w-2xl mb-8">
+          <div className="flex items-center mb-6">
+            <TrendingUp className="h-5 w-5 text-[#245C4F] mr-2" />
+            <h2 className="text-xl font-semibold text-gray-800">
+              Analisi del tuo mutuo
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Range Mutuo */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Target className="h-4 w-4 text-[#245C4F]" />
+                <span className="text-sm font-medium text-gray-600">Range mutuo disponibile</span>
+              </div>
+              <div className="text-2xl font-bold text-gray-900">
+                <span style={{ filter: 'blur(2px)', userSelect: 'none' }}>
+                  €100.000 - €300.000
+                </span>
+              </div>
+            </div>
+
+            {/* Probabilità Mutuo */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Percent className="h-4 w-4 text-[#245C4F]" />
+                <span className="text-sm font-medium text-gray-600">Probabilità di approvazione</span>
+              </div>
+              <div className="text-2xl font-bold text-green-600">
+                <span style={{ filter: 'blur(1.5px)', userSelect: 'none' }}>
+                  89%
+                </span>
+              </div>
+            </div>
+
+            {/* Banche Possibili */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-[#245C4F]" />
+                <span className="text-sm font-medium text-gray-600">Banche disponibili</span>
+              </div>
+              <div className="text-2xl font-bold text-gray-900">
+                4
+              </div>
+            </div>
+
+            {/* Banca più conveniente */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-[#245C4F]" />
+                <span className="text-sm font-medium text-gray-600">Banca più conveniente</span>
+              </div>
+              <div className="text-lg font-semibold text-gray-900">
+                <span style={{ filter: 'blur(2px)', userSelect: 'none' }}>
+                  Unicredit Bank
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Banca con probabilità più alta */}
+          <div className="mt-6 pt-4 border-t border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Percent className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium text-gray-600">Banca con probabilità più alta</span>
+              </div>
+              <div className="text-lg font-semibold text-gray-900">
+                <span style={{ filter: 'blur(2px)', userSelect: 'none' }}>
+                  Intesa Sanpaolo
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Note informativa */}
+          <div className="mt-4 p-3 bg-white bg-opacity-50 rounded-lg border border-gray-200">
+            <p className="text-xs text-gray-500 text-center">
+              * I dati mostrati sono una stima preliminare basata sulle informazioni fornite
+            </p>
+          </div>
+        </div>
+
+        {/* Cosa succede adesso */}
         <div className="bg-[#F8F4EF] p-6 rounded-lg shadow-sm w-full max-w-2xl mb-8">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">
             Cosa succede adesso?
@@ -134,7 +225,10 @@ export default function FormCompleted() {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
-          <Button className="bg-[#245C4F] hover:bg-[#1a453b] text-white py-2.5 px-6 rounded-md flex-1" onClick={() => navigate("/")}>
+          <Button 
+            className="bg-[#245C4F] hover:bg-[#1a453b] text-white py-2.5 px-6 rounded-md flex-1" 
+            onClick={() => navigate("/")}
+          >
             Torna alla home <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </div>
@@ -146,5 +240,6 @@ export default function FormCompleted() {
           <p>&copy; {new Date().getFullYear()} GoMutuo. Tutti i diritti riservati.</p>
         </div>
       </footer>
-    </div>;
+    </div>
+  );
 }
