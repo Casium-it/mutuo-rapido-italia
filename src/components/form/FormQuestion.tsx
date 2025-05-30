@@ -205,7 +205,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
       const existingResponse = getResponse(question.question_id, key);
       if (existingResponse) {
         existingResponses[key] = existingResponse;
-        initialVisibleOptions[key] = false;
         
         // Verifica che le risposte esistenti siano ancora valide
         if (question.placeholders[key].type === "input") {
@@ -215,8 +214,14 @@ export function FormQuestion({ question }: FormQuestionProps) {
             initialValidationErrors[key] = true;
           }
         }
-      } else {
+      }
+      
+      // MODIFICA: Imposta sempre le opzioni dei select come visibili inizialmente
+      if (question.placeholders[key].type === "select") {
         initialVisibleOptions[key] = true;
+      } else {
+        // Per gli input, mantieni la logica esistente
+        initialVisibleOptions[key] = !existingResponse;
       }
     });
     
