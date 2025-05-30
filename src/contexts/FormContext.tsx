@@ -14,6 +14,7 @@ type FormContextType = {
   state: FormState;
   blocks: Block[];
   goToQuestion: (block_id: string, question_id: string, replace?: boolean) => void;
+  goToPreviousQuestion: () => void;
   setResponse: (question_id: string, placeholder_key: string, value: string | string[]) => void;
   getResponse: (question_id: string, placeholder_key: string) => string | string[] | undefined;
   addActiveBlock: (block_id: string) => void;
@@ -394,6 +395,36 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     }
     return null;
   }, [sortedBlocks, state.dynamicBlocks]);
+
+  // Go to previous question function
+  const goToPreviousQuestion = useCallback(() => {
+    // Find the most recent navigation history entry that led TO the current question
+    const currentQuestionId = state.activeQuestion.question_id;
+    const navigationHistory = state.navigationHistory
+      .filter(nav => nav.to_question_id === currentQuestionId)
+      .sort((a, b) => b.timestamp - a.timestamp); // Most recent first
+    
+    if (navigationHistory.length > 0) {
+      const lastNavigation = navigationHistory[0];
+      // Navigate back to the question we came from
+      goToQuestion(lastNavigation.from_block_id, lastNavigation.from_question_id);
+    } else {
+      // Fallback: try to go to previous question in the same block
+      const currentBlock = [...sortedBlocks, ...state.dynamicBlocks]
+        .find(block => block.block_id === state.activeQuestion.block_id);
+      
+      if (currentBlock) {
+        const currentQuestionIndex = currentBlock.questions
+          .findIndex(q => q.question_id === currentQuestionId);
+        
+        if (currentQuestionIndex > 0) {
+          // Go to previous question in the same block
+          const previousQuestion = currentBlock.questions[currentQuestionIndex - 1];
+          goToQuestion(currentBlock.block_id, previousQuestion.question_id);
+        }
+      }
+    }
+  }, [state.activeQuestion, state.navigationHistory, sortedBlocks, state.dynamicBlocks]);
 
   // Trova il lead_to di un placeholder in una domanda
   const findPlaceholderLeadsTo = useCallback((question: any, placeholderKey: string, value: string | string[]): string | null => {
@@ -1140,6 +1171,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
           ...state.dynamicBlocks
         ].sort((a, b) => a.priority - b.priority), 
         goToQuestion,
+        goToPreviousQuestion,
         setResponse,
         getResponse,
         addActiveBlock,
