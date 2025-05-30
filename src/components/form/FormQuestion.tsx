@@ -119,7 +119,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
     state,
     blocks,
     addActiveBlock,
-    goToQuestion 
+    goToQuestion,
+    setBackNavigation // Add the new function
   } = useFormExtended();
   
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});
@@ -195,7 +196,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
     };
   }, [responses, validationErrors, question.skippableWithNotSure]);
 
-  // Effetto per caricare le risposte esistenti e impostare visibilità iniziale delle opzioni
+  // Updated effect for loading existing responses and setting initial visibility
   useEffect(() => {
     const existingResponses: { [key: string]: string | string[] } = {};
     const initialVisibleOptions: { [key: string]: boolean } = {};
@@ -205,9 +206,15 @@ export function FormQuestion({ question }: FormQuestionProps) {
       const existingResponse = getResponse(question.question_id, key);
       if (existingResponse) {
         existingResponses[key] = existingResponse;
-        initialVisibleOptions[key] = false;
         
-        // Verifica che le risposte esistenti siano ancora valide
+        // Show select options if we just navigated back and there's an existing response
+        if (question.placeholders[key].type === "select" && state.isBackNavigation) {
+          initialVisibleOptions[key] = true;
+        } else {
+          initialVisibleOptions[key] = false;
+        }
+        
+        // Verify that existing responses are still valid
         if (question.placeholders[key].type === "input") {
           const placeholder = question.placeholders[key];
           const validationType = (placeholder as any).input_validation as ValidationTypes;
@@ -229,12 +236,20 @@ export function FormQuestion({ question }: FormQuestionProps) {
     setShowNonLoSoButton(false);
     // Reset delle posizioni del cursore
     setCursorPositions({});
-  }, [question.question_id, getResponse, question.placeholders]);
+    
+    // Reset the back navigation flag after processing
+    if (state.isBackNavigation) {
+      setBackNavigation(false);
+    }
+  }, [question.question_id, getResponse, question.placeholders, state.isBackNavigation, setBackNavigation]);
 
-  // Funzione per gestire la navigazione indietro con gestione del caso speciale
+  // Updated function to handle back navigation with the new flag
   const handleBackNavigation = () => {
     if (isNavigating) return;
     setIsNavigating(true);
+    
+    // Set the back navigation flag before navigating
+    setBackNavigation(true);
     
     // Ottieni array di domande risposte dal set
     const answeredQuestionsArray = Array.from(state.answeredQuestions);
@@ -242,6 +257,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
     if (answeredQuestionsArray.length === 0) {
       // Se non ci sono domande precedenti, non possiamo andare indietro
       setIsNavigating(false);
+      setBackNavigation(false); // Reset flag if navigation fails
       return;
     }
     
@@ -268,6 +284,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
     if (!blockWithPreviousQuestion) {
       console.error("Blocco della domanda precedente non trovato:", previousQuestionId);
       setIsNavigating(false);
+      setBackNavigation(false); // Reset flag if navigation fails
       return;
     }
     
