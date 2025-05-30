@@ -1,19 +1,26 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { Progress } from "@/components/ui/progress";
 import { FormResponse } from "@/types/form";
+import { submitFormToSupabase } from "@/services/formSubmissionService";
+import { toast } from "sonner";
 
 export default function FormLoading() {
   const navigate = useNavigate();
   const location = useLocation();
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitCompleted, setSubmitCompleted] = useState(false);
+  const submissionStartedRef = useRef(false);
   
   // Ottieni i dati del form dallo stato della location
   const formData = location.state?.formData as {
     responses: FormResponse;
     activeBlocks: string[];
+    completedBlocks: string[];
+    dynamicBlocks: any[];
     submissionId?: string;
   };
   
@@ -24,16 +31,97 @@ export default function FormLoading() {
       return;
     }
     
-    // Progresso della barra di caricamento da 0 a 100% in 2 secondi
-    const totalDuration = 2000; // 2 secondi
-    const intervalTime = 20; // Aggiorna ogni 20ms per un'animazione fluida
-    const increment = 100 / (totalDuration / intervalTime);
+    // Avvia la submission se non è già stata avviata
+    if (!submissionStartedRef.current) {
+      submissionStartedRef.current = true;
+      handleFormSubmission();
+    }
+    
+    // Avvia l'animazione della barra di progresso
+    startProgressAnimation();
+    
+  }, [formData, navigate]);
+
+  const handleFormSubmission = async () => {
+    setIsSubmitting(true);
+    
+    try {
+      console.log("Inizio invio form dal FormLoading...");
+      
+      // Ottieni tutti i blocchi (statici + dinamici) per il servizio di submission
+      const allBlocks = [...(window as any).allBlocks || [], ...(formData.dynamicBlocks || [])];
+      
+      const result = await submitFormToSupabase({
+        activeBlocks: formData.activeBlocks,
+        responses: formData.responses,
+        completedBlocks: formData.completedBlocks,
+        dynamicBlocks: formData.dynamicBlocks,
+        activeQuestion: { block_id: '', question_id: '' },
+        answeredQuestions: new Set(),
+        navigationHistory: [],
+        blockActivations: {},
+        pendingRemovals: []
+      }, allBlocks);
+      
+      if (result.success) {
+        console.log("Form inviato con successo, ID:", result.submissionId);
+        setSubmitCompleted(true);
+        
+        // Assicurati che la barra raggiunga il 100% quando la submission è completata
+        setLoadingProgress(100);
+        
+      } else {
+        console.error("Errore nell'invio:", result.error);
+        toast.error("Errore durante l'invio", {
+          description: result.error || "Si è verificato un errore durante l'invio del modulo."
+        });
+        // In caso di errore, torna alla pagina precedente
+        navigate(-1);
+      }
+      
+    } catch (error) {
+      console.error('Errore imprevisto durante l\'invio del form:', error);
+      toast.error("Errore durante l'invio", {
+        description: "Si è verificato un errore imprevisto. Riprova più tardi."
+      });
+      // In caso di errore, torna alla pagina precedente
+      navigate(-1);
+    }
+    
+    setIsSubmitting(false);
+  };
+
+  const startProgressAnimation = () => {
+    const totalDuration = 5000; // 5 secondi totali
+    const intervalTime = 50; // Aggiorna ogni 50ms per un'animazione fluida
+    const totalSteps = totalDuration / intervalTime;
+    
+    let currentStep = 0;
     
     const progressInterval = setInterval(() => {
+      currentStep++;
+      
+      // Funzione di easing: inizia lento, poi accelera (ease-out quadratico)
+      const progress = currentStep / totalSteps;
+      const easedProgress = 1 - Math.pow(1 - progress, 3); // cubic ease-out
+      
+      // Calcola il progresso: 0-90% per upload, 90-100% per buffer finale
+      let targetProgress;
+      if (submitCompleted) {
+        // Se submission è completata, vai direttamente al 100%
+        targetProgress = 100;
+      } else {
+        // Altrimenti, limita al 90% fino a quando submission non è completata
+        targetProgress = Math.min(easedProgress * 90, 90);
+      }
+      
       setLoadingProgress(prev => {
-        if (prev >= 100) {
+        const newProgress = Math.max(prev, targetProgress);
+        
+        // Se abbiamo raggiunto il 100% e la submission è completata
+        if (newProgress >= 100 && submitCompleted) {
           clearInterval(progressInterval);
-          // Naviga al completamento dopo aver raggiunto il 100%
+          // Naviga al completamento dopo una breve pausa
           setTimeout(() => {
             navigate("/form-completed", { 
               state: { 
@@ -43,17 +131,29 @@ export default function FormLoading() {
                 }
               }
             });
-          }, 100); // Piccola pausa per mostrare il 100%
-          return 100;
+          }, 500); // Pausa di 500ms per mostrare il 100%
         }
-        return prev + increment;
+        
+        return newProgress;
       });
+      
+      // Se abbiamo completato l'animazione ma la submission non è ancora finita,
+      // continua con piccoli incrementi fino al completamento
+      if (progress >= 1 && !submitCompleted) {
+        // L'animazione principale è finita, ma manteniamo il progresso al 90%
+        // fino a quando submitCompleted non diventa true
+      }
+      
+      // Pulisci l'intervallo se abbiamo raggiunto il tempo limite
+      if (currentStep >= totalSteps && submitCompleted) {
+        clearInterval(progressInterval);
+      }
     }, intervalTime);
     
     return () => {
       clearInterval(progressInterval);
     };
-  }, [formData, navigate]);
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-white">

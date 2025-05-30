@@ -4,8 +4,6 @@ import { FormQuestion } from "./FormQuestion";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, AlertCircle } from "lucide-react";
-import { toast } from "sonner";
-import { submitFormToSupabase } from "@/services/formSubmissionService";
 
 export function QuestionView() {
   const { 
@@ -20,7 +18,6 @@ export function QuestionView() {
   const navigate = useNavigate();
   const params = useParams<{ blockId?: string, questionId?: string }>();
   const [showStopFlow, setShowStopFlow] = useState<boolean>(false);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   
   // Sincronizza il componente con l'URL quando cambia
   useEffect(() => {
@@ -82,43 +79,23 @@ export function QuestionView() {
   // Check if there are any dynamic blocks that are not completed
   const isEndOfFormQuestion = activeQuestion?.endOfForm === true;
   
-  // Handle form submission
+  // Handle form submission - Navigate immediately to loading page
   const handleSubmitForm = async () => {
     if (!allBlocksCompleted) {
-      toast.error("Completa tutti i blocchi prima di procedere", {
-        description: "Ci sono sezioni del form che devono essere completate",
-      });
       return;
     }
 
-    try {
-      setIsSubmitting(true);
-      const result = await submitFormToSupabase(state, blocks);
-      
-      if (result.success) {
-        // Passa i dati rilevanti alla pagina di caricamento
-        navigate("/form-loading", {
-          state: { 
-            formData: {
-              responses: state.responses,
-              activeBlocks: state.activeBlocks,
-              submissionId: result.submissionId
-            }
-          }
-        });
-      } else {
-        toast.error("Si è verificato un errore durante l'invio del form", {
-          description: result.error || "Riprova più tardi o contattaci per assistenza",
-        });
-        setIsSubmitting(false);
+    // Navigate immediately to loading page with form data
+    navigate("/form-loading", {
+      state: { 
+        formData: {
+          responses: state.responses,
+          activeBlocks: state.activeBlocks,
+          completedBlocks: state.completedBlocks,
+          dynamicBlocks: state.dynamicBlocks
+        }
       }
-    } catch (error) {
-      console.error("Errore durante l'invio del form:", error);
-      toast.error("Si è verificato un errore durante l'invio del form", {
-        description: "Riprova più tardi o contattaci per assistenza",
-      });
-      setIsSubmitting(false);
-    }
+    });
   };
 
   if (!activeBlock || !activeQuestion) {
@@ -212,7 +189,7 @@ export function QuestionView() {
             <div className="mt-6 flex justify-center">
               <Button
                 onClick={handleSubmitForm}
-                disabled={!allBlocksCompleted || isSubmitting}
+                disabled={!allBlocksCompleted}
                 className={`${
                   !allBlocksCompleted 
                     ? "bg-[#a0c3be] cursor-not-allowed" 
@@ -223,7 +200,7 @@ export function QuestionView() {
                     : "shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37]"
                 } w-full sm:w-auto transition-all`}
               >
-                {isSubmitting ? "Invio in corso..." : "Invia Form"}
+                Invia Form
               </Button>
             </div>
           </div>
