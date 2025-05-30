@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
+import { Progress } from "@/components/ui/progress";
 import { FormResponse } from "@/types/form";
 
 export default function FormLoading() {
@@ -23,49 +24,36 @@ export default function FormLoading() {
       return;
     }
     
-    // Simula un caricamento progressivo
+    // Progresso della barra di caricamento da 0 a 100% in 2 secondi
+    const totalDuration = 2000; // 2 secondi
+    const intervalTime = 20; // Aggiorna ogni 20ms per un'animazione fluida
+    const increment = 100 / (totalDuration / intervalTime);
+    
     const progressInterval = setInterval(() => {
       setLoadingProgress(prev => {
         if (prev >= 100) {
           clearInterval(progressInterval);
+          // Naviga al completamento dopo aver raggiunto il 100%
+          setTimeout(() => {
+            navigate("/form-completed", { 
+              state: { 
+                submissionData: {
+                  ...formData,
+                  submissionTime: new Date().toISOString()
+                }
+              }
+            });
+          }, 100); // Piccola pausa per mostrare il 100%
           return 100;
         }
-        return prev + 5;
+        return prev + increment;
       });
-    }, 100);
-    
-    // Imposta un timer minimo di 3 secondi prima di navigare alla pagina di completamento
-    const minLoadingTime = setTimeout(() => {
-      // Assicurati che il progresso sia completato
-      if (loadingProgress >= 100) {
-        navigateToCompletion();
-      } else {
-        // Altrimenti attendi che il progresso raggiunga 100%
-        const checkProgress = setInterval(() => {
-          if (loadingProgress >= 100) {
-            clearInterval(checkProgress);
-            navigateToCompletion();
-          }
-        }, 100);
-      }
-    }, 3000);
-    
-    const navigateToCompletion = () => {
-      navigate("/form-completed", { 
-        state: { 
-          submissionData: {
-            ...formData,
-            submissionTime: new Date().toISOString()
-          }
-        }
-      });
-    };
+    }, intervalTime);
     
     return () => {
       clearInterval(progressInterval);
-      clearTimeout(minLoadingTime);
     };
-  }, [formData, navigate, loadingProgress]);
+  }, [formData, navigate]);
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -76,30 +64,35 @@ export default function FormLoading() {
 
       {/* Contenuto principale */}
       <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8">
-        <div className="text-center space-y-12 max-w-md">
-          {/* Primo loader con animazione */}
+        <div className="text-center space-y-8 max-w-md w-full">
+          {/* Loader con animazione */}
           <div className="flex flex-col items-center">
             <div className="dots-loader mb-8"></div>
-            <div className="text-loader mb-4"></div>
-            <div className="mt-6 w-full bg-gray-200 rounded-full h-2.5">
-              <div 
-                className="bg-[#245C4F] h-2.5 rounded-full transition-all duration-300 ease-in-out" 
-                style={{ width: `${loadingProgress}%` }}
-              ></div>
+            
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6">
+              Stiamo elaborando la tua richiesta
+            </h1>
+            
+            <p className="text-lg text-gray-600 mb-8">
+              I tuoi dati vengono salvati in modo sicuro. Tra un momento verrai reindirizzato.
+            </p>
+            
+            {/* Barra di progresso con shadcn/ui */}
+            <div className="w-full space-y-3">
+              <Progress 
+                value={loadingProgress} 
+                className="h-3 bg-gray-200"
+                indicatorClassName="bg-[#245C4F] transition-all duration-75 ease-linear"
+              />
+              <p className="text-sm text-gray-600 font-medium">
+                {Math.round(loadingProgress)}% completato
+              </p>
             </div>
-            <p className="mt-3 text-sm text-gray-500">{loadingProgress}%</p>
           </div>
-          
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-            Stiamo elaborando la tua richiesta
-          </h1>
-          <p className="text-lg text-gray-600">
-            I tuoi dati vengono salvati in modo sicuro. Tra un momento verrai reindirizzato.
-          </p>
         </div>
       </div>
       
-      {/* Style per i loader personalizzati */}
+      {/* Style per il loader personalizzato */}
       <style>
         {`
         /* Dots loader animation */
@@ -127,41 +120,6 @@ export default function FormLoading() {
           100% {
             background-position: 100% 100%, 0 0, 0 100%;
           }
-        }
-        
-        /* Text loader animation */
-        .text-loader {
-          width: fit-content;
-          font-size: 24px;
-          font-family: monospace;
-          font-weight: bold;
-          text-transform: uppercase;
-          margin: 0 auto;
-          color: #0000;
-          -webkit-text-stroke: 1px #245C4F;
-          --g: conic-gradient(#245C4F 0 0) no-repeat text;
-          background: var(--g) 0, var(--g) 1ch, var(--g) 2ch, var(--g) 3ch, 
-                     var(--g) 4ch, var(--g) 5ch, var(--g) 6ch, var(--g) 7ch, 
-                     var(--g) 8ch, var(--g) 9ch, var(--g) 10ch;
-          background-position-y: 100%;
-          animation: textAnim 3s infinite;
-        }
-        .text-loader:before {
-          content: "CARICAMENTO";
-        }
-        @keyframes textAnim {
-          0%     {background-size: 1ch 0,   1ch 0,   1ch 0,   1ch 0,   1ch 0,   1ch 0,   1ch 0,   1ch 0,   1ch 0,   1ch 0,   1ch 0}
-          9.09%  {background-size: 1ch 100%, 1ch 0,   1ch 0,   1ch 0,   1ch 0,   1ch 0,   1ch 0,   1ch 0,   1ch 0,   1ch 0,   1ch 0}
-          18.18% {background-size: 1ch 100%, 1ch 100%, 1ch 0,   1ch 0,   1ch 0,   1ch 0,   1ch 0,   1ch 0,   1ch 0,   1ch 0,   1ch 0}
-          27.27% {background-size: 1ch 100%, 1ch 100%, 1ch 100%, 1ch 0,   1ch 0,   1ch 0,   1ch 0,   1ch 0,   1ch 0,   1ch 0,   1ch 0}
-          36.36% {background-size: 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 0,   1ch 0,   1ch 0,   1ch 0,   1ch 0,   1ch 0,   1ch 0}
-          45.45% {background-size: 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 0,   1ch 0,   1ch 0,   1ch 0,   1ch 0,   1ch 0}
-          54.54% {background-size: 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 0,   1ch 0,   1ch 0,   1ch 0,   1ch 0}
-          63.63% {background-size: 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 0,   1ch 0,   1ch 0,   1ch 0}
-          72.72% {background-size: 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 0,   1ch 0,   1ch 0}
-          81.81% {background-size: 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 0,   1ch 0}
-          90.90% {background-size: 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 0}
-          100%   {background-size: 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%}
         }
         `}
       </style>
