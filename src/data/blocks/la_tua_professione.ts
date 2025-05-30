@@ -38,9 +38,9 @@ export const la_tua_professione: Block = {
           type: "select",
           options: [
             {"id": "indeterminato", "label": "a tempo indeterminato", "leads_to": "posizione_ricoperta"},
-            {"id": "determinato", "label": "a tempo determinato", "leads_to": "scadenza_contratto"},
-            {"id": "apprendistato", "label": "apprendistato", "leads_to": "scadenza_contratto"},
-            {"id": "tirocinio", "label": "tirocinio", "leads_to": "scadenza_contratto"}
+            {"id": "determinato", "label": "a tempo determinato", "leads_to": "periodo_prova"},
+            {"id": "apprendistato", "label": "apprendistato", "leads_to": "periodo_prova"},
+            {"id": "tirocinio", "label": "tirocinio", "leads_to": "periodo_prova"}
           ]
         }
       }

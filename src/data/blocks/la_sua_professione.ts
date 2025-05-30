@@ -38,9 +38,9 @@ export const la_sua_professione: Block = {
           type: "select",
           options: [
             {id: "indeterminato", label: "a tempo indeterminato", leads_to: "posizione_ricoperta_coint", add_block: "il_suo_reddito_secondario"},
-            {id: "determinato", label: "a tempo determinato", leads_to: "scadenza_contratto_coint", add_block: "il_suo_reddito_secondario"},
-            {id: "apprendistato", label: "apprendistato", leads_to: "scadenza_contratto_coint", add_block: "il_suo_reddito_secondario"},
-            {id: "tirocinio", label: "tirocinio", leads_to: "scadenza_contratto_coint", add_block: "il_suo_reddito_secondario"}
+            {id: "determinato", label: "a tempo determinato", leads_to: "periodo_prova_coint", add_block: "il_suo_reddito_secondario"},
+            {id: "apprendistato", label: "apprendistato", leads_to: "periodo_prova_coint", add_block: "il_suo_reddito_secondario"},
+            {id: "tirocinio", label: "tirocinio", leads_to: "periodo_prova_coint", add_block: "il_suo_reddito_secondario"}
           ]
         }
       }
