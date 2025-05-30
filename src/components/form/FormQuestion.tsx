@@ -1015,10 +1015,10 @@ export function FormQuestion({ question }: FormQuestionProps) {
       {/* Linea separatrice beige */}
       <Separator className="h-[1px] bg-[#F0EAE0] mb-5" />
       
-      {/* Contenitore per i select options visibili con pulsante indietro come prima opzione */}
+      {/* Contenitore per i select options visibili con pulsante indietro sempre come prima opzione */}
       <div className="space-y-5">
-        {/* Pulsante Indietro - mostrato come prima opzione se ci sono select options visibili */}
-        {showBackButton && hasVisibleSelectOptions && (
+        {/* Pulsante Indietro - sempre mostrato con il nuovo design se necessario */}
+        {showBackButton && (
           <div className="mt-5">
             <button
               type="button"
@@ -1078,23 +1078,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
           >
             Avanti <ArrowRight className="ml-1 h-4 w-4" />
           </Button>
-        </div>
-      )}
-      
-      {/* Pulsante Indietro originale - visibile solo se non ci sono select options visibili */}
-      {showBackButton && !hasVisibleSelectOptions && (
-        <div className="mt-4">
-          <button
-            type="button"
-            className={cn(
-              "text-[#BEB8AE] hover:text-[#AFA89F] text-[15px] font-medium underline",
-              "transition-colors"
-            )}
-            onClick={handleBackNavigation}
-            disabled={isNavigating}
-          >
-            indietro
-          </button>
         </div>
       )}
     </div>
