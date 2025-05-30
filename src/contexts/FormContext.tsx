@@ -30,7 +30,6 @@ type FormContextType = {
   markBlockAsCompleted: (blockId: string) => void;
   removeBlockFromCompleted: (blockId: string) => void;
   isQuestionPendingRemoval: (questionId: string) => boolean;
-  setBackNavigation: (isBack: boolean) => void;
 };
 
 type Action =
@@ -42,7 +41,6 @@ type Action =
   | { type: "SET_FORM_STATE"; state: Partial<FormState> }
   | { type: "RESET_FORM" }
   | { type: "SET_NAVIGATING"; isNavigating: boolean }
-  | { type: "SET_BACK_NAVIGATION"; isBackNavigation: boolean }
   | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory }
   | { type: "ADD_DYNAMIC_BLOCK"; block: Block }
   | { type: "DELETE_DYNAMIC_BLOCK"; blockId: string }
@@ -62,7 +60,6 @@ const initialState: FormState = {
   responses: {},
   answeredQuestions: new Set(),
   isNavigating: false,
-  isBackNavigation: false,
   navigationHistory: [],
   dynamicBlocks: [],
   blockActivations: {}, // Track which questions/placeholders activated which blocks
@@ -194,12 +191,6 @@ function formReducer(state: FormState, action: Action): FormState {
       return {
         ...state,
         isNavigating: action.isNavigating
-      };
-    }
-    case "SET_BACK_NAVIGATION": {
-      return {
-        ...state,
-        isBackNavigation: action.isBackNavigation
       };
     }
     case "ADD_NAVIGATION_HISTORY": {
@@ -1140,10 +1131,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     dispatch({ type: "DELETE_QUESTION_RESPONSES", questionIds });
   }, []);
 
-  const setBackNavigation = useCallback((isBack: boolean) => {
-    dispatch({ type: "SET_BACK_NAVIGATION", isBackNavigation: isBack });
-  }, []);
-
   return (
     <FormContext.Provider
       value={{
@@ -1168,8 +1155,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         isBlockCompleted,
         markBlockAsCompleted,
         removeBlockFromCompleted,
-        isQuestionPendingRemoval,
-        setBackNavigation
+        isQuestionPendingRemoval
       }}
     >
       {children}

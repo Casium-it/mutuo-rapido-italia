@@ -93,7 +93,6 @@ export type FormState = {
   responses: FormResponse;
   answeredQuestions: Set<string>;
   isNavigating?: boolean;
-  isBackNavigation?: boolean;
   navigationHistory: NavigationHistory[];
   dynamicBlocks: Block[];
   blockActivations: Record<string, BlockActivationSource[]>; // Track which questions activated which blocks
