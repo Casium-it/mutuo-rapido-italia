@@ -1,8 +1,9 @@
+
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { Link } from "react-router-dom";
-import { ArrowRight, CheckCircle, FileText, TrendingUp, Building2, Target, Percent } from "lucide-react";
+import { ArrowRight, CheckCircle, TrendingUp, Building2, Target, Percent } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 
@@ -79,95 +80,111 @@ export default function FormCompleted() {
           </p>
         </div>
 
-        {/* Riepilogo delle risposte */}
-        <div className="bg-[#F8F4EF] p-6 rounded-lg shadow-sm w-full max-w-2xl mb-8">
-          <div className="flex items-center mb-4">
-            <FileText className="h-5 w-5 text-[#245C4F] mr-2" />
-            <h2 className="text-xl font-semibold text-gray-800">
-              Riepilogo della tua richiesta
+        {/* Statistiche Mutuo - Individual Boxes */}
+        <div className="w-full max-w-4xl mb-8">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">
+              La tua analisi mutuo personalizzata
             </h2>
-          </div>
-          
-          <div className="divide-y divide-gray-200">
-            {Object.entries(keySummary).map(([key, value], index) => (
-              <div key={index} className="py-3 flex justify-between">
-                <span className="font-medium text-gray-700">{key}</span>
-                <span className="text-gray-900">{value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Statistiche Mutuo */}
-        <div className="bg-[#F8F4EF] p-6 rounded-lg shadow-sm w-full max-w-2xl mb-8">
-          <div className="flex items-center mb-6">
-            <TrendingUp className="h-5 w-5 text-[#245C4F] mr-2" />
-            <h2 className="text-xl font-semibold text-gray-800">
-              Analisi del tuo mutuo
-            </h2>
+            <p className="text-gray-600">
+              Basata sui dati forniti, ecco le informazioni preliminari
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Range Mutuo */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Target className="h-4 w-4 text-[#245C4F]" />
-                <span className="text-sm font-medium text-gray-600">Range mutuo disponibile</span>
+            <div className="bg-[#F8F4EF] p-6 rounded-lg shadow-sm border border-gray-200">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="bg-[#245C4F] p-2 rounded-lg">
+                  <Target className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">Range mutuo disponibile</h3>
+                  <p className="text-sm text-gray-600">Importo stimato</p>
+                </div>
               </div>
-              <div className="text-2xl font-bold text-gray-900">
-                <span style={{ filter: 'blur(2px)', userSelect: 'none' }}>
-                  €100.000 - €300.000
-                </span>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-gray-900">
+                  <span style={{ filter: 'blur(4px)', userSelect: 'none' }}>
+                    €100.000 - €300.000
+                  </span>
+                </div>
               </div>
             </div>
 
             {/* Probabilità Mutuo */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Percent className="h-4 w-4 text-[#245C4F]" />
-                <span className="text-sm font-medium text-gray-600">Probabilità di approvazione</span>
+            <div className="bg-[#F8F4EF] p-6 rounded-lg shadow-sm border border-gray-200">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="bg-green-600 p-2 rounded-lg">
+                  <Percent className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">Probabilità di approvazione</h3>
+                  <p className="text-sm text-gray-600">Stima preliminare</p>
+                </div>
               </div>
-              <div className="text-2xl font-bold text-green-600">
-                <span style={{ filter: 'blur(1.5px)', userSelect: 'none' }}>
-                  89%
-                </span>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-green-600">
+                  <span style={{ filter: 'blur(4px)', userSelect: 'none' }}>
+                    89%
+                  </span>
+                </div>
               </div>
             </div>
 
             {/* Banche Possibili */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Building2 className="h-4 w-4 text-[#245C4F]" />
-                <span className="text-sm font-medium text-gray-600">Banche disponibili</span>
+            <div className="bg-[#F8F4EF] p-6 rounded-lg shadow-sm border border-gray-200">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="bg-blue-600 p-2 rounded-lg">
+                  <Building2 className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">Banche disponibili</h3>
+                  <p className="text-sm text-gray-600">Opzioni trovate</p>
+                </div>
               </div>
-              <div className="text-2xl font-bold text-gray-900">
-                4
+              <div className="text-center">
+                <div className="text-3xl font-bold text-gray-900">
+                  4
+                </div>
               </div>
             </div>
 
             {/* Banca più conveniente */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-[#245C4F]" />
-                <span className="text-sm font-medium text-gray-600">Banca più conveniente</span>
+            <div className="bg-[#F8F4EF] p-6 rounded-lg shadow-sm border border-gray-200">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="bg-orange-600 p-2 rounded-lg">
+                  <TrendingUp className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">Banca più conveniente</h3>
+                  <p className="text-sm text-gray-600">Miglior tasso</p>
+                </div>
               </div>
-              <div className="text-lg font-semibold text-gray-900">
-                <span style={{ filter: 'blur(2px)', userSelect: 'none' }}>
-                  Unicredit Bank
-                </span>
+              <div className="text-center">
+                <div className="text-xl font-semibold text-gray-900">
+                  <span style={{ filter: 'blur(5px)', userSelect: 'none' }}>
+                    Unicredit Bank
+                  </span>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Banca con probabilità più alta */}
-          <div className="mt-6 pt-4 border-t border-gray-200">
+          {/* Banca con probabilità più alta - Full Width */}
+          <div className="mt-4 bg-[#F8F4EF] p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Percent className="h-4 w-4 text-green-600" />
-                <span className="text-sm font-medium text-gray-600">Banca con probabilità più alta</span>
+              <div className="flex items-center gap-3">
+                <div className="bg-purple-600 p-2 rounded-lg">
+                  <Percent className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">Banca con probabilità più alta</h3>
+                  <p className="text-sm text-gray-600">Migliore approvazione</p>
+                </div>
               </div>
-              <div className="text-lg font-semibold text-gray-900">
-                <span style={{ filter: 'blur(2px)', userSelect: 'none' }}>
+              <div className="text-xl font-semibold text-gray-900">
+                <span style={{ filter: 'blur(5px)', userSelect: 'none' }}>
                   Intesa Sanpaolo
                 </span>
               </div>
@@ -175,9 +192,10 @@ export default function FormCompleted() {
           </div>
 
           {/* Note informativa */}
-          <div className="mt-4 p-3 bg-white bg-opacity-50 rounded-lg border border-gray-200">
-            <p className="text-xs text-gray-500 text-center">
-              * I dati mostrati sono una stima preliminare basata sulle informazioni fornite
+          <div className="mt-6 p-4 bg-white bg-opacity-80 rounded-lg border border-gray-200">
+            <p className="text-sm text-gray-500 text-center">
+              * I dati mostrati sono una stima preliminare basata sulle informazioni fornite. 
+              Per informazioni accurate contattaci per una consulenza personalizzata.
             </p>
           </div>
         </div>
