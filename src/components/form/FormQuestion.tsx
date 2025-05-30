@@ -205,7 +205,14 @@ export function FormQuestion({ question }: FormQuestionProps) {
       const existingResponse = getResponse(question.question_id, key);
       if (existingResponse) {
         existingResponses[key] = existingResponse;
-        initialVisibleOptions[key] = false;
+        
+        // Per i select, mostra sempre le opzioni anche se c'è già una risposta
+        // Questo migliora l'UX quando si naviga indietro
+        if (question.placeholders[key].type === "select") {
+          initialVisibleOptions[key] = true;
+        } else {
+          initialVisibleOptions[key] = false;
+        }
         
         // Verifica che le risposte esistenti siano ancora valide
         if (question.placeholders[key].type === "input") {
@@ -216,7 +223,12 @@ export function FormQuestion({ question }: FormQuestionProps) {
           }
         }
       } else {
-        initialVisibleOptions[key] = true;
+        // Se non c'è una risposta esistente, mostra sempre le opzioni per i select
+        if (question.placeholders[key].type === "select") {
+          initialVisibleOptions[key] = true;
+        } else {
+          initialVisibleOptions[key] = true;
+        }
       }
     });
     
