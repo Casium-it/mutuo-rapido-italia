@@ -12,9 +12,9 @@ export default function FormLoading() {
   const location = useLocation();
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [submissionCompleted, setSubmissionCompleted] = useState(false);
-  const [isInFinalPhase, setIsInFinalPhase] = useState(false);
+  const [showWaitingMessage, setShowWaitingMessage] = useState(false);
   const submissionStartedRef = useRef(false);
-  const finalPhaseStartedRef = useRef(false);
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   // Ottieni i dati del form dallo stato della location
   const formData = location.state?.formData as {
@@ -38,25 +38,57 @@ export default function FormLoading() {
       handleFormSubmission();
     }
     
-    // Avvia l'animazione della barra di progresso per upload (0-90%)
-    startUploadProgressAnimation();
+    // Avvia l'animazione della barra di progresso per 5 secondi
+    startProgressAnimation();
     
+    // Cleanup function
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+    };
   }, [formData, navigate]);
 
-  // Effetto per gestire la fase finale quando la submission è completata
+  // Effetto per gestire quando il progresso raggiunge il 100%
   useEffect(() => {
-    if (submissionCompleted && !isInFinalPhase && !finalPhaseStartedRef.current) {
-      finalPhaseStartedRef.current = true;
-      // Assicurati che siamo al 90% prima di iniziare la fase finale
-      setLoadingProgress(90);
-      setIsInFinalPhase(true);
-      
-      // Avvia la fase finale di 4 secondi (90% -> 100%)
-      setTimeout(() => {
-        startFinalPhaseAnimation();
-      }, 100); // Piccola pausa per assicurarsi che il progresso sia aggiornato al 90%
+    if (loadingProgress >= 100) {
+      if (submissionCompleted) {
+        // Entrambe le condizioni sono soddisfatte, naviga
+        setTimeout(() => {
+          navigate("/form-completed", { 
+            state: { 
+              submissionData: {
+                ...formData,
+                submissionTime: new Date().toISOString()
+              }
+            }
+          });
+        }, 300);
+      } else {
+        // Progresso completato ma submission ancora in corso
+        setShowWaitingMessage(true);
+      }
     }
-  }, [submissionCompleted, isInFinalPhase]);
+  }, [loadingProgress, submissionCompleted, navigate, formData]);
+
+  // Effetto per gestire quando la submission è completata
+  useEffect(() => {
+    if (submissionCompleted && loadingProgress >= 100) {
+      // Entrambe le condizioni sono soddisfatte, nascondi il messaggio di attesa
+      setShowWaitingMessage(false);
+      
+      setTimeout(() => {
+        navigate("/form-completed", { 
+          state: { 
+            submissionData: {
+              ...formData,
+              submissionTime: new Date().toISOString()
+            }
+          }
+        });
+      }, 300);
+    }
+  }, [submissionCompleted, loadingProgress, navigate, formData]);
 
   const handleFormSubmission = async () => {
     try {
@@ -80,6 +112,7 @@ export default function FormLoading() {
       if (result.success) {
         console.log("Form inviato con successo, ID:", result.submissionId);
         setSubmissionCompleted(true);
+        setShowWaitingMessage(false);
       } else {
         console.error("Errore nell'invio:", result.error);
         toast.error("Errore durante l'invio", {
@@ -99,83 +132,43 @@ export default function FormLoading() {
     }
   };
 
-  const startUploadProgressAnimation = () => {
-    const uploadDuration = 3000; // 3 secondi per raggiungere il 90%
+  const startProgressAnimation = () => {
+    const totalDuration = 5000; // 5 secondi esatti
     const intervalTime = 50; // Aggiorna ogni 50ms
-    const totalSteps = uploadDuration / intervalTime;
+    const totalSteps = totalDuration / intervalTime; // 100 step totali
+    const progressPerStep = 100 / totalSteps; // 1% per step
     
     let currentStep = 0;
     
-    const uploadInterval = setInterval(() => {
+    progressIntervalRef.current = setInterval(() => {
       currentStep++;
+      const newProgress = Math.min(currentStep * progressPerStep, 100);
       
-      // Funzione di easing: inizia lento, poi accelera
-      const progress = currentStep / totalSteps;
-      const easedProgress = 1 - Math.pow(1 - progress, 3); // cubic ease-out
+      setLoadingProgress(newProgress);
       
-      // Calcola il progresso da 0% a 90%
-      const targetProgress = Math.min(easedProgress * 90, 90);
-      
-      setLoadingProgress(prev => {
-        // Se la submission è già completata e siamo vicini al 90%, fermiamoci al 90%
-        if (submissionCompleted && prev >= 85) {
-          clearInterval(uploadInterval);
-          return 90;
+      // Se abbiamo raggiunto il 100%, ferma l'animazione
+      if (newProgress >= 100) {
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current);
+          progressIntervalRef.current = null;
         }
-        
-        return Math.max(prev, targetProgress);
-      });
-      
-      // Se abbiamo raggiunto il 90% o il tempo è scaduto
-      if (targetProgress >= 90 || currentStep >= totalSteps) {
-        clearInterval(uploadInterval);
-        setLoadingProgress(90);
       }
     }, intervalTime);
-    
-    return () => {
-      clearInterval(uploadInterval);
-    };
   };
 
-  const startFinalPhaseAnimation = () => {
-    const finalPhaseDuration = 4000; // Esattamente 4 secondi per 90% -> 100%
-    const intervalTime = 50; // Aggiorna ogni 50ms
-    const totalSteps = finalPhaseDuration / intervalTime;
-    
-    let currentStep = 0;
-    
-    const finalInterval = setInterval(() => {
-      currentStep++;
-      
-      // Progresso lineare da 90% a 100% in 4 secondi
-      const progress = currentStep / totalSteps;
-      const targetProgress = 90 + (progress * 10); // Da 90 a 100
-      
-      setLoadingProgress(Math.min(targetProgress, 100));
-      
-      // Quando raggiungiamo il 100% o il tempo è scaduto
-      if (targetProgress >= 100 || currentStep >= totalSteps) {
-        clearInterval(finalInterval);
-        setLoadingProgress(100);
-        
-        // Naviga al completamento dopo una breve pausa per mostrare il 100%
-        setTimeout(() => {
-          navigate("/form-completed", { 
-            state: { 
-              submissionData: {
-                ...formData,
-                submissionTime: new Date().toISOString()
-              }
-            }
-          });
-        }, 300);
-      }
-    }, intervalTime);
-    
-    return () => {
-      clearInterval(finalInterval);
-    };
+  // Determina il messaggio da mostrare
+  const getDisplayMessage = () => {
+    if (showWaitingMessage) {
+      return "Quasi finito... attendi";
+    }
+    return "Stiamo elaborando la tua richiesta";
+  };
+
+  const getDisplayDescription = () => {
+    if (showWaitingMessage) {
+      return "Finalizzazione in corso...";
+    }
+    return "I tuoi dati vengono salvati in modo sicuro. Tra un momento verrai reindirizzato.";
   };
 
   return (
@@ -193,14 +186,11 @@ export default function FormLoading() {
             <div className="dots-loader mb-8"></div>
             
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6">
-              {isInFinalPhase ? "Completamento in corso..." : "Stiamo elaborando la tua richiesta"}
+              {getDisplayMessage()}
             </h1>
             
             <p className="text-lg text-gray-600 mb-8">
-              {isInFinalPhase 
-                ? "Finalizzazione della procedura..." 
-                : "I tuoi dati vengono salvati in modo sicuro. Tra un momento verrai reindirizzato."
-              }
+              {getDisplayDescription()}
             </p>
             
             {/* Barra di progresso con shadcn/ui */}
@@ -216,9 +206,7 @@ export default function FormLoading() {
               
               {/* Indicatore fase */}
               <p className="text-xs text-gray-500">
-                {!submissionCompleted && "Salvataggio dati..."}
-                {submissionCompleted && !isInFinalPhase && "Preparazione completamento..."}
-                {isInFinalPhase && "Finalizzazione..."}
+                {showWaitingMessage ? "Finalizzazione..." : "Salvataggio dati..."}
               </p>
             </div>
           </div>
