@@ -988,6 +988,15 @@ export function FormQuestion({ question }: FormQuestionProps) {
     return null;
   };
   
+  // Check if there are any visible select options
+  const hasVisibleSelectOptions = Object.keys(question.placeholders).some(key => 
+    question.placeholders[key].type === "select" && visibleOptions[key]
+  );
+
+  // Check if back button should be shown
+  const showBackButton = !(state.activeQuestion.block_id === "introduzione" && 
+    state.activeQuestion.question_id === blocks.find(b => b.block_id === "introduzione")?.questions[0].question_id);
+  
   return (
     <div className="max-w-xl animate-fade-in">
       {/* Note banner per le question notes - Design migliorato */}
@@ -1006,8 +1015,30 @@ export function FormQuestion({ question }: FormQuestionProps) {
       {/* Linea separatrice beige */}
       <Separator className="h-[1px] bg-[#F0EAE0] mb-5" />
       
-      {/* Contenitore per i select options visibili */}
+      {/* Contenitore per i select options visibili con pulsante indietro come prima opzione */}
       <div className="space-y-5">
+        {/* Pulsante Indietro - mostrato come prima opzione se ci sono select options visibili */}
+        {showBackButton && hasVisibleSelectOptions && (
+          <div className="mt-5">
+            <button
+              type="button"
+              className={cn(
+                "text-left px-[18px] py-[12px] border-[1.5px] rounded-[10px] transition-all font-['Inter'] text-[16px] font-normal",
+                "shadow-[0_3px_0_0_#AFA89F] mb-[10px] cursor-pointer w-fit",
+                "hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)]",
+                "border-[#BEB8AE] bg-white"
+              )}
+              onClick={handleBackNavigation}
+              disabled={isNavigating}
+            >
+              <div className="font-medium text-black flex items-center gap-2">
+                <span>←</span>
+                <span>indietro</span>
+              </div>
+            </button>
+          </div>
+        )}
+        
         {Object.keys(question.placeholders).map(key => renderVisibleSelectOptions(key, question.placeholders[key]))}
       </div>
       
@@ -1050,9 +1081,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
         </div>
       )}
       
-      {/* Nuovo Pulsante Indietro - visibile solo se non è la prima domanda del primo blocco */}
-      {!(state.activeQuestion.block_id === "introduzione" && 
-         state.activeQuestion.question_id === blocks.find(b => b.block_id === "introduzione")?.questions[0].question_id) && (
+      {/* Pulsante Indietro originale - visibile solo se non ci sono select options visibili */}
+      {showBackButton && !hasVisibleSelectOptions && (
         <div className="mt-4">
           <button
             type="button"
