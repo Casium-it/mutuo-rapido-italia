@@ -1,9 +1,11 @@
+
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { Progress } from "@/components/ui/progress";
 import { FormResponse } from "@/types/form";
 import { submitFormToSupabase } from "@/services/formSubmissionService";
+import { allBlocks } from "@/data/blocks";
 import { toast } from "sonner";
 
 export default function FormLoading() {
@@ -97,9 +99,13 @@ export default function FormLoading() {
   const handleFormSubmission = async () => {
     try {
       console.log("Inizio invio form dal FormLoading...");
+      console.log("Responses da inviare:", formData.responses);
+      console.log("Blocchi statici disponibili:", allBlocks.length);
+      console.log("Blocchi dinamici:", formData.dynamicBlocks?.length || 0);
       
-      // Ottieni tutti i blocchi (statici + dinamici) per il servizio di submission
-      const allBlocks = [...(window as any).allBlocks || [], ...(formData.dynamicBlocks || [])];
+      // Combina tutti i blocchi (statici + dinamici) per il servizio di submission
+      const allAvailableBlocks = [...allBlocks, ...(formData.dynamicBlocks || [])];
+      console.log("Totale blocchi disponibili per submission:", allAvailableBlocks.length);
       
       const result = await submitFormToSupabase({
         activeBlocks: formData.activeBlocks,
@@ -111,7 +117,7 @@ export default function FormLoading() {
         navigationHistory: [],
         blockActivations: {},
         pendingRemovals: []
-      }, allBlocks);
+      }, allAvailableBlocks);
       
       if (result.success && result.submissionId) {
         console.log("Form inviato con successo, ID:", result.submissionId);
