@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { FormResponse, FormState } from "@/types/form";
 
@@ -53,6 +52,7 @@ export async function submitFormToSupabase(
     }
 
     console.log("Submission creata con ID:", submission.id);
+    console.log("Submission object returned:", submission);
 
     // 2. Prepara i dati delle risposte
     const responsesData = [];
@@ -128,6 +128,8 @@ export async function submitFormToSupabase(
       }
     }
 
+    // Return the submission ID as 'id' since that's what we get from the database
+    console.log("Returning submission result with ID:", submission.id);
     return { 
       success: true, 
       submissionId: submission.id 

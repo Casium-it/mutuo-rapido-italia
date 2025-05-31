@@ -28,12 +28,21 @@ export default function FormCompleted() {
   const submissionData = location.state?.submissionData;
   
   useEffect(() => {
+    // Debug: log what submissionData contains
+    console.log("FormCompleted submissionData:", submissionData);
+    console.log("Location state:", location.state);
+    
     // Se l'utente accede direttamente senza aver completato un form, reindirizza alla home
     if (!submissionData) {
+      console.log("No submission data found, redirecting to home");
       navigate("/");
       return;
     }
-  }, [submissionData, navigate]);
+
+    // Debug: log the submission ID specifically
+    console.log("Submission ID from submissionData.submissionId:", submissionData.submissionId);
+    console.log("Submission ID from submissionData.id:", submissionData.id);
+  }, [submissionData, navigate, location.state]);
 
   // Phone number formatting function
   const formatPhoneNumber = (value: string): string => {
@@ -111,12 +120,25 @@ export default function FormCompleted() {
       toast.error("Devi accettare la privacy policy per continuare");
       return;
     }
+
+    // Get the correct submission ID - try submissionId first, then id
+    const submissionId = submissionData.submissionId || submissionData.id;
+    
+    console.log("Using submission ID:", submissionId);
+    console.log("Phone number to submit:", phoneNumber);
+    console.log("Consultation request:", consultationRequest);
+    
+    if (!submissionId) {
+      console.error("No submission ID found in submissionData:", submissionData);
+      toast.error("Errore: ID della submission non trovato");
+      return;
+    }
     
     setIsSubmitting(true);
     
     try {
       const result = await updateSubmissionWithContact(
-        submissionData.submissionId,
+        submissionId,
         phoneNumber,
         consultationRequest
       );
@@ -146,9 +168,11 @@ export default function FormCompleted() {
   // Extract just the phone number without +39 prefix for validation
   const phoneDigits = phoneNumber.replace("+39 ", "").replace(/\s/g, "");
   const isFormValid = validatePhoneNumber(phoneDigits) && privacyConsent;
+  
   if (!submissionData) {
     return null; // Non mostrare nulla durante il reindirizzamento
   }
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       {/* Header */}
