@@ -53,14 +53,14 @@ const Index = () => {
         </div>
 
         <div className="flex flex-col md:flex-row gap-6 justify-center items-center md:items-stretch max-w-3xl mx-auto">
-          {/* Simulazione Veloce */}
+          {/* Simulazione Veloce - Disabled */}
           <PathOption 
             title="Simulazione Veloce"
             description="Analisi rapida prefattibilità mutuo"
             keyPoints={simpleKeyPoints}
-            ctaLabel="Inizia Veloce"
+            ctaLabel="Veloce - Presto disponibile"
             variant="primary"
-            onClick={() => handlePathSelect("/simulazione/pensando/introduzione/soggetto_acquisto")}
+            disabled={true}
           />
 
           {/* Simulazione Avanzata */}

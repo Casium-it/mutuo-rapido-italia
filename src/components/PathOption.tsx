@@ -18,6 +18,7 @@ interface PathOptionProps {
   ctaLabel: string;
   variant: "primary" | "secondary";
   onClick?: () => void;
+  disabled?: boolean;
 }
 
 export function PathOption({ 
@@ -26,10 +27,15 @@ export function PathOption({
   keyPoints,
   ctaLabel,
   variant,
-  onClick
+  onClick,
+  disabled = false
 }: PathOptionProps) {
   return (
-    <Card className={`hover-grow transition-all duration-300 ${
+    <Card className={`transition-all duration-300 ${
+      disabled 
+        ? "opacity-60 cursor-not-allowed" 
+        : "hover-grow"
+    } ${
       variant === "primary" 
         ? "border border-[#BEB8AE] bg-white shadow-[0_3px_0_0_#AFA89F] hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)]" 
         : "bg-[#F8F4EF] border-2 border-[#245C4F] shadow-[0_3px_0_0_#1a3f37] hover:shadow-[0_3px_4px_rgba(26,63,55,0.25)]"
@@ -80,12 +86,15 @@ export function PathOption({
       <CardFooter className="flex justify-center pb-4">
         <Button 
           className={`w-full font-medium px-[32px] py-[16px] text-[16px] rounded-[12px] transition-all ${
-            variant === "primary" 
-              ? "border border-[#245C4F] bg-white text-[#245C4F] hover:bg-[#F8F4EF] shadow-[0_3px_0_0_#AFA89F] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#AFA89F]" 
-              : "bg-[#245C4F] text-white hover:bg-[#1e4f44] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37]"
+            disabled
+              ? "bg-gray-300 text-gray-500 cursor-not-allowed border-gray-300 shadow-none"
+              : variant === "primary" 
+                ? "border border-[#245C4F] bg-white text-[#245C4F] hover:bg-[#F8F4EF] shadow-[0_3px_0_0_#AFA89F] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#AFA89F]" 
+                : "bg-[#245C4F] text-white hover:bg-[#1e4f44] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37]"
           }`}
           size="sm"
-          onClick={onClick}
+          onClick={disabled ? undefined : onClick}
+          disabled={disabled}
         >
           {ctaLabel}
         </Button>
