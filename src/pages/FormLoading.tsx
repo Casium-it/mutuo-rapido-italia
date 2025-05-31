@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
@@ -13,6 +12,7 @@ export default function FormLoading() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [submissionCompleted, setSubmissionCompleted] = useState(false);
   const [showWaitingMessage, setShowWaitingMessage] = useState(false);
+  const [actualSubmissionId, setActualSubmissionId] = useState<string | null>(null);
   const submissionStartedRef = useRef(false);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -52,12 +52,14 @@ export default function FormLoading() {
   // Effetto per gestire quando il progresso raggiunge il 100%
   useEffect(() => {
     if (loadingProgress >= 100) {
-      if (submissionCompleted) {
+      if (submissionCompleted && actualSubmissionId) {
         // Entrambe le condizioni sono soddisfatte, naviga
         setTimeout(() => {
           navigate("/form-completed", { 
             state: { 
               submissionData: {
+                id: actualSubmissionId,
+                submissionId: actualSubmissionId, // Include both for compatibility
                 ...formData,
                 submissionTime: new Date().toISOString()
               }
@@ -69,11 +71,11 @@ export default function FormLoading() {
         setShowWaitingMessage(true);
       }
     }
-  }, [loadingProgress, submissionCompleted, navigate, formData]);
+  }, [loadingProgress, submissionCompleted, actualSubmissionId, navigate, formData]);
 
   // Effetto per gestire quando la submission è completata
   useEffect(() => {
-    if (submissionCompleted && loadingProgress >= 100) {
+    if (submissionCompleted && loadingProgress >= 100 && actualSubmissionId) {
       // Entrambe le condizioni sono soddisfatte, nascondi il messaggio di attesa
       setShowWaitingMessage(false);
       
@@ -81,6 +83,8 @@ export default function FormLoading() {
         navigate("/form-completed", { 
           state: { 
             submissionData: {
+              id: actualSubmissionId,
+              submissionId: actualSubmissionId, // Include both for compatibility
               ...formData,
               submissionTime: new Date().toISOString()
             }
@@ -88,7 +92,7 @@ export default function FormLoading() {
         });
       }, 300);
     }
-  }, [submissionCompleted, loadingProgress, navigate, formData]);
+  }, [submissionCompleted, loadingProgress, actualSubmissionId, navigate, formData]);
 
   const handleFormSubmission = async () => {
     try {
@@ -109,8 +113,9 @@ export default function FormLoading() {
         pendingRemovals: []
       }, allBlocks);
       
-      if (result.success) {
+      if (result.success && result.submissionId) {
         console.log("Form inviato con successo, ID:", result.submissionId);
+        setActualSubmissionId(result.submissionId);
         setSubmissionCompleted(true);
         setShowWaitingMessage(false);
       } else {

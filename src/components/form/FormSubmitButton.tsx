@@ -19,7 +19,7 @@ export function FormSubmitButton() {
       // Usa il servizio centralizzato
       const result = await submitFormToSupabase(state, blocks);
       
-      if (result.success) {
+      if (result.success && result.submissionId) {
         console.log("Form inviato con successo, ID:", result.submissionId);
         
         // Naviga alla pagina di completamento con i dati della submission
@@ -27,6 +27,7 @@ export function FormSubmitButton() {
           state: { 
             submissionData: {
               id: result.submissionId,
+              submissionId: result.submissionId, // Include both for compatibility
               formType: window.location.pathname.includes("mutuo") ? "mutuo" : "simulazione",
               date: new Date().toISOString()
             } 
