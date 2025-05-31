@@ -156,7 +156,7 @@ export default function FormCompleted() {
       <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 max-w-4xl mx-auto w-full">
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Simulazione completata</h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">Abbiamo confrontato più di 123 banche ed offerte di mutui e abbiamo elaborato la simulazione perfetta del tuo mutuo seguendo tutte le tue caratteristiche.</p>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">Abbiamo confrontato più di 123 banche ed offerte di mutui e abbiamo elaborato la simulazione perfetta seguendo tutte le tue caratteristiche.</p>
         </div>
 
         {/* WhatsApp Contact Form */}
@@ -171,7 +171,7 @@ export default function FormCompleted() {
             <form onSubmit={handleWhatsAppSubmit} className="space-y-4">
               {/* Phone Number Input */}
               <div className="space-y-2">
-                <Input id="phone" type="tel" placeholder="il tuo numero di telefono" value={phoneNumber} onChange={handlePhoneChange} onBlur={handlePhoneBlur} className={`
+                <Input id="phone" type="tel" placeholder="Il tuo numero di telefono" value={phoneNumber} onChange={handlePhoneChange} onBlur={handlePhoneBlur} className={`
                     text-left px-[18px] py-[18px] border-[1.5px] rounded-[10px] 
                     font-['Inter'] text-[18px] md:text-[18px] font-bold transition-all
                     shadow-[0_3px_0_0_#AFA89F] mb-[10px] w-full h-auto
