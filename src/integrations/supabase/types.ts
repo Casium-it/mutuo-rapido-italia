@@ -51,6 +51,7 @@ export type Database = {
         Row: {
           completed_at: string
           consulting: boolean | null
+          expires_at: string
           form_type: string
           id: string
           metadata: Json | null
@@ -60,6 +61,7 @@ export type Database = {
         Insert: {
           completed_at?: string
           consulting?: boolean | null
+          expires_at?: string
           form_type: string
           id?: string
           metadata?: Json | null
@@ -69,6 +71,7 @@ export type Database = {
         Update: {
           completed_at?: string
           consulting?: boolean | null
+          expires_at?: string
           form_type?: string
           id?: string
           metadata?: Json | null

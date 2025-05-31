@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 type ContactSubmissionResult = {
   success: boolean;
   error?: string;
+  expired?: boolean;
 };
 
 /**
@@ -20,6 +21,38 @@ export async function updateSubmissionWithContact(
 ): Promise<ContactSubmissionResult> {
   try {
     console.log("Aggiornamento submission con dati contatto...", { submissionId, phoneNumber, consulting });
+    
+    // First, check if the submission exists and hasn't expired
+    const { data: existingSubmission, error: checkError } = await supabase
+      .from('form_submissions')
+      .select('id, expires_at')
+      .eq('id', submissionId)
+      .single();
+
+    if (checkError) {
+      console.error("Errore nel controllo della submission:", checkError);
+      if (checkError.code === 'PGRST116') {
+        return { 
+          success: false, 
+          expired: true,
+          error: "La sessione è scaduta. Ricompila il form per continuare." 
+        };
+      }
+      throw checkError;
+    }
+
+    // Check if submission has expired
+    const now = new Date();
+    const expiresAt = new Date(existingSubmission.expires_at);
+    
+    if (now > expiresAt) {
+      console.log("Submission scaduta:", { now, expiresAt });
+      return { 
+        success: false, 
+        expired: true,
+        error: "La sessione è scaduta. Ricompila il form per continuare." 
+      };
+    }
     
     // Formatta il numero di telefono rimuovendo spazi e assicurandosi che abbia il prefisso +39
     let formattedPhone = phoneNumber.replace(/\s/g, ""); // Rimuovi tutti gli spazi
@@ -42,6 +75,13 @@ export async function updateSubmissionWithContact(
 
     if (error) {
       console.error("Errore nell'aggiornamento della submission:", error);
+      if (error.code === 'PGRST116') {
+        return { 
+          success: false, 
+          expired: true,
+          error: "La sessione è scaduta. Ricompila il form per continuare." 
+        };
+      }
       throw error;
     }
 

@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { FormResponse, FormState } from "@/types/form";
 
@@ -30,12 +31,17 @@ export async function submitFormToSupabase(
     // Determina il tipo di form dall'URL
     const formType = window.location.pathname.includes("mutuo") ? "mutuo" : "simulazione";
     
+    // Calculate expiry time (48 hours from now)
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 48);
+    
     // 1. Crea la submission principale
     const { data: submission, error: submissionError } = await supabase
       .from('form_submissions')
       .insert({
         user_identifier: referralId || null,
         form_type: formType,
+        expires_at: expiresAt.toISOString(),
         metadata: { 
           blocks: state.activeBlocks,
           completedBlocks: state.completedBlocks,

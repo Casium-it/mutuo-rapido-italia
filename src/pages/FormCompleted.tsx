@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
@@ -152,6 +153,16 @@ export default function FormCompleted() {
         setTimeout(() => {
           navigate("/");
         }, 1500);
+      } else if (result.expired) {
+        // Handle expired submission
+        toast.error("Sessione scaduta", {
+          description: result.error || "La tua sessione è scaduta. Ricompila il form."
+        });
+        
+        // Redirect to home after showing error
+        setTimeout(() => {
+          navigate("/");
+        }, 3000);
       } else {
         throw new Error(result.error || "Errore sconosciuto");
       }
