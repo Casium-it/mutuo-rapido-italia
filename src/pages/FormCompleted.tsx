@@ -186,7 +186,7 @@ export default function FormCompleted() {
                   onBlur={handlePhoneBlur} 
                   className={`
                     text-left px-[18px] py-[18px] border-[1.5px] rounded-[10px] 
-                    font-['Inter'] text-[28px] md:text-[36px] font-bold transition-all
+                    font-['Inter'] text-[19px] md:text-[19px] font-bold transition-all
                     shadow-[0_3px_0_0_#AFA89F] mb-[10px] w-full h-auto
                     hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)]
                     focus-visible:outline-none focus-visible:ring-0 focus-visible:border-black
