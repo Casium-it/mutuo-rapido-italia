@@ -9,7 +9,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { validatePhoneNumber } from "@/utils/validationUtils";
 import { toast } from "sonner";
-
 export default function FormCompleted() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -155,7 +154,7 @@ export default function FormCompleted() {
       {/* Contenuto principale */}
       <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 max-w-4xl mx-auto w-full">
         <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Simulazione completata</h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Simulazione pronta!</h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">Abbiamo confrontato più di 123 banche ed offerte di mutui e abbiamo elaborato la simulazione perfetta seguendo tutte le tue caratteristiche.</p>
         </div>
 
