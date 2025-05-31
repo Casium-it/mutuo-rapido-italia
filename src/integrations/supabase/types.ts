@@ -50,23 +50,29 @@ export type Database = {
       form_submissions: {
         Row: {
           completed_at: string
+          consulting: boolean | null
           form_type: string
           id: string
           metadata: Json | null
+          phone_number: string | null
           user_identifier: string | null
         }
         Insert: {
           completed_at?: string
+          consulting?: boolean | null
           form_type: string
           id?: string
           metadata?: Json | null
+          phone_number?: string | null
           user_identifier?: string | null
         }
         Update: {
           completed_at?: string
+          consulting?: boolean | null
           form_type?: string
           id?: string
           metadata?: Json | null
+          phone_number?: string | null
           user_identifier?: string | null
         }
         Relationships: []
