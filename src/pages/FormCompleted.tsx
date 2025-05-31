@@ -190,7 +190,7 @@ export default function FormCompleted() {
               <div className="flex items-center space-x-3">
                 <Checkbox id="consultation" checked={consultationRequest} onCheckedChange={checked => setConsultationRequest(checked as boolean)} className="h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b] flex-shrink-0" />
                 <Label htmlFor="consultation" className="text-sm text-gray-600 leading-relaxed cursor-pointer">
-                  Aggiungi consulenza telefonica <span className="font-bold underline">gratuita e senza impegno</span> con esperto di GoMutuo
+                  Aggiungi consulenza gratuita
                 </Label>
               </div>
 
