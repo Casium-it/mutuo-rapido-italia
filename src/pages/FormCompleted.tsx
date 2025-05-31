@@ -176,7 +176,7 @@ export default function FormCompleted() {
               <div className="space-y-2">
                 <Input id="phone" type="tel" placeholder="il tuo numero di telefono" value={phoneNumber} onChange={handlePhoneChange} onBlur={handlePhoneBlur} className={`
                     text-left px-[18px] py-[16px] border-[1.5px] rounded-[10px] 
-                    font-['Inter'] text-[24px] font-bold transition-all
+                    font-['Inter'] text-[28px] font-bold transition-all
                     shadow-[0_3px_0_0_#AFA89F] mb-[10px] w-full h-auto
                     hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)]
                     focus-visible:outline-none focus-visible:ring-0 focus-visible:border-black
@@ -189,7 +189,7 @@ export default function FormCompleted() {
               {/* Consultation Checkbox */}
               <div className="flex items-center space-x-3">
                 <Checkbox id="consultation" checked={consultationRequest} onCheckedChange={checked => setConsultationRequest(checked as boolean)} className="h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b] flex-shrink-0" />
-                <Label htmlFor="consultation" className="text-sm text-gray-600 leading-relaxed cursor-pointer flex items-center">
+                <Label htmlFor="consultation" className="text-sm text-gray-600 leading-relaxed cursor-pointer">
                   Aggiungi consulenza telefonica <span className="font-bold underline">gratuita e senza impegno</span> con esperto di GoMutuo
                 </Label>
               </div>
@@ -197,7 +197,7 @@ export default function FormCompleted() {
               {/* Privacy Policy Checkbox */}
               <div className="flex items-center space-x-3">
                 <Checkbox id="privacy" checked={privacyConsent} onCheckedChange={checked => setPrivacyConsent(checked as boolean)} className="h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b] flex-shrink-0" />
-                <Label htmlFor="privacy" className="text-sm text-gray-600 leading-relaxed cursor-pointer flex items-center">
+                <Label htmlFor="privacy" className="text-sm text-gray-600 leading-relaxed cursor-pointer">
                   Ho preso visione e accetto la <Link to="/privacy" className="text-[#245C4F] underline hover:text-[#1a453b]">privacy policy</Link>
                 </Label>
               </div>
