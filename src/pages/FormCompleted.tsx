@@ -119,7 +119,7 @@ export default function FormCompleted() {
           <div className="bg-[#F8F4EF] p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="text-center mb-6">
               <h2 className="text-xl font-bold text-gray-800 mb-2">
-                Inserisci il tuo numero e ricevi subito su WhatsApp il risultato della tua simulazione
+                Ricevi subito il risultato della tua simulazione su WhatsApp
               </h2>
             </div>
 
@@ -150,30 +150,25 @@ export default function FormCompleted() {
               </div>
 
               {/* Consultation Checkbox */}
-              <div className="flex items-start space-x-3">
-                <div className="relative">
-                  <span className="bg-green-500 text-white px-1.5 py-0.5 rounded text-xs font-bold absolute -top-2 -left-1 z-10">
-                    GRATIS
-                  </span>
-                  <Checkbox
-                    id="consultation"
-                    checked={consultationRequest}
-                    onCheckedChange={(checked) => setConsultationRequest(checked as boolean)}
-                    className="mt-1 h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b]"
-                  />
-                </div>
+              <div className="flex items-center space-x-3">
+                <Checkbox
+                  id="consultation"
+                  checked={consultationRequest}
+                  onCheckedChange={(checked) => setConsultationRequest(checked as boolean)}
+                  className="h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b]"
+                />
                 <Label htmlFor="consultation" className="text-sm text-gray-600 leading-relaxed cursor-pointer">
-                  Aggiungi consulenza telefonica gratuita e senza impegno con esperto di GoMutuo
+                  Aggiungi consulenza telefonica <span className="font-bold underline">gratuita e senza impegno</span> con esperto di GoMutuo
                 </Label>
               </div>
 
               {/* Privacy Policy Checkbox */}
-              <div className="flex items-start space-x-3">
+              <div className="flex items-center space-x-3">
                 <Checkbox
                   id="privacy"
                   checked={privacyConsent}
                   onCheckedChange={(checked) => setPrivacyConsent(checked as boolean)}
-                  className="mt-1 h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b]"
+                  className="h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b]"
                 />
                 <Label htmlFor="privacy" className="text-sm text-gray-600 leading-relaxed cursor-pointer">
                   Ho preso visione e accetto la <Link to="/privacy" className="text-[#245C4F] underline hover:text-[#1a453b]">privacy policy</Link>
@@ -192,8 +187,8 @@ export default function FormCompleted() {
                   active:shadow-[0_1px_0_0_#1a453b] active:translate-y-[2px]
                   inline-flex items-center justify-center gap-[12px]
                   ${isFormValid && !isSubmitting 
-                    ? 'bg-[#245C4F] bg-opacity-20 text-[#245C4F] border-[#245C4F] cursor-pointer backdrop-blur-sm' 
-                    : 'bg-gray-400 bg-opacity-20 text-gray-400 border-gray-400 cursor-not-allowed backdrop-blur-sm'
+                    ? 'bg-[#245C4F] text-white border-[#245C4F] cursor-pointer' 
+                    : 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'
                   }
                 `}
               >
