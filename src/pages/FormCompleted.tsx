@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
@@ -10,12 +9,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { validatePhoneNumber } from "@/utils/validationUtils";
 import { toast } from "sonner";
-
 export default function FormCompleted() {
   const navigate = useNavigate();
   const location = useLocation();
   const [keySummary, setKeySummary] = useState<Record<string, any>>({});
-  
+
   // Form state for WhatsApp contact
   const [phoneNumber, setPhoneNumber] = useState("");
   const [privacyConsent, setPrivacyConsent] = useState(false);
@@ -25,7 +23,6 @@ export default function FormCompleted() {
 
   // Controlla se l'utente è arrivato a questa pagina dopo aver completato il form
   const submissionData = location.state?.submissionData;
-  
   useEffect(() => {
     // Se l'utente accede direttamente senza aver completato un form, reindirizza alla home
     if (!submissionData) {
@@ -38,7 +35,6 @@ export default function FormCompleted() {
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setPhoneNumber(value);
-    
     if (value && !validatePhoneNumber(value)) {
       setPhoneError("Inserisci un numero di telefono valido (10 cifre)");
     } else {
@@ -49,19 +45,15 @@ export default function FormCompleted() {
   // Form submission
   const handleWhatsAppSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!validatePhoneNumber(phoneNumber)) {
       setPhoneError("Inserisci un numero di telefono valido (10 cifre)");
       return;
     }
-    
     if (!privacyConsent) {
       toast.error("Devi accettare la privacy policy per continuare");
       return;
     }
-
     setIsSubmitting(true);
-    
     try {
       // Here you would typically send the data to your backend
       console.log("WhatsApp form submitted:", {
@@ -70,19 +62,17 @@ export default function FormCompleted() {
         consultationRequest,
         submissionId: submissionData?.submissionId
       });
-      
+
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
       toast.success("Perfetto!", {
         description: "Riceverai presto i risultati su WhatsApp"
       });
-      
+
       // Reset form
       setPhoneNumber("");
       setPrivacyConsent(false);
       setConsultationRequest(false);
-      
     } catch (error) {
       console.error("Error submitting WhatsApp form:", error);
       toast.error("Errore durante l'invio", {
@@ -92,15 +82,11 @@ export default function FormCompleted() {
       setIsSubmitting(false);
     }
   };
-
   const isFormValid = validatePhoneNumber(phoneNumber) && privacyConsent;
-
   if (!submissionData) {
     return null; // Non mostrare nulla durante il reindirizzamento
   }
-
-  return (
-    <div className="min-h-screen flex flex-col bg-white">
+  return <div className="min-h-screen flex flex-col bg-white">
       {/* Header */}
       <header className="py-3 px-4 md:px-6 flex justify-between items-center bg-white border-b border-gray-200">
         <Link to="/">
@@ -126,11 +112,7 @@ export default function FormCompleted() {
         <div className="w-full max-w-2xl mb-8">
           <div className="bg-[#F8F4EF] p-8 rounded-lg shadow-sm border border-gray-200">
             <div className="text-center mb-6">
-              <div className="flex justify-center mb-4">
-                <div className="bg-green-500 p-3 rounded-full">
-                  <Phone className="h-8 w-8 text-white" />
-                </div>
-              </div>
+              
               <h2 className="text-2xl font-bold text-gray-800 mb-2">
                 Inserisci il tuo numero e ricevi subito su WhatsApp il risultato della tua simulazione
               </h2>
@@ -142,13 +124,7 @@ export default function FormCompleted() {
                 <Label htmlFor="phone" className="text-lg font-medium text-gray-700">
                   Il tuo numero di telefono
                 </Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="telefono"
-                  value={phoneNumber}
-                  onChange={handlePhoneChange}
-                  className={`
+                <Input id="phone" type="tel" placeholder="telefono" value={phoneNumber} onChange={handlePhoneChange} className={`
                     text-left px-[18px] py-[16px] border-[1.5px] rounded-[10px] 
                     font-['Inter'] text-[16px] font-normal transition-all
                     shadow-[0_3px_0_0_#AFA89F] mb-[10px] w-full h-auto
@@ -156,22 +132,13 @@ export default function FormCompleted() {
                     focus-visible:outline-none focus-visible:ring-0 focus-visible:border-black
                     ${phoneError ? 'border-red-500' : 'border-[#BEB8AE]'}
                     ${phoneNumber ? 'border-black bg-gray-50' : 'border-[#BEB8AE]'}
-                  `}
-                  maxLength={10}
-                />
-                {phoneError && (
-                  <p className="text-red-500 text-sm">{phoneError}</p>
-                )}
+                  `} maxLength={10} />
+                {phoneError && <p className="text-red-500 text-sm">{phoneError}</p>}
               </div>
 
               {/* Privacy Policy Checkbox */}
               <div className="flex items-start space-x-3">
-                <Checkbox
-                  id="privacy"
-                  checked={privacyConsent}
-                  onCheckedChange={(checked) => setPrivacyConsent(checked as boolean)}
-                  className="mt-1"
-                />
+                <Checkbox id="privacy" checked={privacyConsent} onCheckedChange={checked => setPrivacyConsent(checked as boolean)} className="mt-1" />
                 <Label htmlFor="privacy" className="text-sm text-gray-600 leading-relaxed cursor-pointer">
                   Accetto la <Link to="/privacy" className="text-[#245C4F] underline hover:text-[#1a453b]">privacy policy</Link> e 
                   autorizzo il trattamento dei miei dati personali per ricevere comunicazioni commerciali
@@ -180,12 +147,7 @@ export default function FormCompleted() {
 
               {/* Consultation Checkbox */}
               <div className="flex items-start space-x-3">
-                <Checkbox
-                  id="consultation"
-                  checked={consultationRequest}
-                  onCheckedChange={(checked) => setConsultationRequest(checked as boolean)}
-                  className="mt-1"
-                />
+                <Checkbox id="consultation" checked={consultationRequest} onCheckedChange={checked => setConsultationRequest(checked as boolean)} className="mt-1" />
                 <Label htmlFor="consultation" className="text-sm text-gray-600 leading-relaxed cursor-pointer flex items-center gap-2">
                   Aggiungi consulenza telefonica gratuita di un esperto di GoMutuo
                   <span className="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">
@@ -195,19 +157,11 @@ export default function FormCompleted() {
               </div>
 
               {/* Submit Button */}
-              <Button
-                type="submit"
-                disabled={!isFormValid || isSubmitting}
-                className="w-full bg-[#245C4F] hover:bg-[#1a453b] text-white py-3 text-lg font-medium"
-              >
-                {isSubmitting ? (
-                  "Invio in corso..."
-                ) : (
-                  <>
+              <Button type="submit" disabled={!isFormValid || isSubmitting} className="w-full bg-[#245C4F] hover:bg-[#1a453b] text-white py-3 text-lg font-medium">
+                {isSubmitting ? "Invio in corso..." : <>
                     Ricevi su WhatsApp
                     <ArrowRight className="ml-2 h-5 w-5" />
-                  </>
-                )}
+                  </>}
               </Button>
             </form>
           </div>
@@ -220,6 +174,5 @@ export default function FormCompleted() {
           <p>&copy; {new Date().getFullYear()} GoMutuo. Tutti i diritti riservati.</p>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 }
