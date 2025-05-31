@@ -154,12 +154,8 @@ export default function FormCompleted() {
       {/* Contenuto principale */}
       <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 max-w-4xl mx-auto w-full">
         <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Grazie per aver completato il form!
-          </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Abbiamo ricevuto la tue informazioni e abbiamo elaborato una simulazione completa del tuo mutuo personalizzata per te.
-          </p>
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Simulazione completata</h1>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">Abbiamo confrontato più di 123 banche ed offerte di mutui e abbiamo elaborato la simulazione perfetta del tuo mutuo seguendo tutte le tue caratteristiche.</p>
         </div>
 
         {/* WhatsApp Contact Form */}
