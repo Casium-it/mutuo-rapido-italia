@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
@@ -9,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { validatePhoneNumber } from "@/utils/validationUtils";
 import { toast } from "sonner";
+
 export default function FormCompleted() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -82,11 +84,15 @@ export default function FormCompleted() {
       setIsSubmitting(false);
     }
   };
+
   const isFormValid = validatePhoneNumber(phoneNumber) && privacyConsent;
+
   if (!submissionData) {
     return null; // Non mostrare nulla durante il reindirizzamento
   }
-  return <div className="min-h-screen flex flex-col bg-white">
+
+  return (
+    <div className="min-h-screen flex flex-col bg-white">
       {/* Header */}
       <header className="py-3 px-4 md:px-6 flex justify-between items-center bg-white border-b border-gray-200">
         <Link to="/">
@@ -112,7 +118,6 @@ export default function FormCompleted() {
         <div className="w-full max-w-2xl mb-8">
           <div className="bg-[#F8F4EF] p-8 rounded-lg shadow-sm border border-gray-200">
             <div className="text-center mb-6">
-              
               <h2 className="text-2xl font-bold text-gray-800 mb-2">
                 Inserisci il tuo numero e ricevi subito su WhatsApp il risultato della tua simulazione
               </h2>
@@ -124,7 +129,13 @@ export default function FormCompleted() {
                 <Label htmlFor="phone" className="text-lg font-medium text-gray-700">
                   Il tuo numero di telefono
                 </Label>
-                <Input id="phone" type="tel" placeholder="telefono" value={phoneNumber} onChange={handlePhoneChange} className={`
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="telefono"
+                  value={phoneNumber}
+                  onChange={handlePhoneChange}
+                  className={`
                     text-left px-[18px] py-[16px] border-[1.5px] rounded-[10px] 
                     font-['Inter'] text-[16px] font-normal transition-all
                     shadow-[0_3px_0_0_#AFA89F] mb-[10px] w-full h-auto
@@ -132,37 +143,67 @@ export default function FormCompleted() {
                     focus-visible:outline-none focus-visible:ring-0 focus-visible:border-black
                     ${phoneError ? 'border-red-500' : 'border-[#BEB8AE]'}
                     ${phoneNumber ? 'border-black bg-gray-50' : 'border-[#BEB8AE]'}
-                  `} maxLength={10} />
+                  `}
+                  maxLength={10}
+                />
                 {phoneError && <p className="text-red-500 text-sm">{phoneError}</p>}
               </div>
 
               {/* Privacy Policy Checkbox */}
               <div className="flex items-start space-x-3">
-                <Checkbox id="privacy" checked={privacyConsent} onCheckedChange={checked => setPrivacyConsent(checked as boolean)} className="mt-1" />
+                <Checkbox
+                  id="privacy"
+                  checked={privacyConsent}
+                  onCheckedChange={(checked) => setPrivacyConsent(checked as boolean)}
+                  className="mt-1"
+                />
                 <Label htmlFor="privacy" className="text-sm text-gray-600 leading-relaxed cursor-pointer">
-                  Accetto la <Link to="/privacy" className="text-[#245C4F] underline hover:text-[#1a453b]">privacy policy</Link> e 
-                  autorizzo il trattamento dei miei dati personali per ricevere comunicazioni commerciali
+                  Accetto la <Link to="/privacy" className="text-[#245C4F] underline hover:text-[#1a453b]">privacy policy</Link>
                 </Label>
               </div>
 
               {/* Consultation Checkbox */}
               <div className="flex items-start space-x-3">
-                <Checkbox id="consultation" checked={consultationRequest} onCheckedChange={checked => setConsultationRequest(checked as boolean)} className="mt-1" />
+                <Checkbox
+                  id="consultation"
+                  checked={consultationRequest}
+                  onCheckedChange={(checked) => setConsultationRequest(checked as boolean)}
+                  className="mt-1"
+                />
                 <Label htmlFor="consultation" className="text-sm text-gray-600 leading-relaxed cursor-pointer flex items-center gap-2">
-                  Aggiungi consulenza telefonica gratuita di un esperto di GoMutuo
+                  Aggiungi consulenza telefonica di un esperto di GoMutuo, gratuita e senza impegno
                   <span className="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">
                     GRATIS
                   </span>
                 </Label>
               </div>
 
-              {/* Submit Button */}
-              <Button type="submit" disabled={!isFormValid || isSubmitting} className="w-full bg-[#245C4F] hover:bg-[#1a453b] text-white py-3 text-lg font-medium">
-                {isSubmitting ? "Invio in corso..." : <>
+              {/* Submit Button with 3D effect */}
+              <button
+                type="submit"
+                disabled={!isFormValid || isSubmitting}
+                className={`
+                  w-full px-[32px] py-[16px] border-[1.5px] rounded-[10px] 
+                  font-['Inter'] text-[17px] font-medium transition-all
+                  shadow-[0_3px_0_0_#1a453b] mb-[10px]
+                  hover:shadow-[0_3px_4px_rgba(26,69,59,0.25)]
+                  active:shadow-[0_1px_0_0_#1a453b] active:translate-y-[2px]
+                  inline-flex items-center justify-center gap-[12px]
+                  ${isFormValid && !isSubmitting 
+                    ? 'bg-[#245C4F] text-white border-[#245C4F] cursor-pointer' 
+                    : 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'
+                  }
+                `}
+              >
+                {isSubmitting ? (
+                  "Invio in corso..."
+                ) : (
+                  <>
                     Ricevi su WhatsApp
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </>}
-              </Button>
+                    <ArrowRight className="h-5 w-5" />
+                  </>
+                )}
+              </button>
             </form>
           </div>
         </div>
@@ -174,5 +215,6 @@ export default function FormCompleted() {
           <p>&copy; {new Date().getFullYear()} GoMutuo. Tutti i diritti riservati.</p>
         </div>
       </footer>
-    </div>;
+    </div>
+  );
 }
