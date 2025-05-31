@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
@@ -10,7 +9,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { validatePhoneNumber } from "@/utils/validationUtils";
 import { toast } from "sonner";
-
 export default function FormCompleted() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -38,7 +36,7 @@ export default function FormCompleted() {
   const formatPhoneNumber = (value: string): string => {
     // Remove all non-digits
     const cleaned = value.replace(/\D/g, "");
-    
+
     // Apply formatting: first 3 digits, space, then the rest
     if (cleaned.length <= 3) {
       return cleaned;
@@ -53,7 +51,7 @@ export default function FormCompleted() {
   // Phone number validation and formatting
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    
+
     // Clear error when user starts typing again
     if (phoneError) {
       setPhoneError("");
@@ -142,13 +140,10 @@ export default function FormCompleted() {
   // Extract just the phone number without +39 prefix for validation
   const phoneDigits = phoneNumber.replace("+39 ", "").replace(/\s/g, "");
   const isFormValid = validatePhoneNumber(phoneDigits) && privacyConsent;
-
   if (!submissionData) {
     return null; // Non mostrare nulla durante il reindirizzamento
   }
-
-  return (
-    <div className="min-h-screen flex flex-col bg-white">
+  return <div className="min-h-screen flex flex-col bg-white">
       {/* Header */}
       <header className="py-3 px-4 md:px-6 flex justify-between items-center bg-white border-b border-gray-200">
         <Link to="/">
@@ -179,14 +174,7 @@ export default function FormCompleted() {
             <form onSubmit={handleWhatsAppSubmit} className="space-y-4">
               {/* Phone Number Input */}
               <div className="space-y-2">
-                <Input 
-                  id="phone" 
-                  type="tel" 
-                  placeholder="il tuo numero di telefono" 
-                  value={phoneNumber} 
-                  onChange={handlePhoneChange}
-                  onBlur={handlePhoneBlur}
-                  className={`
+                <Input id="phone" type="tel" placeholder="il tuo numero di telefono" value={phoneNumber} onChange={handlePhoneChange} onBlur={handlePhoneBlur} className={`
                     text-left px-[18px] py-[16px] border-[1.5px] rounded-[10px] 
                     font-['Inter'] text-[24px] font-bold transition-all
                     shadow-[0_3px_0_0_#AFA89F] mb-[10px] w-full h-auto
@@ -194,60 +182,40 @@ export default function FormCompleted() {
                     focus-visible:outline-none focus-visible:ring-0 focus-visible:border-black
                     ${phoneError ? 'border-red-500' : 'border-[#BEB8AE]'}
                     ${phoneNumber ? 'border-black bg-gray-50' : 'border-[#BEB8AE]'}
-                  `} 
-                  inputMode="numeric"
-                />
+                  `} inputMode="numeric" />
                 {phoneError && <p className="text-red-500 text-sm">{phoneError}</p>}
               </div>
 
               {/* Consultation Checkbox */}
               <div className="flex items-center space-x-3">
-                <Checkbox 
-                  id="consultation" 
-                  checked={consultationRequest} 
-                  onCheckedChange={(checked) => setConsultationRequest(checked as boolean)} 
-                  className="h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b] flex-shrink-0" 
-                />
-                <Label htmlFor="consultation" className="text-sm text-gray-600 leading-relaxed cursor-pointer flex items-center">
+                <Checkbox id="consultation" checked={consultationRequest} onCheckedChange={checked => setConsultationRequest(checked as boolean)} className="h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b] flex-shrink-0" />
+                <Label htmlFor="consultation" className="text-sm text-gray-600 leading-relaxed cursor-pointer flex items-left">
                   Aggiungi consulenza telefonica <span className="font-bold underline">gratuita e senza impegno</span> con esperto di GoMutuo
                 </Label>
               </div>
 
               {/* Privacy Policy Checkbox */}
               <div className="flex items-center space-x-3">
-                <Checkbox 
-                  id="privacy" 
-                  checked={privacyConsent} 
-                  onCheckedChange={(checked) => setPrivacyConsent(checked as boolean)} 
-                  className="h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b] flex-shrink-0" 
-                />
+                <Checkbox id="privacy" checked={privacyConsent} onCheckedChange={checked => setPrivacyConsent(checked as boolean)} className="h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b] flex-shrink-0" />
                 <Label htmlFor="privacy" className="text-sm text-gray-600 leading-relaxed cursor-pointer flex items-center">
                   Ho preso visione e accetto la <Link to="/privacy" className="text-[#245C4F] underline hover:text-[#1a453b]">privacy policy</Link>
                 </Label>
               </div>
 
               {/* Submit Button with 3D effect */}
-              <button 
-                type="submit" 
-                disabled={!isFormValid || isSubmitting} 
-                className={`
+              <button type="submit" disabled={!isFormValid || isSubmitting} className={`
                   w-full px-[32px] py-[16px] border-[1.5px] rounded-[10px] 
                   font-['Inter'] text-[17px] font-medium transition-all
                   shadow-[0_3px_0_0_rgba(36,92,79,0.3)] mb-[10px]
                   hover:shadow-[0_3px_4px_rgba(36,92,79,0.25)]
                   active:shadow-[0_1px_0_0_rgba(36,92,79,0.3)] active:translate-y-[2px]
                   inline-flex items-center justify-center gap-[12px]
-                  ${isFormValid && !isSubmitting 
-                    ? 'bg-[#245C4F] text-white border-[#245C4F] cursor-pointer hover:bg-[#1e4f44]' 
-                    : 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'}
-                `}
-              >
-                {isSubmitting ? "Invio in corso..." : (
-                  <>
+                  ${isFormValid && !isSubmitting ? 'bg-[#245C4F] text-white border-[#245C4F] cursor-pointer hover:bg-[#1e4f44]' : 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'}
+                `}>
+                {isSubmitting ? "Invio in corso..." : <>
                     Ricevi su WhatsApp
                     <ArrowRight className="h-5 w-5" />
-                  </>
-                )}
+                  </>}
               </button>
             </form>
           </div>
@@ -260,6 +228,5 @@ export default function FormCompleted() {
           <p>&copy; {new Date().getFullYear()} GoMutuo. Tutti i diritti riservati.</p>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 }
