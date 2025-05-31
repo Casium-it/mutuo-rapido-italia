@@ -145,7 +145,7 @@ export default function FormCompleted() {
                 <Input
                   id="phone"
                   type="tel"
-                  placeholder="3331234567"
+                  placeholder="telefono"
                   value={phoneNumber}
                   onChange={handlePhoneChange}
                   className={`
