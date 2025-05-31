@@ -22,6 +22,7 @@ export default function FormCompleted() {
   const [consultationRequest, setConsultationRequest] = useState(false);
   const [phoneError, setPhoneError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasStartedTyping, setHasStartedTyping] = useState(false);
 
   // Controlla se l'utente è arrivato a questa pagina dopo aver completato il form
   const submissionData = location.state?.submissionData;
@@ -53,29 +54,54 @@ export default function FormCompleted() {
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     
-    // Only allow digits and spaces
-    if (!/^[\d\s]*$/.test(value)) {
+    // Clear error when user starts typing again
+    if (phoneError) {
+      setPhoneError("");
+    }
+
+    // If user starts typing and hasn't started before, add +39 prefix
+    if (!hasStartedTyping && value.length > 0) {
+      setHasStartedTyping(true);
+      const cleanValue = value.replace(/\D/g, "");
+      const formatted = formatPhoneNumber(cleanValue);
+      setPhoneNumber(`+39 ${formatted}`);
       return;
     }
-    
-    const formatted = formatPhoneNumber(value);
-    setPhoneNumber(formatted);
-    
-    // Remove space for validation
-    const cleanValue = formatted.replace(/\s/g, "");
-    if (cleanValue && !validatePhoneNumber(cleanValue)) {
-      setPhoneError("Inserisci un numero di telefono valido (10 cifre)");
-    } else {
-      setPhoneError("");
+
+    // Only allow digits, spaces, and + for the prefix
+    if (!/^[\d\s+]*$/.test(value)) {
+      return;
+    }
+
+    // Handle the +39 prefix
+    if (value.startsWith("+39 ")) {
+      const phoneDigits = value.slice(4); // Remove "+39 "
+      const formatted = formatPhoneNumber(phoneDigits);
+      setPhoneNumber(`+39 ${formatted}`);
+    } else if (value === "") {
+      setPhoneNumber("");
+      setHasStartedTyping(false);
+    }
+  };
+
+  // Handle blur event for validation
+  const handlePhoneBlur = () => {
+    if (phoneNumber) {
+      // Extract just the phone number without +39 prefix
+      const phoneDigits = phoneNumber.replace("+39 ", "").replace(/\s/g, "");
+      if (!validatePhoneNumber(phoneDigits)) {
+        setPhoneError("Inserisci un numero valido");
+      }
     }
   };
 
   // Form submission
   const handleWhatsAppSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanPhone = phoneNumber.replace(/\s/g, "");
-    if (!validatePhoneNumber(cleanPhone)) {
-      setPhoneError("Inserisci un numero di telefono valido (10 cifre)");
+    // Extract just the phone number without +39 prefix
+    const phoneDigits = phoneNumber.replace("+39 ", "").replace(/\s/g, "");
+    if (!validatePhoneNumber(phoneDigits)) {
+      setPhoneError("Inserisci un numero valido");
       return;
     }
     if (!privacyConsent) {
@@ -86,7 +112,7 @@ export default function FormCompleted() {
     try {
       // Here you would typically send the data to your backend
       console.log("WhatsApp form submitted:", {
-        phone: cleanPhone,
+        phone: phoneNumber,
         privacyConsent,
         consultationRequest,
         submissionId: submissionData?.submissionId
@@ -102,6 +128,7 @@ export default function FormCompleted() {
       setPhoneNumber("");
       setPrivacyConsent(false);
       setConsultationRequest(false);
+      setHasStartedTyping(false);
     } catch (error) {
       console.error("Error submitting WhatsApp form:", error);
       toast.error("Errore durante l'invio", {
@@ -112,8 +139,9 @@ export default function FormCompleted() {
     }
   };
 
-  const cleanPhoneForValidation = phoneNumber.replace(/\s/g, "");
-  const isFormValid = validatePhoneNumber(cleanPhoneForValidation) && privacyConsent;
+  // Extract just the phone number without +39 prefix for validation
+  const phoneDigits = phoneNumber.replace("+39 ", "").replace(/\s/g, "");
+  const isFormValid = validatePhoneNumber(phoneDigits) && privacyConsent;
 
   if (!submissionData) {
     return null; // Non mostrare nulla durante il reindirizzamento
@@ -156,10 +184,11 @@ export default function FormCompleted() {
                   type="tel" 
                   placeholder="il tuo numero di telefono" 
                   value={phoneNumber} 
-                  onChange={handlePhoneChange} 
+                  onChange={handlePhoneChange}
+                  onBlur={handlePhoneBlur}
                   className={`
                     text-left px-[18px] py-[16px] border-[1.5px] rounded-[10px] 
-                    font-['Inter'] text-[20px] font-bold transition-all
+                    font-['Inter'] text-[24px] font-bold transition-all
                     shadow-[0_3px_0_0_#AFA89F] mb-[10px] w-full h-auto
                     hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)]
                     focus-visible:outline-none focus-visible:ring-0 focus-visible:border-black
@@ -167,7 +196,6 @@ export default function FormCompleted() {
                     ${phoneNumber ? 'border-black bg-gray-50' : 'border-[#BEB8AE]'}
                   `} 
                   inputMode="numeric"
-                  pattern="[0-9\s]*"
                 />
                 {phoneError && <p className="text-red-500 text-sm">{phoneError}</p>}
               </div>
@@ -178,9 +206,9 @@ export default function FormCompleted() {
                   id="consultation" 
                   checked={consultationRequest} 
                   onCheckedChange={(checked) => setConsultationRequest(checked as boolean)} 
-                  className="h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b]" 
+                  className="h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b] flex-shrink-0" 
                 />
-                <Label htmlFor="consultation" className="text-sm text-gray-600 leading-relaxed cursor-pointer">
+                <Label htmlFor="consultation" className="text-sm text-gray-600 leading-relaxed cursor-pointer flex items-center">
                   Aggiungi consulenza telefonica <span className="font-bold underline">gratuita e senza impegno</span> con esperto di GoMutuo
                 </Label>
               </div>
@@ -191,9 +219,9 @@ export default function FormCompleted() {
                   id="privacy" 
                   checked={privacyConsent} 
                   onCheckedChange={(checked) => setPrivacyConsent(checked as boolean)} 
-                  className="h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b]" 
+                  className="h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b] flex-shrink-0" 
                 />
-                <Label htmlFor="privacy" className="text-sm text-gray-600 leading-relaxed cursor-pointer">
+                <Label htmlFor="privacy" className="text-sm text-gray-600 leading-relaxed cursor-pointer flex items-center">
                   Ho preso visione e accetto la <Link to="/privacy" className="text-[#245C4F] underline hover:text-[#1a453b]">privacy policy</Link>
                 </Label>
               </div>
@@ -210,7 +238,7 @@ export default function FormCompleted() {
                   active:shadow-[0_1px_0_0_rgba(36,92,79,0.3)] active:translate-y-[2px]
                   inline-flex items-center justify-center gap-[12px]
                   ${isFormValid && !isSubmitting 
-                    ? 'bg-[rgba(36,92,79,0.15)] text-[#245C4F] border-[rgba(36,92,79,0.3)] cursor-pointer hover:bg-[rgba(36,92,79,0.2)]' 
+                    ? 'bg-[#245C4F] text-white border-[#245C4F] cursor-pointer hover:bg-[#1e4f44]' 
                     : 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'}
                 `}
               >
