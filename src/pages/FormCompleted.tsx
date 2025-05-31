@@ -115,15 +115,15 @@ export default function FormCompleted() {
         </div>
 
         {/* WhatsApp Contact Form */}
-        <div className="w-full max-w-2xl mb-8">
-          <div className="bg-[#F8F4EF] p-8 rounded-lg shadow-sm border border-gray-200">
+        <div className="w-full max-w-md mb-8">
+          <div className="bg-[#F8F4EF] p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">
+              <h2 className="text-xl font-bold text-gray-800 mb-2">
                 Inserisci il tuo numero e ricevi subito su WhatsApp il risultato della tua simulazione
               </h2>
             </div>
 
-            <form onSubmit={handleWhatsAppSubmit} className="space-y-6">
+            <form onSubmit={handleWhatsAppSubmit} className="space-y-4">
               {/* Phone Number Input */}
               <div className="space-y-2">
                 <Label htmlFor="phone" className="text-lg font-medium text-gray-700">
@@ -149,32 +149,34 @@ export default function FormCompleted() {
                 {phoneError && <p className="text-red-500 text-sm">{phoneError}</p>}
               </div>
 
+              {/* Consultation Checkbox */}
+              <div className="flex items-start space-x-3">
+                <div className="relative">
+                  <span className="bg-green-500 text-white px-1.5 py-0.5 rounded text-xs font-bold absolute -top-2 -left-1 z-10">
+                    GRATIS
+                  </span>
+                  <Checkbox
+                    id="consultation"
+                    checked={consultationRequest}
+                    onCheckedChange={(checked) => setConsultationRequest(checked as boolean)}
+                    className="mt-1 h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b]"
+                  />
+                </div>
+                <Label htmlFor="consultation" className="text-sm text-gray-600 leading-relaxed cursor-pointer">
+                  Aggiungi consulenza telefonica gratuita e senza impegno con esperto di GoMutuo
+                </Label>
+              </div>
+
               {/* Privacy Policy Checkbox */}
               <div className="flex items-start space-x-3">
                 <Checkbox
                   id="privacy"
                   checked={privacyConsent}
                   onCheckedChange={(checked) => setPrivacyConsent(checked as boolean)}
-                  className="mt-1"
+                  className="mt-1 h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b]"
                 />
                 <Label htmlFor="privacy" className="text-sm text-gray-600 leading-relaxed cursor-pointer">
-                  Accetto la <Link to="/privacy" className="text-[#245C4F] underline hover:text-[#1a453b]">privacy policy</Link>
-                </Label>
-              </div>
-
-              {/* Consultation Checkbox */}
-              <div className="flex items-start space-x-3">
-                <Checkbox
-                  id="consultation"
-                  checked={consultationRequest}
-                  onCheckedChange={(checked) => setConsultationRequest(checked as boolean)}
-                  className="mt-1"
-                />
-                <Label htmlFor="consultation" className="text-sm text-gray-600 leading-relaxed cursor-pointer flex items-center gap-2">
-                  Aggiungi consulenza telefonica di un esperto di GoMutuo, gratuita e senza impegno
-                  <span className="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">
-                    GRATIS
-                  </span>
+                  Ho preso visione e accetto la <Link to="/privacy" className="text-[#245C4F] underline hover:text-[#1a453b]">privacy policy</Link>
                 </Label>
               </div>
 
@@ -190,8 +192,8 @@ export default function FormCompleted() {
                   active:shadow-[0_1px_0_0_#1a453b] active:translate-y-[2px]
                   inline-flex items-center justify-center gap-[12px]
                   ${isFormValid && !isSubmitting 
-                    ? 'bg-[#245C4F] text-white border-[#245C4F] cursor-pointer' 
-                    : 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'
+                    ? 'bg-[#245C4F] bg-opacity-20 text-[#245C4F] border-[#245C4F] cursor-pointer backdrop-blur-sm' 
+                    : 'bg-gray-400 bg-opacity-20 text-gray-400 border-gray-400 cursor-not-allowed backdrop-blur-sm'
                   }
                 `}
               >
