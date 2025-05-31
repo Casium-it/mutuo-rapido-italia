@@ -148,7 +148,15 @@ export default function FormCompleted() {
                   placeholder="3331234567"
                   value={phoneNumber}
                   onChange={handlePhoneChange}
-                  className={`text-lg py-3 ${phoneError ? 'border-red-500' : ''}`}
+                  className={`
+                    text-left px-[18px] py-[16px] border-[1.5px] rounded-[10px] 
+                    font-['Inter'] text-[16px] font-normal transition-all
+                    shadow-[0_3px_0_0_#AFA89F] mb-[10px] w-full h-auto
+                    hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)]
+                    focus-visible:outline-none focus-visible:ring-0 focus-visible:border-black
+                    ${phoneError ? 'border-red-500' : 'border-[#BEB8AE]'}
+                    ${phoneNumber ? 'border-black bg-gray-50' : 'border-[#BEB8AE]'}
+                  `}
                   maxLength={10}
                 />
                 {phoneError && (
