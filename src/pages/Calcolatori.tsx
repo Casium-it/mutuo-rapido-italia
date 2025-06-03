@@ -118,15 +118,7 @@ const CalcolatoreCard = ({
   title,
   description
 }: CalcolatoreCardProps) => {
-  return <div className="bg-white p-6 rounded-xl border border-[#BEB8AE] hover:shadow-lg transition-shadow cursor-pointer">
-      <div className="flex items-center gap-4 mb-3">
-        <div className="bg-[#F8F4EF] rounded-lg p-3">
-          <Icon className="w-6 h-6 text-[#245C4F]" />
-        </div>
-      </div>
-      <h3 className="text-lg font-semibold font-['Inter'] text-gray-900 mb-2">{title}</h3>
-      <p className="text-sm font-['Inter'] text-gray-600">{description}</p>
-    </div>;
+  return;
 };
 
 // Componente per le card delle risorse
