@@ -4,35 +4,46 @@ import { Button } from "@/components/ui/button";
 import { Calculator, TrendingUp, PieChart, Target, Home, Users, BookOpen, MessageCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
+
 const Calcolatori = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-  const calcolatori = [{
-    icon: Calculator,
-    title: "Simulatore Mutuo",
-    description: "Calcola rata e importo finanziabile"
-  }, {
-    icon: TrendingUp,
-    title: "Analisi Tassi",
-    description: "Confronta tassi fissi e variabili"
-  }, {
-    icon: PieChart,
-    title: "Piano Ammortamento",
-    description: "Visualizza piano di rimborso"
-  }, {
-    icon: Target,
-    title: "Calcolo Interessi",
-    description: "Stima interessi totali"
-  }, {
-    icon: Home,
-    title: "Valore Immobile",
-    description: "Valuta il prezzo della casa"
-  }, {
-    icon: Users,
-    title: "Capacità Finanziaria",
-    description: "Verifica sostenibilità rata"
-  }];
-  return <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
+
+  const calcolatori = [
+    {
+      icon: Calculator,
+      title: "Simulatore Mutuo",
+      description: "Calcola rata e importo finanziabile"
+    },
+    {
+      icon: TrendingUp,
+      title: "Analisi Tassi",
+      description: "Confronta tassi fissi e variabili"
+    },
+    {
+      icon: PieChart,
+      title: "Piano Ammortamento",
+      description: "Visualizza piano di rimborso"
+    },
+    {
+      icon: Target,
+      title: "Calcolo Interessi",
+      description: "Stima interessi totali"
+    },
+    {
+      icon: Home,
+      title: "Valore Immobile",
+      description: "Valuta il prezzo della casa"
+    },
+    {
+      icon: Users,
+      title: "Capacità Finanziaria",
+      description: "Verifica sostenibilità rata"
+    }
+  ];
+
+  return (
+    <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
       {/* Header */}
       <header className="py-6 px-4 md:px-6 flex justify-between items-center">
         <div className="cursor-pointer" onClick={() => navigate("/")}>
@@ -52,7 +63,7 @@ const Calcolatori = () => {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 px-4 md:px-6 py-8 md:py-12 max-w-5xl mx-auto w-full">
+      <main className="flex-1 px-4 md:px-6 py-8 md:py-12 max-w-5xl mx-auto w-full flex flex-col justify-center">
         {/* Hero Section */}
         <div className="text-center mb-12 md:mb-16">
           <h1 className="text-4xl md:text-6xl font-bold mb-4">
@@ -94,7 +105,8 @@ const Calcolatori = () => {
           </div>
         </div>
       </footer>
-    </div>;
+    </div>
+  );
 };
 
 // Componente per le card dei calcolatori
