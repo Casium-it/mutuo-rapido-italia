@@ -37,33 +37,37 @@ const Calcolatori = () => {
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden bg-[#f1ebe2]">
-      {/* Floating Abstract Shapes - positioned to avoid hero content */}
+      {/* Floating Abstract Shapes - evenly spread and blurred */}
       <div className="absolute inset-0 pointer-events-none">
-        {/* Top area shapes - positioned away from center hero content */}
-        <div className="absolute top-10 left-5 w-16 h-10 bg-[#e3fd53] rounded-full animate-float transform rotate-12" style={{animationDelay: '0s'}}></div>
-        <div className="absolute top-16 right-8 w-12 h-8 bg-[#e3fd53] rounded-full animate-float-rotate transform -rotate-45" style={{animationDelay: '1s'}}></div>
+        {/* Top area shapes - above hero */}
+        <div className="absolute top-8 left-12 w-32 h-20 bg-[#e3fd53] rounded-full blur-sm animate-float transform rotate-12" style={{animationDelay: '0s', animationDuration: '3s'}}></div>
+        <div className="absolute top-12 right-16 w-24 h-16 bg-[#e3fd53] rounded-full blur-md animate-float-rotate transform -rotate-45" style={{animationDelay: '0.8s', animationDuration: '3.5s'}}></div>
+        <div className="absolute top-20 left-1/3 w-28 h-12 bg-[#e3fd53] rounded-2xl blur-sm animate-float transform rotate-30" style={{animationDelay: '1.2s', animationDuration: '4s'}}></div>
+        <div className="absolute top-16 right-1/3 w-20 h-24 bg-[#e3fd53] rounded-xl blur-md animate-float-rotate transform -rotate-20" style={{animationDelay: '2s', animationDuration: '3.2s'}}></div>
         
         {/* Left side shapes */}
-        <div className="absolute top-72 left-2 w-14 h-20 bg-[#e3fd53] rounded-2xl animate-float transform rotate-45" style={{animationDelay: '2s'}}></div>
-        <div className="absolute top-96 left-12 w-20 h-6 bg-[#e3fd53] rounded-full animate-float-rotate transform -rotate-12" style={{animationDelay: '1.5s'}}></div>
+        <div className="absolute top-1/2 left-4 w-36 h-24 bg-[#e3fd53] rounded-3xl blur-md animate-float transform rotate-45" style={{animationDelay: '1.5s', animationDuration: '3.8s'}}></div>
+        <div className="absolute top-2/3 left-8 w-28 h-14 bg-[#e3fd53] rounded-full blur-sm animate-float-rotate transform -rotate-12" style={{animationDelay: '2.3s', animationDuration: '3.3s'}}></div>
         
         {/* Right side shapes */}
-        <div className="absolute top-80 right-4 w-18 h-12 bg-[#e3fd53] rounded-xl animate-float transform rotate-12" style={{animationDelay: '0.5s'}}></div>
-        <div className="absolute top-72 right-16 w-10 h-16 bg-[#e3fd53] rounded-full animate-float-rotate transform rotate-75" style={{animationDelay: '3s'}}></div>
+        <div className="absolute top-1/2 right-6 w-32 h-20 bg-[#e3fd53] rounded-xl blur-md animate-float transform rotate-60" style={{animationDelay: '0.5s', animationDuration: '3.7s'}}></div>
+        <div className="absolute top-3/5 right-12 w-24 h-28 bg-[#e3fd53] rounded-full blur-sm animate-float-rotate transform rotate-75" style={{animationDelay: '1.8s', animationDuration: '3.1s'}}></div>
         
-        {/* Bottom area shapes - covering bottom right */}
-        <div className="absolute bottom-20 left-8 w-24 h-6 bg-[#e3fd53] rounded-full animate-float transform -rotate-12" style={{animationDelay: '1.5s'}}></div>
-        <div className="absolute bottom-32 left-24 w-16 h-12 bg-[#e3fd53] rounded-3xl animate-float transform rotate-30" style={{animationDelay: '2.5s'}}></div>
+        {/* Center area shapes - positioned to not overlap hero content */}
+        <div className="absolute top-1/4 left-1/4 w-20 h-32 bg-[#e3fd53] rounded-2xl blur-md animate-float transform rotate-15" style={{animationDelay: '2.8s', animationDuration: '4.2s'}}></div>
+        <div className="absolute top-1/3 right-1/4 w-26 h-18 bg-[#e3fd53] rounded-full blur-sm animate-float-rotate transform -rotate-35" style={{animationDelay: '1.1s', animationDuration: '3.6s'}}></div>
         
-        {/* Bottom right coverage */}
-        <div className="absolute bottom-16 right-6 w-20 h-8 bg-[#e3fd53] rounded-2xl animate-float-rotate transform -rotate-60" style={{animationDelay: '4s'}}></div>
-        <div className="absolute bottom-28 right-16 w-12 h-18 bg-[#e3fd53] rounded-full animate-float transform rotate-25" style={{animationDelay: '3.5s'}}></div>
-        <div className="absolute bottom-40 right-4 w-14 h-14 bg-[#e3fd53] rounded-xl animate-float-rotate transform rotate-45" style={{animationDelay: '2.8s'}}></div>
-        <div className="absolute bottom-8 right-20 w-18 h-10 bg-[#e3fd53] rounded-full animate-float transform -rotate-30" style={{animationDelay: '1.8s'}}></div>
+        {/* Bottom area shapes - below hero */}
+        <div className="absolute bottom-32 left-16 w-30 h-16 bg-[#e3fd53] rounded-full blur-md animate-float transform -rotate-12" style={{animationDelay: '0.3s', animationDuration: '3.4s'}}></div>
+        <div className="absolute bottom-40 left-1/3 w-24 h-20 bg-[#e3fd53] rounded-3xl blur-sm animate-float transform rotate-30" style={{animationDelay: '2.1s', animationDuration: '3.9s'}}></div>
+        <div className="absolute bottom-24 right-20 w-32 h-14 bg-[#e3fd53] rounded-2xl blur-md animate-float-rotate transform -rotate-60" style={{animationDelay: '1.4s', animationDuration: '3.2s'}}></div>
+        <div className="absolute bottom-36 right-1/3 w-22 h-26 bg-[#e3fd53] rounded-full blur-sm animate-float transform rotate-25" style={{animationDelay: '2.7s', animationDuration: '3.7s'}}></div>
         
-        {/* Additional bottom right shapes for better coverage */}
-        <div className="absolute bottom-12 right-32 w-22 h-6 bg-[#e3fd53] rounded-full animate-float-rotate transform rotate-15" style={{animationDelay: '4.5s'}}></div>
-        <div className="absolute bottom-52 right-8 w-16 h-12 bg-[#e3fd53] rounded-2xl animate-float transform rotate-60" style={{animationDelay: '3.2s'}}></div>
+        {/* Bottom edge shapes */}
+        <div className="absolute bottom-16 left-8 w-28 h-12 bg-[#e3fd53] rounded-xl blur-md animate-float-rotate transform rotate-45" style={{animationDelay: '0.7s', animationDuration: '3.5s'}}></div>
+        <div className="absolute bottom-12 right-8 w-24 h-18 bg-[#e3fd53] rounded-full blur-sm animate-float transform -rotate-30" style={{animationDelay: '1.9s', animationDuration: '3.1s'}}></div>
+        <div className="absolute bottom-8 left-1/2 w-26 h-14 bg-[#e3fd53] rounded-2xl blur-md animate-float-rotate transform rotate-15" style={{animationDelay: '2.5s', animationDuration: '3.8s'}}></div>
+        <div className="absolute bottom-20 right-1/4 w-20 h-22 bg-[#e3fd53] rounded-full blur-sm animate-float transform rotate-50" style={{animationDelay: '1.6s', animationDuration: '3.3s'}}></div>
       </div>
 
       {/* Header */}
