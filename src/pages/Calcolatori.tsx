@@ -4,46 +4,35 @@ import { Button } from "@/components/ui/button";
 import { Calculator, TrendingUp, PieChart, Target, Home, Users, BookOpen, MessageCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
-
 const Calcolatori = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-
-  const calcolatori = [
-    {
-      icon: Calculator,
-      title: "Simulatore Mutuo",
-      description: "Calcola rata e importo finanziabile"
-    },
-    {
-      icon: TrendingUp,
-      title: "Analisi Tassi",
-      description: "Confronta tassi fissi e variabili"
-    },
-    {
-      icon: PieChart,
-      title: "Piano Ammortamento",
-      description: "Visualizza piano di rimborso"
-    },
-    {
-      icon: Target,
-      title: "Calcolo Interessi",
-      description: "Stima interessi totali"
-    },
-    {
-      icon: Home,
-      title: "Valore Immobile",
-      description: "Valuta il prezzo della casa"
-    },
-    {
-      icon: Users,
-      title: "Capacità Finanziaria",
-      description: "Verifica sostenibilità rata"
-    }
-  ];
-
-  return (
-    <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
+  const calcolatori = [{
+    icon: Calculator,
+    title: "Simulatore Mutuo",
+    description: "Calcola rata e importo finanziabile"
+  }, {
+    icon: TrendingUp,
+    title: "Analisi Tassi",
+    description: "Confronta tassi fissi e variabili"
+  }, {
+    icon: PieChart,
+    title: "Piano Ammortamento",
+    description: "Visualizza piano di rimborso"
+  }, {
+    icon: Target,
+    title: "Calcolo Interessi",
+    description: "Stima interessi totali"
+  }, {
+    icon: Home,
+    title: "Valore Immobile",
+    description: "Valuta il prezzo della casa"
+  }, {
+    icon: Users,
+    title: "Capacità Finanziaria",
+    description: "Verifica sostenibilità rata"
+  }];
+  return <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
       {/* Header */}
       <header className="py-6 px-4 md:px-6 relative flex items-center z-10">
         {/* Logo */}
@@ -97,39 +86,11 @@ const Calcolatori = () => {
 
         {/* Calcolatori Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {calcolatori.map((calcolatore, index) => (
-            <CalcolatoreCard
-              key={index}
-              icon={calcolatore.icon}
-              title={calcolatore.title}
-              description={calcolatore.description}
-            />
-          ))}
+          {calcolatori.map((calcolatore, index) => <CalcolatoreCard key={index} icon={calcolatore.icon} title={calcolatore.title} description={calcolatore.description} />)}
         </div>
 
         {/* Risorse Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-          <RisorsaCard
-            icon={MessageCircle}
-            title="Community"
-            description="Parla con altri utenti e condividi la tua esperienza"
-            items={[
-              "Consigli degli utenti",
-              "Esperienze reali",
-              "Supporto diretto"
-            ]}
-          />
-          <RisorsaCard
-            icon={BookOpen}
-            title="Guide"
-            description="Scopri guide e articoli sul mondo dei mutui"
-            items={[
-              "Tutto sui mutui",
-              "Consigli utili",
-              "Glossario"
-            ]}
-          />
-        </div>
+        
 
         {/* CTA Section */}
         <div className="text-center">
@@ -156,8 +117,7 @@ const Calcolatori = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
 
 // Componente per le card dei calcolatori
@@ -171,15 +131,7 @@ const CalcolatoreCard = ({
   title,
   description
 }: CalcolatoreCardProps) => {
-  return <div className="bg-white rounded-[12px] border border-[#BEB8AE] p-6 hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)] transition-all group cursor-pointer shadow-[0_3px_0_0_#AFA89F] hover-grow">
-      <div className="flex items-center gap-3 mb-3">
-        <div className="bg-[#F8F4EF] rounded-full p-2">
-          <Icon className="w-5 h-5 text-[#245C4F]" />
-        </div>
-        <h3 className="text-lg font-semibold font-['Inter'] text-gray-900">{title}</h3>
-      </div>
-      <p className="text-sm font-['Inter'] text-gray-500">{description}</p>
-    </div>;
+  return;
 };
 
 // Componente per le card delle risorse
