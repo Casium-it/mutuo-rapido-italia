@@ -43,9 +43,21 @@ const Calcolatori = () => {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
+    <div className="min-h-screen flex flex-col bg-[#f1ebe2] relative overflow-hidden">
+      {/* Floating Bubbles */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-20 left-10 w-16 h-16 bg-[#e3fd53] rounded-full opacity-70 animate-float"></div>
+        <div className="absolute top-40 right-20 w-12 h-12 bg-[#e3fd53] rounded-full opacity-60 animate-float-rotate" style={{animationDelay: '1s'}}></div>
+        <div className="absolute top-60 left-1/4 w-20 h-20 bg-[#e3fd53] rounded-full opacity-50 animate-float" style={{animationDelay: '2s'}}></div>
+        <div className="absolute bottom-40 right-10 w-14 h-14 bg-[#e3fd53] rounded-full opacity-65 animate-float-rotate" style={{animationDelay: '0.5s'}}></div>
+        <div className="absolute bottom-20 left-20 w-18 h-18 bg-[#e3fd53] rounded-full opacity-55 animate-float" style={{animationDelay: '1.5s'}}></div>
+        <div className="absolute top-1/3 right-1/3 w-10 h-10 bg-[#e3fd53] rounded-full opacity-70 animate-float-rotate" style={{animationDelay: '3s'}}></div>
+        <div className="absolute bottom-1/3 left-1/3 w-22 h-22 bg-[#e3fd53] rounded-full opacity-45 animate-float" style={{animationDelay: '2.5s'}}></div>
+      </div>
+
       {/* Header */}
-      <header className="py-6 px-4 md:px-6 relative flex items-center">
+      <header className="py-6 px-4 md:px-6 relative flex items-center z-10">
+        {/* Header content */}
         <div className="cursor-pointer" onClick={() => navigate("/")}>
           <Logo />
         </div>
@@ -68,7 +80,7 @@ const Calcolatori = () => {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 px-4 md:px-6 py-8 md:py-12 max-w-5xl mx-auto w-full flex flex-col justify-center">
+      <main className="flex-1 px-4 md:px-6 py-8 md:py-12 max-w-5xl mx-auto w-full flex flex-col justify-center relative z-10">
         {/* Hero Section */}
         <div className="text-center mb-12 md:mb-16">
           <h1 className="text-4xl md:text-6xl font-bold mb-4">
@@ -100,7 +112,7 @@ const Calcolatori = () => {
       </main>
 
       {/* Footer */}
-      <footer className="py-6 px-4 border-t border-[#BEB8AE]">
+      <footer className="py-6 px-4 border-t border-[#BEB8AE] relative z-10">
         <div className="max-w-5xl mx-auto flex justify-between items-center">
           <p className="text-sm text-gray-600">© 2025 GoMutuo.it - Tutti i diritti riservati</p>
           <div className="flex gap-4">
