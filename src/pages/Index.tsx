@@ -88,7 +88,12 @@ const Index = () => {
         <div className="flex justify-between items-center mb-4">
           <p className="text-sm text-gray-600">© 2025 GoMutuo.it - Tutti i diritti riservati</p>
           <div className="flex gap-4">
-            <a href="#" className="text-sm text-gray-600 hover:text-[#245C4F]">Privacy</a>
+            <button 
+              onClick={() => navigate("/privacy")}
+              className="text-sm text-gray-600 hover:text-[#245C4F]"
+            >
+              Privacy
+            </button>
             <a href="#" className="text-sm text-gray-600 hover:text-[#245C4F]">Termini</a>
             <a href="#" className="text-sm text-gray-600 hover:text-[#245C4F]">Contatti</a>
           </div>

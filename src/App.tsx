@@ -8,6 +8,7 @@ import { FormProvider } from "./contexts/FormContext";
 import { allBlocks } from "./data/blocks"; // Aggiornato per usare la nuova struttura
 import Index from "./pages/Index";
 import Calcolatori from "./pages/Calcolatori";
+import Privacy from "./pages/Privacy";
 import SimulazioneAvanzata from "./pages/SimulazioneAvanzata";
 import Form from "./pages/Form";
 import FormLoading from "./pages/FormLoading";
@@ -25,6 +26,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/calcolatori" element={<Calcolatori />} />
+          <Route path="/privacy" element={<Privacy />} />
           <Route path="/simulazione-avanzata" element={<SimulazioneAvanzata />} />
           <Route path="/simulazione-avanzata/:slug" element={<SimulazioneAvanzata />} />
           <Route path="/form-loading" element={<FormLoading />} />
