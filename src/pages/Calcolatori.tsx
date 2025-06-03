@@ -1,26 +1,38 @@
-
 import React from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Calculator, TrendingUp, PieChart, Target, Home, Users, BookOpen, MessageCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
-
 const Calcolatori = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-
-  const calcolatori = [
-    { icon: Calculator, title: "Simulatore Mutuo", description: "Calcola rata e importo finanziabile" },
-    { icon: TrendingUp, title: "Analisi Tassi", description: "Confronta tassi fissi e variabili" },
-    { icon: PieChart, title: "Piano Ammortamento", description: "Visualizza piano di rimborso" },
-    { icon: Target, title: "Calcolo Interessi", description: "Stima interessi totali" },
-    { icon: Home, title: "Valore Immobile", description: "Valuta il prezzo della casa" },
-    { icon: Users, title: "Capacità Finanziaria", description: "Verifica sostenibilità rata" },
-  ];
-
-  return (
-    <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
+  const calcolatori = [{
+    icon: Calculator,
+    title: "Simulatore Mutuo",
+    description: "Calcola rata e importo finanziabile"
+  }, {
+    icon: TrendingUp,
+    title: "Analisi Tassi",
+    description: "Confronta tassi fissi e variabili"
+  }, {
+    icon: PieChart,
+    title: "Piano Ammortamento",
+    description: "Visualizza piano di rimborso"
+  }, {
+    icon: Target,
+    title: "Calcolo Interessi",
+    description: "Stima interessi totali"
+  }, {
+    icon: Home,
+    title: "Valore Immobile",
+    description: "Valuta il prezzo della casa"
+  }, {
+    icon: Users,
+    title: "Capacità Finanziaria",
+    description: "Verifica sostenibilità rata"
+  }];
+  return <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
       {/* Header */}
       <header className="py-6 px-4 md:px-6 flex justify-between items-center">
         <div className="cursor-pointer" onClick={() => navigate("/")}>
@@ -52,69 +64,23 @@ const Calcolatori = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button 
-              className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-8 py-4 text-lg rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all"
-              onClick={() => navigate("/simulazione-avanzata")}
-            >
+            <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-8 py-4 text-lg rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all" onClick={() => navigate("/simulazione-avanzata")}>
               Simula il tuo mutuo
             </Button>
-            <Button 
-              variant="ghost" 
-              className="text-[#245C4F] hover:bg-[#F8F4EF] px-8 py-4 text-lg rounded-[12px] border border-[#245C4F] hover:border-[#1e4f44] transition-all"
-            >
+            <Button variant="ghost" className="text-[#245C4F] hover:bg-[#F8F4EF] px-8 py-4 text-lg rounded-[12px] border border-[#245C4F] hover:border-[#1e4f44] transition-all">
               Tutti i calcolatori
             </Button>
           </div>
         </div>
 
         {/* Calcolatori Grid */}
-        <div className="mb-16">
-          <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 text-gray-900">
-            I Nostri Calcolatori
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {calcolatori.map((calc, index) => (
-              <CalcolatoreCard key={index} {...calc} />
-            ))}
-          </div>
-        </div>
+        
 
         {/* Risorse Section */}
-        <div className="bg-white rounded-[16px] border border-[#BEB8AE] p-8 md:p-12 shadow-[0_3px_0_0_#AFA89F] mb-12">
-          <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 text-gray-900">
-            Risorse Utili
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <RisorsaCard 
-              icon={BookOpen}
-              title="Guide Complete"
-              description="Tutto quello che devi sapere sui mutui, spiegato in modo semplice"
-              items={["Prima Casa", "Ristrutturazione", "Surroga", "Mutui Giovani"]}
-            />
-            <RisorsaCard 
-              icon={MessageCircle}
-              title="Community"
-              description="Condividi esperienze con altri giovani che stanno comprando casa"
-              items={["Forum Discussioni", "Consigli Pratici", "Esperienze Reali", "Q&A Esperti"]}
-            />
-          </div>
-        </div>
+        
 
         {/* CTA Section */}
-        <div className="text-center bg-gradient-to-r from-[#245C4F] to-[#1e4f44] rounded-[16px] p-8 md:p-12 text-white">
-          <h2 className="text-2xl md:text-3xl font-bold mb-4">
-            Pronto per il tuo mutuo?
-          </h2>
-          <p className="text-lg mb-6 opacity-90">
-            Inizia la simulazione e scopri le migliori offerte per te
-          </p>
-          <Button 
-            className="bg-white text-[#245C4F] hover:bg-gray-100 px-8 py-4 text-lg rounded-[12px] font-semibold shadow-[0_3px_0_0_rgba(255,255,255,0.2)] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_rgba(255,255,255,0.2)] transition-all"
-            onClick={() => navigate("/simulazione-avanzata")}
-          >
-            Inizia Simulazione
-          </Button>
-        </div>
+        
       </main>
 
       {/* Footer */}
@@ -128,8 +94,7 @@ const Calcolatori = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
 
 // Componente per le card dei calcolatori
@@ -138,10 +103,12 @@ interface CalcolatoreCardProps {
   title: string;
   description: string;
 }
-
-const CalcolatoreCard = ({ icon: Icon, title, description }: CalcolatoreCardProps) => {
-  return (
-    <div className="bg-white rounded-[12px] border border-[#BEB8AE] p-6 hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)] transition-all group cursor-pointer shadow-[0_3px_0_0_#AFA89F] hover-grow">
+const CalcolatoreCard = ({
+  icon: Icon,
+  title,
+  description
+}: CalcolatoreCardProps) => {
+  return <div className="bg-white rounded-[12px] border border-[#BEB8AE] p-6 hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)] transition-all group cursor-pointer shadow-[0_3px_0_0_#AFA89F] hover-grow">
       <div className="flex items-center gap-3 mb-3">
         <div className="bg-[#F8F4EF] rounded-full p-2">
           <Icon className="w-5 h-5 text-[#245C4F]" />
@@ -149,8 +116,7 @@ const CalcolatoreCard = ({ icon: Icon, title, description }: CalcolatoreCardProp
         <h3 className="text-lg font-semibold font-['Inter'] text-gray-900">{title}</h3>
       </div>
       <p className="text-sm font-['Inter'] text-gray-500">{description}</p>
-    </div>
-  );
+    </div>;
 };
 
 // Componente per le card delle risorse
@@ -160,22 +126,21 @@ interface RisorsaCardProps {
   description: string;
   items: string[];
 }
-
-const RisorsaCard = ({ icon: Icon, title, description, items }: RisorsaCardProps) => {
-  return (
-    <div className="text-center">
+const RisorsaCard = ({
+  icon: Icon,
+  title,
+  description,
+  items
+}: RisorsaCardProps) => {
+  return <div className="text-center">
       <div className="bg-[#F8F4EF] rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
         <Icon className="w-8 h-8 text-[#245C4F]" />
       </div>
       <h3 className="text-xl font-semibold font-['Inter'] text-gray-900 mb-2">{title}</h3>
       <p className="text-gray-600 mb-4">{description}</p>
       <ul className="space-y-2">
-        {items.map((item, index) => (
-          <li key={index} className="text-sm text-gray-500 font-['Inter']">• {item}</li>
-        ))}
+        {items.map((item, index) => <li key={index} className="text-sm text-gray-500 font-['Inter']">• {item}</li>)}
       </ul>
-    </div>
-  );
+    </div>;
 };
-
 export default Calcolatori;
