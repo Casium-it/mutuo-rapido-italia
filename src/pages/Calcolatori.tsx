@@ -56,10 +56,10 @@ const Calcolatori = () => {
           <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-vibe-green">
             Risorse
           </Button>
-          <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-full px-6">
-            Inizia Ora
-          </Button>
         </div>
+        <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-full px-6">
+          Inizia Ora
+        </Button>
       </header>
 
       {/* Main content */}
