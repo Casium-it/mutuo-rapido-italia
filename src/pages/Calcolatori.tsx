@@ -1,15 +1,12 @@
-
 import React from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Calculator, TrendingUp, PieChart, Target, Home, Users, BookOpen, MessageCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
-
 const Calcolatori = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-  
   const calcolatori = [{
     icon: Calculator,
     title: "Simulatore Mutuo",
@@ -35,9 +32,7 @@ const Calcolatori = () => {
     title: "Capacità Finanziaria",
     description: "Verifica sostenibilità rata"
   }];
-
-  return (
-    <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
+  return <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
       {/* Header */}
       <header className="py-6 px-4 md:px-6 relative flex items-center z-10">
         {/* Logo */}
@@ -90,16 +85,7 @@ const Calcolatori = () => {
         </div>
 
         {/* Calcolatori Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {calcolatori.map((calcolatore, index) => (
-            <CalcolatoreCard 
-              key={index} 
-              icon={calcolatore.icon} 
-              title={calcolatore.title} 
-              description={calcolatore.description} 
-            />
-          ))}
-        </div>
+        
 
         {/* CTA Section */}
         <div className="text-center">
@@ -126,8 +112,7 @@ const Calcolatori = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
 
 // Componente per le card dei calcolatori
@@ -136,10 +121,12 @@ interface CalcolatoreCardProps {
   title: string;
   description: string;
 }
-
-const CalcolatoreCard = ({ icon: Icon, title, description }: CalcolatoreCardProps) => {
-  return (
-    <div className="bg-white p-6 rounded-xl border border-[#BEB8AE] hover:shadow-lg transition-shadow cursor-pointer">
+const CalcolatoreCard = ({
+  icon: Icon,
+  title,
+  description
+}: CalcolatoreCardProps) => {
+  return <div className="bg-white p-6 rounded-xl border border-[#BEB8AE] hover:shadow-lg transition-shadow cursor-pointer">
       <div className="flex items-center gap-4 mb-3">
         <div className="bg-[#F8F4EF] rounded-lg p-3">
           <Icon className="w-6 h-6 text-[#245C4F]" />
@@ -147,8 +134,7 @@ const CalcolatoreCard = ({ icon: Icon, title, description }: CalcolatoreCardProp
       </div>
       <h3 className="text-lg font-semibold font-['Inter'] text-gray-900 mb-2">{title}</h3>
       <p className="text-sm font-['Inter'] text-gray-600">{description}</p>
-    </div>
-  );
+    </div>;
 };
 
 // Componente per le card delle risorse
@@ -158,22 +144,21 @@ interface RisorsaCardProps {
   description: string;
   items: string[];
 }
-
-const RisorsaCard = ({ icon: Icon, title, description, items }: RisorsaCardProps) => {
-  return (
-    <div className="text-center">
+const RisorsaCard = ({
+  icon: Icon,
+  title,
+  description,
+  items
+}: RisorsaCardProps) => {
+  return <div className="text-center">
       <div className="bg-[#F8F4EF] rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
         <Icon className="w-8 h-8 text-[#245C4F]" />
       </div>
       <h3 className="text-xl font-semibold font-['Inter'] text-gray-900 mb-2">{title}</h3>
       <p className="text-gray-600 mb-4">{description}</p>
       <ul className="space-y-2">
-        {items.map((item, index) => (
-          <li key={index} className="text-sm text-gray-500 font-['Inter']">• {item}</li>
-        ))}
+        {items.map((item, index) => <li key={index} className="text-sm text-gray-500 font-['Inter']">• {item}</li>)}
       </ul>
-    </div>
-  );
+    </div>;
 };
-
 export default Calcolatori;
