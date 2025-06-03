@@ -43,14 +43,7 @@ const Calcolatori = () => {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden bg-gradient-to-br from-[#fff5e9] via-[#f8f4ef] to-[#f0ebe2]">
-      {/* Decorative background elements */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-20 right-10 w-32 h-32 bg-[#245C4F]/5 rounded-full blur-xl"></div>
-        <div className="absolute top-40 left-20 w-24 h-24 bg-[#F0EAE0]/30 rounded-full blur-lg"></div>
-        <div className="absolute bottom-40 right-32 w-28 h-28 bg-[#245C4F]/8 rounded-full blur-2xl"></div>
-      </div>
-
+    <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
       {/* Header */}
       <header className="py-6 px-4 md:px-6 relative flex items-center z-10">
         {/* Logo */}
@@ -79,50 +72,77 @@ const Calcolatori = () => {
       {/* Main content */}
       <main className="flex-1 px-4 md:px-6 py-8 md:py-12 max-w-5xl mx-auto w-full flex flex-col justify-center relative z-10">
         {/* Hero Section */}
-        <div className="text-center mb-12 md:mb-16 relative">
-          {/* Background card effect */}
-          <div className="absolute inset-0 bg-white/20 backdrop-blur-sm rounded-3xl border border-white/30 shadow-xl transform -rotate-1 scale-105"></div>
-          <div className="absolute inset-0 bg-white/10 backdrop-blur-sm rounded-3xl border border-white/20 shadow-lg transform rotate-1 scale-103"></div>
+        <div className="text-center mb-12 md:mb-16">
+          <h1 className="text-4xl md:text-6xl font-bold mb-4">
+            Tutto sui <span className="relative">
+              <span className="gradient-text">mutui</span>
+              <div className="absolute -bottom-2 left-0 right-0 h-2 bg-[#d3f54f] rounded-full opacity-80"></div>
+            </span>
+          </h1>
+          <p className="text-lg md:text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
+            Calcolatori, guide, consigli e una community di giovani<br />
+            che condividono esperienze, senza termini complicati.
+          </p>
           
-          {/* Content container */}
-          <div className="relative bg-white/40 backdrop-blur-md rounded-3xl border border-white/50 shadow-2xl p-8 md:p-12">
-            {/* Decorative corner elements */}
-            <div className="absolute top-4 left-4 w-3 h-3 bg-[#245C4F] rounded-full opacity-60"></div>
-            <div className="absolute top-4 right-4 w-2 h-2 bg-[#F0EAE0] rounded-full"></div>
-            <div className="absolute bottom-4 left-4 w-2 h-2 bg-[#F0EAE0] rounded-full"></div>
-            <div className="absolute bottom-4 right-4 w-3 h-3 bg-[#245C4F] rounded-full opacity-60"></div>
-            
-            <h1 className="text-4xl md:text-6xl font-bold mb-4 relative">
-              Tutto sui <span className="gradient-text relative">
-                mutui
-                <div className="absolute -bottom-2 left-0 right-0 h-1 bg-gradient-to-r from-[#245C4F]/20 to-[#1e4f44]/20 rounded-full"></div>
-              </span>
-            </h1>
-            <p className="text-lg md:text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
-              Calcolatori, guide, consigli e una community di giovani<br />
-              che condividono esperienze, senza termini complicati.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-8 py-4 text-lg rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all relative overflow-hidden group" onClick={() => navigate("/simulazione-avanzata")}>
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-                Simula il tuo mutuo
-              </Button>
-              <Button variant="ghost" className="text-[#245C4F] hover:bg-[#F8F4EF] px-8 py-4 text-lg rounded-[12px] border border-[#245C4F] hover:border-[#1e4f44] transition-all backdrop-blur-sm">
-                Tutti i calcolatori
-              </Button>
-            </div>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-8 py-4 text-lg rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all relative overflow-hidden group" onClick={() => navigate("/simulazione-avanzata")}>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+              Simula il tuo mutuo
+            </Button>
+            <Button variant="ghost" className="text-[#245C4F] hover:bg-[#F8F4EF] px-8 py-4 text-lg rounded-[12px] border border-[#245C4F] hover:border-[#1e4f44] transition-all backdrop-blur-sm">
+              Tutti i calcolatori
+            </Button>
           </div>
         </div>
 
         {/* Calcolatori Grid */}
-        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+          {calcolatori.map((calcolatore, index) => (
+            <CalcolatoreCard
+              key={index}
+              icon={calcolatore.icon}
+              title={calcolatore.title}
+              description={calcolatore.description}
+            />
+          ))}
+        </div>
 
         {/* Risorse Section */}
-        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+          <RisorsaCard
+            icon={MessageCircle}
+            title="Community"
+            description="Parla con altri utenti e condividi la tua esperienza"
+            items={[
+              "Consigli degli utenti",
+              "Esperienze reali",
+              "Supporto diretto"
+            ]}
+          />
+          <RisorsaCard
+            icon={BookOpen}
+            title="Guide"
+            description="Scopri guide e articoli sul mondo dei mutui"
+            items={[
+              "Tutto sui mutui",
+              "Consigli utili",
+              "Glossario"
+            ]}
+          />
+        </div>
 
         {/* CTA Section */}
-        
+        <div className="text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            Non sai da dove iniziare?
+          </h2>
+          <p className="text-lg text-gray-600 mb-8">
+            Inizia subito la simulazione del tuo mutuo ideale!
+          </p>
+          <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-8 py-4 text-lg rounded-[12px]">
+            Simula il tuo mutuo
+          </Button>
+        </div>
       </main>
 
       {/* Footer */}
