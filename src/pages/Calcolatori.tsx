@@ -32,7 +32,7 @@ const Calcolatori = () => {
     title: "Capacità Finanziaria",
     description: "Verifica sostenibilità rata"
   }];
-  return <div className="min-h-screen flex flex-col relative overflow-hidden bg-[F1EBE2] bg-[#fff3e2]">
+  return <div className="min-h-screen flex flex-col relative overflow-hidden bg-[F1EBE2] bg-[#fff5e9]">
       {/* Header */}
       <header className="py-6 px-4 md:px-6 relative flex items-center z-10">
         {/* Logo */}
