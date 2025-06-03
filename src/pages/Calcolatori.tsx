@@ -4,11 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Calculator, TrendingUp, PieChart, Target, Home, Users, BookOpen, MessageCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
-
 const Calcolatori = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-  
   const calcolatori = [{
     icon: Calculator,
     title: "Simulatore Mutuo",
@@ -34,9 +32,7 @@ const Calcolatori = () => {
     title: "Capacità Finanziaria",
     description: "Verifica sostenibilità rata"
   }];
-
-  return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden bg-[#f1ebe2]">
+  return <div className="min-h-screen flex flex-col relative overflow-hidden bg-[F1EBE2] bg-[#fff2e6]">
       {/* Header */}
       <header className="py-6 px-4 md:px-6 relative flex items-center z-10">
         {/* Logo */}
@@ -105,8 +101,7 @@ const Calcolatori = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
 
 // Componente per le card dei calcolatori
