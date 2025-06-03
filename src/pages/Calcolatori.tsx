@@ -4,55 +4,56 @@ import { Button } from "@/components/ui/button";
 import { Calculator, TrendingUp, PieChart, Target, Home, Users, BookOpen, MessageCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
-
 const Calcolatori = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-
-  const calcolatori = [
-    {
-      icon: Calculator,
-      title: "Simulatore Mutuo",
-      description: "Calcola rata e importo finanziabile"
-    },
-    {
-      icon: TrendingUp,
-      title: "Analisi Tassi",
-      description: "Confronta tassi fissi e variabili"
-    },
-    {
-      icon: PieChart,
-      title: "Piano Ammortamento",
-      description: "Visualizza piano di rimborso"
-    },
-    {
-      icon: Target,
-      title: "Calcolo Interessi",
-      description: "Stima interessi totali"
-    },
-    {
-      icon: Home,
-      title: "Valore Immobile",
-      description: "Valuta il prezzo della casa"
-    },
-    {
-      icon: Users,
-      title: "Capacità Finanziaria",
-      description: "Verifica sostenibilità rata"
-    }
-  ];
-
-  return (
-    <div className="min-h-screen flex flex-col bg-[#f1ebe2] relative overflow-hidden">
+  const calcolatori = [{
+    icon: Calculator,
+    title: "Simulatore Mutuo",
+    description: "Calcola rata e importo finanziabile"
+  }, {
+    icon: TrendingUp,
+    title: "Analisi Tassi",
+    description: "Confronta tassi fissi e variabili"
+  }, {
+    icon: PieChart,
+    title: "Piano Ammortamento",
+    description: "Visualizza piano di rimborso"
+  }, {
+    icon: Target,
+    title: "Calcolo Interessi",
+    description: "Stima interessi totali"
+  }, {
+    icon: Home,
+    title: "Valore Immobile",
+    description: "Valuta il prezzo della casa"
+  }, {
+    icon: Users,
+    title: "Capacità Finanziaria",
+    description: "Verifica sostenibilità rata"
+  }];
+  return <div className="min-h-screen flex flex-col relative overflow-hidden bg-[F1EBE2] bg-[#fff7ec]">
       {/* Floating Bubbles */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-20 left-10 w-16 h-16 bg-[#e3fd53] rounded-full opacity-70 animate-float"></div>
-        <div className="absolute top-40 right-20 w-12 h-12 bg-[#e3fd53] rounded-full opacity-60 animate-float-rotate" style={{animationDelay: '1s'}}></div>
-        <div className="absolute top-60 left-1/4 w-20 h-20 bg-[#e3fd53] rounded-full opacity-50 animate-float" style={{animationDelay: '2s'}}></div>
-        <div className="absolute bottom-40 right-10 w-14 h-14 bg-[#e3fd53] rounded-full opacity-65 animate-float-rotate" style={{animationDelay: '0.5s'}}></div>
-        <div className="absolute bottom-20 left-20 w-18 h-18 bg-[#e3fd53] rounded-full opacity-55 animate-float" style={{animationDelay: '1.5s'}}></div>
-        <div className="absolute top-1/3 right-1/3 w-10 h-10 bg-[#e3fd53] rounded-full opacity-70 animate-float-rotate" style={{animationDelay: '3s'}}></div>
-        <div className="absolute bottom-1/3 left-1/3 w-22 h-22 bg-[#e3fd53] rounded-full opacity-45 animate-float" style={{animationDelay: '2.5s'}}></div>
+        <div className="absolute top-40 right-20 w-12 h-12 bg-[#e3fd53] rounded-full opacity-60 animate-float-rotate" style={{
+        animationDelay: '1s'
+      }}></div>
+        <div className="absolute top-60 left-1/4 w-20 h-20 bg-[#e3fd53] rounded-full opacity-50 animate-float" style={{
+        animationDelay: '2s'
+      }}></div>
+        <div className="absolute bottom-40 right-10 w-14 h-14 bg-[#e3fd53] rounded-full opacity-65 animate-float-rotate" style={{
+        animationDelay: '0.5s'
+      }}></div>
+        <div className="absolute bottom-20 left-20 w-18 h-18 bg-[#e3fd53] rounded-full opacity-55 animate-float" style={{
+        animationDelay: '1.5s'
+      }}></div>
+        <div className="absolute top-1/3 right-1/3 w-10 h-10 bg-[#e3fd53] rounded-full opacity-70 animate-float-rotate" style={{
+        animationDelay: '3s'
+      }}></div>
+        <div className="absolute bottom-1/3 left-1/3 w-22 h-22 bg-[#e3fd53] rounded-full opacity-45 animate-float" style={{
+        animationDelay: '2.5s'
+      }}></div>
       </div>
 
       {/* Header */}
@@ -122,8 +123,7 @@ const Calcolatori = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
 
 // Componente per le card dei calcolatori
