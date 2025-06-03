@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Calculator, TrendingUp, PieChart, Target, Home, Users, BookOpen, MessageCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
+
 const Calcolatori = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+  
   const calcolatori = [{
     icon: Calculator,
     title: "Simulatore Mutuo",
@@ -32,7 +34,9 @@ const Calcolatori = () => {
     title: "Capacità Finanziaria",
     description: "Verifica sostenibilità rata"
   }];
-  return <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
+
+  return (
+    <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
       {/* Header */}
       <header className="py-6 px-4 md:px-6 relative flex items-center z-10">
         {/* Logo */}
@@ -62,10 +66,10 @@ const Calcolatori = () => {
       <main className="flex-1 px-4 md:px-6 py-8 md:py-12 max-w-5xl mx-auto w-full flex flex-col justify-center relative z-10">
         {/* Hero Section */}
         <div className="text-center mb-12 md:mb-16">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6">
+          <h1 className="text-4xl md:text-6xl font-bold mb-8">
             Tutto sui <span className="relative">
               <span className="gradient-text">mutui</span>
-              <div className="absolute -bottom-1 left-0 right-0 h-3 bg-[#d3f54f] rounded-full opacity-80"></div>
+              <div className="absolute -bottom-1 left-0 right-0 h-4 bg-[#d3f54f] rounded-full opacity-80"></div>
             </span>
           </h1>
           <p className="text-lg md:text-xl text-gray-600 mb-10 max-w-3xl mx-auto leading-relaxed">
@@ -85,7 +89,16 @@ const Calcolatori = () => {
         </div>
 
         {/* Calcolatori Grid */}
-        
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+          {calcolatori.map((calc, index) => (
+            <CalcolatoreCard
+              key={index}
+              icon={calc.icon}
+              title={calc.title}
+              description={calc.description}
+            />
+          ))}
+        </div>
 
         {/* CTA Section */}
         <div className="text-center">
@@ -112,7 +125,8 @@ const Calcolatori = () => {
           </div>
         </div>
       </footer>
-    </div>;
+    </div>
+  );
 };
 
 // Componente per le card dei calcolatori
@@ -161,4 +175,5 @@ const RisorsaCard = ({
       </ul>
     </div>;
 };
+
 export default Calcolatori;
