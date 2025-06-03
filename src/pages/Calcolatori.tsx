@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
@@ -39,21 +40,21 @@ const Calcolatori = () => {
     <div className="min-h-screen flex flex-col relative overflow-hidden bg-[#f1ebe2]">
       {/* Floating Abstract Shapes */}
       <div className="absolute inset-0 pointer-events-none">
-        {/* Warm oval shapes */}
-        <div className="absolute top-20 left-10 w-24 h-16 bg-[#e8dcc6] rounded-full opacity-40 animate-float transform rotate-12"></div>
-        <div className="absolute top-40 right-20 w-20 h-12 bg-[#ddd2ba] rounded-full opacity-50 animate-float-rotate transform -rotate-45" style={{animationDelay: '1s'}}></div>
+        {/* Neon oval shapes */}
+        <div className="absolute top-20 left-10 w-24 h-16 bg-[#e3fd53] rounded-full opacity-40 animate-float transform rotate-12"></div>
+        <div className="absolute top-40 right-20 w-20 h-12 bg-[#e3fd53] rounded-full opacity-50 animate-float-rotate transform -rotate-45" style={{animationDelay: '1s'}}></div>
         
         {/* Soft rectangular shapes */}
-        <div className="absolute top-60 left-1/4 w-16 h-24 bg-[#e0d5b8] rounded-2xl opacity-35 animate-float transform rotate-45" style={{animationDelay: '2s'}}></div>
-        <div className="absolute bottom-40 right-10 w-18 h-18 bg-[#d9ceaa] rounded-xl opacity-45 animate-float-rotate transform rotate-12" style={{animationDelay: '0.5s'}}></div>
+        <div className="absolute top-60 left-1/4 w-16 h-24 bg-[#e3fd53] rounded-2xl opacity-35 animate-float transform rotate-45" style={{animationDelay: '2s'}}></div>
+        <div className="absolute bottom-40 right-10 w-18 h-18 bg-[#e3fd53] rounded-xl opacity-45 animate-float-rotate transform rotate-12" style={{animationDelay: '0.5s'}}></div>
         
         {/* Elongated pill shapes */}
-        <div className="absolute bottom-20 left-20 w-32 h-8 bg-[#e6dac3] rounded-full opacity-30 animate-float transform -rotate-12" style={{animationDelay: '1.5s'}}></div>
-        <div className="absolute top-1/3 right-1/3 w-12 h-20 bg-[#ddd2b0] rounded-full opacity-40 animate-float-rotate transform rotate-75" style={{animationDelay: '3s'}}></div>
+        <div className="absolute bottom-20 left-20 w-32 h-8 bg-[#e3fd53] rounded-full opacity-30 animate-float transform -rotate-12" style={{animationDelay: '1.5s'}}></div>
+        <div className="absolute top-1/3 right-1/3 w-12 h-20 bg-[#e3fd53] rounded-full opacity-40 animate-float-rotate transform rotate-75" style={{animationDelay: '3s'}}></div>
         
         {/* Additional subtle shapes */}
-        <div className="absolute bottom-1/3 left-1/3 w-20 h-14 bg-[#e4d8bb] rounded-3xl opacity-25 animate-float transform rotate-30" style={{animationDelay: '2.5s'}}></div>
-        <div className="absolute top-3/4 right-1/4 w-14 h-22 bg-[#e0d4b7] rounded-2xl opacity-35 animate-float-rotate transform -rotate-60" style={{animationDelay: '4s'}}></div>
+        <div className="absolute bottom-1/3 left-1/3 w-20 h-14 bg-[#e3fd53] rounded-3xl opacity-25 animate-float transform rotate-30" style={{animationDelay: '2.5s'}}></div>
+        <div className="absolute top-3/4 right-1/4 w-14 h-22 bg-[#e3fd53] rounded-2xl opacity-35 animate-float-rotate transform -rotate-60" style={{animationDelay: '4s'}}></div>
       </div>
 
       {/* Header */}
