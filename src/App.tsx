@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { FormProvider } from "./contexts/FormContext";
 import { allBlocks } from "./data/blocks"; // Aggiornato per usare la nuova struttura
 import Index from "./pages/Index";
+import Calcolatori from "./pages/Calcolatori";
 import SimulazioneAvanzata from "./pages/SimulazioneAvanzata";
 import Form from "./pages/Form";
 import FormLoading from "./pages/FormLoading";
@@ -23,6 +24,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/calcolatori" element={<Calcolatori />} />
           <Route path="/simulazione-avanzata" element={<SimulazioneAvanzata />} />
           <Route path="/simulazione-avanzata/:slug" element={<SimulazioneAvanzata />} />
           <Route path="/form-loading" element={<FormLoading />} />

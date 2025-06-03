@@ -31,8 +31,16 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
       {/* Header */}
-      <header className="container mx-auto py-6 px-4">
+      <header className="container mx-auto py-6 px-4 flex justify-between items-center">
         <Logo />
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => navigate("/calcolatori")}
+            className="text-gray-700 hover:text-[#245C4F] font-medium transition-colors"
+          >
+            Calcolatori
+          </button>
+        </div>
       </header>
 
       {/* Main content */}
