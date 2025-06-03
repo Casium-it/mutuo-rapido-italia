@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Calculator, TrendingUp, PieChart, Target, Home, Users, BookOpen, MessageCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
+
 const Calcolatori = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+  
   const calcolatori = [{
     icon: Calculator,
     title: "Simulatore Mutuo",
@@ -32,47 +34,46 @@ const Calcolatori = () => {
     title: "Capacità Finanziaria",
     description: "Verifica sostenibilità rata"
   }];
-  return <div className="min-h-screen flex flex-col relative overflow-hidden bg-[F1EBE2] bg-[#fff7ec]">
-      {/* Floating Bubbles */}
+
+  return (
+    <div className="min-h-screen flex flex-col relative overflow-hidden bg-[#f1ebe2]">
+      {/* Floating Abstract Shapes */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-20 left-10 w-16 h-16 bg-[#e3fd53] rounded-full opacity-70 animate-float"></div>
-        <div className="absolute top-40 right-20 w-12 h-12 bg-[#e3fd53] rounded-full opacity-60 animate-float-rotate" style={{
-        animationDelay: '1s'
-      }}></div>
-        <div className="absolute top-60 left-1/4 w-20 h-20 bg-[#e3fd53] rounded-full opacity-50 animate-float" style={{
-        animationDelay: '2s'
-      }}></div>
-        <div className="absolute bottom-40 right-10 w-14 h-14 bg-[#e3fd53] rounded-full opacity-65 animate-float-rotate" style={{
-        animationDelay: '0.5s'
-      }}></div>
-        <div className="absolute bottom-20 left-20 w-18 h-18 bg-[#e3fd53] rounded-full opacity-55 animate-float" style={{
-        animationDelay: '1.5s'
-      }}></div>
-        <div className="absolute top-1/3 right-1/3 w-10 h-10 bg-[#e3fd53] rounded-full opacity-70 animate-float-rotate" style={{
-        animationDelay: '3s'
-      }}></div>
-        <div className="absolute bottom-1/3 left-1/3 w-22 h-22 bg-[#e3fd53] rounded-full opacity-45 animate-float" style={{
-        animationDelay: '2.5s'
-      }}></div>
+        {/* Warm oval shapes */}
+        <div className="absolute top-20 left-10 w-24 h-16 bg-[#e8dcc6] rounded-full opacity-40 animate-float transform rotate-12"></div>
+        <div className="absolute top-40 right-20 w-20 h-12 bg-[#ddd2ba] rounded-full opacity-50 animate-float-rotate transform -rotate-45" style={{animationDelay: '1s'}}></div>
+        
+        {/* Soft rectangular shapes */}
+        <div className="absolute top-60 left-1/4 w-16 h-24 bg-[#e0d5b8] rounded-2xl opacity-35 animate-float transform rotate-45" style={{animationDelay: '2s'}}></div>
+        <div className="absolute bottom-40 right-10 w-18 h-18 bg-[#d9ceaa] rounded-xl opacity-45 animate-float-rotate transform rotate-12" style={{animationDelay: '0.5s'}}></div>
+        
+        {/* Elongated pill shapes */}
+        <div className="absolute bottom-20 left-20 w-32 h-8 bg-[#e6dac3] rounded-full opacity-30 animate-float transform -rotate-12" style={{animationDelay: '1.5s'}}></div>
+        <div className="absolute top-1/3 right-1/3 w-12 h-20 bg-[#ddd2b0] rounded-full opacity-40 animate-float-rotate transform rotate-75" style={{animationDelay: '3s'}}></div>
+        
+        {/* Additional subtle shapes */}
+        <div className="absolute bottom-1/3 left-1/3 w-20 h-14 bg-[#e4d8bb] rounded-3xl opacity-25 animate-float transform rotate-30" style={{animationDelay: '2.5s'}}></div>
+        <div className="absolute top-3/4 right-1/4 w-14 h-22 bg-[#e0d4b7] rounded-2xl opacity-35 animate-float-rotate transform -rotate-60" style={{animationDelay: '4s'}}></div>
       </div>
 
       {/* Header */}
       <header className="py-6 px-4 md:px-6 relative flex items-center z-10">
-        {/* Header content */}
+        {/* Logo */}
         <div className="cursor-pointer" onClick={() => navigate("/")}>
           <Logo />
         </div>
         
         {/* Absolutely centered navigation */}
         <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-4">
-          <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-vibe-green">
+          <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]">
             Calcolatori
           </Button>
-          <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-vibe-green">
+          <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]">
             Risorse
           </Button>
         </div>
         
+        {/* CTA Button */}
         <div className="ml-auto">
           <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-full px-6">
             Inizia Ora
@@ -123,7 +124,8 @@ const Calcolatori = () => {
           </div>
         </div>
       </footer>
-    </div>;
+    </div>
+  );
 };
 
 // Componente per le card dei calcolatori
