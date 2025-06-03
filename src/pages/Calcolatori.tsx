@@ -45,11 +45,13 @@ const Calcolatori = () => {
   return (
     <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
       {/* Header */}
-      <header className="py-6 px-4 md:px-6 flex justify-between items-center">
+      <header className="py-6 px-4 md:px-6 relative flex items-center">
         <div className="cursor-pointer" onClick={() => navigate("/")}>
           <Logo />
         </div>
-        <div className="flex items-center gap-4">
+        
+        {/* Absolutely centered navigation */}
+        <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-4">
           <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-vibe-green">
             Calcolatori
           </Button>
@@ -57,9 +59,12 @@ const Calcolatori = () => {
             Risorse
           </Button>
         </div>
-        <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-full px-6">
-          Inizia Ora
-        </Button>
+        
+        <div className="ml-auto">
+          <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-full px-6">
+            Inizia Ora
+          </Button>
+        </div>
       </header>
 
       {/* Main content */}
