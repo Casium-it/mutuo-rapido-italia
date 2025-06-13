@@ -95,7 +95,7 @@ export async function saveSimulation(
 }
 
 /**
- * Recupera una simulazione salvata usando il codice di ripresa con accesso diretto alla tabella
+ * Recupera una simulazione salvata usando il codice di ripresa con accesso sicuro
  * @param resumeCode - Codice di ripresa della simulazione
  * @returns I dati della simulazione salvata o null se non trovata
  */
@@ -120,9 +120,9 @@ export async function loadSimulation(resumeCode: string): Promise<{
       };
     }
     
-    console.log("Query diretta alla tabella saved_simulations con codice:", resumeCode.toUpperCase());
+    console.log("Query sicura alla tabella saved_simulations con codice:", resumeCode.toUpperCase());
     
-    // Use direct table access now that RLS is disabled
+    // Use secure query that RLS policies will evaluate
     const { data, error } = await supabase
       .from('saved_simulations')
       .select('*')
@@ -130,15 +130,24 @@ export async function loadSimulation(resumeCode: string): Promise<{
       .gt('expires_at', new Date().toISOString())
       .single();
 
-    console.log("Supabase direct query response - data:", data);
-    console.log("Supabase direct query response - error:", error);
+    console.log("Supabase secure query response - data:", data);
+    console.log("Supabase secure query response - error:", error);
 
     if (error) {
       if (error.code === 'PGRST116') {
         console.error("Simulazione non trovata o scaduta");
         return {
           success: false,
-          error: "Simulazione non trovata o scaduta"
+          error: "Simulazione non trovata, scaduta o accesso non autorizzato"
+        };
+      }
+      
+      // Handle potential RLS policy violations
+      if (error.message.includes('row-level security') || error.message.includes('policy')) {
+        console.error("Accesso negato dalle politiche di sicurezza:", error);
+        return {
+          success: false,
+          error: "Accesso negato. Assicurati di utilizzare il codice corretto."
         };
       }
       
