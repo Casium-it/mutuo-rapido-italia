@@ -39,7 +39,6 @@ function App() {
             <Route path="/form-completed" element={<FormCompleted />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/simulazioni" element={<Simulazioni />} />
-            <Route path="/calcolatori" element={<Home />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
