@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -137,6 +136,16 @@ export default {
 					'0%, 100%': { filter: 'brightness(1)' },
 					'50%': { filter: 'brightness(1.2)' },
 				},
+				'fade-in-delayed': {
+					"0%": {
+					  opacity: "0",
+					  transform: "translateY(10px)"
+					},
+					"100%": {
+					  opacity: "1",
+					  transform: "translateY(0)"
+					}
+				},
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
@@ -146,6 +155,7 @@ export default {
 				'pulse-light': 'pulse-light 2s ease-in-out infinite',
 				'float-rotate': 'float-rotate 8s ease-in-out infinite',
 				'glow': 'glow 2s ease-in-out infinite',
+				'fade-in-delayed': 'fade-in-delayed 0.5s ease-out 3s both',
 			}
 		}
 	},

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Calculator, TrendingUp, PieChart, Target, Home, Users, BookOpen, MessageCircle, Star, Check, Shield, Globe, Heart, Award } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
+
 const Calcolatori = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
@@ -127,10 +128,10 @@ const Calcolatori = () => {
               <img src="/lovable-uploads/3fc7bd9a-e8ce-4850-b0a8-a704f2af6b9d.png" alt="Coppia felice che usa il laptop per simulare il mutuo" className="w-full max-w-md lg:max-w-lg rounded-2xl shadow-lg" />
               
               {/* Success notification popup */}
-              <div className="absolute bottom-4 left-4 right-4 bg-[#245C4F]/90 backdrop-blur-sm rounded-lg p-4 text-white shadow-lg animate-fade-in">
-                <div className="flex items-center gap-3">
+              <div className="absolute bottom-4 right-4 bg-[#245C4F]/90 backdrop-blur-sm rounded-lg p-3 text-white shadow-lg animate-[fade-in_0.5s_ease-out_3s_both] opacity-0">
+                <div className="flex items-center gap-2">
                   <div className="bg-green-500 rounded-full p-1">
-                    <Check className="w-4 h-4 text-white" />
+                    <Check className="w-3 h-3 text-white" />
                   </div>
                   <div>
                     <p className="text-sm font-semibold">Mutuo accettato!</p>
