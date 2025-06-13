@@ -4,11 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Calculator, TrendingUp, PieChart, Target, Home, Users, BookOpen, MessageCircle, Star, Check, Shield, Globe, Heart, Award } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
-
 const Calcolatori = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-  
   const calcolatori = [{
     icon: Calculator,
     title: "Simulatore Mutuo",
@@ -34,32 +32,23 @@ const Calcolatori = () => {
     title: "Capacità Finanziaria",
     description: "Verifica sostenibilità rata"
   }];
-
-  const benefits = [
-    {
-      title: "Il miglior Mutuo",
-      description: "Confrontiamo e parliamo con più di 100 banche senza che devi andare in filiale"
-    },
-    {
-      title: "Trasparenza",
-      description: "La trasparenza è al primo posto, niente termini incomprensibili"
-    },
-    {
-      title: "Esperti su tutta Italia",
-      description: "Rete di 90+ mediatori partner esperti su tutta italia, pronti ad aiutarti"
-    },
-    {
-      title: "Mutuo per tutti",
-      description: "Mutuo difficile? Partita Iva? Segnalazioni? Ci pensiamo noi a te siamo esperti in questo"
-    }
-  ];
-  
+  const benefits = [{
+    title: "Il miglior Mutuo",
+    description: "Confrontiamo e parliamo con più di 100 banche senza che devi andare in filiale"
+  }, {
+    title: "Trasparenza",
+    description: "La trasparenza è al primo posto, niente termini incomprensibili"
+  }, {
+    title: "Esperti su tutta Italia",
+    description: "Rete di 90+ mediatori partner esperti su tutta italia, pronti ad aiutarti"
+  }, {
+    title: "Mutuo per tutti",
+    description: "Mutuo difficile? Partita Iva? Segnalazioni? Ci pensiamo noi a te siamo esperti in questo"
+  }];
   const handleWhatsAppContact = () => {
     window.open('https://wa.me/393518681491', '_blank');
   };
-  
-  return (
-    <div className="min-h-screen flex flex-col bg-[#fff7f0]">
+  return <div className="min-h-screen flex flex-col bg-[#fff7f0]">
       {/* Header */}
       <header className="py-6 px-4 md:px-6 relative flex items-center z-10">
         {/* Logo */}
@@ -97,9 +86,7 @@ const Calcolatori = () => {
                 <div className="absolute -bottom-1 left-0 right-0 h-4 bg-[#d3f54f] rounded-full opacity-80"></div>
               </span>
             </h1>
-            <p className="text-gray-600 mb-4 max-w-3xl mx-auto lg:mx-0 leading-relaxed text-lg md:text-lg">Noi siamo dalla tua parte, non da quella delle banche!
-Ti garantiamo tutta la trasparenza che ti meriti.
-GoMutuo è il partner che ti segue dall'inizio alla fine.</p>
+            <p className="text-gray-600 mb-4 max-w-3xl mx-auto lg:mx-0 leading-relaxed text-lg md:text-lg">Noi siamo dalla tua parte, non da quella delle banche! GoMutuo è il partner che ti segue dall'inizio alla fine.</p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start items-center mb-6">
               <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-8 py-4 text-lg rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all relative overflow-hidden group" onClick={() => navigate("/simulazioni")}>
@@ -126,11 +113,9 @@ GoMutuo è il partner che ti segue dall'inizio alla fine.</p>
             {/* Rating */}
             <div className="flex items-center justify-center lg:justify-start gap-2">
               <div className="flex items-center">
-                {[1, 2, 3, 4, 5].map(star => (
-                  <Star key={star} className={`w-5 h-5 ${star <= 4 ? 'fill-yellow-400 text-yellow-400' : star === 5 ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} style={star === 5 ? {
-                    clipPath: 'polygon(0 0, 80% 0, 80% 100%, 0 100%)'
-                  } : {}} />
-                ))}
+                {[1, 2, 3, 4, 5].map(star => <Star key={star} className={`w-5 h-5 ${star <= 4 ? 'fill-yellow-400 text-yellow-400' : star === 5 ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} style={star === 5 ? {
+                clipPath: 'polygon(0 0, 80% 0, 80% 100%, 0 100%)'
+              } : {}} />)}
               </div>
               <span className="text-gray-600 font-medium">4.8/5 - 872 recensioni</span>
             </div>
@@ -160,13 +145,7 @@ GoMutuo è il partner che ti segue dall'inizio alla fine.</p>
         {/* Benefits Section */}
         <div className="mb-16 bg-gradient-to-b from-[#f8f5f1] to-[#f0ede8] rounded-2xl py-12 px-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {benefits.map((benefit, index) => (
-              <BenefitCard
-                key={index}
-                title={benefit.title}
-                description={benefit.description}
-              />
-            ))}
+            {benefits.map((benefit, index) => <BenefitCard key={index} title={benefit.title} description={benefit.description} />)}
           </div>
         </div>
 
@@ -190,8 +169,7 @@ GoMutuo è il partner che ti segue dall'inizio alla fine.</p>
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
 
 // Componente per le card dei benefici
@@ -199,17 +177,17 @@ interface BenefitCardProps {
   title: string;
   description: string;
 }
-
-const BenefitCard = ({ title, description }: BenefitCardProps) => {
-  return (
-    <div className="text-center p-4">
+const BenefitCard = ({
+  title,
+  description
+}: BenefitCardProps) => {
+  return <div className="text-center p-4">
       <div className="bg-[#245C4F] rounded-full p-2 w-8 h-8 mx-auto mb-4 flex items-center justify-center">
         <Check className="w-4 h-4 text-white font-bold stroke-[3]" />
       </div>
       <h3 className="text-lg font-bold font-['Inter'] text-gray-900 mb-2">{title}</h3>
       <p className="text-sm text-gray-600 leading-relaxed">{description}</p>
-    </div>
-  );
+    </div>;
 };
 
 // Componente per le card dei calcolatori
