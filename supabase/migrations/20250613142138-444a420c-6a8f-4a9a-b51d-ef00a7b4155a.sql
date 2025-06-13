@@ -12,7 +12,6 @@ GRANT EXECUTE ON FUNCTION public.get_saved_simulation_by_resume_code(TEXT) TO an
 
 -- Also ensure the function can access the tables it needs
 GRANT SELECT ON public.saved_simulations TO postgres;
-GRANT INSERT ON public.security_logs TO postgres;
 
 -- Verify the SELECT policy is properly restrictive (should block direct access)
 DROP POLICY IF EXISTS "Secure access to saved simulations by resume code" ON public.saved_simulations;
@@ -21,6 +20,3 @@ CREATE POLICY "Secure access to saved simulations by resume code"
   ON public.saved_simulations 
   FOR SELECT 
   USING (false);
-
--- Ensure the security logs table allows the security definer function to insert
-ALTER TABLE public.security_logs DISABLE ROW LEVEL SECURITY;

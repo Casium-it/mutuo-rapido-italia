@@ -143,30 +143,6 @@ export type Database = {
         }
         Relationships: []
       }
-      security_logs: {
-        Row: {
-          created_at: string
-          details: Json | null
-          event_type: string
-          id: string
-          ip_address: unknown | null
-        }
-        Insert: {
-          created_at?: string
-          details?: Json | null
-          event_type: string
-          id?: string
-          ip_address?: unknown | null
-        }
-        Update: {
-          created_at?: string
-          details?: Json | null
-          event_type?: string
-          id?: string
-          ip_address?: unknown | null
-        }
-        Relationships: []
-      }
       simulations: {
         Row: {
           answers: Json
