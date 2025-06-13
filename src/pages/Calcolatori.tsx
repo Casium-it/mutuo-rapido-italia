@@ -67,7 +67,7 @@ const Calcolatori = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center mb-12 md:mb-16">
           {/* Left side - Text content */}
           <div className="text-center lg:text-left">
-            <h1 className="text-4xl md:text-6xl font-bold mb-8">
+            <h1 className="text-4xl md:text-5xl font-bold mb-8">
               Cerchi un <span className="relative">
                 <span className="gradient-text">mutuo?</span>
                 <div className="absolute -bottom-1 left-0 right-0 h-4 bg-[#d3f54f] rounded-full opacity-80"></div>
