@@ -95,7 +95,7 @@ export async function saveSimulation(
 }
 
 /**
- * Recupera una simulazione salvata usando il codice di ripresa tramite la funzione sicura
+ * Recupera una simulazione salvata usando il codice di ripresa con accesso diretto alla tabella
  * @param resumeCode - Codice di ripresa della simulazione
  * @returns I dati della simulazione salvata o null se non trovata
  */
@@ -120,18 +120,28 @@ export async function loadSimulation(resumeCode: string): Promise<{
       };
     }
     
-    console.log("Chiamata a get_saved_simulation_by_resume_code con codice:", resumeCode.toUpperCase());
+    console.log("Query diretta alla tabella saved_simulations con codice:", resumeCode.toUpperCase());
     
-    // Use the secure database function instead of direct table access
+    // Use direct table access now that RLS is disabled
     const { data, error } = await supabase
-      .rpc('get_saved_simulation_by_resume_code', {
-        p_resume_code: resumeCode.toUpperCase()
-      });
+      .from('saved_simulations')
+      .select('*')
+      .eq('resume_code', resumeCode.toUpperCase())
+      .gt('expires_at', new Date().toISOString())
+      .single();
 
-    console.log("Supabase RPC response - data:", data);
-    console.log("Supabase RPC response - error:", error);
+    console.log("Supabase direct query response - data:", data);
+    console.log("Supabase direct query response - error:", error);
 
     if (error) {
+      if (error.code === 'PGRST116') {
+        console.error("Simulazione non trovata o scaduta");
+        return {
+          success: false,
+          error: "Simulazione non trovata o scaduta"
+        };
+      }
+      
       console.error("Errore nel caricamento della simulazione:", error);
       return {
         success: false,
@@ -139,20 +149,18 @@ export async function loadSimulation(resumeCode: string): Promise<{
       };
     }
 
-    // Check if any data was returned
-    if (!data || data.length === 0) {
-      console.error("Nessun dato restituito dalla funzione RPC");
+    if (!data) {
+      console.error("Nessun dato restituito dalla query");
       return {
         success: false,
-        error: "Simulazione non trovata, scaduta o troppi tentativi. Riprova tra qualche minuto."
+        error: "Simulazione non trovata o scaduta"
       };
     }
 
-    const simulationData = data[0];
-    console.log("Dati simulazione trovati:", simulationData);
+    console.log("Dati simulazione trovati:", data);
     
     // Type assertion per il form_state che sappiamo essere compatibile con FormState
-    const savedFormState = simulationData.form_state as any;
+    const savedFormState = data.form_state as any;
     
     // Riconverte Array in Set per answeredQuestions
     const formState: FormState = {
@@ -165,11 +173,11 @@ export async function loadSimulation(resumeCode: string): Promise<{
       success: true,
       data: {
         formState,
-        formType: simulationData.form_type,
+        formType: data.form_type,
         contactInfo: {
-          name: simulationData.name,
-          phone: simulationData.phone,
-          email: simulationData.email
+          name: data.name,
+          phone: data.phone,
+          email: data.email
         }
       }
     };

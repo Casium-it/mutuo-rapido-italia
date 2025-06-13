@@ -179,21 +179,6 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
-      get_saved_simulation_by_resume_code: {
-        Args: { p_resume_code: string }
-        Returns: {
-          id: string
-          resume_code: string
-          name: string
-          phone: string
-          email: string
-          form_state: Json
-          form_type: string
-          expires_at: string
-          created_at: string
-          updated_at: string
-        }[]
-      }
     }
     Enums: {
       [_ in never]: never
