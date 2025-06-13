@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Calculator, TrendingUp, PieChart, Target, Home, Users, BookOpen, MessageCircle, Star } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
-
 const Calcolatori = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
@@ -74,9 +73,7 @@ const Calcolatori = () => {
                 <div className="absolute -bottom-1 left-0 right-0 h-4 bg-[#d3f54f] rounded-full opacity-80"></div>
               </span>
             </h1>
-            <p className="text-lg md:text-xl text-gray-600 mb-4 max-w-3xl mx-auto lg:mx-0 leading-relaxed">
-              Simula, confronta e richiedi il tuo mutuo direttamente online, facile e veloce.
-            </p>
+            <p className="text-lg md:text-xl text-gray-600 mb-4 max-w-3xl mx-auto lg:mx-0 leading-relaxed">Ti aiutiamo a trovare il mutuo perfetto per la tua situazione e ti aiutiamo lungo tutto i processo.</p>
             
             {/* Rating */}
             <div className="flex items-center justify-center lg:justify-start gap-2 mb-10">
@@ -101,11 +98,7 @@ const Calcolatori = () => {
 
           {/* Right side - Image */}
           <div className="flex justify-center lg:justify-end">
-            <img 
-              src="/lovable-uploads/3fc7bd9a-e8ce-4850-b0a8-a704f2af6b9d.png"
-              alt="Coppia felice che usa il laptop per simulare il mutuo"
-              className="w-full max-w-md lg:max-w-lg rounded-2xl shadow-lg"
-            />
+            <img src="/lovable-uploads/3fc7bd9a-e8ce-4850-b0a8-a704f2af6b9d.png" alt="Coppia felice che usa il laptop per simulare il mutuo" className="w-full max-w-md lg:max-w-lg rounded-2xl shadow-lg" />
           </div>
         </div>
 
