@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Calculator, TrendingUp, PieChart, Target, Home, Users, BookOpen, MessageCircle, Star, Check } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
-
 const Calcolatori = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
@@ -74,7 +73,8 @@ const Calcolatori = () => {
                 <div className="absolute -bottom-1 left-0 right-0 h-4 bg-[#d3f54f] rounded-full opacity-80"></div>
               </span>
             </h1>
-            <p className="text-lg md:text-xl text-gray-600 mb-4 max-w-3xl mx-auto lg:mx-0 leading-relaxed">Facciamo i tuoi interessi, non quelli delle banche.</p>
+            <p className="text-gray-600 mb-4 max-w-3xl mx-auto lg:mx-0 leading-relaxed md:text-xl text-lg">Noi siamo dalla tua parte, non da quella delle banche!
+Ti garantiamo tutta la trasparenza che ti meriti</p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start items-center mb-6">
               <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-8 py-4 text-lg rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all relative overflow-hidden group" onClick={() => navigate("/simulazioni")}>
