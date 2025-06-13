@@ -4,12 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Calculator, TrendingUp, PieChart, Target, Home, Users, BookOpen, MessageCircle, Star, Check, Shield, Globe, Heart, Award } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
+import { useHomePageTimeTracking } from "@/hooks/useHomePageTimeTracking";
+import { trackSimulationStart, trackContactAttempt, trackCTAClick } from "@/utils/analytics";
 
 const HomePage = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const [currentNotification, setCurrentNotification] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
+  
+  // Initialize home page time tracking
+  const { trackNavigation } = useHomePageTimeTracking();
   
   const notifications = [
     {
@@ -107,10 +112,16 @@ const HomePage = () => {
   }];
   
   const handleWhatsAppContact = () => {
+    trackNavigation(); // Track time before navigation
+    trackContactAttempt('whatsapp');
+    trackCTAClick('Parla con noi', 'hero_section');
     window.open('https://wa.me/393518681491', '_blank');
   };
 
   const handleSimulationClick = () => {
+    trackNavigation(); // Track time before navigation
+    trackSimulationStart('home_page');
+    trackCTAClick('Simula il tuo mutuo', 'hero_section');
     navigate("/simulazioni");
   };
 
