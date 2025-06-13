@@ -46,7 +46,7 @@ export function ExitConfirmationDialog({
           <div className="flex flex-col-reverse sm:flex-row gap-2 w-full">
             <AlertDialogCancel 
               onClick={onClose}
-              className="flex-1 sm:flex-none"
+              className="flex-1 sm:flex-none border-[#245C4F] text-[#245C4F] hover:bg-[#245C4F] hover:text-white"
             >
               Continua simulazione
             </AlertDialogCancel>
