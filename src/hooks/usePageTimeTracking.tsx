@@ -45,13 +45,17 @@ export const usePageTimeTracking = (options: TimeTrackingOptions) => {
         if (currentVisibleTime >= milestone * 1000 && !milestonesReached.current.has(milestone)) {
           milestonesReached.current.add(milestone);
           
-          // Send GA4 event with react-ga4
-          console.log(`📊 Sending engagement milestone: ${milestone}s on ${pageName}`);
-          ReactGA.event('engagement_milestone', {
-            page_name: pageName,
-            milestone_seconds: milestone,
-            total_time_seconds: Math.floor(currentVisibleTime / 1000)
-          });
+          try {
+            console.log(`📊 Triggering engagement milestone: ${milestone}s on ${pageName}`);
+            ReactGA.event('engagement_milestone', {
+              page_name: pageName,
+              milestone_seconds: milestone,
+              total_time_seconds: Math.floor(currentVisibleTime / 1000)
+            });
+            console.log(`📊 Engagement milestone event sent successfully: ${milestone}s`);
+          } catch (error) {
+            console.error('📊 Error sending engagement milestone event:', error);
+          }
         }
       });
     };
@@ -73,13 +77,17 @@ export const usePageTimeTracking = (options: TimeTrackingOptions) => {
         if (scrollPercentage >= percentage && !scrollDepthsReached.current.has(percentage)) {
           scrollDepthsReached.current.add(percentage);
           
-          // Send GA4 event with react-ga4
-          console.log(`📊 Sending scroll depth: ${label} on ${pageName}`);
-          ReactGA.event('scroll_depth', {
-            page_name: pageName,
-            scroll_percentage: percentage,
-            scroll_label: label
-          });
+          try {
+            console.log(`📊 Triggering scroll depth: ${label} on ${pageName}`);
+            ReactGA.event('scroll_depth', {
+              page_name: pageName,
+              scroll_percentage: percentage,
+              scroll_label: label
+            });
+            console.log(`📊 Scroll depth event sent successfully: ${label}`);
+          } catch (error) {
+            console.error('📊 Error sending scroll depth event:', error);
+          }
         }
       });
     };
@@ -115,14 +123,18 @@ export const usePageTimeTracking = (options: TimeTrackingOptions) => {
     const handleBeforeUnload = () => {
       const totalTime = getCurrentVisibleTime();
       
-      // Send final time tracking event with react-ga4
-      console.log(`📊 Sending page exit time: ${Math.floor(totalTime / 1000)}s on ${pageName}`);
-      ReactGA.event('page_exit_time', {
-        page_name: pageName,
-        total_time_seconds: Math.floor(totalTime / 1000),
-        milestones_reached: Array.from(milestonesReached.current),
-        scroll_depths_reached: Array.from(scrollDepthsReached.current)
-      });
+      try {
+        console.log(`📊 Triggering page exit time: ${Math.floor(totalTime / 1000)}s on ${pageName}`);
+        ReactGA.event('page_exit_time', {
+          page_name: pageName,
+          total_time_seconds: Math.floor(totalTime / 1000),
+          milestones_reached: Array.from(milestonesReached.current),
+          scroll_depths_reached: Array.from(scrollDepthsReached.current)
+        });
+        console.log(`📊 Page exit time event sent successfully`);
+      } catch (error) {
+        console.error('📊 Error sending page exit time event:', error);
+      }
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
