@@ -2,11 +2,7 @@ import ReactGA from 'react-ga4';
 
 // Initialize GA4 with react-ga4
 export const initializeGA = () => {
-  ReactGA.initialize('G-NCEGV2W1YP', {
-    gtagOptions: {
-      debug_mode: process.env.NODE_ENV === 'development',
-    }
-  });
+  ReactGA.initialize('G-NCEGV2W1YP');
   
   console.log('📊 GA4 initialized with tracking ID: G-NCEGV2W1YP');
   
