@@ -5,12 +5,16 @@ import { Calculator, TrendingUp, PieChart, Target, Home, Users, BookOpen, Messag
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
 import { trackEvent } from "@/utils/analytics";
+import { usePageEngagement } from "@/hooks/usePageEngagement";
 
 const HomePage = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const [currentNotification, setCurrentNotification] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
+  
+  // Initialize page engagement tracking
+  usePageEngagement();
   
   const notifications = [
     {
