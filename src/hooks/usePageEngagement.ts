@@ -11,10 +11,13 @@ export const usePageEngagement = () => {
   const totalVisibleTimeRef = useRef<number>(0);
   const lastVisibilityChangeRef = useRef<number>(Date.now());
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastScrollTimeRef = useRef<number>(0);
+  const isInitializedRef = useRef<boolean>(false);
 
   // Engagement milestones in seconds
   const MILESTONES = [10, 30, 60, 120, 300]; // 10s, 30s, 1min, 2min, 5min
   const SCROLL_DEPTHS = [25, 50, 75, 100]; // percentage thresholds
+  const SCROLL_THROTTLE_MS = 100; // Throttle scroll events to every 100ms
 
   const updateVisibleTime = () => {
     if (isVisible) {
@@ -47,8 +50,20 @@ export const usePageEngagement = () => {
   };
 
   const handleScroll = () => {
+    const now = Date.now();
+    
+    // Throttle scroll events to prevent spam
+    if (now - lastScrollTimeRef.current < SCROLL_THROTTLE_MS) {
+      return;
+    }
+    
+    lastScrollTimeRef.current = now;
+    
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
     const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    
+    if (docHeight <= 0) return; // Prevent division by zero
+    
     const scrollPercent = Math.round((scrollTop / docHeight) * 100);
 
     SCROLL_DEPTHS.forEach(depth => {
@@ -79,18 +94,26 @@ export const usePageEngagement = () => {
   const handlePageExit = () => {
     updateVisibleTime();
     const totalTime = Math.round(totalVisibleTimeRef.current);
+    console.log(`🚪 Final page exit tracking: ${totalTime}s`);
     trackPageExit(totalTime);
   };
 
   useEffect(() => {
-    console.log('🚀 Page engagement tracking started');
+    // Prevent multiple initializations
+    if (isInitializedRef.current) {
+      console.log('⚠️ usePageEngagement already initialized, skipping');
+      return;
+    }
     
-    // Set up milestone checking interval
+    console.log('🚀 Page engagement tracking started');
+    isInitializedRef.current = true;
+    
+    // Set up milestone checking interval (only once)
     intervalRef.current = setInterval(checkMilestones, 1000);
 
-    // Add event listeners
+    // Add event listeners (only once)
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('beforeunload', handlePageExit);
     window.addEventListener('unload', handlePageExit);
 
@@ -106,14 +129,18 @@ export const usePageEngagement = () => {
       // Cleanup
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
       
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('beforeunload', handlePageExit);
       window.removeEventListener('unload', handlePageExit);
+      
+      isInitializedRef.current = false;
+      console.log('✅ Cleanup completed');
     };
-  }, [isVisible]);
+  }, []); // Empty dependency array - run only once on mount
 
   return {
     isVisible,
