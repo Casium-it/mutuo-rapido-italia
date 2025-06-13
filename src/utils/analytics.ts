@@ -2,7 +2,7 @@
 import ReactGA from 'react-ga4';
 
 // Initialize GA4 - you'll need to set your GA4 measurement ID
-const GA_MEASUREMENT_ID = process.env.REACT_APP_GA_MEASUREMENT_ID || 'G-XXXXXXXXXX';
+const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID || 'G-XXXXXXXXXX';
 
 export const initializeGA = () => {
   if (GA_MEASUREMENT_ID && GA_MEASUREMENT_ID !== 'G-XXXXXXXXXX') {
