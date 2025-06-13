@@ -4,7 +4,7 @@ import { useFormExtended } from './useFormExtended';
 import { trackFormReply } from '@/utils/analytics';
 
 export function useFormTracking() {
-  const { updateResponse } = useFormExtended();
+  const { updateQuestionResponse } = useFormExtended();
 
   const updateResponseWithTracking = useCallback((
     questionId: string,
@@ -13,11 +13,11 @@ export function useFormTracking() {
     blockId?: string
   ) => {
     // Call original update function
-    updateResponse(questionId, value);
+    updateQuestionResponse(questionId, value);
     
     // Track the form reply
     trackFormReply(questionId, blockId || 'unknown', value, questionText);
-  }, [updateResponse]);
+  }, [updateQuestionResponse]);
 
   return {
     updateResponseWithTracking
