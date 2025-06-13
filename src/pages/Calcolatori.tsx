@@ -1,11 +1,9 @@
-
 import React from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Calculator, TrendingUp, PieChart, Target, Home, Users, BookOpen, MessageCircle, Star, Check, Shield, Globe, Heart, Award } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
-
 const Calcolatori = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
@@ -59,16 +57,14 @@ const Calcolatori = () => {
         </div>
         
         {/* Desktop only navigation - centered */}
-        {!isMobile && (
-          <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-4">
+        {!isMobile && <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-4">
             <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]" onClick={() => navigate("/simulazioni")}>
               Simulazioni
             </Button>
             <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]" onClick={handleWhatsAppContact}>
               Contattaci
             </Button>
-          </div>
-        )}
+          </div>}
         
         {/* CTA Button */}
         <div>
@@ -90,7 +86,7 @@ const Calcolatori = () => {
                 <div className="absolute -bottom-1 left-0 right-0 h-2 md:h-4 bg-[#d3f54f] rounded-full opacity-80 animate-[expand-line_1.2s_ease-out_0.8s_both] scale-x-0 origin-left"></div>
               </span>
             </h1>
-            <p className="text-gray-600 mb-4 max-w-3xl mx-auto lg:mx-0 leading-relaxed text-lg md:text-lg animate-[fade-in_0.6s_ease-out_0.6s_both] opacity-0">Noi siamo dalla tua parte, non da quella delle banche! GoMutuo è il partner che ti segue dall'inizio alla fine.</p>
+            <p className="text-gray-600 mb-4 max-w-3xl mx-auto lg:mx-0 leading-relaxed text-lg md:text-lg animate-[fade-in_0.6s_ease-out_0.6s_both] opacity-0 py-[5px]">Noi siamo dalla tua parte, non da quella delle banche! GoMutuo è il partner che ti segue dall'inizio alla fine.</p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start items-center mb-6 animate-[fade-in_0.6s_ease-out_0.9s_both] opacity-0">
               <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-8 py-4 text-lg rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all relative overflow-hidden group" onClick={() => navigate("/simulazioni")}>
@@ -163,7 +159,7 @@ const Calcolatori = () => {
       {/* Footer */}
       <footer className="py-6 px-4 border-t border-[#BEB8AE] relative z-10 animate-[fade-in_0.6s_ease-out_2.1s_both] opacity-0">
         <div className="max-w-5xl mx-auto flex justify-between items-center">
-          <p className="text-sm text-gray-600">© 2025 GoMutuo.it - Tutti i diritti riservati - FILIPPO GIACOMETTI - Viale dei Mille 142, Firenze, 50131, Italia - P.IVA: 07438860483</p>
+          <p className="text-sm text-gray-600">© 2025 GoMutuo.it - Tutti i diritti riservati</p>
           <div className="flex gap-4">
             <button onClick={() => navigate("/privacy")} className="text-sm text-gray-600 hover:text-[#245C4F]">
               Privacy
