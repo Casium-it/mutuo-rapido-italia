@@ -14,7 +14,7 @@ import ResumeSimulation from "./pages/ResumeSimulation";
 import NotFound from "./pages/NotFound";
 import Privacy from "./pages/Privacy";
 import Simulazioni from "./pages/Simulazioni";
-import Calcolatori from "./pages/Calcolatori";
+import Home from "./pages/Home";
 
 const queryClient = new QueryClient();
 
@@ -26,7 +26,7 @@ function App() {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<SimulazioneAvanzata />} />
+            <Route path="/" element={<Home />} />
             <Route path="/simulazione-avanzata" element={<SimulazioneAvanzata />} />
             <Route path="/simulazione-avanzata/:slug" element={<SimulazioneAvanzata />} />
             <Route path="/riprendi-simulazione" element={<ResumeSimulation />} />
@@ -39,7 +39,7 @@ function App() {
             <Route path="/form-completed" element={<FormCompleted />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/simulazioni" element={<Simulazioni />} />
-            <Route path="/calcolatori" element={<Calcolatori />} />
+            <Route path="/calcolatori" element={<Home />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

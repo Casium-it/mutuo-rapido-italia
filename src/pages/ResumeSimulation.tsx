@@ -119,7 +119,7 @@ export default function ResumeSimulation() {
           </p>
           <Button 
             variant="outline"
-            onClick={() => navigate("/simulazione-avanzata")}
+            onClick={() => navigate("/")}
             className="border-[#245C4F] text-[#245C4F] hover:bg-[#245C4F] hover:text-white"
           >
             Inizia una nuova simulazione
