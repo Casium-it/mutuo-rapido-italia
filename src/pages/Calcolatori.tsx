@@ -1,15 +1,12 @@
-
 import React from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Calculator, TrendingUp, PieChart, Target, Home, Users, BookOpen, MessageCircle, Star } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
-
 const Calcolatori = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-  
   const calcolatori = [{
     icon: Calculator,
     title: "Simulatore Mutuo",
@@ -35,13 +32,10 @@ const Calcolatori = () => {
     title: "Capacità Finanziaria",
     description: "Verifica sostenibilità rata"
   }];
-
   const handleWhatsAppContact = () => {
     window.open('https://wa.me/393518681491', '_blank');
   };
-
-  return (
-    <div className="min-h-screen flex flex-col bg-[#fff7f0]">
+  return <div className="min-h-screen flex flex-col bg-[#fff7f0]">
       {/* Header */}
       <header className="py-6 px-4 md:px-6 relative flex items-center z-10">
         {/* Logo */}
@@ -84,13 +78,9 @@ const Calcolatori = () => {
           {/* Rating */}
           <div className="flex items-center justify-center gap-2 mb-10">
             <div className="flex items-center">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star 
-                  key={star} 
-                  className={`w-5 h-5 ${star <= 4 ? 'fill-yellow-400 text-yellow-400' : star === 5 ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
-                  style={star === 5 ? { clipPath: 'polygon(0 0, 80% 0, 80% 100%, 0 100%)' } : {}}
-                />
-              ))}
+              {[1, 2, 3, 4, 5].map(star => <Star key={star} className={`w-5 h-5 ${star <= 4 ? 'fill-yellow-400 text-yellow-400' : star === 5 ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} style={star === 5 ? {
+              clipPath: 'polygon(0 0, 80% 0, 80% 100%, 0 100%)'
+            } : {}} />)}
             </div>
             <span className="text-gray-600 font-medium">4.8/5 - 872 recensioni</span>
           </div>
@@ -107,16 +97,7 @@ const Calcolatori = () => {
         </div>
 
         {/* Calcolatori Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
-          {calcolatori.map((calc, index) => (
-            <CalcolatoreCard 
-              key={index} 
-              icon={calc.icon} 
-              title={calc.title} 
-              description={calc.description} 
-            />
-          ))}
-        </div>
+        
 
         {/* CTA Section */}
         
@@ -127,10 +108,7 @@ const Calcolatori = () => {
         <div className="max-w-5xl mx-auto flex justify-between items-center">
           <p className="text-sm text-gray-600">© 2025 GoMutuo.it - Tutti i diritti riservati</p>
           <div className="flex gap-4">
-            <button 
-              onClick={() => navigate("/privacy")}
-              className="text-sm text-gray-600 hover:text-[#245C4F]"
-            >
+            <button onClick={() => navigate("/privacy")} className="text-sm text-gray-600 hover:text-[#245C4F]">
               Privacy
             </button>
             <a href="#" className="text-sm text-gray-600 hover:text-[#245C4F]">Termini</a>
@@ -138,8 +116,7 @@ const Calcolatori = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
 
 // Componente per le card dei calcolatori
@@ -148,21 +125,18 @@ interface CalcolatoreCardProps {
   title: string;
   description: string;
 }
-
 const CalcolatoreCard = ({
   icon: Icon,
   title,
   description
 }: CalcolatoreCardProps) => {
-  return (
-    <div className="bg-white rounded-lg border border-[#BEB8AE] p-6 hover:shadow-lg transition-all">
+  return <div className="bg-white rounded-lg border border-[#BEB8AE] p-6 hover:shadow-lg transition-all">
       <div className="bg-[#F8F4EF] rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
         <Icon className="w-8 h-8 text-[#245C4F]" />
       </div>
       <h3 className="text-xl font-semibold font-['Inter'] text-gray-900 mb-2 text-center">{title}</h3>
       <p className="text-gray-600 text-center">{description}</p>
-    </div>
-  );
+    </div>;
 };
 
 // Componente per le card delle risorse
@@ -172,27 +146,21 @@ interface RisorsaCardProps {
   description: string;
   items: string[];
 }
-
 const RisorsaCard = ({
   icon: Icon,
   title,
   description,
   items
 }: RisorsaCardProps) => {
-  return (
-    <div className="text-center">
+  return <div className="text-center">
       <div className="bg-[#F8F4EF] rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
         <Icon className="w-8 h-8 text-[#245C4F]" />
       </div>
       <h3 className="text-xl font-semibold font-['Inter'] text-gray-900 mb-2">{title}</h3>
       <p className="text-gray-600 mb-4">{description}</p>
       <ul className="space-y-2">
-        {items.map((item, index) => (
-          <li key={index} className="text-sm text-gray-500 font-['Inter']">• {item}</li>
-        ))}
+        {items.map((item, index) => <li key={index} className="text-sm text-gray-500 font-['Inter']">• {item}</li>)}
       </ul>
-    </div>
-  );
+    </div>;
 };
-
 export default Calcolatori;
