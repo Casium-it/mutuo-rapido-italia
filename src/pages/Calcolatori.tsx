@@ -58,7 +58,7 @@ const Calcolatori = () => {
         {/* CTA Button */}
         <div className="ml-auto">
           <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-full px-6">
-            Inizia Ora
+            Simulazione
           </Button>
         </div>
       </header>

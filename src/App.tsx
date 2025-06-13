@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { FormProvider } from "./contexts/FormContext";
 import { allBlocks } from "./data/blocks"; // Aggiornato per usare la nuova struttura
-import Index from "./pages/Index";
 import Calcolatori from "./pages/Calcolatori";
 import Privacy from "./pages/Privacy";
 import SimulazioneAvanzata from "./pages/SimulazioneAvanzata";
@@ -24,8 +23,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/calcolatori" element={<Calcolatori />} />
+          <Route path="/" element={<Calcolatori />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/simulazione-avanzata" element={<SimulazioneAvanzata />} />
           <Route path="/simulazione-avanzata/:slug" element={<SimulazioneAvanzata />} />
