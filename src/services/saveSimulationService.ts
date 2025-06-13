@@ -110,11 +110,14 @@ export async function loadSimulation(resumeCode: string): Promise<{
       };
     }
 
+    // Type assertion per il form_state che sappiamo essere compatibile con FormState
+    const savedFormState = data.form_state as any;
+    
     // Riconverte Array in Set per answeredQuestions
-    const formState = {
-      ...data.form_state,
-      answeredQuestions: new Set(data.form_state.answeredQuestions || [])
-    } as FormState;
+    const formState: FormState = {
+      ...savedFormState,
+      answeredQuestions: new Set(savedFormState.answeredQuestions || [])
+    };
 
     console.log("Simulazione caricata con successo");
     return {
