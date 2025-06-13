@@ -28,6 +28,8 @@ export async function saveSimulation(
 ): Promise<SaveSimulationResult> {
   try {
     console.log("Inizio salvataggio simulazione...");
+    console.log("Form type:", formType);
+    console.log("Contact data:", contactData);
     
     // Prepara lo stato del form per il salvataggio
     const formStateToSave = {
@@ -36,9 +38,13 @@ export async function saveSimulation(
       answeredQuestions: Array.from(formState.answeredQuestions || [])
     };
     
+    console.log("Form state prepared for saving:", formStateToSave);
+    
     // Calcola la data di scadenza (30 giorni da ora)
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
+    
+    console.log("Expires at:", expiresAt.toISOString());
     
     // Inserisci i dati nella tabella saved_simulations
     const { data, error } = await supabase
@@ -54,13 +60,23 @@ export async function saveSimulation(
       .select('resume_code')
       .single();
 
+    console.log("Supabase response - data:", data);
+    console.log("Supabase response - error:", error);
+
     if (error) {
       console.error("Errore nel salvataggio della simulazione:", error);
-      throw error;
+      return { 
+        success: false, 
+        error: `Errore durante il salvataggio: ${error.message}` 
+      };
     }
 
     if (!data?.resume_code) {
-      throw new Error("Codice di ripresa non generato");
+      console.error("Codice di ripresa non generato");
+      return { 
+        success: false, 
+        error: "Codice di ripresa non generato dal database" 
+      };
     }
 
     console.log("Simulazione salvata con successo, codice:", data.resume_code);
@@ -97,11 +113,14 @@ export async function loadSimulation(resumeCode: string): Promise<{
     
     // Validate resume code format on client side first
     if (!resumeCode || !/^[A-Z0-9]{8}$/.test(resumeCode.toUpperCase())) {
+      console.error("Formato del codice di ripresa non valido:", resumeCode);
       return {
         success: false,
         error: "Formato del codice di ripresa non valido. Deve essere di 8 caratteri alfanumerici."
       };
     }
+    
+    console.log("Chiamata a get_saved_simulation_by_resume_code con codice:", resumeCode.toUpperCase());
     
     // Use the secure database function instead of direct table access
     const { data, error } = await supabase
@@ -109,16 +128,20 @@ export async function loadSimulation(resumeCode: string): Promise<{
         p_resume_code: resumeCode.toUpperCase()
       });
 
+    console.log("Supabase RPC response - data:", data);
+    console.log("Supabase RPC response - error:", error);
+
     if (error) {
       console.error("Errore nel caricamento della simulazione:", error);
       return {
         success: false,
-        error: "Errore durante il caricamento della simulazione"
+        error: `Errore durante il caricamento: ${error.message}`
       };
     }
 
     // Check if any data was returned
     if (!data || data.length === 0) {
+      console.error("Nessun dato restituito dalla funzione RPC");
       return {
         success: false,
         error: "Simulazione non trovata, scaduta o troppi tentativi. Riprova tra qualche minuto."
@@ -126,6 +149,7 @@ export async function loadSimulation(resumeCode: string): Promise<{
     }
 
     const simulationData = data[0];
+    console.log("Dati simulazione trovati:", simulationData);
     
     // Type assertion per il form_state che sappiamo essere compatibile con FormState
     const savedFormState = simulationData.form_state as any;
