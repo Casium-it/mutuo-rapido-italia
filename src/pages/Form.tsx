@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { BlockSidebar } from "@/components/form/BlockSidebar";
 import { QuestionView } from "@/components/form/QuestionView";
@@ -11,6 +11,9 @@ import { Menu } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { CompleteFormButton } from "@/components/form/CompleteFormButton";
+import { SaveSimulationDialog } from "@/components/form/SaveSimulationDialog";
+import { saveSimulation, SaveSimulationData } from "@/services/saveSimulationService";
+import { toast } from "sonner";
 
 export default function Form() {
   const {
@@ -24,6 +27,8 @@ export default function Form() {
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Trova il blocco attivo corrente
   const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
@@ -36,20 +41,36 @@ export default function Form() {
     blockId => state.completedBlocks?.includes(blockId)
   );
 
-  // Gestisci il salvataggio e l'uscita
-  const handleSaveAndExit = () => {
-    // Lo stato è già salvato in localStorage grazie al FormContext
-    navigate("/");
+  // Gestisci il salvataggio della simulazione
+  const handleSaveSimulation = async (contactData: SaveSimulationData) => {
+    setIsSaving(true);
+    
+    try {
+      const formType = params.blockType || "unknown";
+      const result = await saveSimulation(state, contactData, formType);
+      
+      setIsSaving(false);
+      return result;
+    } catch (error) {
+      setIsSaving(false);
+      console.error('Errore nel salvataggio:', error);
+      return { 
+        success: false, 
+        error: "Errore imprevisto durante il salvataggio" 
+      };
+    }
   };
 
-  // Gestisci il test per la professione
-  const handleTestProfessione = () => {
-    // Naviga al blocco "la_tua_professione" e alla sua prima domanda
-    const professioneBlock = blocks.find(block => block.block_id === "la_tua_professione");
-    if (professioneBlock && professioneBlock.questions.length > 0) {
-      const firstQuestionId = professioneBlock.questions[0].question_id;
-      goToQuestion("la_tua_professione", firstQuestionId);
-    }
+  // Gestisci il salvataggio e l'uscita
+  const handleSaveAndExit = () => {
+    setShowSaveDialog(true);
+  };
+
+  // Gestisci la chiusura del dialog di salvataggio
+  const handleCloseSaveDialog = () => {
+    setShowSaveDialog(false);
+    // Naviga alla home page dopo aver chiuso il dialog
+    navigate("/");
   };
 
   // Assicuriamoci che il componente si ri-renderizzi quando cambia l'URL
@@ -129,5 +150,13 @@ export default function Form() {
           </div>
         </div>
       </div>
+
+      {/* Save Simulation Dialog */}
+      <SaveSimulationDialog 
+        open={showSaveDialog}
+        onClose={handleCloseSaveDialog}
+        onSave={handleSaveSimulation}
+        isLoading={isSaving}
+      />
     </div>;
 }

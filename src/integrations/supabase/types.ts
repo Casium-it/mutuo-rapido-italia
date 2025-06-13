@@ -104,6 +104,45 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_simulations: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+          form_state: Json
+          form_type: string
+          id: string
+          name: string
+          phone: string
+          resume_code: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at?: string
+          form_state: Json
+          form_type: string
+          id?: string
+          name: string
+          phone: string
+          resume_code?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+          form_state?: Json
+          form_type?: string
+          id?: string
+          name?: string
+          phone?: string
+          resume_code?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       simulations: {
         Row: {
           answers: Json
@@ -136,7 +175,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_resume_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

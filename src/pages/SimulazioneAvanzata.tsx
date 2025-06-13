@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, LightbulbIcon, Search, Home, Check, Badge } from "lucide-react";
+import { ArrowRight, LightbulbIcon, Search, Home, Check, Badge, RotateCcw } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge as UIBadge } from "@/components/ui/badge";
 import { useNavigate, useParams } from "react-router-dom";
@@ -135,6 +135,15 @@ const SimulazioneAvanzata = () => {
         <p className="text-base text-gray-600 mb-10 text-center font-semibold">Da dove partiamo?</p>
         
         <div className="space-y-4">
+          {/* Resume simulation option */}
+          <OptionCard
+            icon={RotateCcw}
+            title="Riprendi una simulazione"
+            description="Hai un codice per continuare da dove hai lasciato?"
+            href="/riprendi-simulazione"
+            onClick={() => navigate("/riprendi-simulazione")}
+          />
+          
           <OptionCard
             icon={LightbulbIcon}
             title="Mi sto guardando intorno"
