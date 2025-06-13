@@ -49,8 +49,8 @@ export type Database = {
       }
       form_submissions: {
         Row: {
-          completed_at: string
           consulting: boolean | null
+          created_at: string
           expires_at: string
           form_type: string
           id: string
@@ -59,9 +59,9 @@ export type Database = {
           user_identifier: string | null
         }
         Insert: {
-          completed_at?: string
           consulting?: boolean | null
-          expires_at?: string
+          created_at?: string
+          expires_at: string
           form_type: string
           id?: string
           metadata?: Json | null
@@ -69,8 +69,8 @@ export type Database = {
           user_identifier?: string | null
         }
         Update: {
-          completed_at?: string
           consulting?: boolean | null
+          created_at?: string
           expires_at?: string
           form_type?: string
           id?: string
@@ -82,69 +82,61 @@ export type Database = {
       }
       leads: {
         Row: {
-          created_at: string | null
+          created_at: string
           id: string
-          name: string
-          phone: string
+          name: string | null
+          phone: string | null
           slug: string
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           id?: string
-          name: string
-          phone: string
+          name?: string | null
+          phone?: string | null
           slug: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           id?: string
-          name?: string
-          phone?: string
+          name?: string | null
+          phone?: string | null
           slug?: string
         }
         Relationships: []
       }
       simulations: {
         Row: {
-          answers: Json | null
+          answers: Json
           completed_at: string | null
+          created_at: string
           id: string
-          slug: string | null
+          slug: string
           submitted_at: string | null
         }
         Insert: {
-          answers?: Json | null
+          answers: Json
           completed_at?: string | null
+          created_at?: string
           id?: string
-          slug?: string | null
+          slug: string
           submitted_at?: string | null
         }
         Update: {
-          answers?: Json | null
+          answers?: Json
           completed_at?: string | null
+          created_at?: string
           id?: string
-          slug?: string | null
+          slug?: string
           submitted_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "simulations_slug_fkey"
-            columns: ["slug"]
-            isOneToOne: false
-            referencedRelation: "leads"
-            referencedColumns: ["slug"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      check_slug_header: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
