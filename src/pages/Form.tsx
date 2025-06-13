@@ -12,6 +12,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { CompleteFormButton } from "@/components/form/CompleteFormButton";
 import { SaveSimulationDialog } from "@/components/form/SaveSimulationDialog";
+import { ExitConfirmationDialog } from "@/components/form/ExitConfirmationDialog";
 import { saveSimulation, SaveSimulationData } from "@/services/saveSimulationService";
 import { toast } from "sonner";
 
@@ -28,6 +29,7 @@ export default function Form() {
   const location = useLocation();
   const isMobile = useIsMobile();
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showExitDialog, setShowExitDialog] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   // Trova il blocco attivo corrente
@@ -40,6 +42,23 @@ export default function Form() {
   const areAllBlocksCompleted = state.activeBlocks?.every(
     blockId => state.completedBlocks?.includes(blockId)
   );
+
+  // Handle logo click with confirmation
+  const handleLogoClick = () => {
+    setShowExitDialog(true);
+  };
+
+  // Handle confirmed exit without saving
+  const handleConfirmExit = () => {
+    setShowExitDialog(false);
+    navigate("/");
+  };
+
+  // Handle exit with save option
+  const handleExitWithSave = () => {
+    setShowExitDialog(false);
+    setShowSaveDialog(true);
+  };
 
   // Gestisci il salvataggio della simulazione
   const handleSaveSimulation = async (contactData: SaveSimulationData) => {
@@ -83,9 +102,7 @@ export default function Form() {
       {/* Header */}
       <header className="py-3 px-4 md:px-6 flex justify-between items-center bg-white border-b border-gray-200">
         <div className="flex items-center">
-          <Link to="/">
-            <Logo />
-          </Link>
+          <Logo onClick={handleLogoClick} />
         </div>
         <div className="flex items-center gap-4">
           <Button variant="outline" size="sm" className="text-gray-700 border-gray-300 hover:bg-gray-100 text-sm" onClick={handleSaveAndExit}>
@@ -150,6 +167,15 @@ export default function Form() {
           </div>
         </div>
       </div>
+
+      {/* Exit Confirmation Dialog */}
+      <ExitConfirmationDialog
+        open={showExitDialog}
+        onClose={() => setShowExitDialog(false)}
+        onConfirmExit={handleConfirmExit}
+        onSaveAndExit={handleExitWithSave}
+        progress={progress}
+      />
 
       {/* Save Simulation Dialog */}
       <SaveSimulationDialog 
