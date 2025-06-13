@@ -1,7 +1,6 @@
-
 import React, { useEffect, useState } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
-import { TrackedFormQuestion } from "./TrackedFormQuestion";
+import { FormQuestion } from "./FormQuestion";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, AlertCircle } from "lucide-react";
@@ -208,7 +207,7 @@ export function QuestionView() {
         </div>
       ) : (
         <div className="space-y-4">
-          <TrackedFormQuestion question={activeQuestion} />
+          <FormQuestion question={activeQuestion} />
         </div>
       )}
     </div>

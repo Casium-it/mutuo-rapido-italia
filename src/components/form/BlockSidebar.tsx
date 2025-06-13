@@ -1,4 +1,3 @@
-
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { cn } from "@/lib/utils";
 import { useParams, Link } from "react-router-dom";
@@ -10,7 +9,6 @@ import { SaveSimulationDialog } from "./SaveSimulationDialog";
 import { useNavigate } from "react-router-dom";
 import { saveSimulation, SaveSimulationData } from "@/services/saveSimulationService";
 import { toast } from "sonner";
-import { trackBackNavigation, trackFormExit } from "@/utils/analytics";
 
 export function BlockSidebar() {
   const {
@@ -52,22 +50,11 @@ export function BlockSidebar() {
   const handleBackClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    // Track back navigation
-    trackBackNavigation(
-      state.activeQuestion.question_id,
-      state.activeQuestion.block_id,
-      'sidebar_back_button'
-    );
-    
     setShowExitDialog(true);
   };
 
   // Handle confirmed exit without saving
   const handleConfirmExit = () => {
-    // Track exit without saving
-    trackFormExit('not_saved', state.activeQuestion.question_id, progress);
-    
     setShowExitDialog(false);
     navigate("/");
   };
@@ -87,12 +74,6 @@ export function BlockSidebar() {
       const result = await saveSimulation(state, contactData, formType);
       
       setIsSaving(false);
-      
-      if (result.success) {
-        // Track successful save and exit
-        trackFormExit('saved', state.activeQuestion.question_id, progress);
-      }
-      
       return result;
     } catch (error) {
       setIsSaving(false);
@@ -106,11 +87,6 @@ export function BlockSidebar() {
 
   // Handle close save dialog
   const handleCloseSaveDialog = (shouldNavigate: boolean = false) => {
-    if (!shouldNavigate) {
-      // Track cancelled exit
-      trackFormExit('cancel_exit', state.activeQuestion.question_id, progress);
-    }
-    
     setShowSaveDialog(false);
     if (shouldNavigate) {
       navigate("/");

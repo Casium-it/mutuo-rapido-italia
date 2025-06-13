@@ -8,7 +8,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { allBlocks } from "@/data/blocks";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { trackFormStart, trackPageView } from "@/utils/analytics";
 
 const SimulazioneAvanzata = () => {
   const isMobile = useIsMobile();
@@ -16,14 +15,6 @@ const SimulazioneAvanzata = () => {
   const { slug } = useParams();
   const [leadInfo, setLeadInfo] = useState<{ name: string; phone: string } | null>(null);
   const [loading, setLoading] = useState(false);
-  
-  // Track page view
-  useEffect(() => {
-    trackPageView('simulazione_avanzata', { 
-      has_slug: !!slug,
-      user_type: leadInfo ? 'returning' : 'new'
-    });
-  }, [slug, leadInfo]);
   
   // Effetto per controllare e gestire lo slug
   useEffect(() => {
@@ -90,9 +81,6 @@ const SimulazioneAvanzata = () => {
     // Rimuoviamo qualsiasi dato salvato in localStorage per i vari tipi di form
     const pathSegments = path.split('/');
     const formType = pathSegments[pathSegments.length - 3]; // Estrai il tipo (pensando, cercando, offerta, ecc.)
-    
-    // Track form start event
-    trackFormStart(path, formType);
     
     // Rimuovi tutti i dati salvati dal localStorage per questo tipo di form
     localStorage.removeItem(`form-state-${formType}`);

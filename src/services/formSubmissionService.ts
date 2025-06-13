@@ -1,6 +1,6 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { FormResponse, FormState } from "@/types/form";
-import { trackFormSubmit } from "@/utils/analytics";
 
 type SubmissionResult = {
   success: boolean;
@@ -30,12 +30,6 @@ export async function submitFormToSupabase(
     
     // Determina il tipo di form dall'URL
     const formType = window.location.pathname.includes("mutuo") ? "mutuo" : "simulazione";
-    
-    // Calculate total questions answered
-    const totalQuestions = Object.keys(state.responses).length;
-    
-    // Track form submission
-    trackFormSubmit(formType, totalQuestions, state.completedBlocks || []);
     
     // Calculate expiry time (48 hours from now)
     const expiresAt = new Date();
