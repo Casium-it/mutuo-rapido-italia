@@ -68,6 +68,14 @@ export function SaveSimulationDialog({ open, onClose, onSave, isLoading = false 
     onClose();
   };
 
+  // Handle successful save and close - this will trigger navigation in parent
+  const handleSuccessfulClose = () => {
+    setStep('form');
+    setResumeCode('');
+    form.reset();
+    onClose(); // This will now trigger navigation in the parent component
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px]">
@@ -177,7 +185,7 @@ export function SaveSimulationDialog({ open, onClose, onSave, isLoading = false 
             </div>
 
             <Button 
-              onClick={handleClose}
+              onClick={handleSuccessfulClose}
               className="w-full bg-[#245C4F] hover:bg-[#1e4f44] mt-6"
             >
               Chiudi

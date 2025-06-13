@@ -43,8 +43,12 @@ export default function Form() {
     blockId => state.completedBlocks?.includes(blockId)
   );
 
-  // Handle logo click with confirmation
-  const handleLogoClick = () => {
+  // Handle logo click with confirmation - prevent default navigation
+  const handleLogoClick = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setShowExitDialog(true);
   };
 
@@ -85,11 +89,18 @@ export default function Form() {
     setShowSaveDialog(true);
   };
 
-  // Gestisci la chiusura del dialog di salvataggio
-  const handleCloseSaveDialog = () => {
+  // Gestisci la chiusura del dialog di salvataggio - FIXED: only navigate on successful save
+  const handleCloseSaveDialog = (shouldNavigate: boolean = false) => {
     setShowSaveDialog(false);
-    // Naviga alla home page dopo aver chiuso il dialog
-    navigate("/");
+    // Only navigate to home page if shouldNavigate is true (successful save)
+    if (shouldNavigate) {
+      navigate("/");
+    }
+  };
+
+  // Handle successful save and exit
+  const handleSaveSuccess = () => {
+    handleCloseSaveDialog(true); // Navigate to home on successful save
   };
 
   // Assicuriamoci che il componente si ri-renderizzi quando cambia l'URL
@@ -180,7 +191,7 @@ export default function Form() {
       {/* Save Simulation Dialog */}
       <SaveSimulationDialog 
         open={showSaveDialog}
-        onClose={handleCloseSaveDialog}
+        onClose={() => handleCloseSaveDialog(false)} // Don't navigate on cancel/close
         onSave={handleSaveSimulation}
         isLoading={isSaving}
       />
