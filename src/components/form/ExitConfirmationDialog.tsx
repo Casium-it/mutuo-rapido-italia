@@ -29,36 +29,43 @@ export function ExitConfirmationDialog({
 }: ExitConfirmationDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onClose}>
-      <AlertDialogContent className="sm:max-w-[425px]">
+      <AlertDialogContent className="sm:max-w-[500px] mx-4">
         <AlertDialogHeader>
           <AlertDialogTitle className="text-xl font-semibold text-gray-900">
-            Vuoi davvero uscire?
+            Vuoi davvero uscire dalla simulazione?
           </AlertDialogTitle>
-          <AlertDialogDescription className="text-gray-600">
-            Hai completato il <span className="font-semibold text-[#245C4F]">{progress}%</span> della simulazione.
-            Se esci senza salvare, perderai tutti i progressi fatti.
+          <AlertDialogDescription className="text-gray-600 leading-relaxed">
+            Hai completato il <span className="font-semibold text-[#245C4F]">{progress}%</span> della tua simulazione mutuo.
+            <br />
+            <span className="text-sm mt-2 block">
+              Se esci senza salvare, tutti i dati inseriti fino ad ora andranno perduti e dovrai ricominciare da capo.
+            </span>
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter className="flex flex-col sm:flex-row gap-2">
-          <AlertDialogCancel 
-            onClick={onClose}
-            className="order-3 sm:order-1"
-          >
-            Continua simulazione
-          </AlertDialogCancel>
-          <Button
-            variant="outline"
-            onClick={onSaveAndExit}
-            className="order-1 sm:order-2 border-[#245C4F] text-[#245C4F] hover:bg-[#245C4F] hover:text-white"
-          >
-            Salva ed esci
-          </Button>
-          <AlertDialogAction
-            onClick={onConfirmExit}
-            className="order-2 sm:order-3 bg-red-600 hover:bg-red-700"
-          >
-            Esci senza salvare
-          </AlertDialogAction>
+        <AlertDialogFooter className="flex flex-col gap-3 sm:gap-2">
+          <div className="flex flex-col-reverse sm:flex-row gap-2 w-full">
+            <AlertDialogCancel 
+              onClick={onClose}
+              className="flex-1 sm:flex-none"
+            >
+              Continua simulazione
+            </AlertDialogCancel>
+            <div className="flex flex-col sm:flex-row gap-2 flex-1">
+              <Button
+                variant="outline"
+                onClick={onSaveAndExit}
+                className="flex-1 border-[#245C4F] text-[#245C4F] hover:bg-[#245C4F] hover:text-white"
+              >
+                Salva ed esci
+              </Button>
+              <AlertDialogAction
+                onClick={onConfirmExit}
+                className="flex-1 bg-red-600 hover:bg-red-700"
+              >
+                Esci senza salvare
+              </AlertDialogAction>
+            </div>
+          </div>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
