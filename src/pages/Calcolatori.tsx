@@ -37,22 +37,18 @@ const Calcolatori = () => {
 
   const benefits = [
     {
-      icon: Award,
       title: "Il miglior Mutuo",
       description: "Confrontiamo e parliamo con più di 100 banche senza che devi andare in filiale"
     },
     {
-      icon: Shield,
-      title: "Trasparenza al 1° posto",
-      description: "La trasparenza è al primo posto, niente termini incomprensibili, comunicazione semplice"
+      title: "Trasparenza",
+      description: "La trasparenza è al primo posto, niente termini incomprensibili"
     },
     {
-      icon: Globe,
       title: "Esperti su tutta Italia",
       description: "Rete di 90+ mediatori partner esperti su tutta italia, pronti ad aiutarti"
     },
     {
-      icon: Heart,
       title: "Mutuo per tutti",
       description: "Mutuo difficile? Partita Iva? Segnalazioni? Ci pensiamo noi a te siamo esperti in questo"
     }
@@ -147,12 +143,11 @@ GoMutuo è il partner che ti segue dall'inizio alla fine.</p>
         </div>
 
         {/* Benefits Section */}
-        <div className="mb-16">
+        <div className="mb-16 bg-gradient-to-b from-[#f8f5f1] to-[#f0ede8] rounded-2xl py-12 px-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {benefits.map((benefit, index) => (
               <BenefitCard
                 key={index}
-                icon={benefit.icon}
                 title={benefit.title}
                 description={benefit.description}
               />
@@ -186,16 +181,15 @@ GoMutuo è il partner che ti segue dall'inizio alla fine.</p>
 
 // Componente per le card dei benefici
 interface BenefitCardProps {
-  icon: React.ElementType;
   title: string;
   description: string;
 }
 
-const BenefitCard = ({ icon: Icon, title, description }: BenefitCardProps) => {
+const BenefitCard = ({ title, description }: BenefitCardProps) => {
   return (
     <div className="text-center p-4">
-      <div className="bg-[#F8F4EF] rounded-full p-3 w-12 h-12 mx-auto mb-4 flex items-center justify-center">
-        <Icon className="w-6 h-6 text-[#245C4F]" />
+      <div className="bg-[#245C4F] rounded-full p-3 w-12 h-12 mx-auto mb-4 flex items-center justify-center">
+        <Check className="w-6 h-6 text-white" />
       </div>
       <h3 className="text-lg font-bold font-['Inter'] text-gray-900 mb-2">{title}</h3>
       <p className="text-sm text-gray-600 leading-relaxed">{description}</p>
