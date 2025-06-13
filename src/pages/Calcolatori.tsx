@@ -51,7 +51,7 @@ const Calcolatori = () => {
         
         {/* Absolutely centered navigation */}
         <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-4">
-          <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]" onClick={() => navigate("/simulazione-avanzata")}>
+          <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]" onClick={() => navigate("/simulazioni")}>
             Simulazioni
           </Button>
           <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]" onClick={handleWhatsAppContact}>
@@ -61,7 +61,7 @@ const Calcolatori = () => {
         
         {/* CTA Button */}
         <div className="ml-auto">
-          <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-full px-6" onClick={() => navigate("/simulazione-avanzata")}>
+          <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-full px-6" onClick={() => navigate("/simulazioni")}>
             Simulazione
           </Button>
         </div>
@@ -83,7 +83,7 @@ const Calcolatori = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-8 py-4 text-lg rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all relative overflow-hidden group" onClick={() => navigate("/simulazione-avanzata")}>
+            <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-8 py-4 text-lg rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all relative overflow-hidden group" onClick={() => navigate("/simulazioni")}>
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
               Simula il tuo mutuo
             </Button>

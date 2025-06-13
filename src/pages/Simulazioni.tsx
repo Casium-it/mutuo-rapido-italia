@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Logo } from "@/components/Logo";
 import { PathOption } from "@/components/PathOption";
@@ -6,7 +5,7 @@ import { Clock, Percent, Building2, Calculator, Check } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
 
-const Index = () => {
+const Simulazioni = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
 
@@ -32,13 +31,15 @@ const Index = () => {
     <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
       {/* Header */}
       <header className="container mx-auto py-6 px-4 flex justify-between items-center">
-        <Logo />
+        <div className="cursor-pointer" onClick={() => navigate("/")}>
+          <Logo />
+        </div>
         <div className="flex items-center gap-4">
           <button 
-            onClick={() => navigate("/calcolatori")}
+            onClick={() => navigate("/")}
             className="text-gray-700 hover:text-[#245C4F] font-medium transition-colors"
           >
-            Calcolatori
+            Home
           </button>
         </div>
       </header>
@@ -113,4 +114,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default Simulazioni;
