@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Calculator, TrendingUp, PieChart, Target, Home, Users, BookOpen, MessageCircle, Star } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
+
 const Calcolatori = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
@@ -64,35 +65,47 @@ const Calcolatori = () => {
       {/* Main content */}
       <main className="flex-1 px-4 md:px-6 py-8 md:py-12 max-w-5xl mx-auto w-full flex flex-col justify-center relative z-10">
         {/* Hero Section */}
-        <div className="text-center mb-12 md:mb-16">
-          <h1 className="text-4xl md:text-6xl font-bold mb-8">
-            Tutto sui <span className="relative">
-              <span className="gradient-text">mutui</span>
-              <div className="absolute -bottom-1 left-0 right-0 h-4 bg-[#d3f54f] rounded-full opacity-80"></div>
-            </span>
-          </h1>
-          <p className="text-lg md:text-xl text-gray-600 mb-4 max-w-3xl mx-auto leading-relaxed">
-            Simula, confronta e richiedi il tuo mutuo direttamente online, facile e veloce.
-          </p>
-          
-          {/* Rating */}
-          <div className="flex items-center justify-center gap-2 mb-10">
-            <div className="flex items-center">
-              {[1, 2, 3, 4, 5].map(star => <Star key={star} className={`w-5 h-5 ${star <= 4 ? 'fill-yellow-400 text-yellow-400' : star === 5 ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} style={star === 5 ? {
-              clipPath: 'polygon(0 0, 80% 0, 80% 100%, 0 100%)'
-            } : {}} />)}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center mb-12 md:mb-16">
+          {/* Left side - Text content */}
+          <div className="text-center lg:text-left">
+            <h1 className="text-4xl md:text-6xl font-bold mb-8">
+              Tutto sui <span className="relative">
+                <span className="gradient-text">mutui</span>
+                <div className="absolute -bottom-1 left-0 right-0 h-4 bg-[#d3f54f] rounded-full opacity-80"></div>
+              </span>
+            </h1>
+            <p className="text-lg md:text-xl text-gray-600 mb-4 max-w-3xl mx-auto lg:mx-0 leading-relaxed">
+              Simula, confronta e richiedi il tuo mutuo direttamente online, facile e veloce.
+            </p>
+            
+            {/* Rating */}
+            <div className="flex items-center justify-center lg:justify-start gap-2 mb-10">
+              <div className="flex items-center">
+                {[1, 2, 3, 4, 5].map(star => <Star key={star} className={`w-5 h-5 ${star <= 4 ? 'fill-yellow-400 text-yellow-400' : star === 5 ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} style={star === 5 ? {
+                clipPath: 'polygon(0 0, 80% 0, 80% 100%, 0 100%)'
+              } : {}} />)}
+              </div>
+              <span className="text-gray-600 font-medium">4.8/5 - 872 recensioni</span>
             </div>
-            <span className="text-gray-600 font-medium">4.8/5 - 872 recensioni</span>
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start items-center">
+              <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-8 py-4 text-lg rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all relative overflow-hidden group" onClick={() => navigate("/simulazioni")}>
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                Simula il tuo mutuo
+              </Button>
+              <Button variant="ghost" className="text-[#245C4F] hover:bg-[#F8F4EF] px-8 py-4 text-lg rounded-[12px] border border-[#245C4F] hover:border-[#1e4f44] transition-all backdrop-blur-sm" onClick={handleWhatsAppContact}>
+                Parla con noi
+              </Button>
+            </div>
           </div>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-8 py-4 text-lg rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all relative overflow-hidden group" onClick={() => navigate("/simulazioni")}>
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-              Simula il tuo mutuo
-            </Button>
-            <Button variant="ghost" className="text-[#245C4F] hover:bg-[#F8F4EF] px-8 py-4 text-lg rounded-[12px] border border-[#245C4F] hover:border-[#1e4f44] transition-all backdrop-blur-sm" onClick={handleWhatsAppContact}>
-              Parla con noi
-            </Button>
+
+          {/* Right side - Image */}
+          <div className="flex justify-center lg:justify-end">
+            <img 
+              src="/lovable-uploads/3fc7bd9a-e8ce-4850-b0a8-a704f2af6b9d.png"
+              alt="Coppia felice che usa il laptop per simulare il mutuo"
+              className="w-full max-w-md lg:max-w-lg rounded-2xl shadow-lg"
+            />
           </div>
         </div>
 
