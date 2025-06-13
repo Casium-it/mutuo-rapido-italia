@@ -2,7 +2,7 @@
 import React from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
-import { Calculator, TrendingUp, PieChart, Target, Home, Users, BookOpen, MessageCircle } from "lucide-react";
+import { Calculator, TrendingUp, PieChart, Target, Home, Users, BookOpen, MessageCircle, Star } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
 
@@ -77,10 +77,23 @@ const Calcolatori = () => {
               <div className="absolute -bottom-1 left-0 right-0 h-4 bg-[#d3f54f] rounded-full opacity-80"></div>
             </span>
           </h1>
-          <p className="text-lg md:text-xl text-gray-600 mb-10 max-w-3xl mx-auto leading-relaxed">
-            Calcolatori, guide, consigli e una community di giovani<br />
-            che condividono esperienze, senza termini complicati.
+          <p className="text-lg md:text-xl text-gray-600 mb-4 max-w-3xl mx-auto leading-relaxed">
+            Simula, confronta e richiedi il tuo mutuo direttamente online, facile e veloce.
           </p>
+          
+          {/* Rating */}
+          <div className="flex items-center justify-center gap-2 mb-10">
+            <div className="flex items-center">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star 
+                  key={star} 
+                  className={`w-5 h-5 ${star <= 4 ? 'fill-yellow-400 text-yellow-400' : star === 5 ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                  style={star === 5 ? { clipPath: 'polygon(0 0, 80% 0, 80% 100%, 0 100%)' } : {}}
+                />
+              ))}
+            </div>
+            <span className="text-gray-600 font-medium">4.8/5 - 872 recensioni</span>
+          </div>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-8 py-4 text-lg rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all relative overflow-hidden group" onClick={() => navigate("/simulazioni")}>
