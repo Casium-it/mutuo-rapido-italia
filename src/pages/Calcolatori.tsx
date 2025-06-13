@@ -1,12 +1,14 @@
 import React from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
-import { Calculator, TrendingUp, PieChart, Target, Home, Users, BookOpen, MessageCircle, Star, Check } from "lucide-react";
+import { Calculator, TrendingUp, PieChart, Target, Home, Users, BookOpen, MessageCircle, Star, Check, Shield, Globe, Heart, Award } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
+
 const Calcolatori = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+  
   const calcolatori = [{
     icon: Calculator,
     title: "Simulatore Mutuo",
@@ -32,10 +34,36 @@ const Calcolatori = () => {
     title: "Capacità Finanziaria",
     description: "Verifica sostenibilità rata"
   }];
+
+  const benefits = [
+    {
+      icon: Award,
+      title: "Il miglior Mutuo",
+      description: "Confrontiamo e parliamo con più di 100 banche senza che devi andare in filiale"
+    },
+    {
+      icon: Shield,
+      title: "Trasparenza al 1° posto",
+      description: "La trasparenza è al primo posto, niente termini incomprensibili, comunicazione semplice"
+    },
+    {
+      icon: Globe,
+      title: "Esperti su tutta Italia",
+      description: "Rete di 90+ mediatori partner esperti su tutta italia, pronti ad aiutarti"
+    },
+    {
+      icon: Heart,
+      title: "Mutuo per tutti",
+      description: "Mutuo difficile? Partita Iva? Segnalazioni? Ci pensiamo noi a te siamo esperti in questo"
+    }
+  ];
+  
   const handleWhatsAppContact = () => {
     window.open('https://wa.me/393518681491', '_blank');
   };
-  return <div className="min-h-screen flex flex-col bg-[#fff7f0]">
+  
+  return (
+    <div className="min-h-screen flex flex-col bg-[#fff7f0]">
       {/* Header */}
       <header className="py-6 px-4 md:px-6 relative flex items-center z-10">
         {/* Logo */}
@@ -102,9 +130,11 @@ GoMutuo è il partner che ti segue dall'inizio alla fine.</p>
             {/* Rating */}
             <div className="flex items-center justify-center lg:justify-start gap-2">
               <div className="flex items-center">
-                {[1, 2, 3, 4, 5].map(star => <Star key={star} className={`w-5 h-5 ${star <= 4 ? 'fill-yellow-400 text-yellow-400' : star === 5 ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} style={star === 5 ? {
-                clipPath: 'polygon(0 0, 80% 0, 80% 100%, 0 100%)'
-              } : {}} />)}
+                {[1, 2, 3, 4, 5].map(star => (
+                  <Star key={star} className={`w-5 h-5 ${star <= 4 ? 'fill-yellow-400 text-yellow-400' : star === 5 ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} style={star === 5 ? {
+                    clipPath: 'polygon(0 0, 80% 0, 80% 100%, 0 100%)'
+                  } : {}} />
+                ))}
               </div>
               <span className="text-gray-600 font-medium">4.8/5 - 872 recensioni</span>
             </div>
@@ -113,6 +143,20 @@ GoMutuo è il partner che ti segue dall'inizio alla fine.</p>
           {/* Right side - Image */}
           <div className="flex justify-center lg:justify-end">
             <img src="/lovable-uploads/3fc7bd9a-e8ce-4850-b0a8-a704f2af6b9d.png" alt="Coppia felice che usa il laptop per simulare il mutuo" className="w-full max-w-md lg:max-w-lg rounded-2xl shadow-lg" />
+          </div>
+        </div>
+
+        {/* Benefits Section */}
+        <div className="mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {benefits.map((benefit, index) => (
+              <BenefitCard
+                key={index}
+                icon={benefit.icon}
+                title={benefit.title}
+                description={benefit.description}
+              />
+            ))}
           </div>
         </div>
 
@@ -136,7 +180,27 @@ GoMutuo è il partner che ti segue dall'inizio alla fine.</p>
           </div>
         </div>
       </footer>
-    </div>;
+    </div>
+  );
+};
+
+// Componente per le card dei benefici
+interface BenefitCardProps {
+  icon: React.ElementType;
+  title: string;
+  description: string;
+}
+
+const BenefitCard = ({ icon: Icon, title, description }: BenefitCardProps) => {
+  return (
+    <div className="text-center p-4">
+      <div className="bg-[#F8F4EF] rounded-full p-3 w-12 h-12 mx-auto mb-4 flex items-center justify-center">
+        <Icon className="w-6 h-6 text-[#245C4F]" />
+      </div>
+      <h3 className="text-lg font-bold font-['Inter'] text-gray-900 mb-2">{title}</h3>
+      <p className="text-sm text-gray-600 leading-relaxed">{description}</p>
+    </div>
+  );
 };
 
 // Componente per le card dei calcolatori
