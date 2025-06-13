@@ -73,7 +73,7 @@ const Calcolatori = () => {
                 <div className="absolute -bottom-1 left-0 right-0 h-4 bg-[#d3f54f] rounded-full opacity-80"></div>
               </span>
             </h1>
-            <p className="text-lg md:text-xl text-gray-600 mb-4 max-w-3xl mx-auto lg:mx-0 leading-relaxed">Ti aiutiamo a trovare il mutuo perfetto per la tua situazione e ti aiutiamo lungo tutto i processo.</p>
+            <p className="text-lg md:text-xl text-gray-600 mb-4 max-w-3xl mx-auto lg:mx-0 leading-relaxed">Facciamo i tuoi interessi, non quelli delle banche.</p>
             
             {/* Rating */}
             <div className="flex items-center justify-center lg:justify-start gap-2 mb-10">
