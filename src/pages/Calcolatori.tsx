@@ -36,6 +36,10 @@ const Calcolatori = () => {
     description: "Verifica sostenibilità rata"
   }];
 
+  const handleWhatsAppContact = () => {
+    window.open('https://wa.me/393518681491', '_blank');
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-[#fff7f0]">
       {/* Header */}
@@ -47,17 +51,17 @@ const Calcolatori = () => {
         
         {/* Absolutely centered navigation */}
         <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-4">
-          <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]">
-            Calcolatori
+          <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]" onClick={() => navigate("/simulazione-avanzata")}>
+            Simulazioni
           </Button>
-          <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]">
-            Risorse
+          <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]" onClick={handleWhatsAppContact}>
+            Contattaci
           </Button>
         </div>
         
         {/* CTA Button */}
         <div className="ml-auto">
-          <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-full px-6">
+          <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-full px-6" onClick={() => navigate("/simulazione-avanzata")}>
             Simulazione
           </Button>
         </div>
@@ -83,8 +87,8 @@ const Calcolatori = () => {
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
               Simula il tuo mutuo
             </Button>
-            <Button variant="ghost" className="text-[#245C4F] hover:bg-[#F8F4EF] px-8 py-4 text-lg rounded-[12px] border border-[#245C4F] hover:border-[#1e4f44] transition-all backdrop-blur-sm">
-              Tutti i calcolatori
+            <Button variant="ghost" className="text-[#245C4F] hover:bg-[#F8F4EF] px-8 py-4 text-lg rounded-[12px] border border-[#245C4F] hover:border-[#1e4f44] transition-all backdrop-blur-sm" onClick={handleWhatsAppContact}>
+              Parla con noi
             </Button>
           </div>
         </div>
