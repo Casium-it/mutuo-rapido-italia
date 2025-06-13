@@ -143,6 +143,30 @@ export type Database = {
         }
         Relationships: []
       }
+      security_logs: {
+        Row: {
+          created_at: string
+          details: Json | null
+          event_type: string
+          id: string
+          ip_address: unknown | null
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          event_type: string
+          id?: string
+          ip_address?: unknown | null
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          event_type?: string
+          id?: string
+          ip_address?: unknown | null
+        }
+        Relationships: []
+      }
       simulations: {
         Row: {
           answers: Json
@@ -178,6 +202,21 @@ export type Database = {
       generate_resume_code: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_saved_simulation_by_resume_code: {
+        Args: { p_resume_code: string }
+        Returns: {
+          id: string
+          resume_code: string
+          name: string
+          phone: string
+          email: string
+          form_state: Json
+          form_type: string
+          expires_at: string
+          created_at: string
+          updated_at: string
+        }[]
       }
     }
     Enums: {

@@ -79,7 +79,7 @@ export async function saveSimulation(
 }
 
 /**
- * Recupera una simulazione salvata usando il codice di ripresa
+ * Recupera una simulazione salvata usando il codice di ripresa tramite la funzione sicura
  * @param resumeCode - Codice di ripresa della simulazione
  * @returns I dati della simulazione salvata o null se non trovata
  */
@@ -95,23 +95,40 @@ export async function loadSimulation(resumeCode: string): Promise<{
   try {
     console.log("Caricamento simulazione con codice:", resumeCode);
     
+    // Validate resume code format on client side first
+    if (!resumeCode || !/^[A-Z0-9]{8}$/.test(resumeCode.toUpperCase())) {
+      return {
+        success: false,
+        error: "Formato del codice di ripresa non valido. Deve essere di 8 caratteri alfanumerici."
+      };
+    }
+    
+    // Use the secure database function instead of direct table access
     const { data, error } = await supabase
-      .from('saved_simulations')
-      .select('*')
-      .eq('resume_code', resumeCode.toUpperCase())
-      .gt('expires_at', new Date().toISOString())
-      .single();
+      .rpc('get_saved_simulation_by_resume_code', {
+        p_resume_code: resumeCode.toUpperCase()
+      });
 
-    if (error || !data) {
+    if (error) {
       console.error("Errore nel caricamento della simulazione:", error);
       return {
         success: false,
-        error: "Simulazione non trovata o scaduta"
+        error: "Errore durante il caricamento della simulazione"
       };
     }
 
+    // Check if any data was returned
+    if (!data || data.length === 0) {
+      return {
+        success: false,
+        error: "Simulazione non trovata, scaduta o troppi tentativi. Riprova tra qualche minuto."
+      };
+    }
+
+    const simulationData = data[0];
+    
     // Type assertion per il form_state che sappiamo essere compatibile con FormState
-    const savedFormState = data.form_state as any;
+    const savedFormState = simulationData.form_state as any;
     
     // Riconverte Array in Set per answeredQuestions
     const formState: FormState = {
@@ -124,11 +141,11 @@ export async function loadSimulation(resumeCode: string): Promise<{
       success: true,
       data: {
         formState,
-        formType: data.form_type,
+        formType: simulationData.form_type,
         contactInfo: {
-          name: data.name,
-          phone: data.phone,
-          email: data.email
+          name: simulationData.name,
+          phone: simulationData.phone,
+          email: simulationData.email
         }
       }
     };
