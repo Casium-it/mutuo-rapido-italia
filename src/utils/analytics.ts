@@ -1,11 +1,17 @@
-
 import ReactGA from 'react-ga4';
 
 // Initialize GA4 with react-ga4
 export const initializeGA = () => {
   ReactGA.initialize('G-NCEGV2W1YP', {
-    testMode: process.env.NODE_ENV === 'development', // Use testMode for development
+    gtagOptions: {
+      debug_mode: process.env.NODE_ENV === 'development',
+    }
   });
+  
+  console.log('📊 GA4 initialized with tracking ID: G-NCEGV2W1YP');
+  
+  // Send initial pageview
+  ReactGA.send({ hitType: "pageview", page: window.location.pathname });
 };
 
 // Centralized analytics utility for GA4 event tracking
