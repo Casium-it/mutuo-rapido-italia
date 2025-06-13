@@ -1,9 +1,10 @@
 import React from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
-import { Calculator, TrendingUp, PieChart, Target, Home, Users, BookOpen, MessageCircle, Star } from "lucide-react";
+import { Calculator, TrendingUp, PieChart, Target, Home, Users, BookOpen, MessageCircle, Star, Check } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
+
 const Calcolatori = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
@@ -75,17 +76,7 @@ const Calcolatori = () => {
             </h1>
             <p className="text-lg md:text-xl text-gray-600 mb-4 max-w-3xl mx-auto lg:mx-0 leading-relaxed">Facciamo i tuoi interessi, non quelli delle banche.</p>
             
-            {/* Rating */}
-            <div className="flex items-center justify-center lg:justify-start gap-2 mb-10">
-              <div className="flex items-center">
-                {[1, 2, 3, 4, 5].map(star => <Star key={star} className={`w-5 h-5 ${star <= 4 ? 'fill-yellow-400 text-yellow-400' : star === 5 ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} style={star === 5 ? {
-                clipPath: 'polygon(0 0, 80% 0, 80% 100%, 0 100%)'
-              } : {}} />)}
-              </div>
-              <span className="text-gray-600 font-medium">4.8/5 - 872 recensioni</span>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start items-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start items-center mb-6">
               <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-8 py-4 text-lg rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all relative overflow-hidden group" onClick={() => navigate("/simulazioni")}>
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
                 Simula il tuo mutuo
@@ -93,6 +84,28 @@ const Calcolatori = () => {
               <Button variant="ghost" className="text-[#245C4F] hover:bg-[#F8F4EF] px-8 py-4 text-lg rounded-[12px] border border-[#245C4F] hover:border-[#1e4f44] transition-all backdrop-blur-sm" onClick={handleWhatsAppContact}>
                 Parla con noi
               </Button>
+            </div>
+
+            {/* Check marks */}
+            <div className="flex items-center justify-center lg:justify-start gap-8 mb-4">
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-green-600" />
+                <span className="text-sm text-gray-600">Online in 10 min</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-green-600" />
+                <span className="text-sm text-gray-600">Senza Impegno</span>
+              </div>
+            </div>
+            
+            {/* Rating */}
+            <div className="flex items-center justify-center lg:justify-start gap-2">
+              <div className="flex items-center">
+                {[1, 2, 3, 4, 5].map(star => <Star key={star} className={`w-5 h-5 ${star <= 4 ? 'fill-yellow-400 text-yellow-400' : star === 5 ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} style={star === 5 ? {
+                clipPath: 'polygon(0 0, 80% 0, 80% 100%, 0 100%)'
+              } : {}} />)}
+              </div>
+              <span className="text-gray-600 font-medium">4.8/5 - 872 recensioni</span>
             </div>
           </div>
 
