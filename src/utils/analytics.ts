@@ -25,6 +25,17 @@ export const trackEvent = (action: string, parameters: object = {}) => {
 };
 
 /**
+ * Track simulation CTA button clicks
+ */
+export const trackSimulationCTAClick = (location: string) => {
+  console.log(`🎯 Simulation CTA clicked: ${location}`);
+  ReactGA.event('simulation_cta_click', {
+    button_location: location,
+    timestamp: new Date().toISOString()
+  });
+};
+
+/**
  * Track engagement milestones
  */
 export const trackEngagementMilestone = (milestone: string) => {
