@@ -136,9 +136,24 @@ GoMutuo è il partner che ti segue dall'inizio alla fine.</p>
             </div>
           </div>
 
-          {/* Right side - Image */}
+          {/* Right side - Image with notification */}
           <div className="flex justify-center lg:justify-end">
-            <img src="/lovable-uploads/3fc7bd9a-e8ce-4850-b0a8-a704f2af6b9d.png" alt="Coppia felice che usa il laptop per simulare il mutuo" className="w-full max-w-md lg:max-w-lg rounded-2xl shadow-lg" />
+            <div className="relative">
+              <img src="/lovable-uploads/3fc7bd9a-e8ce-4850-b0a8-a704f2af6b9d.png" alt="Coppia felice che usa il laptop per simulare il mutuo" className="w-full max-w-md lg:max-w-lg rounded-2xl shadow-lg" />
+              
+              {/* Success notification popup */}
+              <div className="absolute bottom-4 left-4 right-4 bg-[#245C4F]/90 backdrop-blur-sm rounded-lg p-4 text-white shadow-lg animate-fade-in">
+                <div className="flex items-center gap-3">
+                  <div className="bg-green-500 rounded-full p-1">
+                    <Check className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">Mutuo accettato!</p>
+                    <p className="text-xs opacity-90">Hai risparmiato 23.000 €</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -189,7 +204,7 @@ const BenefitCard = ({ title, description }: BenefitCardProps) => {
   return (
     <div className="text-center p-4">
       <div className="bg-[#245C4F] rounded-full p-2 w-8 h-8 mx-auto mb-4 flex items-center justify-center">
-        <Check className="w-3 h-3 text-white opacity-50" />
+        <Check className="w-4 h-4 text-white font-bold stroke-[3]" />
       </div>
       <h3 className="text-lg font-bold font-['Inter'] text-gray-900 mb-2">{title}</h3>
       <p className="text-sm text-gray-600 leading-relaxed">{description}</p>
