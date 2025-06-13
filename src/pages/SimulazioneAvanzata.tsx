@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
@@ -137,14 +136,6 @@ const SimulazioneAvanzata = () => {
         <div className="space-y-4">
           {/* Resume simulation option */}
           <OptionCard
-            icon={RotateCcw}
-            title="Riprendi una simulazione"
-            description="Hai un codice per continuare da dove hai lasciato?"
-            href="/riprendi-simulazione"
-            onClick={() => navigate("/riprendi-simulazione")}
-          />
-          
-          <OptionCard
             icon={LightbulbIcon}
             title="Mi sto guardando intorno"
             description="Non ho ancora iniziato le visite"
@@ -192,6 +183,17 @@ const SimulazioneAvanzata = () => {
             disabled={true}
             badge="Presto disponibile"
           />
+        </div>
+        
+        {/* Resume simulation link */}
+        <div className="mt-8 text-center">
+          <button
+            onClick={() => navigate("/riprendi-simulazione")}
+            className="inline-flex items-center gap-2 text-[#245C4F] font-bold hover:underline transition-all"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Riprendi simulazione salvata con il codice simulazione QUI
+          </button>
         </div>
       </main>
     </div>
