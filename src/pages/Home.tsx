@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Calculator, TrendingUp, PieChart, Target, Home, Users, BookOpen, MessageCircle, Star, Check, Shield, Globe, Heart, Award } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
+import { trackEvent } from "@/utils/analytics";
 
 const HomePage = () => {
   const isMobile = useIsMobile();
@@ -106,7 +107,14 @@ const HomePage = () => {
     description: "Mutuo difficile? Partita Iva? Segnalazioni? Ci pensiamo noi a te siamo esperti in questo"
   }];
   
-  const handleWhatsAppContact = () => {
+  const handleWhatsAppContact = (location: string) => {
+    // Track the WhatsApp contact event
+    trackEvent('whatsapp_contact_click', {
+      location: location,
+      button_text: location === 'header' ? 'Contattaci' : 'Parla con noi',
+      destination_url: 'https://wa.me/393518681491'
+    });
+    
     window.open('https://wa.me/393518681491', '_blank');
   };
 
@@ -127,7 +135,7 @@ const HomePage = () => {
             <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]" onClick={handleSimulationClick}>
               Simulazioni
             </Button>
-            <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]" onClick={handleWhatsAppContact}>
+            <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]" onClick={() => handleWhatsAppContact('header')}>
               Contattaci
             </Button>
           </div>}
@@ -159,7 +167,7 @@ const HomePage = () => {
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
                 Simula il tuo mutuo
               </Button>
-              <Button variant="ghost" className="text-[#245C4F] hover:bg-[#F8F4EF] px-8 py-4 text-lg rounded-[12px] border border-[#245C4F] hover:border-[#1e4f44] transition-all backdrop-blur-sm" onClick={handleWhatsAppContact}>
+              <Button variant="ghost" className="text-[#245C4F] hover:bg-[#F8F4EF] px-8 py-4 text-lg rounded-[12px] border border-[#245C4F] hover:border-[#1e4f44] transition-all backdrop-blur-sm" onClick={() => handleWhatsAppContact('hero')}>
                 Parla con noi
               </Button>
             </div>
