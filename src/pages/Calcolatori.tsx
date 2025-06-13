@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
@@ -51,7 +52,7 @@ const Calcolatori = () => {
   };
   return <div className="min-h-screen flex flex-col bg-[#fff7f0]">
       {/* Header */}
-      <header className="py-6 px-4 md:px-6 relative flex items-center justify-between z-10">
+      <header className="py-6 px-4 md:px-6 relative flex items-center justify-between z-10 animate-fade-in">
         {/* Logo */}
         <div className="cursor-pointer" onClick={() => navigate("/")}>
           <Logo />
@@ -82,16 +83,16 @@ const Calcolatori = () => {
         {/* Hero Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center mb-12 md:mb-16">
           {/* Left side - Text content */}
-          <div className="text-center lg:text-left">
+          <div className="text-center lg:text-left animate-[fade-in_0.6s_ease-out_0.3s_both] opacity-0">
             <h1 className="text-4xl md:text-5xl font-bold mb-8">
               Cerchi un <span className="relative">
                 <span className="gradient-text">mutuo?</span>
-                <div className="absolute -bottom-1 left-0 right-0 h-4 bg-[#d3f54f] rounded-full opacity-80"></div>
+                <div className="absolute -bottom-1 left-0 right-0 h-2 md:h-4 bg-[#d3f54f] rounded-full opacity-80 animate-[expand-line_1.2s_ease-out_0.8s_both] scale-x-0 origin-left"></div>
               </span>
             </h1>
-            <p className="text-gray-600 mb-4 max-w-3xl mx-auto lg:mx-0 leading-relaxed text-lg md:text-lg">Noi siamo dalla tua parte, non da quella delle banche! GoMutuo è il partner che ti segue dall'inizio alla fine.</p>
+            <p className="text-gray-600 mb-4 max-w-3xl mx-auto lg:mx-0 leading-relaxed text-lg md:text-lg animate-[fade-in_0.6s_ease-out_0.6s_both] opacity-0">Noi siamo dalla tua parte, non da quella delle banche! GoMutuo è il partner che ti segue dall'inizio alla fine.</p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start items-center mb-6">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start items-center mb-6 animate-[fade-in_0.6s_ease-out_0.9s_both] opacity-0">
               <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-8 py-4 text-lg rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all relative overflow-hidden group" onClick={() => navigate("/simulazioni")}>
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
                 Simula il tuo mutuo
@@ -102,7 +103,7 @@ const Calcolatori = () => {
             </div>
 
             {/* Check marks */}
-            <div className="flex items-center justify-center lg:justify-start gap-8 mb-4">
+            <div className="flex items-center justify-center lg:justify-start gap-8 mb-4 animate-[fade-in_0.6s_ease-out_1.2s_both] opacity-0">
               <div className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-green-600 opacity-50" />
                 <span className="text-sm text-gray-600">Online in 10 min</span>
@@ -114,7 +115,7 @@ const Calcolatori = () => {
             </div>
             
             {/* Rating */}
-            <div className="flex items-center justify-center lg:justify-start gap-2">
+            <div className="flex items-center justify-center lg:justify-start gap-2 animate-[fade-in_0.6s_ease-out_1.5s_both] opacity-0">
               <div className="flex items-center">
                 {[1, 2, 3, 4, 5].map(star => <Star key={star} className={`w-5 h-5 ${star <= 4 ? 'fill-yellow-400 text-yellow-400' : star === 5 ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} style={star === 5 ? {
                 clipPath: 'polygon(0 0, 80% 0, 80% 100%, 0 100%)'
@@ -125,12 +126,12 @@ const Calcolatori = () => {
           </div>
 
           {/* Right side - Image with notification */}
-          <div className="flex justify-center lg:justify-end">
+          <div className="flex justify-center lg:justify-end animate-[fade-in_0.6s_ease-out_0.5s_both] opacity-0">
             <div className="relative">
               <img src="/lovable-uploads/3fc7bd9a-e8ce-4850-b0a8-a704f2af6b9d.png" alt="Coppia felice che usa il laptop per simulare il mutuo" className="w-full max-w-md lg:max-w-lg rounded-2xl shadow-lg" />
               
               {/* Success notification popup */}
-              <div className="absolute bottom-4 right-4 bg-[#245C4F]/90 backdrop-blur-sm rounded-lg p-3 text-white shadow-lg animate-[fade-in_0.5s_ease-out_3s_both] opacity-0">
+              <div className="absolute bottom-4 right-4 bg-[#245C4F]/90 backdrop-blur-sm rounded-lg p-3 text-white shadow-lg animate-[fade-in-delayed_0.5s_ease-out_3s_both] opacity-0">
                 <div className="flex items-center gap-2">
                   <div className="bg-green-500 rounded-full p-1">
                     <Check className="w-3 h-3 text-white" />
@@ -146,7 +147,7 @@ const Calcolatori = () => {
         </div>
 
         {/* Benefits Section */}
-        <div className="mb-16 bg-gradient-to-b from-[#f8f5f1] to-[#f0ede8] rounded-2xl py-12 px-6">
+        <div className="mb-16 bg-gradient-to-b from-[#f8f5f1] to-[#f0ede8] rounded-2xl py-12 px-6 animate-[fade-in_0.8s_ease-out_1.8s_both] opacity-0">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {benefits.map((benefit, index) => <BenefitCard key={index} title={benefit.title} description={benefit.description} />)}
           </div>
@@ -160,7 +161,7 @@ const Calcolatori = () => {
       </main>
 
       {/* Footer */}
-      <footer className="py-6 px-4 border-t border-[#BEB8AE] relative z-10">
+      <footer className="py-6 px-4 border-t border-[#BEB8AE] relative z-10 animate-[fade-in_0.6s_ease-out_2.1s_both] opacity-0">
         <div className="max-w-5xl mx-auto flex justify-between items-center">
           <p className="text-sm text-gray-600">© 2025 GoMutuo.it - Tutti i diritti riservati</p>
           <div className="flex gap-4">

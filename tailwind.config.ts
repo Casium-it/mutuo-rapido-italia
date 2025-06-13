@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -146,6 +147,14 @@ export default {
 					  transform: "translateY(0)"
 					}
 				},
+				'expand-line': {
+					"0%": {
+					  transform: "scaleX(0)"
+					},
+					"100%": {
+					  transform: "scaleX(1)"
+					}
+				},
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
@@ -156,6 +165,7 @@ export default {
 				'float-rotate': 'float-rotate 8s ease-in-out infinite',
 				'glow': 'glow 2s ease-in-out infinite',
 				'fade-in-delayed': 'fade-in-delayed 0.5s ease-out 3s both',
+				'expand-line': 'expand-line 1.2s ease-out',
 			}
 		}
 	},
