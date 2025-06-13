@@ -1,9 +1,16 @@
 
 import React from "react";
 
-export function Logo() {
+interface LogoProps {
+  onClick?: () => void;
+}
+
+export function Logo({ onClick }: LogoProps) {
   return (
-    <div className="flex items-center gap-2">
+    <div 
+      className={`flex items-center gap-2 ${onClick ? 'cursor-pointer' : ''}`}
+      onClick={onClick}
+    >
       <div className="rounded-md p-1">
         <img 
           src="/lovable-uploads/173cb557-9ae4-40df-a6a9-79a356b8218f.png"

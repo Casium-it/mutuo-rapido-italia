@@ -113,7 +113,7 @@ const SimulazioneAvanzata = () => {
     <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
       {/* Header */}
       <header className="py-6 px-4 md:px-6 flex justify-between items-center">
-        <Logo />
+        <Logo onClick={() => navigate("/")} />
         <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-vibe-green">
           Accedi
         </Button>
