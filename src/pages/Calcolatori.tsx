@@ -69,8 +69,8 @@ const Calcolatori = () => {
           {/* Left side - Text content */}
           <div className="text-center lg:text-left">
             <h1 className="text-4xl md:text-6xl font-bold mb-8">
-              Tutto sui <span className="relative">
-                <span className="gradient-text">mutui</span>
+              Cerchi un <span className="relative">
+                <span className="gradient-text">mutuo?</span>
                 <div className="absolute -bottom-1 left-0 right-0 h-4 bg-[#d3f54f] rounded-full opacity-80"></div>
               </span>
             </h1>
