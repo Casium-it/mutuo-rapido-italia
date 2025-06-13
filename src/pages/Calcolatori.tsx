@@ -188,8 +188,8 @@ interface BenefitCardProps {
 const BenefitCard = ({ title, description }: BenefitCardProps) => {
   return (
     <div className="text-center p-4">
-      <div className="bg-[#245C4F] rounded-full p-3 w-12 h-12 mx-auto mb-4 flex items-center justify-center">
-        <Check className="w-6 h-6 text-white" />
+      <div className="bg-[#245C4F] rounded-full p-2 w-8 h-8 mx-auto mb-4 flex items-center justify-center">
+        <Check className="w-3 h-3 text-white opacity-50" />
       </div>
       <h3 className="text-lg font-bold font-['Inter'] text-gray-900 mb-2">{title}</h3>
       <p className="text-sm text-gray-600 leading-relaxed">{description}</p>
