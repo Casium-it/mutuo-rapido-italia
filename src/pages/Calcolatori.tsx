@@ -30,7 +30,7 @@ const Calcolatori = () => {
     // Inizia dopo 3 secondi
     const initialTimer = setTimeout(() => {
       setIsVisible(true);
-    }, 3000);
+    }, 2000);
 
     return () => clearTimeout(initialTimer);
   }, []);
@@ -47,10 +47,10 @@ const Calcolatori = () => {
         const changeTimer = setTimeout(() => {
           setCurrentNotification((prev) => (prev + 1) % notifications.length);
           setIsVisible(true);
-        }, 1000);
+        }, 2000);
 
         return () => clearTimeout(changeTimer);
-      }, 3000);
+      }, 5000);
 
       return () => clearTimeout(showTimer);
     };
@@ -58,7 +58,7 @@ const Calcolatori = () => {
     const cleanup = cycleNotifications();
     
     // Ripeti il ciclo ogni 4 secondi (3 sec visibile + 1 sec nascosto)
-    const intervalId = setInterval(cycleNotifications, 4000);
+    const intervalId = setInterval(cycleNotifications, 7000);
 
     return () => {
       cleanup?.();
