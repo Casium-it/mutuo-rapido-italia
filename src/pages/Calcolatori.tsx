@@ -68,12 +68,12 @@ const Calcolatori = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center mb-12 md:mb-16">
           {/* Left side - Text content */}
           <div className="text-center lg:text-left">
-            <h1 className="text-4xl md:text-6xl font-bold mb-8">
-              Tutto sui <span className="relative">
-                <span className="gradient-text">mutui</span>
-                <div className="absolute -bottom-1 left-0 right-0 h-4 bg-[#d3f54f] rounded-full opacity-80"></div>
-              </span>
+            <h1 className="text-4xl md:text-6xl font-bold mb-4">
+              Cerchi un mutuo?
             </h1>
+            <h2 className="text-3xl md:text-5xl font-bold mb-8">
+              Noi facciamo i tuoi interessi, non quelli delle banche
+            </h2>
             <p className="text-lg md:text-xl text-gray-600 mb-4 max-w-3xl mx-auto lg:mx-0 leading-relaxed">
               Simula, confronta e richiedi il tuo mutuo direttamente online, facile e veloce.
             </p>
