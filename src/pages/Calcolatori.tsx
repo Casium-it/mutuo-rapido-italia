@@ -51,24 +51,26 @@ const Calcolatori = () => {
   };
   return <div className="min-h-screen flex flex-col bg-[#fff7f0]">
       {/* Header */}
-      <header className="py-6 px-4 md:px-6 relative flex items-center z-10">
+      <header className="py-6 px-4 md:px-6 relative flex items-center justify-between z-10">
         {/* Logo */}
         <div className="cursor-pointer" onClick={() => navigate("/")}>
           <Logo />
         </div>
         
-        {/* Absolutely centered navigation */}
-        <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-4">
-          <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]" onClick={() => navigate("/simulazioni")}>
-            Simulazioni
-          </Button>
-          <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]" onClick={handleWhatsAppContact}>
-            Contattaci
-          </Button>
-        </div>
+        {/* Desktop only navigation - centered */}
+        {!isMobile && (
+          <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-4">
+            <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]" onClick={() => navigate("/simulazioni")}>
+              Simulazioni
+            </Button>
+            <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]" onClick={handleWhatsAppContact}>
+              Contattaci
+            </Button>
+          </div>
+        )}
         
         {/* CTA Button */}
-        <div className="ml-auto">
+        <div>
           <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-full px-6" onClick={() => navigate("/simulazioni")}>
             Simulazione
           </Button>
@@ -102,11 +104,11 @@ const Calcolatori = () => {
             {/* Check marks */}
             <div className="flex items-center justify-center lg:justify-start gap-8 mb-4">
               <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-green-600" />
+                <Check className="w-4 h-4 text-green-600 opacity-50" />
                 <span className="text-sm text-gray-600">Online in 10 min</span>
               </div>
               <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-green-600" />
+                <Check className="w-4 h-4 text-green-600 opacity-50" />
                 <span className="text-sm text-gray-600">Senza Impegno</span>
               </div>
             </div>
