@@ -1,12 +1,71 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Calculator, TrendingUp, PieChart, Target, Home, Users, BookOpen, MessageCircle, Star, Check, Shield, Globe, Heart, Award } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
+
 const Calcolatori = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+  const [currentNotification, setCurrentNotification] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
+  
+  const notifications = [
+    {
+      title: "Mutuo accettato!",
+      description: "Hai risparmiato 23.000 €"
+    },
+    {
+      title: "Ciao sono Luca,",
+      description: "Il tuo consulente personale"
+    },
+    {
+      title: "Nuovo tasso → 2.1%",
+      description: "Surroga e risparmia 4.000 €"
+    }
+  ];
+
+  useEffect(() => {
+    // Inizia dopo 3 secondi
+    const initialTimer = setTimeout(() => {
+      setIsVisible(true);
+    }, 3000);
+
+    return () => clearTimeout(initialTimer);
+  }, []);
+
+  useEffect(() => {
+    if (!isVisible) return;
+
+    const cycleNotifications = () => {
+      // Mostra per 3 secondi
+      const showTimer = setTimeout(() => {
+        setIsVisible(false);
+        
+        // Aspetta 1 secondo per il fade out, poi cambia notifica
+        const changeTimer = setTimeout(() => {
+          setCurrentNotification((prev) => (prev + 1) % notifications.length);
+          setIsVisible(true);
+        }, 1000);
+
+        return () => clearTimeout(changeTimer);
+      }, 3000);
+
+      return () => clearTimeout(showTimer);
+    };
+
+    const cleanup = cycleNotifications();
+    
+    // Ripeti il ciclo ogni 4 secondi (3 sec visibile + 1 sec nascosto)
+    const intervalId = setInterval(cycleNotifications, 4000);
+
+    return () => {
+      cleanup?.();
+      clearInterval(intervalId);
+    };
+  }, [isVisible, currentNotification, notifications.length]);
+
   const calcolatori = [{
     icon: Calculator,
     title: "Simulatore Mutuo",
@@ -48,9 +107,10 @@ const Calcolatori = () => {
   const handleWhatsAppContact = () => {
     window.open('https://wa.me/393518681491', '_blank');
   };
+
   return <div className="min-h-screen flex flex-col bg-[#fff7f0]">
       {/* Header */}
-      <header className="py-6 px-4 md:px-6 relative flex items-center justify-between z-10 animate-fade-in">
+      <header className="py-6 px-4 md:px-6 relative flex items-center justify-between z-10 animate-[fade-in_0.6s_ease-out_0.1s_both] opacity-0">
         {/* Logo */}
         <div className="cursor-pointer" onClick={() => navigate("/")}>
           <Logo />
@@ -80,10 +140,10 @@ const Calcolatori = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center mb-12 md:mb-16">
           {/* Left side - Text content */}
           <div className="text-center lg:text-left animate-[fade-in_0.6s_ease-out_0.3s_both] opacity-0">
-            <h1 className="text-4xl md:text-5xl font-bold mb-8">
+            <h1 className="text-4xl md:text-5xl font-bold mb-8 animate-[fade-in_0.6s_ease-out_0.4s_both] opacity-0">
               Cerchi un <span className="relative">
                 <span className="gradient-text">mutuo?</span>
-                <div className="absolute -bottom-1 left-0 right-0 h-2 md:h-4 bg-[#d3f54f] rounded-full opacity-80 animate-[expand-line_1.2s_ease-out_0.8s_both] scale-x-0 origin-left"></div>
+                <div className="absolute -bottom-1 left-0 right-0 h-1 md:h-3 bg-[#d3f54f] rounded-full opacity-80 animate-[expand-line_1.2s_ease-out_0.8s_both] scale-x-0 origin-left"></div>
               </span>
             </h1>
             <p className="text-gray-600 mb-4 max-w-3xl mx-auto lg:mx-0 leading-relaxed text-lg md:text-lg animate-[fade-in_0.6s_ease-out_0.6s_both] opacity-0 py-[5px]">Noi siamo dalla tua parte, non da quella delle banche! GoMutuo è il partner che ti segue dall'inizio alla fine.</p>
@@ -126,15 +186,15 @@ const Calcolatori = () => {
             <div className="relative">
               <img src="/lovable-uploads/3fc7bd9a-e8ce-4850-b0a8-a704f2af6b9d.png" alt="Coppia felice che usa il laptop per simulare il mutuo" className="w-full max-w-md lg:max-w-lg rounded-2xl shadow-lg" />
               
-              {/* Success notification popup */}
-              <div className="absolute bottom-4 right-4 bg-[#245C4F]/90 backdrop-blur-sm rounded-lg p-3 text-white shadow-lg animate-[fade-in-delayed_0.5s_ease-out_3s_both] opacity-0">
+              {/* Success notification popup with cycling notifications */}
+              <div className={`absolute bottom-4 right-4 bg-[#245C4F]/90 backdrop-blur-sm rounded-lg p-3 text-white shadow-lg transition-opacity duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
                 <div className="flex items-center gap-2">
-                  <div className="bg-green-500 rounded-full p-1">
+                  <div className="bg-green-500 rounded-full p-1 flex-shrink-0">
                     <Check className="w-3 h-3 text-white" />
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold">Mutuo accettato!</p>
-                    <p className="text-xs opacity-90">Hai risparmiato 23.000 €</p>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold whitespace-nowrap">{notifications[currentNotification].title}</p>
+                    <p className="text-xs opacity-90 whitespace-nowrap">{notifications[currentNotification].description}</p>
                   </div>
                 </div>
               </div>
