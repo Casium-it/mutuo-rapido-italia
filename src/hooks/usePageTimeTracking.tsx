@@ -1,5 +1,6 @@
 
 import { useEffect, useRef, useState } from 'react';
+import ReactGA from 'react-ga4';
 
 interface TimeTrackingOptions {
   milestones?: number[]; // in seconds
@@ -44,15 +45,13 @@ export const usePageTimeTracking = (options: TimeTrackingOptions) => {
         if (currentVisibleTime >= milestone * 1000 && !milestonesReached.current.has(milestone)) {
           milestonesReached.current.add(milestone);
           
-          // Send GA4 event
-          if (typeof window !== 'undefined' && window.gtag) {
-            console.log(`📊 Sending engagement milestone: ${milestone}s on ${pageName}`);
-            window.gtag('event', 'engagement_milestone', {
-              page_name: pageName,
-              milestone_seconds: milestone,
-              total_time_seconds: Math.floor(currentVisibleTime / 1000)
-            });
-          }
+          // Send GA4 event with react-ga4
+          console.log(`📊 Sending engagement milestone: ${milestone}s on ${pageName}`);
+          ReactGA.event('engagement_milestone', {
+            page_name: pageName,
+            milestone_seconds: milestone,
+            total_time_seconds: Math.floor(currentVisibleTime / 1000)
+          });
         }
       });
     };
@@ -74,15 +73,13 @@ export const usePageTimeTracking = (options: TimeTrackingOptions) => {
         if (scrollPercentage >= percentage && !scrollDepthsReached.current.has(percentage)) {
           scrollDepthsReached.current.add(percentage);
           
-          // Send GA4 event
-          if (typeof window !== 'undefined' && window.gtag) {
-            console.log(`📊 Sending scroll depth: ${label} on ${pageName}`);
-            window.gtag('event', 'scroll_depth', {
-              page_name: pageName,
-              scroll_percentage: percentage,
-              scroll_label: label
-            });
-          }
+          // Send GA4 event with react-ga4
+          console.log(`📊 Sending scroll depth: ${label} on ${pageName}`);
+          ReactGA.event('scroll_depth', {
+            page_name: pageName,
+            scroll_percentage: percentage,
+            scroll_label: label
+          });
         }
       });
     };
@@ -118,16 +115,14 @@ export const usePageTimeTracking = (options: TimeTrackingOptions) => {
     const handleBeforeUnload = () => {
       const totalTime = getCurrentVisibleTime();
       
-      // Send final time tracking event
-      if (typeof window !== 'undefined' && window.gtag) {
-        console.log(`📊 Sending page exit time: ${Math.floor(totalTime / 1000)}s on ${pageName}`);
-        window.gtag('event', 'page_exit_time', {
-          page_name: pageName,
-          total_time_seconds: Math.floor(totalTime / 1000),
-          milestones_reached: Array.from(milestonesReached.current),
-          scroll_depths_reached: Array.from(scrollDepthsReached.current)
-        });
-      }
+      // Send final time tracking event with react-ga4
+      console.log(`📊 Sending page exit time: ${Math.floor(totalTime / 1000)}s on ${pageName}`);
+      ReactGA.event('page_exit_time', {
+        page_name: pageName,
+        total_time_seconds: Math.floor(totalTime / 1000),
+        milestones_reached: Array.from(milestonesReached.current),
+        scroll_depths_reached: Array.from(scrollDepthsReached.current)
+      });
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
