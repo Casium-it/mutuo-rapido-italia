@@ -2,39 +2,13 @@
 import React from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
-import { Calculator, TrendingUp, PieChart, Target, Home, Users, BookOpen, MessageCircle } from "lucide-react";
+import { Star, MapPin, CheckCircle, ArrowRight, Users, Award } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
 
 const Calcolatori = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-  
-  const calcolatori = [{
-    icon: Calculator,
-    title: "Simulatore Mutuo",
-    description: "Calcola rata e importo finanziabile"
-  }, {
-    icon: TrendingUp,
-    title: "Analisi Tassi",
-    description: "Confronta tassi fissi e variabili"
-  }, {
-    icon: PieChart,
-    title: "Piano Ammortamento",
-    description: "Visualizza piano di rimborso"
-  }, {
-    icon: Target,
-    title: "Calcolo Interessi",
-    description: "Stima interessi totali"
-  }, {
-    icon: Home,
-    title: "Valore Immobile",
-    description: "Valuta il prezzo della casa"
-  }, {
-    icon: Users,
-    title: "Capacità Finanziaria",
-    description: "Verifica sostenibilità rata"
-  }];
 
   const handleWhatsAppContact = () => {
     window.open('https://wa.me/393518681491', '_blank');
@@ -68,45 +42,117 @@ const Calcolatori = () => {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 px-4 md:px-6 py-8 md:py-12 max-w-5xl mx-auto w-full flex flex-col justify-center relative z-10">
+      <main className="flex-1 px-4 md:px-6 py-8 md:py-12 max-w-6xl mx-auto w-full flex flex-col justify-center relative z-10">
+        {/* Background elements */}
+        <div className="fixed inset-0 -z-10 overflow-hidden">
+          <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-r from-[#F0EAE0] to-[#E8F5E9] rounded-full blur-3xl opacity-20 animate-float"></div>
+          <div className="absolute bottom-1/4 left-1/3 w-64 h-64 bg-gradient-to-r from-[#E8F5E9] to-[#F0EAE0] rounded-full blur-3xl opacity-20 animate-float-rotate"></div>
+        </div>
+
         {/* Hero Section */}
-        <div className="text-center mb-12 md:mb-16">
-          <h1 className="text-4xl md:text-6xl font-bold mb-8">
-            Tutto sui <span className="relative">
-              <span className="gradient-text">mutui</span>
-              <div className="absolute -bottom-1 left-0 right-0 h-4 bg-[#d3f54f] rounded-full opacity-80"></div>
-            </span>
-          </h1>
-          <p className="text-lg md:text-xl text-gray-600 mb-10 max-w-3xl mx-auto leading-relaxed">
-            Calcolatori, guide, consigli e una community di giovani<br />
-            che condividono esperienze, senza termini complicati.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-8 py-4 text-lg rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all relative overflow-hidden group" onClick={() => navigate("/simulazioni")}>
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-              Simula il tuo mutuo
+        <div className="text-center mb-12 md:mb-16 animate-fade-in">
+          {/* Main Value Proposition */}
+          <div className="mb-8">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
+              <span className="block mb-2">Cerca, confronta</span>
+              <span className="block">e richiedi il <span className="relative">
+                <span className="gradient-text">mutuo</span>
+                <div className="absolute -bottom-2 left-0 right-0 h-4 bg-[#d3f54f] rounded-full opacity-80"></div>
+              </span></span>
+            </h1>
+            
+            <div className="flex flex-wrap justify-center items-center gap-4 md:gap-8 text-xl md:text-2xl font-semibold text-[#245C4F] mb-8">
+              <div className="flex items-center gap-2 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+                <CheckCircle className="w-6 h-6 text-green-500" />
+                <span>Veloce</span>
+              </div>
+              <div className="hidden md:block w-2 h-2 bg-[#245C4F] rounded-full opacity-50"></div>
+              <div className="flex items-center gap-2 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+                <CheckCircle className="w-6 h-6 text-green-500" />
+                <span>Online</span>
+              </div>
+              <div className="hidden md:block w-2 h-2 bg-[#245C4F] rounded-full opacity-50"></div>
+              <div className="flex items-center gap-2 animate-fade-in" style={{ animationDelay: '0.6s' }}>
+                <CheckCircle className="w-6 h-6 text-green-500" />
+                <span>100% Gratuito</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Social Proof Section */}
+          <div className="mb-12 animate-fade-in" style={{ animationDelay: '0.8s' }}>
+            <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-12 mb-8">
+              {/* Star Rating */}
+              <div className="flex flex-col items-center">
+                <div className="flex items-center gap-1 mb-2">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-6 h-6 fill-yellow-400 text-yellow-400" />
+                  ))}
+                  <span className="ml-2 text-2xl font-bold text-gray-900">4.89</span>
+                </div>
+                <p className="text-gray-600 font-medium">
+                  <span className="font-bold">857</span> recensioni verificate
+                </p>
+              </div>
+
+              {/* Trust Badge */}
+              <div className="flex items-center gap-3 bg-white/80 backdrop-blur-sm px-6 py-4 rounded-2xl border border-[#BEB8AE] shadow-lg">
+                <Award className="w-8 h-8 text-[#245C4F]" />
+                <div className="text-left">
+                  <p className="font-bold text-[#245C4F] text-lg">La prima vera</p>
+                  <p className="font-bold text-[#245C4F] text-lg">simulazione precisa</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Location Promise */}
+            <div className="flex items-center justify-center gap-3 text-lg text-gray-700 mb-8">
+              <MapPin className="w-6 h-6 text-[#245C4F]" />
+              <span className="font-medium">Ti troviamo il migliore mediatore creditizio vicino a te</span>
+            </div>
+          </div>
+
+          {/* CTA Section */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in" style={{ animationDelay: '1s' }}>
+            <Button 
+              className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-12 py-6 text-xl font-semibold rounded-[16px] shadow-[0_6px_0_0_#1a3f37] hover:translate-y-[2px] hover:shadow-[0_4px_0_0_#1a3f37] transition-all relative overflow-hidden group animate-glow"
+              onClick={() => navigate("/simulazioni")}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+              <span className="relative flex items-center gap-3">
+                Inizia la tua simulazione
+                <ArrowRight className="w-6 h-6" />
+              </span>
             </Button>
-            <Button variant="ghost" className="text-[#245C4F] hover:bg-[#F8F4EF] px-8 py-4 text-lg rounded-[12px] border border-[#245C4F] hover:border-[#1e4f44] transition-all backdrop-blur-sm" onClick={handleWhatsAppContact}>
-              Parla con noi
+            
+            <Button 
+              variant="outline" 
+              className="text-[#245C4F] hover:bg-[#F8F4EF] border-2 border-[#245C4F] hover:border-[#1e4f44] px-8 py-6 text-lg font-medium rounded-[16px] transition-all backdrop-blur-sm bg-white/50"
+              onClick={handleWhatsAppContact}
+            >
+              <span className="flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Parla con un esperto
+              </span>
             </Button>
           </div>
-        </div>
 
-        {/* Calcolatori Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
-          {calcolatori.map((calc, index) => (
-            <CalcolatoreCard 
-              key={index} 
-              icon={calc.icon} 
-              title={calc.title} 
-              description={calc.description} 
-            />
-          ))}
+          {/* Trust Indicators */}
+          <div className="mt-12 flex flex-wrap justify-center items-center gap-8 text-sm text-gray-500 animate-fade-in" style={{ animationDelay: '1.2s' }}>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-green-500" />
+              <span>Nessun impegno</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-green-500" />
+              <span>100% sicuro e gratuito</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-green-500" />
+              <span>Risultati in 3 minuti</span>
+            </div>
+          </div>
         </div>
-
-        {/* CTA Section */}
-        
       </main>
 
       {/* Footer */}
@@ -125,59 +171,6 @@ const Calcolatori = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
-};
-
-// Componente per le card dei calcolatori
-interface CalcolatoreCardProps {
-  icon: React.ElementType;
-  title: string;
-  description: string;
-}
-
-const CalcolatoreCard = ({
-  icon: Icon,
-  title,
-  description
-}: CalcolatoreCardProps) => {
-  return (
-    <div className="bg-white rounded-lg border border-[#BEB8AE] p-6 hover:shadow-lg transition-all">
-      <div className="bg-[#F8F4EF] rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-        <Icon className="w-8 h-8 text-[#245C4F]" />
-      </div>
-      <h3 className="text-xl font-semibold font-['Inter'] text-gray-900 mb-2 text-center">{title}</h3>
-      <p className="text-gray-600 text-center">{description}</p>
-    </div>
-  );
-};
-
-// Componente per le card delle risorse
-interface RisorsaCardProps {
-  icon: React.ElementType;
-  title: string;
-  description: string;
-  items: string[];
-}
-
-const RisorsaCard = ({
-  icon: Icon,
-  title,
-  description,
-  items
-}: RisorsaCardProps) => {
-  return (
-    <div className="text-center">
-      <div className="bg-[#F8F4EF] rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-        <Icon className="w-8 h-8 text-[#245C4F]" />
-      </div>
-      <h3 className="text-xl font-semibold font-['Inter'] text-gray-900 mb-2">{title}</h3>
-      <p className="text-gray-600 mb-4">{description}</p>
-      <ul className="space-y-2">
-        {items.map((item, index) => (
-          <li key={index} className="text-sm text-gray-500 font-['Inter']">• {item}</li>
-        ))}
-      </ul>
     </div>
   );
 };
