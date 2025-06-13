@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,11 +8,17 @@ import { useNavigate } from "react-router-dom";
 import { loadSimulation } from "@/services/saveSimulationService";
 import { toast } from "sonner";
 import { Search, ArrowLeft } from "lucide-react";
+import { trackFormResume, trackPageView } from "@/utils/analytics";
 
 export default function ResumeSimulation() {
   const navigate = useNavigate();
   const [resumeCode, setResumeCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Track page view
+  useEffect(() => {
+    trackPageView('resume_simulation');
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,6 +34,9 @@ export default function ResumeSimulation() {
       const result = await loadSimulation(resumeCode.trim());
       
       if (result.success && result.data) {
+        // Track successful resume
+        trackFormResume('success', resumeCode.trim());
+        
         // Salva lo stato nel localStorage con il tipo di form corretto
         const formType = result.data.formType;
         const stateToSave = {
@@ -43,10 +52,17 @@ export default function ResumeSimulation() {
         const { activeQuestion } = result.data.formState;
         navigate(`/simulazione/${formType}/${activeQuestion.block_id}/${activeQuestion.question_id}`);
       } else {
+        // Track failed resume
+        trackFormResume('failed', resumeCode.trim(), result.error);
+        
         toast.error(result.error || "Simulazione non trovata o scaduta");
       }
     } catch (error) {
       console.error('Errore nel caricamento:', error);
+      
+      // Track failed resume
+      trackFormResume('failed', resumeCode.trim(), 'unexpected_error');
+      
       toast.error("Si è verificato un errore nel caricamento della simulazione");
     } finally {
       setIsLoading(false);

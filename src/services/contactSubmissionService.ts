@@ -1,5 +1,5 @@
-
 import { supabase } from "@/integrations/supabase/client";
+import { trackContactSubmission } from "@/utils/analytics";
 
 type ContactSubmissionResult = {
   success: boolean;
@@ -21,6 +21,9 @@ export async function updateSubmissionWithContact(
 ): Promise<ContactSubmissionResult> {
   try {
     console.log("Aggiornamento submission con dati contatto...", { submissionId, phoneNumber, consulting });
+    
+    // Track contact submission
+    trackContactSubmission(consulting, 'whatsapp');
     
     // First, check if the submission exists and hasn't expired
     const { data: existingSubmission, error: checkError } = await supabase
