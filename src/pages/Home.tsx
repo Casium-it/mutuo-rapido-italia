@@ -4,22 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Calculator, TrendingUp, PieChart, Target, Home, Users, BookOpen, MessageCircle, Star, Check, Shield, Globe, Heart, Award } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
-import { usePageTimeTracking } from "@/hooks/usePageTimeTracking";
-import { analytics } from "@/utils/analytics";
 
 const HomePage = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const [currentNotification, setCurrentNotification] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
-  
-  // Initialize time tracking for the home page
-  const timeTracking = usePageTimeTracking({
-    milestones: [10, 30, 60, 120, 300], // 10s, 30s, 1min, 2min, 5min
-    trackScrollDepth: true,
-    trackVisibility: true,
-    pageName: 'home'
-  });
   
   const notifications = [
     {
@@ -101,6 +91,7 @@ const HomePage = () => {
     title: "Capacità Finanziaria",
     description: "Verifica sostenibilità rata"
   }];
+  
   const benefits = [{
     title: "Il miglior Mutuo",
     description: "Confrontiamo e parliamo con più di 100 banche senza che devi andare in filiale"
@@ -114,18 +105,12 @@ const HomePage = () => {
     title: "Mutuo per tutti",
     description: "Mutuo difficile? Partita Iva? Segnalazioni? Ci pensiamo noi a te siamo esperti in questo"
   }];
+  
   const handleWhatsAppContact = () => {
-    // Track the contact view event
-    analytics.trackContactView('whatsapp', 'header_button');
     window.open('https://wa.me/393518681491', '_blank');
   };
 
-  const handleSimulationClick = (location: string) => {
-    // Track simulation start from different locations
-    analytics.trackEvent('simulation_start', {
-      source: location,
-      page_name: 'home'
-    });
+  const handleSimulationClick = () => {
     navigate("/simulazioni");
   };
 
@@ -139,7 +124,7 @@ const HomePage = () => {
         
         {/* Desktop only navigation - centered */}
         {!isMobile && <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-4">
-            <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]" onClick={() => handleSimulationClick('header_simulazioni')}>
+            <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]" onClick={handleSimulationClick}>
               Simulazioni
             </Button>
             <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]" onClick={handleWhatsAppContact}>
@@ -149,7 +134,7 @@ const HomePage = () => {
         
         {/* CTA Button */}
         <div>
-          <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-full px-6" onClick={() => handleSimulationClick('header_cta')}>
+          <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-full px-6" onClick={handleSimulationClick}>
             Simulazione
           </Button>
         </div>
@@ -170,14 +155,11 @@ const HomePage = () => {
             <p className="text-gray-600 mb-4 max-w-3xl mx-auto lg:mx-0 leading-relaxed text-lg md:text-lg animate-[fade-in_0.6s_ease-out_0.6s_both] opacity-0 py-[5px]">Noi siamo dalla tua parte, non da quella delle banche! GoMutuo è il partner che ti segue dall'inizio alla fine.</p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start items-center mb-6 animate-[fade-in_0.6s_ease-out_0.9s_both] opacity-0">
-              <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-8 py-4 text-lg rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all relative overflow-hidden group" onClick={() => handleSimulationClick('hero_primary')}>
+              <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-8 py-4 text-lg rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all relative overflow-hidden group" onClick={handleSimulationClick}>
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
                 Simula il tuo mutuo
               </Button>
-              <Button variant="ghost" className="text-[#245C4F] hover:bg-[#F8F4EF] px-8 py-4 text-lg rounded-[12px] border border-[#245C4F] hover:border-[#1e4f44] transition-all backdrop-blur-sm" onClick={() => {
-                analytics.trackContactView('whatsapp', 'hero_secondary');
-                handleWhatsAppContact();
-              }}>
+              <Button variant="ghost" className="text-[#245C4F] hover:bg-[#F8F4EF] px-8 py-4 text-lg rounded-[12px] border border-[#245C4F] hover:border-[#1e4f44] transition-all backdrop-blur-sm" onClick={handleWhatsAppContact}>
                 Parla con noi
               </Button>
             </div>
