@@ -94,3 +94,20 @@ export const trackSimulationStart = (option: string, source: string = 'simulazio
   console.log(`🚀 Simulation started with option: ${option} from ${source}`);
   trackEvent('simulation_start', 'simulation', option);
 };
+
+// New tracking function for simulation replies
+export const trackSimulationReply = (blockId: string, questionId: string, replyTimeSeconds: number) => {
+  const action = 'simulation_reply';
+  const category = 'form_interaction';
+  const label = `${blockId}_${questionId}`;
+  
+  logEvent(action, category, label, replyTimeSeconds);
+  console.log(`💬 Simulation reply tracked: ${blockId}/${questionId} after ${replyTimeSeconds}s`);
+  
+  ReactGA.event({
+    action,
+    category,
+    label,
+    value: replyTimeSeconds,
+  });
+};

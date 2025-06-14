@@ -12,6 +12,7 @@ import { getQuestionTextWithClickableResponses } from "@/utils/formUtils";
 import { validateInput } from "@/utils/validationUtils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { MultiBlockManager } from "./MultiBlockManager";
+import { trackSimulationReply } from "@/utils/analytics";
 
 // Funzione per formattare il valore da visualizzare in base al tipo di validazione
 const formatDisplayValue = (value: string, validationType: ValidationTypes): string => {
@@ -134,6 +135,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
   const [showNonLoSoButton, setShowNonLoSoButton] = useState(false);
   // Nuovo stato per tenere traccia delle posizioni del cursore
   const [cursorPositions, setCursorPositions] = useState<{ [key: string]: number | null }>({});
+  // New state for tracking question start time
+  const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now());
   const params = useParams();
 
   // Nuova funzione per verificare se ci sono campi di input mancanti o non validi
@@ -229,6 +232,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
     setShowNonLoSoButton(false);
     // Reset delle posizioni del cursore
     setCursorPositions({});
+    // Reset question start time when question changes
+    setQuestionStartTime(Date.now());
   }, [question.question_id, getResponse, question.placeholders]);
 
   // Funzione per gestire la navigazione indietro con gestione del caso speciale
@@ -498,6 +503,11 @@ export function FormQuestion({ question }: FormQuestionProps) {
   const handleNextQuestion = () => {
     if (isNavigating) return;
     setIsNavigating(true);
+    
+    // Track simulation reply with timing
+    const replyTimeMs = Date.now() - questionStartTime;
+    const replyTimeSeconds = Math.round(replyTimeMs / 1000);
+    trackSimulationReply(state.activeQuestion.block_id, state.activeQuestion.question_id, replyTimeSeconds);
     
     // Verifica se è stata specificata una priorità per i placeholder
     if (question.leads_to_placeholder_priority && 
