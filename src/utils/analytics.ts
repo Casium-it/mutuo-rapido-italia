@@ -1,4 +1,3 @@
-
 import ReactGA from 'react-ga4';
 
 // Debug mode - can be enabled via environment variable
@@ -109,5 +108,21 @@ export const trackSimulationReply = (blockId: string, questionId: string, replyT
     category,
     label,
     value: replyTimeSeconds,
+  });
+};
+
+// New tracking function for back navigation
+export const trackSimulationBackNavigation = (blockId: string, questionId: string) => {
+  const action = 'simulation_back_navigation';
+  const category = 'navigation';
+  const label = `${blockId}_${questionId}`;
+  
+  logEvent(action, category, label);
+  console.log(`⬅️ Back navigation tracked: ${blockId}/${questionId}`);
+  
+  ReactGA.event({
+    action,
+    category,
+    label,
   });
 };

@@ -12,7 +12,7 @@ import { getQuestionTextWithClickableResponses } from "@/utils/formUtils";
 import { validateInput } from "@/utils/validationUtils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { MultiBlockManager } from "./MultiBlockManager";
-import { trackSimulationReply } from "@/utils/analytics";
+import { trackSimulationReply, trackSimulationBackNavigation } from "@/utils/analytics";
 
 // Funzione per formattare il valore da visualizzare in base al tipo di validazione
 const formatDisplayValue = (value: string, validationType: ValidationTypes): string => {
@@ -77,7 +77,7 @@ const formatEuroInput = (value: string, selectionStart: number | null): {
         separatorCount++;
       }
       
-      // Quando raggiungiamo il numero di cifre inserite prima del cursore
+      // Quando raggiungiamo la lunghezza totale dei separatori prima del cursore
       if (digitsCount === valueBeforeCursor.length) {
         newCursorPosition = i + 1;
         break;
@@ -240,6 +240,9 @@ export function FormQuestion({ question }: FormQuestionProps) {
   const handleBackNavigation = () => {
     if (isNavigating) return;
     setIsNavigating(true);
+    
+    // Track back navigation
+    trackSimulationBackNavigation(state.activeQuestion.block_id, state.activeQuestion.question_id);
     
     // Ottieni array di domande risposte dal set
     const answeredQuestionsArray = Array.from(state.answeredQuestions);
