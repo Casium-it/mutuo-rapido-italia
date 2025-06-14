@@ -89,3 +89,8 @@ export const trackSimulationCTA = (position: string) => {
   console.log(`🎯 Simulation CTA clicked at: ${position}`);
   trackEvent('simulazione_cta_click', 'cta', `home_page_${position}`);
 };
+
+export const trackSimulationStart = (option: string, source: string = 'simulazione_avanzata') => {
+  console.log(`🚀 Simulation started with option: ${option} from ${source}`);
+  trackEvent('simulation_start', 'simulation', option);
+};

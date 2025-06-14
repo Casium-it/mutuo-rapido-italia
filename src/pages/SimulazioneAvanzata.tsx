@@ -8,6 +8,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { allBlocks } from "@/data/blocks";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useTimeTracking } from "@/hooks/useTimeTracking";
+import { trackSimulationStart } from "@/utils/analytics";
 
 const SimulazioneAvanzata = () => {
   const isMobile = useIsMobile();
@@ -15,6 +17,11 @@ const SimulazioneAvanzata = () => {
   const { slug } = useParams();
   const [leadInfo, setLeadInfo] = useState<{ name: string; phone: string } | null>(null);
   const [loading, setLoading] = useState(false);
+  
+  // Initialize time tracking for simulazione avanzata page
+  const { trackCustomExit } = useTimeTracking({ 
+    pageName: 'simulazione_avanzata'
+  });
   
   // Effetto per controllare e gestire lo slug
   useEffect(() => {
@@ -77,7 +84,13 @@ const SimulazioneAvanzata = () => {
   }, [slug]);
   
   // Funzione per gestire l'avvio di un nuovo form
-  const startNewForm = (path: string, additionalBlocks: string[] = []) => {
+  const startNewForm = (path: string, additionalBlocks: string[] = [], optionTitle: string) => {
+    // Track simulation start with the selected option
+    trackSimulationStart(optionTitle);
+    
+    // Track custom exit since user is navigating to simulation
+    trackCustomExit('simulation_start');
+    
     // Rimuoviamo qualsiasi dato salvato in localStorage per i vari tipi di form
     const pathSegments = path.split('/');
     const formType = pathSegments[pathSegments.length - 3]; // Estrai il tipo (pensando, cercando, offerta, ecc.)
@@ -140,7 +153,11 @@ const SimulazioneAvanzata = () => {
             title="Mi sto guardando intorno"
             description="Non ho ancora iniziato le visite"
             href="/simulazione/pensando/introduzione/soggetto_acquisto"
-            onClick={() => startNewForm("/simulazione/pensando/introduzione/soggetto_acquisto", ["la_tua_ricerca_casa"])}
+            onClick={() => startNewForm(
+              "/simulazione/pensando/introduzione/soggetto_acquisto", 
+              ["la_tua_ricerca_casa"],
+              "Mi sto guardando intorno"
+            )}
           />
           
           <OptionCard
@@ -148,7 +165,11 @@ const SimulazioneAvanzata = () => {
             title="Sto cercando attivamente"
             description="Ho già iniziato o pianificato le visite"
             href="/simulazione/cercando/introduzione/soggetto_acquisto"
-            onClick={() => startNewForm("/simulazione/cercando/introduzione/soggetto_acquisto", ["la_tua_ricerca_casa"])}
+            onClick={() => startNewForm(
+              "/simulazione/cercando/introduzione/soggetto_acquisto", 
+              ["la_tua_ricerca_casa"],
+              "Sto cercando attivamente"
+            )}
           />
           
           <OptionCard
@@ -156,7 +177,11 @@ const SimulazioneAvanzata = () => {
             title="Ho individuato una casa"
             description="Ho trovato l'immobile ideale"
             href="/simulazione/individuata/introduzione/soggetto_acquisto"
-            onClick={() => startNewForm("/simulazione/individuata/introduzione/soggetto_acquisto", ["la_casa_individuata"])}
+            onClick={() => startNewForm(
+              "/simulazione/individuata/introduzione/soggetto_acquisto", 
+              ["la_casa_individuata"],
+              "Ho individuato una casa"
+            )}
           />
           
           <OptionCard
@@ -164,7 +189,11 @@ const SimulazioneAvanzata = () => {
             title="Ho fatto un'offerta"
             description="Sono in attesa dell'accettazione"
             href="/simulazione/offerta/introduzione/soggetto_acquisto"
-            onClick={() => startNewForm("/simulazione/offerta/introduzione/soggetto_acquisto", ["la_tua_offerta"])}
+            onClick={() => startNewForm(
+              "/simulazione/offerta/introduzione/soggetto_acquisto", 
+              ["la_tua_offerta"],
+              "Ho fatto un'offerta"
+            )}
           />
           
           <OptionCard
@@ -172,7 +201,11 @@ const SimulazioneAvanzata = () => {
             title="Ho un'offerta accettata"
             description="Sono sicuro dell'immobile"
             href="/simulazione/accettata/introduzione/soggetto_acquisto"
-            onClick={() => startNewForm("/simulazione/accettata/introduzione/soggetto_acquisto", ["la_tua_offerta"])}
+            onClick={() => startNewForm(
+              "/simulazione/accettata/introduzione/soggetto_acquisto", 
+              ["la_tua_offerta"],
+              "Ho un'offerta accettata"
+            )}
           />
           
           <OptionCard
