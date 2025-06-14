@@ -194,3 +194,20 @@ export const trackSimulationCompleted = (totalTimeSeconds: number) => {
     value: totalTimeSeconds,
   });
 };
+
+// New tracking function for contact details submission
+export const trackSimulationContactDetails = (timeToSubmitSeconds: number, hasConsulting: boolean) => {
+  const action = 'simulation_contact_details';
+  const category = 'form_completion';
+  const label = hasConsulting ? 'with_consulting' : 'no_consulting';
+  
+  logEvent(action, category, label, timeToSubmitSeconds);
+  console.log(`📋 Contact details tracked: ${label} after ${timeToSubmitSeconds}s on page`);
+  
+  ReactGA.event({
+    action,
+    category,
+    label,
+    value: timeToSubmitSeconds,
+  });
+};

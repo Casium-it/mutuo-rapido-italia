@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { Link } from "react-router-dom";
@@ -11,11 +11,13 @@ import { Label } from "@/components/ui/label";
 import { validatePhoneNumber } from "@/utils/validationUtils";
 import { toast } from "sonner";
 import { updateSubmissionWithContact } from "@/services/contactSubmissionService";
+import { trackSimulationContactDetails } from "@/utils/analytics";
 
 export default function FormCompleted() {
   const navigate = useNavigate();
   const location = useLocation();
   const [keySummary, setKeySummary] = useState<Record<string, any>>({});
+  const pageStartTimeRef = useRef<number>(Date.now());
 
   // Form state for WhatsApp contact
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -145,6 +147,10 @@ export default function FormCompleted() {
       );
 
       if (result.success) {
+        // Calculate time spent on this page and track the contact details submission
+        const timeSpentOnPage = Math.floor((Date.now() - pageStartTimeRef.current) / 1000);
+        trackSimulationContactDetails(timeSpentOnPage, consultationRequest);
+        
         toast.success("Perfetto!", {
           description: "Riceverai presto i risultati su WhatsApp"
         });
