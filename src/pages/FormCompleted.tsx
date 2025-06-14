@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
@@ -11,13 +10,14 @@ import { Label } from "@/components/ui/label";
 import { validatePhoneNumber } from "@/utils/validationUtils";
 import { toast } from "sonner";
 import { updateSubmissionWithContact } from "@/services/contactSubmissionService";
-import { trackSimulationContactDetails } from "@/utils/analytics";
+import { trackSimulationContactDetails, trackSimulationLostDetails } from "@/utils/analytics";
 
 export default function FormCompleted() {
   const navigate = useNavigate();
   const location = useLocation();
   const [keySummary, setKeySummary] = useState<Record<string, any>>({});
   const pageStartTimeRef = useRef<number>(Date.now());
+  const hasSubmittedRef = useRef<boolean>(false);
 
   // Form state for WhatsApp contact
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -45,6 +45,38 @@ export default function FormCompleted() {
     // Debug: log the submission ID specifically
     console.log("Submission ID from submissionData.submissionId:", submissionData.submissionId);
     console.log("Submission ID from submissionData.id:", submissionData.id);
+
+    // Track lost details on page exit
+    const handleBeforeUnload = () => {
+      if (!hasSubmittedRef.current) {
+        const timeOnPage = Math.floor((Date.now() - pageStartTimeRef.current) / 1000);
+        trackSimulationLostDetails('page_close', timeOnPage);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden && !hasSubmittedRef.current) {
+        const timeOnPage = Math.floor((Date.now() - pageStartTimeRef.current) / 1000);
+        trackSimulationLostDetails('tab_close', timeOnPage);
+      }
+    };
+
+    const handlePopState = () => {
+      if (!hasSubmittedRef.current) {
+        const timeOnPage = Math.floor((Date.now() - pageStartTimeRef.current) / 1000);
+        trackSimulationLostDetails('navigate', timeOnPage);
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, [submissionData, navigate, location.state]);
 
   // Phone number formatting function
@@ -147,6 +179,9 @@ export default function FormCompleted() {
       );
 
       if (result.success) {
+        // Mark as submitted to prevent lost details tracking
+        hasSubmittedRef.current = true;
+        
         // Calculate time spent on this page and track the contact details submission
         const timeSpentOnPage = Math.floor((Date.now() - pageStartTimeRef.current) / 1000);
         trackSimulationContactDetails(timeSpentOnPage, consultationRequest);

@@ -211,3 +211,20 @@ export const trackSimulationContactDetails = (timeToSubmitSeconds: number, hasCo
     value: timeToSubmitSeconds,
   });
 };
+
+// New tracking function for lost contact details
+export const trackSimulationLostDetails = (exitType: 'navigate' | 'tab_close' | 'page_close', timeOnPageSeconds: number) => {
+  const action = 'simulation_lost_details';
+  const category = 'form_abandonment';
+  const label = exitType;
+  
+  logEvent(action, category, label, timeOnPageSeconds);
+  console.log(`💔 Contact details lost: ${exitType} after ${timeOnPageSeconds}s on page`);
+  
+  ReactGA.event({
+    action,
+    category,
+    label,
+    value: timeOnPageSeconds,
+  });
+};
