@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { BlockSidebar } from "@/components/form/BlockSidebar";
@@ -15,6 +14,8 @@ import { SaveSimulationDialog } from "@/components/form/SaveSimulationDialog";
 import { ExitConfirmationDialog } from "@/components/form/ExitConfirmationDialog";
 import { saveSimulation, SaveSimulationData } from "@/services/saveSimulationService";
 import { toast } from "sonner";
+import { useTimeTracking } from "@/hooks/useTimeTracking";
+import { trackSimulationExit } from "@/utils/analytics";
 
 export default function Form() {
   const {
@@ -31,6 +32,11 @@ export default function Form() {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Initialize time tracking for the simulation
+  const { getTimeSpent, trackCustomExit } = useTimeTracking({
+    pageName: 'simulation_form'
+  });
 
   // Trova il blocco attivo corrente
   const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
@@ -52,8 +58,10 @@ export default function Form() {
     setShowExitDialog(true);
   };
 
-  // Handle confirmed exit without saving
+  // Handle confirmed exit without saving - NOW WITH TRACKING
   const handleConfirmExit = () => {
+    const totalTimeSpent = getTimeSpent();
+    trackSimulationExit('confirmed_exit', totalTimeSpent);
     setShowExitDialog(false);
     navigate("/");
   };
@@ -102,6 +110,20 @@ export default function Form() {
   const handleSaveSuccess = () => {
     handleCloseSaveDialog(true); // Navigate to home on successful save
   };
+
+  // Track tab close/page unload as simulation exit
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      const totalTimeSpent = getTimeSpent();
+      trackSimulationExit('tab_close', totalTimeSpent);
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [getTimeSpent]);
 
   // Assicuriamoci che il componente si ri-renderizzi quando cambia l'URL
   useEffect(() => {

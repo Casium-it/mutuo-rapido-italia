@@ -9,6 +9,8 @@ import { SaveSimulationDialog } from "./SaveSimulationDialog";
 import { useNavigate } from "react-router-dom";
 import { saveSimulation, SaveSimulationData } from "@/services/saveSimulationService";
 import { toast } from "sonner";
+import { useTimeTracking } from "@/hooks/useTimeTracking";
+import { trackSimulationExit } from "@/utils/analytics";
 
 export function BlockSidebar() {
   const {
@@ -25,6 +27,11 @@ export function BlockSidebar() {
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Get time tracking for exit purposes
+  const { getTimeSpent } = useTimeTracking({
+    pageName: 'simulation_form'
+  });
 
   // Filter blocks that are active and not invisible, and sort by priority
   const activeBlocks = blocks.filter(block => state.activeBlocks.includes(block.block_id) && !block.invisible).sort((a, b) => a.priority - b.priority);
@@ -53,8 +60,10 @@ export function BlockSidebar() {
     setShowExitDialog(true);
   };
 
-  // Handle confirmed exit without saving
+  // Handle confirmed exit without saving - NOW WITH TRACKING
   const handleConfirmExit = () => {
+    const totalTimeSpent = getTimeSpent();
+    trackSimulationExit('confirmed_exit', totalTimeSpent);
     setShowExitDialog(false);
     navigate("/");
   };

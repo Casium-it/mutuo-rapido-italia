@@ -142,3 +142,20 @@ export const trackSimulationChangeResponse = (blockId: string, questionId: strin
     label,
   });
 };
+
+// New tracking function for simulation exit
+export const trackSimulationExit = (exitType: 'confirmed_exit' | 'tab_close', totalTimeSeconds: number) => {
+  const action = 'simulation_exit';
+  const category = 'simulation';
+  const label = exitType;
+  
+  logEvent(action, category, label, totalTimeSeconds);
+  console.log(`🚪 Simulation exit tracked: ${exitType} after ${totalTimeSeconds}s total`);
+  
+  ReactGA.event({
+    action,
+    category,
+    label,
+    value: totalTimeSeconds,
+  });
+};
