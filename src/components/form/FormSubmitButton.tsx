@@ -5,11 +5,18 @@ import { Button } from "@/components/ui/button";
 import { useForm } from "@/contexts/FormContext";
 import { submitFormToSupabase } from "@/services/formSubmissionService";
 import { toast } from "@/hooks/use-toast";
+import { useTimeTracking } from "@/hooks/useTimeTracking";
+import { trackSimulationCompleted } from "@/utils/analytics";
 
 export function FormSubmitButton() {
   const { state, blocks } = useForm();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+
+  // Get time tracking for completion event
+  const { getTimeSpent } = useTimeTracking({
+    pageName: 'simulation_form'
+  });
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
@@ -21,6 +28,10 @@ export function FormSubmitButton() {
       
       if (result.success && result.submissionId) {
         console.log("Form inviato con successo, ID:", result.submissionId);
+        
+        // Track successful completion with total time spent
+        const totalTimeSpent = getTimeSpent();
+        trackSimulationCompleted(totalTimeSpent);
         
         // Naviga alla pagina di completamento con i dati della submission
         navigate('/form-completed', { 

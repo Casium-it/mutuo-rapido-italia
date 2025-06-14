@@ -177,3 +177,20 @@ export const trackSimulationSave = (totalTimeSeconds: number) => {
     value: totalTimeSeconds,
   });
 };
+
+// New tracking function for simulation completion
+export const trackSimulationCompleted = (totalTimeSeconds: number) => {
+  const action = 'simulation_completed';
+  const category = 'simulation';
+  const label = 'completed_successfully';
+  
+  logEvent(action, category, label, totalTimeSeconds);
+  console.log(`🎉 Simulation completed tracked after ${totalTimeSeconds}s total`);
+  
+  ReactGA.event({
+    action,
+    category,
+    label,
+    value: totalTimeSeconds,
+  });
+};
