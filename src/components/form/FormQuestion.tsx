@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { Question, ValidationTypes } from "@/types/form";
 import { Input } from "@/components/ui/input";
@@ -135,8 +135,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
   const [showNonLoSoButton, setShowNonLoSoButton] = useState(false);
   // Nuovo stato per tenere traccia delle posizioni del cursore
   const [cursorPositions, setCursorPositions] = useState<{ [key: string]: number | null }>({});
-  // New state for tracking question start time
-  const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now());
+  // Use ref instead of state for question start time to prevent resets on re-renders
+  const questionStartTimeRef = useRef<number>(Date.now());
   const params = useParams();
 
   // Nuova funzione per verificare se ci sono campi di input mancanti o non validi
@@ -232,8 +232,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
     setShowNonLoSoButton(false);
     // Reset delle posizioni del cursore
     setCursorPositions({});
-    // Reset question start time when question changes
-    setQuestionStartTime(Date.now());
+    // Reset question start time when question changes (only when question ID changes)
+    questionStartTimeRef.current = Date.now();
   }, [question.question_id, getResponse, question.placeholders]);
 
   // Funzione per gestire la navigazione indietro con gestione del caso speciale
@@ -522,8 +522,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
     if (isNavigating) return;
     setIsNavigating(true);
     
-    // Track simulation reply with timing
-    const replyTimeMs = Date.now() - questionStartTime;
+    // Track simulation reply with timing using ref instead of state
+    const replyTimeMs = Date.now() - questionStartTimeRef.current;
     const replyTimeSeconds = Math.round(replyTimeMs / 1000);
     trackSimulationReply(state.activeQuestion.block_id, state.activeQuestion.question_id, replyTimeSeconds);
     
