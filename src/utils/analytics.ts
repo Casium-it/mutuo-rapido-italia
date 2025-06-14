@@ -94,3 +94,52 @@ export const trackSimulationStart = (option: string, source: string = 'simulazio
   console.log(`🚀 Simulation started with option: ${option} from ${source}`);
   trackEvent('simulation_start', 'simulation', option);
 };
+
+// New form interaction tracking functions
+export const trackSimulationReply = (blockId: string, questionId: string, replyTimeMs: number, responseValue?: string) => {
+  const action = 'simulation_reply';
+  const category = 'form_interaction';
+  const label = `${blockId}_${questionId}`;
+  
+  logEvent(action, category, label, replyTimeMs);
+  console.log(`📝 Form reply tracked: ${blockId}/${questionId} - ${replyTimeMs}ms${responseValue ? ` - "${responseValue}"` : ''}`);
+  
+  ReactGA.event({
+    action,
+    category,
+    label,
+    value: replyTimeMs,
+    custom_parameters: responseValue ? { response_value: responseValue } : {}
+  });
+};
+
+export const trackBackNavigation = (fromBlockId: string, fromQuestionId: string, toBlockId: string, toQuestionId: string) => {
+  const action = 'simulation_back_navigation';
+  const category = 'form_navigation';
+  const label = `${fromBlockId}_${fromQuestionId}_to_${toBlockId}_${toQuestionId}`;
+  
+  logEvent(action, category, label);
+  console.log(`⬅️ Back navigation tracked: ${fromBlockId}/${fromQuestionId} → ${toBlockId}/${toQuestionId}`);
+  
+  ReactGA.event({
+    action,
+    category,
+    label
+  });
+};
+
+export const trackChangeResponse = (blockId: string, questionId: string, placeholderKey: string, previousValue?: string) => {
+  const action = 'simulation_change_response';
+  const category = 'form_interaction';
+  const label = `${blockId}_${questionId}_${placeholderKey}`;
+  
+  logEvent(action, category, label);
+  console.log(`✏️ Response change tracked: ${blockId}/${questionId}/${placeholderKey}${previousValue ? ` - was "${previousValue}"` : ''}`);
+  
+  ReactGA.event({
+    action,
+    category,
+    label,
+    custom_parameters: previousValue ? { previous_value: previousValue } : {}
+  });
+};

@@ -12,6 +12,7 @@ import { getQuestionTextWithClickableResponses } from "@/utils/formUtils";
 import { validateInput } from "@/utils/validationUtils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { MultiBlockManager } from "./MultiBlockManager";
+import { trackSimulationReply, trackBackNavigation, trackChangeResponse } from "@/utils/analytics";
 
 // Funzione per formattare il valore da visualizzare in base al tipo di validazione
 const formatDisplayValue = (value: string, validationType: ValidationTypes): string => {
@@ -134,6 +135,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
   const [showNonLoSoButton, setShowNonLoSoButton] = useState(false);
   // Nuovo stato per tenere traccia delle posizioni del cursore
   const [cursorPositions, setCursorPositions] = useState<{ [key: string]: number | null }>({});
+  // Add question start time for tracking reply time
+  const [questionStartTime, setQuestionStartTime] = useState<number>(0);
   const params = useParams();
 
   // Nuova funzione per verificare se ci sono campi di input mancanti o non validi
@@ -229,6 +232,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
     setShowNonLoSoButton(false);
     // Reset delle posizioni del cursore
     setCursorPositions({});
+    // Track question start time
+    setQuestionStartTime(Date.now());
   }, [question.question_id, getResponse, question.placeholders]);
 
   // Funzione per gestire la navigazione indietro con gestione del caso speciale
@@ -271,6 +276,14 @@ export function FormQuestion({ question }: FormQuestionProps) {
       return;
     }
     
+    // Track back navigation before navigating
+    trackBackNavigation(
+      state.activeQuestion.block_id,
+      state.activeQuestion.question_id,
+      blockWithPreviousQuestion.block_id,
+      previousQuestionId
+    );
+    
     // Naviga alla domanda precedente
     setTimeout(() => {
       goToQuestion(blockWithPreviousQuestion.block_id, previousQuestionId);
@@ -282,6 +295,15 @@ export function FormQuestion({ question }: FormQuestionProps) {
   const handleNonLoSoClick = () => {
     if (isNavigating) return;
     setIsNavigating(true);
+    
+    // Track reply time before proceeding
+    const replyTime = Date.now() - questionStartTime;
+    trackSimulationReply(
+      state.activeQuestion.block_id,
+      state.activeQuestion.question_id,
+      replyTime,
+      "non lo so"
+    );
     
     // Trova tutti i placeholder di tipo input che sono vuoti o non validi
     const inputPlaceholders = Object.keys(question.placeholders).filter(
@@ -468,6 +490,19 @@ export function FormQuestion({ question }: FormQuestionProps) {
 
   // Funzione per gestire il click sul placeholder
   const handlePlaceholderClick = (key: string) => {
+    // Check if this is editing an existing response
+    const existingResponse = getResponse(question.question_id, key);
+    
+    if (existingResponse) {
+      // Track change response event
+      trackChangeResponse(
+        state.activeQuestion.block_id,
+        state.activeQuestion.question_id,
+        key,
+        typeof existingResponse === 'string' ? existingResponse : JSON.stringify(existingResponse)
+      );
+    }
+    
     setVisibleOptions(prev => ({
       ...prev,
       [key]: !prev[key]
@@ -476,6 +511,19 @@ export function FormQuestion({ question }: FormQuestionProps) {
 
   // Funzione per attivare la modalità di modifica di un input
   const handleInputClick = (key: string) => {
+    // Check if this is editing an existing response
+    const existingResponse = getResponse(question.question_id, key);
+    
+    if (existingResponse) {
+      // Track change response event
+      trackChangeResponse(
+        state.activeQuestion.block_id,
+        state.activeQuestion.question_id,
+        key,
+        typeof existingResponse === 'string' ? existingResponse : JSON.stringify(existingResponse)
+      );
+    }
+    
     setEditingFields(prev => ({
       ...prev,
       [key]: true
@@ -498,6 +546,20 @@ export function FormQuestion({ question }: FormQuestionProps) {
   const handleNextQuestion = () => {
     if (isNavigating) return;
     setIsNavigating(true);
+    
+    // Track reply time and get response values for tracking
+    const replyTime = Date.now() - questionStartTime;
+    const responseValues = Object.keys(question.placeholders).map(key => {
+      const response = responses[key] || getResponse(question.question_id, key);
+      return response ? `${key}:${response}` : null;
+    }).filter(Boolean).join(', ');
+    
+    trackSimulationReply(
+      state.activeQuestion.block_id,
+      state.activeQuestion.question_id,
+      replyTime,
+      responseValues || undefined
+    );
     
     // Verifica se è stata specificata una priorità per i placeholder
     if (question.leads_to_placeholder_priority && 
