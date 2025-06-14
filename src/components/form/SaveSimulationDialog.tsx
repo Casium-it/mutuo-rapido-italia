@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { CheckCircle2, Copy } from "lucide-react";
-import { useTimeTracking } from "@/hooks/useTimeTracking";
+import { useSimulationTimer } from "@/hooks/useSimulationTimer";
 import { trackSimulationSave } from "@/utils/analytics";
 
 const saveFormSchema = z.object({
@@ -32,10 +31,8 @@ export function SaveSimulationDialog({ open, onClose, onSave, isLoading = false 
   const [step, setStep] = useState<'form' | 'success'>('form');
   const [resumeCode, setResumeCode] = useState<string>('');
   
-  // Get time tracking for save event
-  const { getTimeSpent } = useTimeTracking({
-    pageName: 'simulation_form'
-  });
+  // Get global simulation timer for save event
+  const { getTotalTimeSpent } = useSimulationTimer();
   
   const form = useForm<SaveFormData>({
     resolver: zodResolver(saveFormSchema),
@@ -51,8 +48,8 @@ export function SaveSimulationDialog({ open, onClose, onSave, isLoading = false 
       const result = await onSave(data);
       
       if (result.success && result.resumeCode) {
-        // Track successful save with total time spent
-        const totalTimeSpent = getTimeSpent();
+        // Track successful save with total time spent from simulation start
+        const totalTimeSpent = getTotalTimeSpent();
         trackSimulationSave(totalTimeSpent);
         
         setResumeCode(result.resumeCode);

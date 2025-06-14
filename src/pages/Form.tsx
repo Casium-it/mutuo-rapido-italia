@@ -15,6 +15,7 @@ import { ExitConfirmationDialog } from "@/components/form/ExitConfirmationDialog
 import { saveSimulation, SaveSimulationData } from "@/services/saveSimulationService";
 import { toast } from "sonner";
 import { useTimeTracking } from "@/hooks/useTimeTracking";
+import { useSimulationTimer } from "@/hooks/useSimulationTimer";
 import { trackSimulationExit } from "@/utils/analytics";
 
 export default function Form() {
@@ -38,6 +39,14 @@ export default function Form() {
     pageName: 'simulation_form'
   });
 
+  // Initialize global simulation timer
+  const { initializeTimer, getTotalTimeSpent } = useSimulationTimer();
+
+  // Initialize global timer when form component mounts
+  useEffect(() => {
+    initializeTimer();
+  }, [initializeTimer]);
+
   // Trova il blocco attivo corrente
   const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
 
@@ -58,9 +67,9 @@ export default function Form() {
     setShowExitDialog(true);
   };
 
-  // Handle confirmed exit without saving - NOW WITH TRACKING
+  // Handle confirmed exit without saving - NOW WITH GLOBAL TRACKING
   const handleConfirmExit = () => {
-    const totalTimeSpent = getTimeSpent();
+    const totalTimeSpent = getTotalTimeSpent();
     trackSimulationExit('confirmed_exit', totalTimeSpent);
     setShowExitDialog(false);
     navigate("/");
@@ -111,10 +120,10 @@ export default function Form() {
     handleCloseSaveDialog(true); // Navigate to home on successful save
   };
 
-  // Track tab close/page unload as simulation exit
+  // Track tab close/page unload as simulation exit - WITH GLOBAL TRACKING
   useEffect(() => {
     const handleBeforeUnload = () => {
-      const totalTimeSpent = getTimeSpent();
+      const totalTimeSpent = getTotalTimeSpent();
       trackSimulationExit('tab_close', totalTimeSpent);
     };
 
@@ -123,7 +132,7 @@ export default function Form() {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [getTimeSpent]);
+  }, [getTotalTimeSpent]);
 
   // Assicuriamoci che il componente si ri-renderizzi quando cambia l'URL
   useEffect(() => {

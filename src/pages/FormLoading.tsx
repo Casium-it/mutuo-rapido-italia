@@ -6,7 +6,7 @@ import { FormResponse } from "@/types/form";
 import { submitFormToSupabase } from "@/services/formSubmissionService";
 import { allBlocks } from "@/data/blocks";
 import { toast } from "sonner";
-import { useTimeTracking } from "@/hooks/useTimeTracking";
+import { useSimulationTimer } from "@/hooks/useSimulationTimer";
 import { trackSimulationCompleted } from "@/utils/analytics";
 
 export default function FormLoading() {
@@ -19,10 +19,8 @@ export default function FormLoading() {
   const submissionStartedRef = useRef(false);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Get time tracking for completion event
-  const { getTimeSpent } = useTimeTracking({
-    pageName: 'simulation_form'
-  });
+  // Get global simulation timer for completion event
+  const { getTotalTimeSpent } = useSimulationTimer();
   
   // Ottieni i dati del form dallo stato della location
   const formData = location.state?.formData as {
@@ -128,8 +126,8 @@ export default function FormLoading() {
       if (result.success && result.submissionId) {
         console.log("Form inviato con successo, ID:", result.submissionId);
         
-        // Track successful completion with total time spent
-        const totalTimeSpent = getTimeSpent();
+        // Track successful completion with total time spent from simulation start
+        const totalTimeSpent = getTotalTimeSpent();
         trackSimulationCompleted(totalTimeSpent);
         
         setActualSubmissionId(result.submissionId);
