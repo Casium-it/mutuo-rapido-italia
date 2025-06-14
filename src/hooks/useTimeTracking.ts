@@ -7,32 +7,41 @@ interface UseTimeTrackingOptions {
   milestones?: number[]; // in seconds
 }
 
+// Default milestones outside the hook to prevent re-initialization
+const DEFAULT_MILESTONES = [10, 30, 60, 120, 300]; // 10s, 30s, 1min, 2min, 5min
+
 export const useTimeTracking = ({ 
   pageName, 
-  milestones = [10, 30, 60, 120, 300] // 10s, 30s, 1min, 2min, 5min
+  milestones = DEFAULT_MILESTONES
 }: UseTimeTrackingOptions) => {
-  const startTimeRef = useRef<number>(Date.now());
+  const startTimeRef = useRef<number>(0);
   const milestonesReachedRef = useRef<Set<number>>(new Set());
   const timeoutsRef = useRef<NodeJS.Timeout[]>([]);
   const hasTrackedExitRef = useRef<boolean>(false);
+  const isInitializedRef = useRef<boolean>(false);
 
   const getTimeSpent = useCallback(() => {
+    if (startTimeRef.current === 0) return 0;
     return Math.floor((Date.now() - startTimeRef.current) / 1000);
   }, []);
 
   const trackExit = useCallback((exitType: string) => {
-    if (hasTrackedExitRef.current) return;
+    if (hasTrackedExitRef.current || startTimeRef.current === 0) return;
     hasTrackedExitRef.current = true;
     
     const timeSpent = getTimeSpent();
     trackPageExit(pageName, exitType, timeSpent);
   }, [pageName, getTimeSpent]);
 
+  // Initialize only once when component mounts
   useEffect(() => {
+    if (isInitializedRef.current) return;
+    
     console.log(`🕒 Time tracking started for ${pageName}`);
     startTimeRef.current = Date.now();
     milestonesReachedRef.current.clear();
     hasTrackedExitRef.current = false;
+    isInitializedRef.current = true;
 
     // Set up milestone timeouts
     milestones.forEach((milestone) => {
@@ -83,8 +92,9 @@ export const useTimeTracking = ({
       }
 
       console.log(`🕒 Time tracking stopped for ${pageName}. Total time: ${getTimeSpent()}s`);
+      isInitializedRef.current = false;
     };
-  }, [pageName, milestones, trackExit, getTimeSpent]);
+  }, [pageName]); // Only depend on pageName, not on milestones or callbacks
 
   return {
     getTimeSpent,

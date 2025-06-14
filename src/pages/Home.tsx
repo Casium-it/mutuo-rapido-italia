@@ -13,10 +13,9 @@ const HomePage = () => {
   const [currentNotification, setCurrentNotification] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   
-  // Initialize time tracking for home page
+  // Initialize time tracking for home page - stable reference
   const { trackCustomExit } = useTimeTracking({ 
-    pageName: 'home_page',
-    milestones: [10, 30, 60, 120, 300] // 10s, 30s, 1min, 2min, 5min
+    pageName: 'home_page'
   });
   
   const notifications = [
