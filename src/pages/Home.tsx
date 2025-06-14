@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Check, Star } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
+import { trackEvent } from "@/utils/analytics";
 
 const HomePage = () => {
   const isMobile = useIsMobile();
@@ -82,6 +83,7 @@ const HomePage = () => {
   }];
 
   const handleWhatsAppContact = () => {
+    trackEvent('whatsapp_contact', 'contact', 'home_page');
     window.open('https://wa.me/393518681491', '_blank');
   };
 
