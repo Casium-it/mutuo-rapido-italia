@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { FormProvider } from "@/contexts/FormContext";
+import { usePageTracking } from "@/hooks/usePageTracking";
 import { allBlocks } from "@/data/blocks";
 import SimulazioneAvanzata from "./pages/SimulazioneAvanzata";
 import Form from "./pages/Form";
@@ -18,6 +19,30 @@ import Home from "./pages/Home";
 
 const queryClient = new QueryClient();
 
+// Component to track page views inside Router context
+const AppWithTracking = () => {
+  usePageTracking();
+  
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/simulazione-avanzata" element={<SimulazioneAvanzata />} />
+      <Route path="/simulazione-avanzata/:slug" element={<SimulazioneAvanzata />} />
+      <Route path="/riprendi-simulazione" element={<ResumeSimulation />} />
+      <Route path="/simulazione/:blockType/:blockId/:questionId" element={
+        <FormProvider blocks={allBlocks}>
+          <Form />
+        </FormProvider>
+      } />
+      <Route path="/form-loading" element={<FormLoading />} />
+      <Route path="/form-completed" element={<FormCompleted />} />
+      <Route path="/privacy" element={<Privacy />} />
+      <Route path="/simulazioni" element={<Simulazioni />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -25,22 +50,7 @@ function App() {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/simulazione-avanzata" element={<SimulazioneAvanzata />} />
-            <Route path="/simulazione-avanzata/:slug" element={<SimulazioneAvanzata />} />
-            <Route path="/riprendi-simulazione" element={<ResumeSimulation />} />
-            <Route path="/simulazione/:blockType/:blockId/:questionId" element={
-              <FormProvider blocks={allBlocks}>
-                <Form />
-              </FormProvider>
-            } />
-            <Route path="/form-loading" element={<FormLoading />} />
-            <Route path="/form-completed" element={<FormCompleted />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/simulazioni" element={<Simulazioni />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AppWithTracking />
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
