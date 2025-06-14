@@ -3,9 +3,7 @@ import ReactGA from 'react-ga4';
 
 // Initialize GA4 with react-ga4
 export const initializeGA = () => {
-  ReactGA.initialize('G-NCEGV2W1YP', {
-    testMode: process.env.NODE_ENV === 'development', // Use testMode for development
-  });
+  ReactGA.initialize('G-NCEGV2W1YP');
 };
 
 // Centralized analytics utility for GA4 event tracking
