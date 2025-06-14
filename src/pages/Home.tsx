@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
-import { Calculator, TrendingUp, PieChart, Target, Home, Users, BookOpen, MessageCircle, Star, Check, Shield, Globe, Heart, Award } from "lucide-react";
+import { Check, Star } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
 
@@ -66,31 +67,6 @@ const HomePage = () => {
     };
   }, [isVisible, currentNotification, notifications.length]);
 
-  const calcolatori = [{
-    icon: Calculator,
-    title: "Simulatore Mutuo",
-    description: "Calcola rata e importo finanziabile"
-  }, {
-    icon: TrendingUp,
-    title: "Analisi Tassi",
-    description: "Confronta tassi fissi e variabili"
-  }, {
-    icon: PieChart,
-    title: "Piano Ammortamento",
-    description: "Visualizza piano di rimborso"
-  }, {
-    icon: Target,
-    title: "Calcolo Interessi",
-    description: "Stima interessi totali"
-  }, {
-    icon: Home,
-    title: "Valore Immobile",
-    description: "Valuta il prezzo della casa"
-  }, {
-    icon: Users,
-    title: "Capacità Finanziaria",
-    description: "Verifica sostenibilità rata"
-  }];
   const benefits = [{
     title: "Il miglior Mutuo",
     description: "Confrontiamo e parliamo con più di 100 banche senza che devi andare in filiale"
@@ -104,6 +80,7 @@ const HomePage = () => {
     title: "Mutuo per tutti",
     description: "Mutuo difficile? Partita Iva? Segnalazioni? Ci pensiamo noi a te siamo esperti in questo"
   }];
+
   const handleWhatsAppContact = () => {
     window.open('https://wa.me/393518681491', '_blank');
   };
@@ -208,12 +185,6 @@ const HomePage = () => {
             {benefits.map((benefit, index) => <BenefitCard key={index} title={benefit.title} description={benefit.description} />)}
           </div>
         </div>
-
-        {/* Calcolatori Grid */}
-        
-
-        {/* CTA Section */}
-        
       </main>
 
       {/* Footer */}
@@ -250,48 +221,4 @@ const BenefitCard = ({
     </div>;
 };
 
-// Componente per le card dei calcolatori
-interface CalcolatoreCardProps {
-  icon: React.ElementType;
-  title: string;
-  description: string;
-}
-const CalcolatoreCard = ({
-  icon: Icon,
-  title,
-  description
-}: CalcolatoreCardProps) => {
-  return <div className="bg-white rounded-lg border border-[#BEB8AE] p-6 hover:shadow-lg transition-all">
-      <div className="bg-[#F8F4EF] rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-        <Icon className="w-8 h-8 text-[#245C4F]" />
-      </div>
-      <h3 className="text-xl font-semibold font-['Inter'] text-gray-900 mb-2 text-center">{title}</h3>
-      <p className="text-gray-600 text-center">{description}</p>
-    </div>;
-};
-
-// Componente per le card delle risorse
-interface RisorsaCardProps {
-  icon: React.ElementType;
-  title: string;
-  description: string;
-  items: string[];
-}
-const RisorsaCard = ({
-  icon: Icon,
-  title,
-  description,
-  items
-}: RisorsaCardProps) => {
-  return <div className="text-center">
-      <div className="bg-[#F8F4EF] rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-        <Icon className="w-8 h-8 text-[#245C4F]" />
-      </div>
-      <h3 className="text-xl font-semibold font-['Inter'] text-gray-900 mb-2">{title}</h3>
-      <p className="text-gray-600 mb-4">{description}</p>
-      <ul className="space-y-2">
-        {items.map((item, index) => <li key={index} className="text-sm text-gray-500 font-['Inter']">• {item}</li>)}
-      </ul>
-    </div>;
-};
 export default HomePage;
