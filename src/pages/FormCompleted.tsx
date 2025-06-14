@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
@@ -11,10 +10,13 @@ import { Label } from "@/components/ui/label";
 import { validatePhoneNumber } from "@/utils/validationUtils";
 import { toast } from "sonner";
 import { updateSubmissionWithContact } from "@/services/contactSubmissionService";
+import { trackSimulationCompleted, trackSimulationContactDetails } from "@/utils/analytics";
+import { useContactPageTracking } from "@/hooks/useContactPageTracking";
 
 export default function FormCompleted() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { getPageTime } = useContactPageTracking();
   const [keySummary, setKeySummary] = useState<Record<string, any>>({});
 
   // Form state for WhatsApp contact
@@ -44,6 +46,13 @@ export default function FormCompleted() {
     console.log("Submission ID from submissionData.submissionId:", submissionData.submissionId);
     console.log("Submission ID from submissionData.id:", submissionData.id);
   }, [submissionData, navigate, location.state]);
+
+  // Track simulation completion when page loads
+  useEffect(() => {
+    if (submissionData) {
+      trackSimulationCompleted();
+    }
+  }, [submissionData]);
 
   // Phone number formatting function
   const formatPhoneNumber = (value: string): string => {
@@ -145,6 +154,10 @@ export default function FormCompleted() {
       );
 
       if (result.success) {
+        // Track successful contact details submission
+        const pageTimeSeconds = getPageTime();
+        trackSimulationContactDetails(pageTimeSeconds, consultationRequest);
+        
         toast.success("Perfetto!", {
           description: "Riceverai presto i risultati su WhatsApp"
         });
