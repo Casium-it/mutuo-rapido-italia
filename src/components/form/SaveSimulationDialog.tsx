@@ -10,6 +10,8 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { CheckCircle2, Copy } from "lucide-react";
+import { useTimeTracking } from "@/hooks/useTimeTracking";
+import { trackSimulationSave } from "@/utils/analytics";
 
 const saveFormSchema = z.object({
   name: z.string().min(2, "Il nome deve avere almeno 2 caratteri"),
@@ -30,6 +32,11 @@ export function SaveSimulationDialog({ open, onClose, onSave, isLoading = false 
   const [step, setStep] = useState<'form' | 'success'>('form');
   const [resumeCode, setResumeCode] = useState<string>('');
   
+  // Get time tracking for save event
+  const { getTimeSpent } = useTimeTracking({
+    pageName: 'simulation_form'
+  });
+  
   const form = useForm<SaveFormData>({
     resolver: zodResolver(saveFormSchema),
     defaultValues: {
@@ -44,6 +51,10 @@ export function SaveSimulationDialog({ open, onClose, onSave, isLoading = false 
       const result = await onSave(data);
       
       if (result.success && result.resumeCode) {
+        // Track successful save with total time spent
+        const totalTimeSpent = getTimeSpent();
+        trackSimulationSave(totalTimeSpent);
+        
         setResumeCode(result.resumeCode);
         setStep('success');
         toast.success("Simulazione salvata con successo!");

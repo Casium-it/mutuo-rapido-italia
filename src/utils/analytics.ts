@@ -1,3 +1,4 @@
+
 import ReactGA from 'react-ga4';
 
 // Debug mode - can be enabled via environment variable
@@ -151,6 +152,23 @@ export const trackSimulationExit = (exitType: 'confirmed_exit' | 'tab_close', to
   
   logEvent(action, category, label, totalTimeSeconds);
   console.log(`🚪 Simulation exit tracked: ${exitType} after ${totalTimeSeconds}s total`);
+  
+  ReactGA.event({
+    action,
+    category,
+    label,
+    value: totalTimeSeconds,
+  });
+};
+
+// New tracking function for simulation save
+export const trackSimulationSave = (totalTimeSeconds: number) => {
+  const action = 'simulation_save';
+  const category = 'simulation';
+  const label = 'saved_successfully';
+  
+  logEvent(action, category, label, totalTimeSeconds);
+  console.log(`💾 Simulation save tracked after ${totalTimeSeconds}s total`);
   
   ReactGA.event({
     action,
