@@ -135,9 +135,52 @@ export function FormQuestion({ question }: FormQuestionProps) {
   const [showNonLoSoButton, setShowNonLoSoButton] = useState(false);
   // Nuovo stato per tenere traccia delle posizioni del cursore
   const [cursorPositions, setCursorPositions] = useState<{ [key: string]: number | null }>({});
-  // Use ref instead of state for question start time to prevent resets on re-renders
+  // Use ref for question start time to prevent resets on re-renders
   const questionStartTimeRef = useRef<number>(Date.now());
   const params = useParams();
+
+  // Fixed useEffect - only reset timer when question ID actually changes
+  useEffect(() => {
+    // Reset question start time when question changes (only when question ID changes)
+    questionStartTimeRef.current = Date.now();
+    console.log('🎯 Question timer started for:', question.question_id);
+  }, [question.question_id]); // Only depend on question ID
+
+  // Separate useEffect for loading existing responses and UI state
+  useEffect(() => {
+    const existingResponses: { [key: string]: string | string[] } = {};
+    const initialVisibleOptions: { [key: string]: boolean } = {};
+    const initialValidationErrors: { [key: string]: boolean } = {};
+    
+    Object.keys(question.placeholders).forEach(key => {
+      const existingResponse = getResponse(question.question_id, key);
+      if (existingResponse) {
+        existingResponses[key] = existingResponse;
+        initialVisibleOptions[key] = false;
+        
+        // Verifica che le risposte esistenti siano ancora valide
+        if (question.placeholders[key].type === "input") {
+          const placeholder = question.placeholders[key];
+          const validationType = (placeholder as any).input_validation as ValidationTypes;
+          if (!validateInput(existingResponse as string, validationType)) {
+            initialValidationErrors[key] = true;
+          }
+        }
+      } else {
+        initialVisibleOptions[key] = true;
+      }
+    });
+    
+    setResponses(existingResponses);
+    setVisibleOptions(initialVisibleOptions);
+    setValidationErrors(initialValidationErrors);
+    setEditingFields({});
+    setIsNavigating(false);
+    // Reset dello stato del pulsante "Non lo so" quando cambia la domanda
+    setShowNonLoSoButton(false);
+    // Reset delle posizioni del cursore
+    setCursorPositions({});
+  }, [question.question_id, getResponse, question.placeholders]);
 
   // Nuova funzione per verificare se ci sono campi di input mancanti o non validi
   const hasMissingOrInvalidInputs = () => {
@@ -197,44 +240,6 @@ export function FormQuestion({ question }: FormQuestionProps) {
       clearTimeout(timer);
     };
   }, [responses, validationErrors, question.skippableWithNotSure]);
-
-  // Effetto per caricare le risposte esistenti e impostare visibilità iniziale delle opzioni
-  useEffect(() => {
-    const existingResponses: { [key: string]: string | string[] } = {};
-    const initialVisibleOptions: { [key: string]: boolean } = {};
-    const initialValidationErrors: { [key: string]: boolean } = {};
-    
-    Object.keys(question.placeholders).forEach(key => {
-      const existingResponse = getResponse(question.question_id, key);
-      if (existingResponse) {
-        existingResponses[key] = existingResponse;
-        initialVisibleOptions[key] = false;
-        
-        // Verifica che le risposte esistenti siano ancora valide
-        if (question.placeholders[key].type === "input") {
-          const placeholder = question.placeholders[key];
-          const validationType = (placeholder as any).input_validation as ValidationTypes;
-          if (!validateInput(existingResponse as string, validationType)) {
-            initialValidationErrors[key] = true;
-          }
-        }
-      } else {
-        initialVisibleOptions[key] = true;
-      }
-    });
-    
-    setResponses(existingResponses);
-    setVisibleOptions(initialVisibleOptions);
-    setValidationErrors(initialValidationErrors);
-    setEditingFields({});
-    setIsNavigating(false);
-    // Reset dello stato del pulsante "Non lo so" quando cambia la domanda
-    setShowNonLoSoButton(false);
-    // Reset delle posizioni del cursore
-    setCursorPositions({});
-    // Reset question start time when question changes (only when question ID changes)
-    questionStartTimeRef.current = Date.now();
-  }, [question.question_id, getResponse, question.placeholders]);
 
   // Funzione per gestire la navigazione indietro con gestione del caso speciale
   const handleBackNavigation = () => {
@@ -522,9 +527,10 @@ export function FormQuestion({ question }: FormQuestionProps) {
     if (isNavigating) return;
     setIsNavigating(true);
     
-    // Track simulation reply with timing using ref instead of state
+    // Track simulation reply with timing using ref - now properly tracks from question display
     const replyTimeMs = Date.now() - questionStartTimeRef.current;
     const replyTimeSeconds = Math.round(replyTimeMs / 1000);
+    console.log('⏱️ Reply time tracked:', replyTimeSeconds, 'seconds for question:', question.question_id);
     trackSimulationReply(state.activeQuestion.block_id, state.activeQuestion.question_id, replyTimeSeconds);
     
     // Verifica se è stata specificata una priorità per i placeholder
