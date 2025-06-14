@@ -4,13 +4,20 @@ import { Button } from "@/components/ui/button";
 import { Check, Star } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
-import { trackEvent } from "@/utils/analytics";
+import { trackWhatsAppContact, trackSimulationCTA } from "@/utils/analytics";
+import { useTimeTracking } from "@/hooks/useTimeTracking";
 
 const HomePage = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const [currentNotification, setCurrentNotification] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
+  
+  // Initialize time tracking for home page
+  const { trackCustomExit } = useTimeTracking({ 
+    pageName: 'home_page',
+    milestones: [10, 30, 60, 120, 300] // 10s, 30s, 1min, 2min, 5min
+  });
   
   const notifications = [
     {
@@ -82,12 +89,16 @@ const HomePage = () => {
   }];
 
   const handleWhatsAppContact = () => {
-    trackEvent('whatsapp_contact', 'contact', 'home_page');
+    trackWhatsAppContact('home_page');
+    // Track custom exit since user is leaving for WhatsApp
+    trackCustomExit('whatsapp_contact');
     window.open('https://wa.me/393518681491', '_blank');
   };
 
   const handleSimulationClick = (position: string) => {
-    trackEvent('simulazione_cta_click', 'cta', `home_page_${position}`);
+    trackSimulationCTA(position);
+    // Track custom exit since user is navigating away
+    trackCustomExit('simulation_navigation');
     navigate("/simulazioni");
   };
 
