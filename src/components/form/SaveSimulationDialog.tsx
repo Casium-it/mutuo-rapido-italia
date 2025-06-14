@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,6 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { CheckCircle2, Copy } from "lucide-react";
-import { trackSimulationSave } from "@/utils/analytics";
 
 const saveFormSchema = z.object({
   name: z.string().min(2, "Il nome deve avere almeno 2 caratteri"),
@@ -44,9 +44,6 @@ export function SaveSimulationDialog({ open, onClose, onSave, isLoading = false 
       const result = await onSave(data);
       
       if (result.success && result.resumeCode) {
-        // Track successful simulation save
-        trackSimulationSave();
-        
         setResumeCode(result.resumeCode);
         setStep('success');
         toast.success("Simulazione salvata con successo!");

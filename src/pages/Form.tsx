@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { BlockSidebar } from "@/components/form/BlockSidebar";
@@ -14,7 +15,6 @@ import { SaveSimulationDialog } from "@/components/form/SaveSimulationDialog";
 import { ExitConfirmationDialog } from "@/components/form/ExitConfirmationDialog";
 import { saveSimulation, SaveSimulationData } from "@/services/saveSimulationService";
 import { toast } from "sonner";
-import { trackSimulationExit } from "@/utils/analytics";
 
 export default function Form() {
   const {
