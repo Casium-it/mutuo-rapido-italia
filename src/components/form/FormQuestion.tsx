@@ -12,7 +12,7 @@ import { getQuestionTextWithClickableResponses } from "@/utils/formUtils";
 import { validateInput } from "@/utils/validationUtils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { MultiBlockManager } from "./MultiBlockManager";
-import { trackSimulationReply, trackSimulationBackNavigation } from "@/utils/analytics";
+import { trackSimulationReply, trackSimulationBackNavigation, trackSimulationChangeResponse } from "@/utils/analytics";
 
 // Funzione per formattare il valore da visualizzare in base al tipo di validazione
 const formatDisplayValue = (value: string, validationType: ValidationTypes): string => {
@@ -476,14 +476,26 @@ export function FormQuestion({ question }: FormQuestionProps) {
 
   // Funzione per gestire il click sul placeholder
   const handlePlaceholderClick = (key: string) => {
+    // Track response change when user clicks to change an existing select value
+    const existingResponse = getResponse(question.question_id, key);
+    if (existingResponse) {
+      trackSimulationChangeResponse(state.activeQuestion.block_id, state.activeQuestion.question_id);
+    }
+    
     setVisibleOptions(prev => ({
       ...prev,
       [key]: !prev[key]
     }));
   };
 
-  // Funzione per attivare la modalità di modifica di un input
+  // Funzione modificata per attivare la modalità di modifica di un input
   const handleInputClick = (key: string) => {
+    // Track response change when user clicks to edit an existing value
+    const existingResponse = getResponse(question.question_id, key);
+    if (existingResponse) {
+      trackSimulationChangeResponse(state.activeQuestion.block_id, state.activeQuestion.question_id);
+    }
+    
     setEditingFields(prev => ({
       ...prev,
       [key]: true
@@ -492,6 +504,9 @@ export function FormQuestion({ question }: FormQuestionProps) {
 
   // Funzione modificata per navigare alla domanda specifica quando si fa click su una risposta
   const handleQuestionClick = (questionId: string) => {
+    // Track response change when user clicks on a previous response to edit it
+    trackSimulationChangeResponse(state.activeQuestion.block_id, questionId);
+    
     // Naviga direttamente alla domanda con l'ID specificato
     if (questionId && !isNavigating) {
       setIsNavigating(true);

@@ -126,3 +126,19 @@ export const trackSimulationBackNavigation = (blockId: string, questionId: strin
     label,
   });
 };
+
+// New tracking function for response changes
+export const trackSimulationChangeResponse = (blockId: string, questionId: string) => {
+  const action = 'simulation_change_response';
+  const category = 'form_interaction';
+  const label = `${blockId}_${questionId}`;
+  
+  logEvent(action, category, label);
+  console.log(`✏️ Response change tracked: ${blockId}/${questionId}`);
+  
+  ReactGA.event({
+    action,
+    category,
+    label,
+  });
+};
