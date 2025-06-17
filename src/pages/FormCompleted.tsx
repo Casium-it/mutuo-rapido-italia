@@ -11,6 +11,7 @@ import { validatePhoneNumber } from "@/utils/validationUtils";
 import { toast } from "sonner";
 import { updateSubmissionWithContact } from "@/services/contactSubmissionService";
 import { trackSimulationContactDetails, trackSimulationLostDetails } from "@/utils/analytics";
+import { trackSubmitApplication } from "@/services/facebookConversionsService";
 
 export default function FormCompleted() {
   const navigate = useNavigate();
@@ -172,6 +173,9 @@ export default function FormCompleted() {
     setIsSubmitting(true);
     
     try {
+      // Track Submit Application event in Facebook Conversion API
+      await trackSubmitApplication(phoneNumber);
+      
       const result = await updateSubmissionWithContact(
         submissionId,
         phoneNumber,

@@ -7,6 +7,7 @@ import { submitFormToSupabase } from "@/services/formSubmissionService";
 import { toast } from "@/hooks/use-toast";
 import { useSimulationTimer } from "@/hooks/useSimulationTimer";
 import { trackSimulationCompleted } from "@/utils/analytics";
+import { trackCustomizeProduct } from "@/services/facebookConversionsService";
 
 export function FormSubmitButton() {
   const { state, blocks } = useForm();
@@ -21,6 +22,9 @@ export function FormSubmitButton() {
     console.log("Avvio invio form dal FormSubmitButton...");
     
     try {
+      // Track form completion as CustomizeProduct event in Facebook
+      await trackCustomizeProduct();
+      
       // Usa il servizio centralizzato
       const result = await submitFormToSupabase(state, blocks);
       

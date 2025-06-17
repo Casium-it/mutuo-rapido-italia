@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { useTimeTracking } from "@/hooks/useTimeTracking";
 import { useSimulationTimer } from "@/hooks/useSimulationTimer";
 import { trackSimulationExit } from "@/utils/analytics";
+import { trackCustomizeProduct } from "@/services/facebookConversionsService";
 
 export default function Form() {
   const {
@@ -33,6 +34,7 @@ export default function Form() {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [hasTrackedCustomizeProduct, setHasTrackedCustomizeProduct] = useState(false);
 
   // Initialize time tracking for the simulation
   const { getTimeSpent, trackCustomExit } = useTimeTracking({
@@ -46,6 +48,14 @@ export default function Form() {
   useEffect(() => {
     initializeTimer();
   }, [initializeTimer]);
+
+  // Track Customize Product event when form starts (only once)
+  useEffect(() => {
+    if (!hasTrackedCustomizeProduct) {
+      trackCustomizeProduct();
+      setHasTrackedCustomizeProduct(true);
+    }
+  }, [hasTrackedCustomizeProduct]);
 
   // Trova il blocco attivo corrente
   const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
