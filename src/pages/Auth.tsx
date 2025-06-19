@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CreateAdminButton } from '@/components/CreateAdminButton';
 
 export default function Auth() {
   const [email, setEmail] = useState('');
@@ -254,6 +254,14 @@ export default function Auth() {
                   {loading ? 'Registrazione in corso...' : 'Registrati'}
                 </Button>
               </form>
+              
+              {/* Admin creation button */}
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="text-center">
+                  <p className="text-sm text-gray-600 mb-2">Sviluppo:</p>
+                  <CreateAdminButton />
+                </div>
+              </div>
             </TabsContent>
           </Tabs>
         </CardContent>
