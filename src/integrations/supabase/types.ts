@@ -51,30 +51,45 @@ export type Database = {
         Row: {
           consulting: boolean | null
           created_at: string
+          email: string | null
           expires_at: string
+          first_name: string | null
           form_type: string
           id: string
+          last_name: string | null
+          lead_status: Database["public"]["Enums"]["lead_status"] | null
           metadata: Json | null
+          notes: string | null
           phone_number: string | null
           user_identifier: string | null
         }
         Insert: {
           consulting?: boolean | null
           created_at?: string
+          email?: string | null
           expires_at: string
+          first_name?: string | null
           form_type: string
           id?: string
+          last_name?: string | null
+          lead_status?: Database["public"]["Enums"]["lead_status"] | null
           metadata?: Json | null
+          notes?: string | null
           phone_number?: string | null
           user_identifier?: string | null
         }
         Update: {
           consulting?: boolean | null
           created_at?: string
+          email?: string | null
           expires_at?: string
+          first_name?: string | null
           form_type?: string
           id?: string
+          last_name?: string | null
+          lead_status?: Database["public"]["Enums"]["lead_status"] | null
           metadata?: Json | null
+          notes?: string | null
           phone_number?: string | null
           user_identifier?: string | null
         }
@@ -190,6 +205,12 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "customer" | "broker"
+      lead_status:
+        | "not_contacted"
+        | "first_contact"
+        | "advanced_conversations"
+        | "converted"
+        | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -306,6 +327,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "customer", "broker"],
+      lead_status: [
+        "not_contacted",
+        "first_contact",
+        "advanced_conversations",
+        "converted",
+        "rejected",
+      ],
     },
   },
 } as const

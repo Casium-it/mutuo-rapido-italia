@@ -8,6 +8,7 @@ import { ArrowLeft, Calendar, Phone, FileText, Download } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { getQuestionTextWithStyledResponses } from '@/utils/formUtils';
 import { generateSubmissionPDF, PDFSubmissionData } from '@/utils/pdfUtils';
+import { LeadManagementCard } from '@/components/admin/LeadManagementCard';
 
 interface FormSubmission {
   id: string;
@@ -17,6 +18,11 @@ interface FormSubmission {
   consulting: boolean | null;
   user_identifier: string | null;
   metadata: any;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  notes: string | null;
+  lead_status: 'not_contacted' | 'first_contact' | 'advanced_conversations' | 'converted' | 'rejected';
 }
 
 interface FormResponse {
@@ -89,6 +95,43 @@ export default function AdminFormDetail() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLeadUpdate = async (field: string, value: string) => {
+    if (!submission) return;
+
+    try {
+      const { error } = await supabase
+        .from('form_submissions')
+        .update({ [field]: value })
+        .eq('id', submission.id);
+
+      if (error) {
+        console.error('Error updating lead:', error);
+        toast({
+          title: "Errore",
+          description: "Errore nell'aggiornamento del lead",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Update local state
+      setSubmission(prev => prev ? { ...prev, [field]: value } : null);
+      
+      toast({
+        title: "Successo",
+        description: "Lead aggiornato con successo",
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('Error updating lead:', error);
+      toast({
+        title: "Errore",
+        description: "Errore imprevisto nell'aggiornamento",
+        variant: "destructive"
+      });
     }
   };
 
@@ -317,6 +360,14 @@ export default function AdminFormDetail() {
             )}
           </CardContent>
         </Card>
+
+        {/* Lead Management Card */}
+        <div className="mb-6">
+          <LeadManagementCard
+            submission={submission}
+            onUpdate={handleLeadUpdate}
+          />
+        </div>
 
         {/* Responses by Block */}
         <div className="space-y-6">
