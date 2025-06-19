@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Calendar, Phone, FileText } from 'lucide-react';
+import { ArrowLeft, Calendar, Phone, FileText, Download } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { getQuestionTextWithStyledResponses } from '@/utils/formUtils';
 
@@ -108,6 +108,14 @@ export default function AdminFormDetail() {
       return JSON.stringify(value, null, 2);
     }
     return String(value);
+  };
+
+  const handleDownloadPDF = () => {
+    toast({
+      title: "Funzione in sviluppo",
+      description: "Il download PDF sarà disponibile presto",
+      variant: "default"
+    });
   };
 
   // New component to render styled question text
@@ -235,6 +243,18 @@ export default function AdminFormDetail() {
                   </div>
                 </div>
               )}
+
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={handleDownloadPDF}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2 text-[#245C4F] border-[#245C4F] hover:bg-[#245C4F] hover:text-white"
+                >
+                  <Download className="h-4 w-4" />
+                  Scarica PDF
+                </Button>
+              </div>
             </div>
             
             {submission.metadata && (
