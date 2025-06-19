@@ -5,6 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { FormProvider } from "@/contexts/FormContext";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { allBlocks } from "@/data/blocks";
 import SimulazioneAvanzata from "./pages/SimulazioneAvanzata";
@@ -16,6 +18,9 @@ import NotFound from "./pages/NotFound";
 import Privacy from "./pages/Privacy";
 import Simulazioni from "./pages/Simulazioni";
 import Home from "./pages/Home";
+import Auth from "./pages/Auth";
+import Admin from "./pages/Admin";
+import AdminFormDetail from "./pages/AdminFormDetail";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +31,7 @@ const AppWithTracking = () => {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
+      <Route path="/auth" element={<Auth />} />
       <Route path="/simulazione-avanzata" element={<SimulazioneAvanzata />} />
       <Route path="/simulazione-avanzata/:slug" element={<SimulazioneAvanzata />} />
       <Route path="/riprendi-simulazione" element={<ResumeSimulation />} />
@@ -38,6 +44,16 @@ const AppWithTracking = () => {
       <Route path="/form-completed" element={<FormCompleted />} />
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/simulazioni" element={<Simulazioni />} />
+      <Route path="/admin" element={
+        <ProtectedRoute requireAdmin>
+          <Admin />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/form/:submissionId" element={
+        <ProtectedRoute requireAdmin>
+          <AdminFormDetail />
+        </ProtectedRoute>
+      } />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
@@ -50,7 +66,9 @@ function App() {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <AppWithTracking />
+          <AuthProvider>
+            <AppWithTracking />
+          </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
