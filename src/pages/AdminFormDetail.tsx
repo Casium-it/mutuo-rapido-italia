@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Calendar, Phone, FileText } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { getQuestionTextWithStyledResponses } from '@/utils/formUtils';
 
 interface FormSubmission {
   id: string;
@@ -108,6 +108,31 @@ export default function AdminFormDetail() {
       return JSON.stringify(value, null, 2);
     }
     return String(value);
+  };
+
+  // New component to render styled question text
+  const StyledQuestionText = ({ questionText, questionId, responseValue }: {
+    questionText: string;
+    questionId: string;
+    responseValue: any;
+  }) => {
+    const { parts } = getQuestionTextWithStyledResponses(questionText, questionId, responseValue);
+    
+    return (
+      <div className="mb-2">
+        {parts.map((part, index) => (
+          <span key={index}>
+            {part.type === 'response' ? (
+              <span className="font-bold underline text-[#245C4F]">
+                {part.content}
+              </span>
+            ) : (
+              part.content
+            )}
+          </span>
+        ))}
+      </div>
+    );
   };
 
   // Group responses by block
@@ -268,17 +293,13 @@ export default function AdminFormDetail() {
                     {blockResponses.map((response) => (
                       <div key={response.id} className="border-l-4 border-[#245C4F] pl-4">
                         <div className="mb-2">
-                          <h4 className="font-medium text-gray-900">{response.question_text}</h4>
+                          <StyledQuestionText 
+                            questionText={response.question_text}
+                            questionId={response.question_id}
+                            responseValue={response.response_value}
+                          />
                           <p className="text-xs text-gray-500">ID: {response.question_id}</p>
                         </div>
-                        <div className="bg-gray-50 p-3 rounded-md">
-                          <pre className="text-sm text-gray-800 whitespace-pre-wrap">
-                            {formatResponseValue(response.response_value)}
-                          </pre>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Risposto il: {formatDate(response.created_at)}
-                        </p>
                       </div>
                     ))}
                   </div>

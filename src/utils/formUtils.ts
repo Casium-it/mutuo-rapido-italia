@@ -1,4 +1,3 @@
-
 import { Block, Question } from "@/types/form";
 
 /**
@@ -319,4 +318,96 @@ export const getQuestionsAfterInBlock = (
   
   // Return all questions after the specified one in this block
   return block.questions.slice(questionIndex + 1);
+};
+
+/**
+ * Gets the question text with styled responses for admin display
+ * @param questionText The original question text
+ * @param questionId The question ID
+ * @param responseValue The response value from the database
+ * @param placeholders The question placeholders (if available)
+ * @returns Object with parts array containing text and styled response objects
+ */
+export const getQuestionTextWithStyledResponses = (
+  questionText: string,
+  questionId: string,
+  responseValue: any,
+  placeholders?: Record<string, any>
+): { parts: Array<{type: 'text' | 'response', content: string, placeholderKey?: string}> } => {
+  if (!questionText) return { parts: [{ type: 'text', content: '' }] };
+
+  const parts: Array<{type: 'text' | 'response', content: string, placeholderKey?: string}> = [];
+  
+  let lastIndex = 0;
+  const regex = /\{\{([^}]+)\}\}/g;
+  let match;
+
+  while ((match = regex.exec(questionText)) !== null) {
+    // Add text before the placeholder
+    if (match.index > lastIndex) {
+      parts.push({
+        type: 'text',
+        content: questionText.slice(lastIndex, match.index)
+      });
+    }
+
+    const placeholderKey = match[1];
+    let displayValue = "";
+    
+    // Try to get the response value for this placeholder
+    if (responseValue && typeof responseValue === 'object') {
+      const responseForPlaceholder = responseValue[placeholderKey];
+      
+      if (responseForPlaceholder !== undefined && responseForPlaceholder !== null) {
+        // Handle select type placeholders with options
+        if (placeholders && placeholders[placeholderKey]?.type === "select" && !Array.isArray(responseForPlaceholder)) {
+          const option = placeholders[placeholderKey].options?.find(
+            (opt: any) => opt.id === responseForPlaceholder
+          );
+          displayValue = option ? option.label : responseForPlaceholder.toString();
+        } else {
+          // Handle other types (input, etc.)
+          displayValue = Array.isArray(responseForPlaceholder) 
+            ? responseForPlaceholder.join(", ") 
+            : responseForPlaceholder.toString();
+        }
+      }
+    }
+    
+    // If no response found, try to use the response value directly if it's a simple value
+    if (!displayValue && responseValue && typeof responseValue !== 'object') {
+      displayValue = responseValue.toString();
+    }
+    
+    // Fallback to placeholder if no response found
+    if (!displayValue) {
+      displayValue = "____";
+    }
+    
+    parts.push({
+      type: 'response',
+      content: displayValue,
+      placeholderKey: placeholderKey
+    });
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Add remaining text
+  if (lastIndex < questionText.length) {
+    parts.push({
+      type: 'text',
+      content: questionText.slice(lastIndex)
+    });
+  }
+
+  // If no placeholders found, return the original text
+  if (parts.length === 0) {
+    parts.push({
+      type: 'text',
+      content: questionText
+    });
+  }
+
+  return { parts };
 };
