@@ -1,6 +1,7 @@
 
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { getQuestionTextWithStyledResponses } from './formUtils';
 
 export interface PDFSubmissionData {
   id: string;
@@ -19,6 +20,39 @@ export interface PDFSubmissionData {
     created_at: string;
   }>;
 }
+
+/**
+ * Renders question text with styled placeholders for PDF display
+ * @param questionText The original question text
+ * @param responseValue The response value containing placeholder data
+ * @returns HTML string with styled placeholders
+ */
+const renderQuestionTextForPDF = (questionText: string, responseValue: any): string => {
+  if (!questionText) return '';
+
+  const { parts } = getQuestionTextWithStyledResponses(questionText, '', responseValue);
+  
+  return parts.map(part => {
+    if (part.type === 'response') {
+      // Style response parts with bold, underline, and brand color
+      return `<span style="font-weight: bold; text-decoration: underline; color: #245C4F;">${escapeHtml(part.content)}</span>`;
+    } else {
+      // Regular text parts
+      return escapeHtml(part.content);
+    }
+  }).join('');
+};
+
+/**
+ * Escapes HTML special characters to prevent XSS and rendering issues
+ * @param text The text to escape
+ * @returns Escaped HTML string
+ */
+const escapeHtml = (text: string): string => {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+};
 
 export const generateSubmissionPDF = async (data: PDFSubmissionData): Promise<void> => {
   try {
@@ -127,13 +161,10 @@ export const generateSubmissionPDF = async (data: PDFSubmissionData): Promise<vo
               ${blockResponses.map(response => `
                 <div style="margin-bottom: 15px; padding-left: 15px; border-left: 4px solid #245C4F;">
                   <div style="margin-bottom: 8px;">
-                    <strong>${response.question_text}</strong>
+                    ${renderQuestionTextForPDF(response.question_text, response.response_value)}
                   </div>
                   <div style="color: #666; font-size: 12px; margin-bottom: 5px;">
                     ID: ${response.question_id}
-                  </div>
-                  <div style="background: #f9f9f9; padding: 8px; border-radius: 4px; font-size: 14px;">
-                    ${formatResponseValue(response.response_value)}
                   </div>
                 </div>
               `).join('')}
