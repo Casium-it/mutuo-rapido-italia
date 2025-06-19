@@ -1,4 +1,3 @@
-
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { getQuestionTextWithStyledResponses } from './formUtils';
@@ -11,6 +10,11 @@ export interface PDFSubmissionData {
   consulting: boolean | null;
   user_identifier: string | null;
   metadata: any;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  notes: string | null;
+  lead_status: 'not_contacted' | 'first_contact' | 'advanced_conversations' | 'converted' | 'rejected';
   responses: Array<{
     id: string;
     question_id: string;
@@ -20,6 +24,34 @@ export interface PDFSubmissionData {
     created_at: string;
   }>;
 }
+
+/**
+ * Maps lead status values to Italian labels
+ */
+const getLeadStatusLabel = (status: string): string => {
+  const statusMap: Record<string, string> = {
+    'not_contacted': 'Non Contattato',
+    'first_contact': 'Primo Contatto',
+    'advanced_conversations': 'Conversazioni Avanzate',
+    'converted': 'Convertito',
+    'rejected': 'Rifiutato'
+  };
+  return statusMap[status] || status;
+};
+
+/**
+ * Gets the color for lead status
+ */
+const getLeadStatusColor = (status: string): string => {
+  const colorMap: Record<string, string> = {
+    'not_contacted': '#6b7280', // gray
+    'first_contact': '#3b82f6', // blue
+    'advanced_conversations': '#f59e0b', // yellow
+    'converted': '#10b981', // green
+    'rejected': '#ef4444' // red
+  };
+  return colorMap[status] || '#6b7280';
+};
 
 /**
  * Renders question text with styled placeholders for PDF display
@@ -89,11 +121,15 @@ const createPageHeader = (data: PDFSubmissionData, pageNumber: number, totalPage
     });
   };
 
+  const fullName = [data.first_name, data.last_name].filter(Boolean).join(' ');
+
+  const displayTitle = fullName ? `GoMutuo - ${fullName}` : 'GoMutuo - Dettagli Submission';
+
   return `
     <div style="margin-bottom: 20px; border-bottom: 2px solid #245C4F; padding-bottom: 15px;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
-          <h1 style="color: #245C4F; font-size: 20px; margin: 0 0 5px 0;">GoMutuo - Dettagli Submission</h1>
+          <h1 style="color: #245C4F; font-size: 20px; margin: 0 0 5px 0;">${displayTitle}</h1>
           <p style="color: #666; font-size: 12px; margin: 0;">ID: ${data.id}</p>
         </div>
         <div style="text-align: right; font-size: 12px; color: #666;">
@@ -148,7 +184,11 @@ export const generateSubmissionPDF = async (data: PDFSubmissionData): Promise<vo
     let currentPageContent = '';
     let currentPageHeight = 0;
     
-    // First page - General Information
+    // First page - General Information with Lead Details
+    const leadStatusLabel = getLeadStatusLabel(data.lead_status);
+    const leadStatusColor = getLeadStatusColor(data.lead_status);
+    const fullName = [data.first_name, data.last_name].filter(Boolean).join(' ');
+
     const generalInfoContent = `
       <div style="margin-bottom: 25px; padding: 15px; border: 1px solid #BEB8AE; border-radius: 8px; break-inside: avoid;">
         <h2 style="color: #245C4F; font-size: 16px; margin-bottom: 15px;">Informazioni Generali</h2>
@@ -161,7 +201,7 @@ export const generateSubmissionPDF = async (data: PDFSubmissionData): Promise<vo
         </div>
         
         ${data.metadata ? `
-        <div style="background: #f5f5f5; padding: 15px; border-radius: 6px;">
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
           <h4 style="margin-bottom: 10px;">Metadata</h4>
           <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; font-size: 12px;">
             <div><strong>Blocchi attivi:</strong> ${data.metadata.blocks?.length || 0}</div>
@@ -171,11 +211,33 @@ export const generateSubmissionPDF = async (data: PDFSubmissionData): Promise<vo
           </div>
         </div>
         ` : ''}
+
+        <div style="background: #f8f5f1; padding: 15px; border-radius: 6px; border-left: 4px solid #245C4F;">
+          <h4 style="color: #245C4F; margin-bottom: 15px;">Informazioni Lead</h4>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+            ${fullName ? `<div><strong>Nome Completo:</strong> ${fullName}</div>` : '<div><strong>Nome:</strong> Non specificato</div>'}
+            ${data.email ? `<div><strong>Email:</strong> ${data.email}</div>` : '<div><strong>Email:</strong> Non specificata</div>'}
+          </div>
+          <div style="margin-bottom: 15px;">
+            <div style="margin-bottom: 8px;"><strong>Status Lead:</strong></div>
+            <span style="display: inline-block; background: ${leadStatusColor}; color: white; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">
+              ${leadStatusLabel}
+            </span>
+          </div>
+          ${data.notes ? `
+          <div>
+            <div style="margin-bottom: 8px;"><strong>Note:</strong></div>
+            <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #BEB8AE; line-height: 1.4; font-size: 14px;">
+              ${escapeHtml(data.notes)}
+            </div>
+          </div>
+          ` : ''}
+        </div>
       </div>
     `;
 
     currentPageContent = generalInfoContent;
-    currentPageHeight = 300; // Estimated height for general info
+    currentPageHeight = 400; // Estimated height for general info with lead details
 
     // Add responses section header
     const responsesHeaderContent = `
@@ -304,7 +366,8 @@ export const generateSubmissionPDF = async (data: PDFSubmissionData): Promise<vo
 
     // Generate filename and save
     const date = new Date().toISOString().split('T')[0];
-    const filename = `submission_${data.id.substring(0, 8)}_${date}.pdf`;
+    const nameForFilename = fullName ? `_${fullName.replace(/\s+/g, '_')}` : '';
+    const filename = `submission_${data.id.substring(0, 8)}${nameForFilename}_${date}.pdf`;
     pdf.save(filename);
 
   } catch (error) {

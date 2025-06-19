@@ -175,6 +175,11 @@ export default function AdminFormDetail() {
         consulting: submission.consulting,
         user_identifier: submission.user_identifier,
         metadata: submission.metadata,
+        first_name: submission.first_name,
+        last_name: submission.last_name,
+        email: submission.email,
+        notes: submission.notes,
+        lead_status: submission.lead_status,
         responses: responses
       };
 
