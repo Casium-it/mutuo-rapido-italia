@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Calendar, Phone, FileText, Download } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { getQuestionTextWithStyledResponses } from '@/utils/formUtils';
+import { generateSubmissionPDF, PDFSubmissionData } from '@/utils/pdfUtils';
 
 interface FormSubmission {
   id: string;
@@ -33,6 +34,7 @@ export default function AdminFormDetail() {
   const [submission, setSubmission] = useState<FormSubmission | null>(null);
   const [responses, setResponses] = useState<FormResponse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   useEffect(() => {
     if (submissionId) {
@@ -110,12 +112,46 @@ export default function AdminFormDetail() {
     return String(value);
   };
 
-  const handleDownloadPDF = () => {
-    toast({
-      title: "Funzione in sviluppo",
-      description: "Il download PDF sarà disponibile presto",
-      variant: "default"
-    });
+  const handleDownloadPDF = async () => {
+    if (!submission || !responses) {
+      toast({
+        title: "Errore",
+        description: "Dati della submission non disponibili",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setPdfLoading(true);
+    try {
+      const pdfData: PDFSubmissionData = {
+        id: submission.id,
+        created_at: submission.created_at,
+        form_type: submission.form_type,
+        phone_number: submission.phone_number,
+        consulting: submission.consulting,
+        user_identifier: submission.user_identifier,
+        metadata: submission.metadata,
+        responses: responses
+      };
+
+      await generateSubmissionPDF(pdfData);
+      
+      toast({
+        title: "PDF generato",
+        description: "Il PDF è stato scaricato con successo",
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      toast({
+        title: "Errore",
+        description: "Errore nella generazione del PDF",
+        variant: "destructive"
+      });
+    } finally {
+      setPdfLoading(false);
+    }
   };
 
   // New component to render styled question text
@@ -250,9 +286,10 @@ export default function AdminFormDetail() {
                   variant="outline"
                   size="sm"
                   className="flex items-center gap-2 text-[#245C4F] border-[#245C4F] hover:bg-[#245C4F] hover:text-white"
+                  disabled={pdfLoading}
                 >
                   <Download className="h-4 w-4" />
-                  Scarica PDF
+                  {pdfLoading ? 'Generando PDF...' : 'Scarica PDF'}
                 </Button>
               </div>
             </div>
