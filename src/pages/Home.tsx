@@ -17,18 +17,12 @@ export default function Home() {
   const { toast } = useToast()
 
   const handleSimulazioneAvanzataClick = () => {
-    trackEvent('home_page_button_click', {
-      button_name: 'Simulazione Avanzata',
-      page_location: 'home_page'
-    });
+    trackEvent('home_page_button_click', 'Simulazione Avanzata');
     navigate('/simulazione-avanzata');
   };
 
   const handleSimulazioniClick = () => {
-    trackEvent('home_page_button_click', {
-      button_name: 'Simulazioni',
-      page_location: 'home_page'
-    });
+    trackEvent('home_page_button_click', 'Simulazioni');
     navigate('/simulazioni');
   };
 
