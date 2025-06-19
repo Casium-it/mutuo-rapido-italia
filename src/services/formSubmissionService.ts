@@ -25,9 +25,6 @@ export async function submitFormToSupabase(
     const searchParams = new URLSearchParams(window.location.search);
     const referralId = searchParams.get('ref');
     
-    // Ottieni lo slug salvato nel localStorage
-    const slug = localStorage.getItem('user_slug');
-    
     // Determina il tipo di form dall'URL
     const formType = window.location.pathname.includes("mutuo") ? "mutuo" : "simulazione";
     
@@ -45,8 +42,7 @@ export async function submitFormToSupabase(
         metadata: { 
           blocks: state.activeBlocks,
           completedBlocks: state.completedBlocks,
-          dynamicBlocks: state.dynamicBlocks?.length || 0,
-          slug: slug || null
+          dynamicBlocks: state.dynamicBlocks?.length || 0
         }
       })
       .select('id')
@@ -114,27 +110,7 @@ export async function submitFormToSupabase(
       
       console.log(`Salvate ${responsesData.length} risposte`);
     }
-    
-    // 4. Se esiste uno slug, salva nella tabella simulations
-    if (slug) {
-      const { error: simulationError } = await supabase
-        .from('simulations')
-        .insert({
-          slug: slug,
-          answers: state.responses,
-          submitted_at: new Date().toISOString(),
-          completed_at: new Date().toISOString()
-        });
 
-      if (simulationError) {
-        console.error("Errore nel salvataggio della simulazione:", simulationError);
-        // Non facciamo fallire l'intera operazione
-      } else {
-        console.log("Simulazione salvata con slug:", slug);
-      }
-    }
-
-    // Return the submission ID as 'id' since that's what we get from the database
     console.log("Returning submission result with ID:", submission.id);
     return { 
       success: true, 

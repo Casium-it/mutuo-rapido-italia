@@ -80,30 +80,6 @@ export type Database = {
         }
         Relationships: []
       }
-      leads: {
-        Row: {
-          created_at: string
-          id: string
-          name: string | null
-          phone: string | null
-          slug: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          name?: string | null
-          phone?: string | null
-          slug: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          name?: string | null
-          phone?: string | null
-          slug?: string
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           created_at: string | null
@@ -167,33 +143,6 @@ export type Database = {
           phone?: string
           resume_code?: string
           updated_at?: string
-        }
-        Relationships: []
-      }
-      simulations: {
-        Row: {
-          answers: Json
-          completed_at: string | null
-          created_at: string
-          id: string
-          slug: string
-          submitted_at: string | null
-        }
-        Insert: {
-          answers: Json
-          completed_at?: string | null
-          created_at?: string
-          id?: string
-          slug: string
-          submitted_at?: string | null
-        }
-        Update: {
-          answers?: Json
-          completed_at?: string | null
-          created_at?: string
-          id?: string
-          slug?: string
-          submitted_at?: string | null
         }
         Relationships: []
       }
