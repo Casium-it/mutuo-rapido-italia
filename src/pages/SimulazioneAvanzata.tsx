@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge as UIBadge } from "@/components/ui/badge";
 import { useNavigate, useParams } from "react-router-dom";
 import { allBlocks } from "@/data/blocks";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useTimeTracking } from "@/hooks/useTimeTracking";
 import { trackSimulationStart } from "@/utils/analytics";
@@ -15,7 +15,6 @@ const SimulazioneAvanzata = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { slug } = useParams();
-  const [leadInfo, setLeadInfo] = useState<{ name: string; phone: string } | null>(null);
   const [loading, setLoading] = useState(false);
   
   // Initialize time tracking for simulazione avanzata page
@@ -23,63 +22,15 @@ const SimulazioneAvanzata = () => {
     pageName: 'simulazione_avanzata'
   });
   
-  // Effetto per controllare e gestire lo slug
+  // Effetto per controllare e gestire lo slug (removed leads table functionality)
   useEffect(() => {
-    const handleSlug = async () => {
-      if (!slug) return;
-      
+    if (slug) {
       // Salva lo slug in localStorage per un uso futuro
       localStorage.setItem('user_slug', slug);
       
-      try {
-        setLoading(true);
-        
-        // Recupera le informazioni del lead usando lo slug
-        const { data, error } = await supabase
-          .from('leads')
-          .select('name, phone')
-          .eq('slug', slug)
-          .single();
-        
-        if (error) {
-          console.error('Errore nel recupero del lead:', error);
-          toast.error('Impossibile recuperare i dati del profilo');
-          return;
-        }
-        
-        if (data) {
-          setLeadInfo(data);
-          toast.success(`Bentornato ${data.name}!`);
-        }
-      } catch (error) {
-        console.error('Errore imprevisto:', error);
-        toast.error('Si è verificato un errore imprevisto');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    handleSlug();
-  }, [slug]);
-  
-  // Funzione per intercettare le richieste Supabase
-  useEffect(() => {
-    if (slug) {
-      // Configura l'interceptor per aggiungere l'header x-slug
-      const originalFetch = window.fetch;
-      window.fetch = function(input, init) {
-        if (typeof input === 'string' && input.includes('supabase.co')) {
-          init = init || {};
-          init.headers = init.headers || {};
-          Object.assign(init.headers, { 'x-slug': slug });
-        }
-        return originalFetch(input, init);
-      };
-      
-      // Cleanup function
-      return () => {
-        window.fetch = originalFetch;
-      };
+      // Note: Lead information retrieval has been removed as the leads table was deleted
+      // Users coming with a slug will still have it saved for potential future use
+      console.log('Slug saved to localStorage:', slug);
     }
   }, [slug]);
   
@@ -133,10 +84,10 @@ const SimulazioneAvanzata = () => {
 
       {/* Main content */}
       <main className="flex-1 px-4 md:px-6 py-8 md:py-12 max-w-3xl mx-auto w-full">
-        {/* Informazioni del lead recuperate */}
-        {leadInfo && (
+        {/* Welcome message (removed lead info since leads table was deleted) */}
+        {slug && (
           <div className="mb-6 p-4 bg-[#245C4F]/10 rounded-lg text-center">
-            <h2 className="text-xl font-medium mb-1 text-[#245C4F]">Ciao {leadInfo.name}!</h2>
+            <h2 className="text-xl font-medium mb-1 text-[#245C4F]">Bentornato!</h2>
             <p className="text-sm text-gray-600">Completa la tua simulazione per un mutuo su misura.</p>
           </div>
         )}
