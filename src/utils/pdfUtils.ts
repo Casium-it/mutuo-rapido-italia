@@ -154,11 +154,11 @@ export const generateSubmissionPDF = async (data: PDFSubmissionData): Promise<vo
     const pageWidth = 210;
     const pageHeight = 297;
     const pageMargin = 20;
-    const headerHeight = 30; // Reserve space for header
-    const footerHeight = 15; // Reserve space for footer
-    const safetyMargin = 20; // Extra margin to prevent cuts
+    const headerHeight = 30;
+    const footerHeight = 15;
+    const safetyMargin = 20;
     const maxContentHeight = pageHeight - (pageMargin * 2) - headerHeight - footerHeight - safetyMargin;
-    const maxContentHeightPx = maxContentHeight * 3.78; // Convert mm to px
+    const maxContentHeightPx = maxContentHeight * 3.78;
 
     const formatDate = (dateString: string) => {
       return new Date(dateString).toLocaleString('it-IT', {
@@ -170,15 +170,12 @@ export const generateSubmissionPDF = async (data: PDFSubmissionData): Promise<vo
       });
     };
 
-    // Prepare all content sections
-    const contentSections: string[] = [];
-    
-    // General Information with Lead Details
+    // Prepare first page content (General Information and Lead Details)
     const leadStatusLabel = getLeadStatusLabel(data.lead_status);
     const leadStatusColor = getLeadStatusColor(data.lead_status);
     const fullName = [data.first_name, data.last_name].filter(Boolean).join(' ');
 
-    const generalInfoContent = `
+    const firstPageContent = `
       <div style="margin-bottom: 25px; padding: 15px; border: 1px solid #BEB8AE; border-radius: 8px;">
         <h2 style="color: #245C4F; font-size: 16px; margin-bottom: 15px;">Informazioni Generali</h2>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
@@ -225,8 +222,9 @@ export const generateSubmissionPDF = async (data: PDFSubmissionData): Promise<vo
       </div>
     `;
 
-    contentSections.push(generalInfoContent);
-
+    // Prepare responses content sections (for second page onwards)
+    const responsesSections: string[] = [];
+    
     // Responses section header
     const responsesHeaderContent = `
       <div style="margin-bottom: 20px;">
@@ -249,10 +247,10 @@ export const generateSubmissionPDF = async (data: PDFSubmissionData): Promise<vo
           <p>Nessuna risposta trovata per questa submission.</p>
         </div>
       `;
-      contentSections.push(responsesHeaderContent + emptyContent);
+      responsesSections.push(responsesHeaderContent + emptyContent);
     } else {
       // Add responses header
-      contentSections.push(responsesHeaderContent);
+      responsesSections.push(responsesHeaderContent);
 
       // Process each block as separate sections
       for (const [blockId, blockResponses] of Object.entries(responsesByBlock)) {
@@ -264,8 +262,7 @@ export const generateSubmissionPDF = async (data: PDFSubmissionData): Promise<vo
           </div>
         `;
 
-        // Add each question as a separate section to allow individual placement
-        contentSections.push(blockHeader);
+        responsesSections.push(blockHeader);
 
         for (const response of blockResponses) {
           const questionContent = `
@@ -278,34 +275,35 @@ export const generateSubmissionPDF = async (data: PDFSubmissionData): Promise<vo
               </div>
             </div>
           `;
-          contentSections.push(questionContent);
+          responsesSections.push(questionContent);
         }
       }
     }
 
-    // Now build pages using actual measurements
+    // Build pages: First page for general info, remaining pages for responses
     const pages: string[] = [];
+    
+    // First page - General Information only
+    pages.push(firstPageContent);
+
+    // Remaining pages - Responses content with pagination
     let currentPageContent = '';
     let currentPageHeight = 0;
 
-    for (const section of contentSections) {
-      // Measure the height of this section
+    for (const section of responsesSections) {
       const sectionHeight = await measureContentHeight(section);
       
-      // Check if this section fits on the current page
       if (currentPageHeight + sectionHeight > maxContentHeightPx && currentPageContent) {
-        // Current section doesn't fit, start a new page
         pages.push(currentPageContent);
         currentPageContent = section;
         currentPageHeight = sectionHeight;
       } else {
-        // Section fits, add it to current page
         currentPageContent += section;
         currentPageHeight += sectionHeight;
       }
     }
 
-    // Add the last page if it has content
+    // Add the last responses page if it has content
     if (currentPageContent.trim()) {
       pages.push(currentPageContent);
     }
@@ -343,10 +341,8 @@ export const generateSubmissionPDF = async (data: PDFSubmissionData): Promise<vo
         </div>
       `;
 
-      // Add to document temporarily
       document.body.appendChild(pageContainer);
 
-      // Generate canvas for this page with higher scale for better quality
       const canvas = await html2canvas(pageContainer, {
         scale: 1.5,
         useCORS: true,
@@ -357,14 +353,10 @@ export const generateSubmissionPDF = async (data: PDFSubmissionData): Promise<vo
         logging: false
       });
 
-      // Remove from document
       document.body.removeChild(pageContainer);
 
-      // Add to PDF with proper dimensions
       const imgWidth = pageWidth;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      // Ensure the image fits within page bounds
       const finalHeight = Math.min(imgHeight, pageHeight);
       
       pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, finalHeight);
