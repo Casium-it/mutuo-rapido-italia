@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
@@ -352,7 +351,7 @@ export default function FormCompleted() {
 
       {/* Confirmation Dialog */}
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <AlertDialogContent className="mx-4 max-w-sm sm:max-w-md w-[calc(100vw-2rem)] sm:w-full">
+        <AlertDialogContent className="w-[calc(100vw-3rem)] max-w-sm mx-auto sm:max-w-md sm:w-full">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-center text-xl font-bold text-gray-900">
               Conferma il tuo numero
@@ -371,13 +370,13 @@ export default function FormCompleted() {
             </div>
           </div>
           
-          <AlertDialogFooter className="flex flex-col-reverse sm:flex-row justify-center sm:justify-end gap-3 sm:gap-2">
-            <AlertDialogCancel className="w-full sm:w-auto order-2 sm:order-1">
+          <AlertDialogFooter className="!flex !flex-col !items-center !justify-center gap-3 sm:!flex-row sm:!justify-center sm:gap-4">
+            <AlertDialogCancel className="w-full max-w-[200px] sm:w-auto order-2 sm:order-1 border-[#245C4F] text-[#245C4F] hover:bg-[#245C4F] hover:text-white">
               Modifica numero
             </AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleConfirmedSubmission}
-              className="w-full sm:w-auto bg-[#245C4F] hover:bg-[#1e4f44] text-white order-1 sm:order-2"
+              className="w-full max-w-[200px] sm:w-auto bg-[#245C4F] hover:bg-[#1e4f44] text-white order-1 sm:order-2"
             >
               Conferma e invia
             </AlertDialogAction>
