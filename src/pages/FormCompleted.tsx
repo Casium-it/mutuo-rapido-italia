@@ -7,6 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { validatePhoneNumber } from "@/utils/validationUtils";
 import { toast } from "sonner";
 import { updateSubmissionWithContact } from "@/services/contactSubmissionService";
@@ -26,6 +36,9 @@ export default function FormCompleted() {
   const [phoneError, setPhoneError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasStartedTyping, setHasStartedTyping] = useState(false);
+  
+  // New state for confirmation dialog
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   // Controlla se l'utente è arrivato a questa pagina dopo aver completato il form
   const submissionData = location.state?.submissionData;
@@ -156,6 +169,14 @@ export default function FormCompleted() {
       return;
     }
 
+    // Show confirmation dialog instead of submitting directly
+    setShowConfirmDialog(true);
+  };
+
+  // New function to handle confirmed submission
+  const handleConfirmedSubmission = async () => {
+    setShowConfirmDialog(false);
+    
     // Get the correct submission ID - try submissionId first, then id
     const submissionId = submissionData.submissionId || submissionData.id;
     
@@ -327,6 +348,41 @@ export default function FormCompleted() {
           </div>
         </div>
       </div>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent className="max-w-md mx-4">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-center text-xl font-bold text-gray-900">
+              Conferma il tuo numero
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center text-gray-600 mt-4">
+              Stai per inviare la simulazione a questo numero WhatsApp:
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className="my-6 text-center">
+            <div className="inline-flex items-center justify-center bg-[#F8F4EF] px-4 py-3 rounded-lg border-2 border-[#245C4F]">
+              <Phone className="h-5 w-5 text-[#245C4F] mr-2" />
+              <span className="text-lg font-bold text-[#245C4F]">
+                {phoneNumber}
+              </span>
+            </div>
+          </div>
+          
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel className="w-full sm:w-auto">
+              Modifica numero
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmedSubmission}
+              className="w-full sm:w-auto bg-[#245C4F] hover:bg-[#1e4f44] text-white"
+            >
+              Conferma e invia
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Footer */}
       <footer className="py-6 px-4 bg-gray-50 border-t border-gray-200 mt-auto">
