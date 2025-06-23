@@ -22,7 +22,7 @@ export default function FormLoading() {
   // Get global simulation timer for completion event
   const { getTotalTimeSpent } = useSimulationTimer();
   
-  // Ottieni i dati del form dallo stato della location
+  // Get form data from location state - handle both possible formats
   const formData = location.state?.formData as {
     responses: FormResponse;
     activeBlocks: string[];
@@ -32,19 +32,22 @@ export default function FormLoading() {
   };
   
   useEffect(() => {
-    // Se non ci sono dati del form, reindirizza alla home
-    if (!formData) {
+    // Enhanced validation - if no form data, redirect to home
+    if (!formData || !formData.responses || !formData.activeBlocks) {
+      console.error("FormLoading: No valid form data found, redirecting to home");
       navigate("/");
       return;
     }
     
-    // Avvia la submission se non è già stata avviata
-    if (!submissionStartedRef.current) {
-      submissionStartedRef.current = true;
-      handleFormSubmission();
+    // Prevent multiple submissions - check if submission already started
+    if (submissionStartedRef.current) {
+      console.log("FormLoading: Submission already in progress, skipping");
+      return;
     }
     
-    // Avvia l'animazione della barra di progresso per 5 secondi
+    console.log("FormLoading: Starting form submission process");
+    submissionStartedRef.current = true;
+    handleFormSubmission();
     startProgressAnimation();
     
     // Cleanup function
@@ -102,16 +105,17 @@ export default function FormLoading() {
 
   const handleFormSubmission = async () => {
     try {
-      console.log("Inizio invio form dal FormLoading...");
-      console.log("Responses da inviare:", formData.responses);
-      console.log("Blocchi statici disponibili:", allBlocks.length);
-      console.log("Blocchi dinamici:", formData.dynamicBlocks?.length || 0);
+      console.log("FormLoading: Beginning form submission to Supabase");
+      console.log("FormLoading: Form responses:", Object.keys(formData.responses).length);
+      console.log("FormLoading: Active blocks:", formData.activeBlocks.length);
+      console.log("FormLoading: Dynamic blocks:", formData.dynamicBlocks?.length || 0);
       
-      // Combina tutti i blocchi (statici + dinamici) per il servizio di submission
+      // Combine all blocks for submission service
       const allAvailableBlocks = [...allBlocks, ...(formData.dynamicBlocks || [])];
-      console.log("Totale blocchi disponibili per submission:", allAvailableBlocks.length);
+      console.log("FormLoading: Total blocks available:", allAvailableBlocks.length);
       
-      const result = await submitFormToSupabase({
+      // Create form state for submission service
+      const formStateForSubmission = {
         activeBlocks: formData.activeBlocks,
         responses: formData.responses,
         completedBlocks: formData.completedBlocks,
@@ -121,10 +125,12 @@ export default function FormLoading() {
         navigationHistory: [],
         blockActivations: {},
         pendingRemovals: []
-      }, allAvailableBlocks);
+      };
+      
+      const result = await submitFormToSupabase(formStateForSubmission, allAvailableBlocks);
       
       if (result.success && result.submissionId) {
-        console.log("Form inviato con successo, ID:", result.submissionId);
+        console.log("FormLoading: Form submitted successfully, ID:", result.submissionId);
         
         // Track successful completion with total time spent from simulation start
         const totalTimeSpent = getTotalTimeSpent();
@@ -134,29 +140,27 @@ export default function FormLoading() {
         setSubmissionCompleted(true);
         setShowWaitingMessage(false);
       } else {
-        console.error("Errore nell'invio:", result.error);
+        console.error("FormLoading: Submission failed:", result.error);
         toast.error("Errore durante l'invio", {
           description: result.error || "Si è verificato un errore durante l'invio del modulo."
         });
-        // In caso di errore, torna alla pagina precedente
         navigate(-1);
       }
       
     } catch (error) {
-      console.error('Errore imprevisto durante l\'invio del form:', error);
+      console.error('FormLoading: Unexpected error during submission:', error);
       toast.error("Errore durante l'invio", {
         description: "Si è verificato un errore imprevisto. Riprova più tardi."
       });
-      // In caso di errore, torna alla pagina precedente
       navigate(-1);
     }
   };
 
   const startProgressAnimation = () => {
-    const totalDuration = 5000; // 5 secondi esatti
-    const intervalTime = 50; // Aggiorna ogni 50ms
-    const totalSteps = totalDuration / intervalTime; // 100 step totali
-    const progressPerStep = 100 / totalSteps; // 1% per step
+    const totalDuration = 5000; // 5 seconds
+    const intervalTime = 50; // Update every 50ms
+    const totalSteps = totalDuration / intervalTime;
+    const progressPerStep = 100 / totalSteps;
     
     let currentStep = 0;
     
@@ -166,7 +170,6 @@ export default function FormLoading() {
       
       setLoadingProgress(newProgress);
       
-      // Se abbiamo raggiunto il 100%, ferma l'animazione
       if (newProgress >= 100) {
         if (progressIntervalRef.current) {
           clearInterval(progressIntervalRef.current);
@@ -198,10 +201,9 @@ export default function FormLoading() {
         <Logo />
       </header>
 
-      {/* Contenuto principale */}
+      {/* Main content */}
       <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8">
         <div className="text-center space-y-8 max-w-md w-full">
-          {/* Loader con animazione */}
           <div className="flex flex-col items-center">
             <div className="dots-loader mb-8"></div>
             
@@ -213,7 +215,6 @@ export default function FormLoading() {
               {getDisplayDescription()}
             </p>
             
-            {/* Barra di progresso con shadcn/ui */}
             <div className="w-full space-y-3">
               <Progress 
                 value={loadingProgress} 
@@ -224,7 +225,6 @@ export default function FormLoading() {
                 {Math.round(loadingProgress)}% completato
               </p>
               
-              {/* Indicatore fase */}
               <p className="text-xs text-gray-500">
                 {showWaitingMessage ? "Finalizzazione..." : "Salvataggio dati..."}
               </p>
@@ -233,10 +233,9 @@ export default function FormLoading() {
         </div>
       </div>
       
-      {/* Style per il loader personalizzato */}
+      {/* CSS for loader animation */}
       <style>
         {`
-        /* Dots loader animation */
         .dots-loader {
           width: 65px;
           aspect-ratio: 1;
