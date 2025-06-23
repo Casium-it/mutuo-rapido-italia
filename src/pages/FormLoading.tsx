@@ -14,16 +14,18 @@ export default function FormLoading() {
   const navigate = useNavigate();
   const location = useLocation();
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionCompleted, setSubmissionCompleted] = useState(false);
-  const [showWaitingMessage, setShowWaitingMessage] = useState(false);
   const [actualSubmissionId, setActualSubmissionId] = useState<string | null>(null);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
+  
   const submissionStartedRef = useRef(false);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   // Get global simulation timer for completion event
   const { getTotalTimeSpent } = useSimulationTimer();
   
-  // Get form data from location state - handle both possible formats
+  // Get form data from location state
   const formData = location.state?.formData as {
     responses: FormResponse;
     activeBlocks: string[];
@@ -33,6 +35,8 @@ export default function FormLoading() {
   };
   
   useEffect(() => {
+    console.log("FormLoading: Component mounted, starting initialization");
+    
     // Enhanced validation - if no form data, redirect to home
     if (!formData || !formData.responses || !formData.activeBlocks) {
       console.error("FormLoading: No valid form data found, redirecting to home");
@@ -40,7 +44,54 @@ export default function FormLoading() {
       return;
     }
     
-    // Prevent multiple submissions - check if submission already started
+    console.log("FormLoading: Valid form data found, starting progress and submission");
+    
+    // Always start progress animation immediately for good UX
+    startProgressAnimation();
+    
+    // Start form submission (with duplicate prevention)
+    handleFormSubmission();
+    
+    // Cleanup function
+    return () => {
+      console.log("FormLoading: Component unmounting, cleaning up");
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+    };
+  }, [formData, navigate]);
+
+  // Handle navigation when both progress and submission are complete
+  useEffect(() => {
+    console.log("FormLoading: Checking navigation conditions - Progress:", loadingProgress, "Submission completed:", submissionCompleted, "Submission ID:", actualSubmissionId, "Error:", submissionError);
+    
+    if (loadingProgress >= 100 && submissionCompleted && actualSubmissionId) {
+      console.log("FormLoading: All conditions met, navigating to completion page");
+      setTimeout(() => {
+        navigate("/form-completed", { 
+          state: { 
+            submissionData: {
+              id: actualSubmissionId,
+              submissionId: actualSubmissionId,
+              ...formData,
+              submissionTime: new Date().toISOString()
+            }
+          }
+        });
+      }, 500); // Small delay for smooth UX
+    } else if (loadingProgress >= 100 && submissionError) {
+      console.error("FormLoading: Submission failed, showing error and going back");
+      toast.error("Errore durante l'invio", {
+        description: submissionError
+      });
+      setTimeout(() => {
+        navigate(-1);
+      }, 2000);
+    }
+  }, [loadingProgress, submissionCompleted, actualSubmissionId, submissionError, navigate, formData]);
+
+  const handleFormSubmission = async () => {
+    // Prevent duplicate submissions
     if (submissionStartedRef.current) {
       console.log("FormLoading: Submission already in progress, skipping");
       return;
@@ -48,63 +99,8 @@ export default function FormLoading() {
     
     console.log("FormLoading: Starting form submission process");
     submissionStartedRef.current = true;
-    handleFormSubmission();
-    startProgressAnimation();
+    setIsSubmitting(true);
     
-    // Cleanup function
-    return () => {
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-      }
-    };
-  }, [formData, navigate]);
-
-  // Effetto per gestire quando il progresso raggiunge il 100%
-  useEffect(() => {
-    if (loadingProgress >= 100) {
-      if (submissionCompleted && actualSubmissionId) {
-        // Entrambe le condizioni sono soddisfatte, naviga
-        setTimeout(() => {
-          navigate("/form-completed", { 
-            state: { 
-              submissionData: {
-                id: actualSubmissionId,
-                submissionId: actualSubmissionId, // Include both for compatibility
-                ...formData,
-                submissionTime: new Date().toISOString()
-              }
-            }
-          });
-        }, 300);
-      } else {
-        // Progresso completato ma submission ancora in corso
-        setShowWaitingMessage(true);
-      }
-    }
-  }, [loadingProgress, submissionCompleted, actualSubmissionId, navigate, formData]);
-
-  // Effetto per gestire quando la submission è completata
-  useEffect(() => {
-    if (submissionCompleted && loadingProgress >= 100 && actualSubmissionId) {
-      // Entrambe le condizioni sono soddisfatte, nascondi il messaggio di attesa
-      setShowWaitingMessage(false);
-      
-      setTimeout(() => {
-        navigate("/form-completed", { 
-          state: { 
-            submissionData: {
-              id: actualSubmissionId,
-              submissionId: actualSubmissionId, // Include both for compatibility
-              ...formData,
-              submissionTime: new Date().toISOString()
-            }
-          }
-        });
-      }, 300);
-    }
-  }, [submissionCompleted, loadingProgress, actualSubmissionId, navigate, formData]);
-
-  const handleFormSubmission = async () => {
     try {
       console.log("FormLoading: Beginning form submission to Supabase");
       console.log("FormLoading: Form responses:", Object.keys(formData.responses).length);
@@ -122,7 +118,7 @@ export default function FormLoading() {
         completedBlocks: formData.completedBlocks,
         dynamicBlocks: formData.dynamicBlocks,
         activeQuestion: { block_id: '', question_id: '' },
-        answeredQuestions: new Set<string>(), // Fix: Properly type the Set as Set<string>
+        answeredQuestions: new Set<string>(),
         navigationHistory: [],
         blockActivations: {},
         pendingRemovals: []
@@ -139,25 +135,21 @@ export default function FormLoading() {
         
         setActualSubmissionId(result.submissionId);
         setSubmissionCompleted(true);
-        setShowWaitingMessage(false);
       } else {
         console.error("FormLoading: Submission failed:", result.error);
-        toast.error("Errore durante l'invio", {
-          description: result.error || "Si è verificato un errore durante l'invio del modulo."
-        });
-        navigate(-1);
+        setSubmissionError(result.error || "Si è verificato un errore durante l'invio del modulo.");
       }
       
     } catch (error) {
       console.error('FormLoading: Unexpected error during submission:', error);
-      toast.error("Errore durante l'invio", {
-        description: "Si è verificato un errore imprevisto. Riprova più tardi."
-      });
-      navigate(-1);
+      setSubmissionError("Si è verificato un errore imprevisto. Riprova più tardi.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const startProgressAnimation = () => {
+    console.log("FormLoading: Starting progress animation");
     const totalDuration = 5000; // 5 seconds
     const intervalTime = 50; // Update every 50ms
     const totalSteps = totalDuration / intervalTime;
@@ -172,6 +164,7 @@ export default function FormLoading() {
       setLoadingProgress(newProgress);
       
       if (newProgress >= 100) {
+        console.log("FormLoading: Progress animation completed");
         if (progressIntervalRef.current) {
           clearInterval(progressIntervalRef.current);
           progressIntervalRef.current = null;
@@ -180,19 +173,44 @@ export default function FormLoading() {
     }, intervalTime);
   };
 
-  // Determina il messaggio da mostrare
+  // Determine display messages based on current state
   const getDisplayMessage = () => {
-    if (showWaitingMessage) {
+    if (submissionError) {
+      return "Errore durante l'invio";
+    }
+    if (loadingProgress >= 100 && !submissionCompleted) {
       return "Quasi finito... attendi";
+    }
+    if (loadingProgress >= 100 && submissionCompleted) {
+      return "Completato!";
     }
     return "Stiamo elaborando la tua richiesta";
   };
 
   const getDisplayDescription = () => {
-    if (showWaitingMessage) {
+    if (submissionError) {
+      return "Si è verificato un errore. Verrai reindirizzato.";
+    }
+    if (loadingProgress >= 100 && !submissionCompleted) {
       return "Finalizzazione in corso...";
     }
+    if (loadingProgress >= 100 && submissionCompleted) {
+      return "Reindirizzamento alla pagina dei risultati...";
+    }
     return "I tuoi dati vengono salvati in modo sicuro. Tra un momento verrai reindirizzato.";
+  };
+
+  const getProgressSubtext = () => {
+    if (submissionError) {
+      return "Errore";
+    }
+    if (loadingProgress >= 100 && !submissionCompleted) {
+      return "Finalizzazione...";
+    }
+    if (loadingProgress >= 100 && submissionCompleted) {
+      return "Reindirizzamento...";
+    }
+    return "Salvataggio dati...";
   };
 
   return (
@@ -220,14 +238,14 @@ export default function FormLoading() {
               <Progress 
                 value={loadingProgress} 
                 className="h-3 bg-gray-200"
-                indicatorClassName="bg-[#245C4F] transition-all duration-75 ease-linear"
+                indicatorClassName={`transition-all duration-75 ease-linear ${submissionError ? 'bg-red-500' : 'bg-[#245C4F]'}`}
               />
               <p className="text-sm text-gray-600 font-medium">
                 {Math.round(loadingProgress)}% completato
               </p>
               
               <p className="text-xs text-gray-500">
-                {showWaitingMessage ? "Finalizzazione..." : "Salvataggio dati..."}
+                {getProgressSubtext()}
               </p>
             </div>
           </div>
