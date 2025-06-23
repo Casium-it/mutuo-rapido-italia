@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
@@ -114,14 +115,14 @@ export default function FormLoading() {
       const allAvailableBlocks = [...allBlocks, ...(formData.dynamicBlocks || [])];
       console.log("FormLoading: Total blocks available:", allAvailableBlocks.length);
       
-      // Create form state for submission service
+      // Create form state for submission service with proper types
       const formStateForSubmission = {
         activeBlocks: formData.activeBlocks,
         responses: formData.responses,
         completedBlocks: formData.completedBlocks,
         dynamicBlocks: formData.dynamicBlocks,
         activeQuestion: { block_id: '', question_id: '' },
-        answeredQuestions: new Set(),
+        answeredQuestions: new Set<string>(), // Fix: Properly type the Set as Set<string>
         navigationHistory: [],
         blockActivations: {},
         pendingRemovals: []
