@@ -1,6 +1,5 @@
 
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import { getQuestionTextWithStyledResponses } from './formUtils';
 
 export interface PDFSubmissionData {
@@ -26,6 +25,25 @@ export interface PDFSubmissionData {
   }>;
 }
 
+// PDF layout constants
+const PAGE_WIDTH = 210; // A4 width in mm
+const PAGE_HEIGHT = 297; // A4 height in mm
+const MARGIN = 20; // Margin in mm
+const CONTENT_WIDTH = PAGE_WIDTH - (MARGIN * 2);
+const CONTENT_HEIGHT = PAGE_HEIGHT - (MARGIN * 2);
+
+// Font sizes
+const FONT_SIZE_TITLE = 18;
+const FONT_SIZE_SUBTITLE = 14;
+const FONT_SIZE_SECTION = 12;
+const FONT_SIZE_NORMAL = 10;
+const FONT_SIZE_SMALL = 9;
+
+// Line heights (spacing between lines)
+const LINE_HEIGHT_TITLE = 8;
+const LINE_HEIGHT_NORMAL = 5;
+const LINE_HEIGHT_SECTION = 7;
+
 /**
  * Maps lead status values to Italian labels
  */
@@ -41,249 +59,307 @@ const getLeadStatusLabel = (status: string): string => {
 };
 
 /**
- * Renders question text with styled placeholders for PDF display
+ * Format date for Italian locale
  */
-const renderQuestionTextForPDF = (questionText: string, responseValue: any): string => {
-  if (!questionText) return '';
-
-  const { parts } = getQuestionTextWithStyledResponses(questionText, '', responseValue);
-  
-  return parts.map(part => {
-    if (part.type === 'response') {
-      return `<strong style="color: #245C4F;">${escapeHtml(part.content)}</strong>`;
-    } else {
-      return escapeHtml(part.content);
-    }
-  }).join('');
+const formatDate = (dateString: string): string => {
+  return new Date(dateString).toLocaleString('it-IT', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 };
 
 /**
- * Escapes HTML special characters
+ * Add text with automatic line wrapping and return new Y position
  */
-const escapeHtml = (text: string): string => {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
+const addWrappedText = (
+  pdf: jsPDF, 
+  text: string, 
+  x: number, 
+  y: number, 
+  maxWidth: number,
+  fontSize: number = FONT_SIZE_NORMAL,
+  lineHeight: number = LINE_HEIGHT_NORMAL
+): number => {
+  pdf.setFontSize(fontSize);
+  const lines = pdf.splitTextToSize(text, maxWidth);
+  
+  for (let i = 0; i < lines.length; i++) {
+    if (y > PAGE_HEIGHT - MARGIN - 10) {
+      pdf.addPage();
+      y = MARGIN;
+    }
+    pdf.text(lines[i], x, y);
+    y += lineHeight;
+  }
+  
+  return y;
+};
+
+/**
+ * Add a section title
+ */
+const addSectionTitle = (
+  pdf: jsPDF,
+  title: string,
+  x: number,
+  y: number
+): number => {
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(FONT_SIZE_SECTION);
+  pdf.setTextColor(36, 92, 79); // #245C4F
+  pdf.text(title, x, y);
+  pdf.setTextColor(0, 0, 0); // Reset to black
+  pdf.setFont('helvetica', 'normal');
+  return y + LINE_HEIGHT_SECTION;
 };
 
 /**
  * Format response value for display
  */
 const formatResponseValue = (value: any): string => {
-  if (typeof value === 'object' && value !== null) {
+  if (value === null || value === undefined) {
+    return '';
+  }
+  
+  if (typeof value === 'object') {
     if (Array.isArray(value)) {
       return value.join(', ');
     }
     return JSON.stringify(value, null, 2);
   }
+  
   return String(value);
 };
 
+/**
+ * Process question text and return parts with responses highlighted
+ */
+const processQuestionText = (
+  questionText: string,
+  responseValue: any
+): Array<{type: 'text' | 'response', content: string}> => {
+  if (!questionText) {
+    return [{ type: 'text', content: '' }];
+  }
+
+  const { parts } = getQuestionTextWithStyledResponses(questionText, '', responseValue);
+  return parts;
+};
+
+/**
+ * Add question with styled responses
+ */
+const addQuestionWithResponses = (
+  pdf: jsPDF,
+  questionText: string,
+  responseValue: any,
+  questionId: string,
+  x: number,
+  y: number
+): number => {
+  const parts = processQuestionText(questionText, responseValue);
+  
+  pdf.setFontSize(FONT_SIZE_NORMAL);
+  let currentX = x;
+  
+  // Check if we need a new page
+  if (y > PAGE_HEIGHT - MARGIN - 20) {
+    pdf.addPage();
+    y = MARGIN;
+  }
+  
+  for (const part of parts) {
+    if (part.type === 'response') {
+      // Style responses as bold and colored
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(36, 92, 79); // #245C4F
+    } else {
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(0, 0, 0); // Black
+    }
+    
+    const textWidth = pdf.getTextWidth(part.content);
+    
+    // Check if text fits on current line
+    if (currentX + textWidth > MARGIN + CONTENT_WIDTH) {
+      y += LINE_HEIGHT_NORMAL;
+      currentX = x;
+      
+      // Check if we need a new page
+      if (y > PAGE_HEIGHT - MARGIN - 10) {
+        pdf.addPage();
+        y = MARGIN;
+      }
+    }
+    
+    pdf.text(part.content, currentX, y);
+    currentX += textWidth;
+  }
+  
+  // Reset font and color
+  pdf.setFont('helvetica', 'normal');
+  pdf.setTextColor(0, 0, 0);
+  
+  // Add question ID
+  y += LINE_HEIGHT_NORMAL;
+  pdf.setFontSize(FONT_SIZE_SMALL);
+  pdf.setTextColor(100, 100, 100); // Gray
+  y = addWrappedText(pdf, `ID: ${questionId}`, x, y, CONTENT_WIDTH, FONT_SIZE_SMALL, 4);
+  pdf.setTextColor(0, 0, 0); // Reset to black
+  
+  return y + 3; // Extra spacing after each question
+};
+
+/**
+ * Generate the first page with lead information
+ */
+const generateFirstPage = (pdf: jsPDF, data: PDFSubmissionData): void => {
+  let y = MARGIN;
+  
+  // Header
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(FONT_SIZE_TITLE);
+  pdf.setTextColor(36, 92, 79); // #245C4F
+  
+  const fullName = [data.first_name, data.last_name].filter(Boolean).join(' ');
+  const title = fullName ? `GoMutuo - ${fullName}` : 'GoMutuo - Dettagli Submission';
+  
+  y = addWrappedText(pdf, title, MARGIN, y, CONTENT_WIDTH, FONT_SIZE_TITLE, LINE_HEIGHT_TITLE);
+  
+  // Submission ID
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(FONT_SIZE_NORMAL);
+  pdf.setTextColor(100, 100, 100); // Gray
+  y = addWrappedText(pdf, `ID: ${data.id}`, MARGIN, y, CONTENT_WIDTH, FONT_SIZE_NORMAL, LINE_HEIGHT_NORMAL);
+  y += 5; // Extra spacing
+  
+  // Lead Information Section
+  pdf.setTextColor(0, 0, 0); // Black
+  y = addSectionTitle(pdf, 'Informazioni Lead', MARGIN, y);
+  
+  // Lead details
+  const leadInfo = [
+    `Nome: ${fullName || 'Non specificato'}`,
+    `Email: ${data.email || 'Non specificata'}`,
+    `Telefono: ${data.phone_number || 'Non specificato'}`,
+    `Status: ${getLeadStatusLabel(data.lead_status)}`,
+    `Tipo Form: ${data.form_type}`,
+    `Data Invio: ${formatDate(data.created_at)}`,
+    `Consulenza: ${data.consulting ? 'Richiesta' : 'Non richiesta'}`
+  ];
+  
+  leadInfo.forEach(info => {
+    y = addWrappedText(pdf, info, MARGIN, y, CONTENT_WIDTH, FONT_SIZE_NORMAL, LINE_HEIGHT_NORMAL);
+  });
+  
+  y += 10; // Extra spacing before notes
+  
+  // Notes Section
+  if (data.notes && data.notes.trim()) {
+    y = addSectionTitle(pdf, 'Note', MARGIN, y);
+    y = addWrappedText(pdf, data.notes, MARGIN, y, CONTENT_WIDTH, FONT_SIZE_NORMAL, LINE_HEIGHT_NORMAL);
+  }
+  
+  // Metadata Section
+  if (data.metadata) {
+    y += 10;
+    y = addSectionTitle(pdf, 'Metadata', MARGIN, y);
+    
+    const metadataInfo = [
+      `Blocchi attivi: ${data.metadata.blocks?.length || 0}`,
+      `Blocchi completati: ${data.metadata.completedBlocks?.length || 0}`,
+      `Blocchi dinamici: ${data.metadata.dynamicBlocks || 0}`
+    ];
+    
+    if (data.metadata.slug) {
+      metadataInfo.push(`Slug: ${data.metadata.slug}`);
+    }
+    
+    metadataInfo.forEach(info => {
+      y = addWrappedText(pdf, info, MARGIN, y, CONTENT_WIDTH, FONT_SIZE_NORMAL, LINE_HEIGHT_NORMAL);
+    });
+  }
+};
+
+/**
+ * Generate blocks and responses starting from page 2
+ */
+const generateBlocksAndResponses = (pdf: jsPDF, data: PDFSubmissionData): void => {
+  // Start new page for responses
+  pdf.addPage();
+  let y = MARGIN;
+  
+  // Responses header
+  y = addSectionTitle(pdf, `Risposte (${data.responses.length} totali)`, MARGIN, y);
+  y += 5;
+  
+  if (data.responses.length === 0) {
+    y = addWrappedText(pdf, 'Nessuna risposta trovata per questa submission.', MARGIN, y, CONTENT_WIDTH);
+    return;
+  }
+  
+  // Group responses by block
+  const responsesByBlock = data.responses.reduce((acc, response) => {
+    if (!acc[response.block_id]) {
+      acc[response.block_id] = [];
+    }
+    acc[response.block_id].push(response);
+    return acc;
+  }, {} as Record<string, typeof data.responses>);
+  
+  // Process each block
+  Object.entries(responsesByBlock).forEach(([blockId, blockResponses]) => {
+    // Check if we need a new page for the block header
+    if (y > PAGE_HEIGHT - MARGIN - 30) {
+      pdf.addPage();
+      y = MARGIN;
+    }
+    
+    // Block header
+    y = addSectionTitle(pdf, `Blocco: ${blockId} (${blockResponses.length} risposte)`, MARGIN, y);
+    y += 3;
+    
+    // Process each response in the block
+    blockResponses.forEach(response => {
+      y = addQuestionWithResponses(
+        pdf,
+        response.question_text,
+        response.response_value,
+        response.question_id,
+        MARGIN,
+        y
+      );
+      y += 2; // Extra spacing between questions
+    });
+    
+    y += 5; // Extra spacing between blocks
+  });
+};
+
+/**
+ * Generate submission PDF
+ */
 export const generateSubmissionPDF = async (data: PDFSubmissionData): Promise<void> => {
   try {
     const pdf = new jsPDF('p', 'mm', 'a4');
-    const pageWidth = 210;
-    const pageHeight = 297;
-    const pageMargin = 20;
-    const maxContentWidth = pageWidth - (pageMargin * 2);
-
-    const formatDate = (dateString: string) => {
-      return new Date(dateString).toLocaleString('it-IT', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    };
-
-    const fullName = [data.first_name, data.last_name].filter(Boolean).join(' ');
-    const displayTitle = fullName ? `GoMutuo - ${fullName}` : 'GoMutuo - Dettagli Submission';
-    const leadStatusLabel = getLeadStatusLabel(data.lead_status);
-
-    // Create complete HTML content
-    const htmlContent = `
-      <div style="
-        width: ${maxContentWidth}mm; 
-        font-family: Arial, sans-serif; 
-        color: #000; 
-        background: white;
-        padding: 20px;
-        box-sizing: border-box;
-        line-height: 1.4;
-      ">
-        <!-- Header -->
-        <div style="margin-bottom: 30px; text-align: center;">
-          <h1 style="color: #245C4F; font-size: 24px; margin: 0 0 10px 0;">${displayTitle}</h1>
-          <p style="color: #666; font-size: 14px; margin: 0;">ID: ${data.id}</p>
-          <p style="color: #666; font-size: 12px; margin: 5px 0 0 0;">${formatDate(data.created_at)}</p>
-        </div>
-
-        <!-- General Information -->
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #245C4F; font-size: 18px; margin-bottom: 15px;">Informazioni Generali</h2>
-          <div style="margin-bottom: 15px;">
-            <div style="margin-bottom: 10px;"><strong>Tipo Form:</strong> ${data.form_type}</div>
-            <div style="margin-bottom: 10px;"><strong>Data Invio:</strong> ${formatDate(data.created_at)}</div>
-            ${data.phone_number ? `<div style="margin-bottom: 10px;"><strong>Telefono:</strong> ${data.phone_number}</div>` : ''}
-            ${data.user_identifier ? `<div style="margin-bottom: 10px;"><strong>ID Utente:</strong> ${data.user_identifier}</div>` : ''}
-            <div style="margin-bottom: 10px;"><strong>Consulenza:</strong> ${data.consulting ? 'Richiesta' : 'Non richiesta'}</div>
-          </div>
-        </div>
-
-        <!-- Lead Information -->
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #245C4F; font-size: 18px; margin-bottom: 15px;">Informazioni Lead</h2>
-          <div style="margin-bottom: 15px;">
-            ${fullName ? `<div style="margin-bottom: 10px;"><strong>Nome Completo:</strong> ${fullName}</div>` : '<div style="margin-bottom: 10px;"><strong>Nome:</strong> Non specificato</div>'}
-            ${data.email ? `<div style="margin-bottom: 10px;"><strong>Email:</strong> ${data.email}</div>` : '<div style="margin-bottom: 10px;"><strong>Email:</strong> Non specificata</div>'}
-            <div style="margin-bottom: 10px;"><strong>Status Lead:</strong> ${leadStatusLabel}</div>
-          </div>
-          
-          ${data.notes ? `
-          <div style="margin-bottom: 15px;">
-            <div style="margin-bottom: 8px;"><strong>Note:</strong></div>
-            <div style="background: #f5f5f5; padding: 15px; border-radius: 6px; line-height: 1.6; font-size: 14px;">
-              ${escapeHtml(data.notes)}
-            </div>
-          </div>
-          ` : ''}
-        </div>
-
-        ${data.metadata ? `
-        <!-- Metadata -->
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #245C4F; font-size: 18px; margin-bottom: 15px;">Metadata</h2>
-          <div style="margin-bottom: 15px;">
-            <div style="margin-bottom: 8px;"><strong>Blocchi attivi:</strong> ${data.metadata.blocks?.length || 0}</div>
-            <div style="margin-bottom: 8px;"><strong>Blocchi completati:</strong> ${data.metadata.completedBlocks?.length || 0}</div>
-            <div style="margin-bottom: 8px;"><strong>Blocchi dinamici:</strong> ${data.metadata.dynamicBlocks || 0}</div>
-            ${data.metadata.slug ? `<div style="margin-bottom: 8px;"><strong>Slug:</strong> ${data.metadata.slug}</div>` : ''}
-          </div>
-        </div>
-        ` : ''}
-
-        <!-- Responses -->
-        <div style="margin-bottom: 20px;">
-          <h2 style="color: #245C4F; font-size: 18px; margin-bottom: 15px;">Risposte (${data.responses.length} totali)</h2>
-          
-          ${data.responses.length === 0 ? `
-          <div style="text-align: center; padding: 40px; color: #666;">
-            <p>Nessuna risposta trovata per questa submission.</p>
-          </div>
-          ` : ''}
-          
-          ${Object.entries(data.responses.reduce((acc, response) => {
-            if (!acc[response.block_id]) {
-              acc[response.block_id] = [];
-            }
-            acc[response.block_id].push(response);
-            return acc;
-          }, {} as Record<string, typeof data.responses>)).map(([blockId, blockResponses]) => `
-            <div style="margin-bottom: 25px;">
-              <h3 style="color: #245C4F; font-size: 16px; margin-bottom: 15px; background: #f8f5f1; padding: 10px; border-radius: 6px;">
-                Blocco: ${blockId} (${blockResponses.length} risposte)
-              </h3>
-              
-              ${blockResponses.map(response => `
-                <div style="margin-bottom: 15px; padding: 15px; background: #fafafa; border-radius: 6px;">
-                  <div style="margin-bottom: 8px; line-height: 1.6;">
-                    ${renderQuestionTextForPDF(response.question_text, response.response_value)}
-                  </div>
-                  <div style="color: #666; font-size: 11px; margin-top: 8px;">
-                    ID: ${response.question_id}
-                  </div>
-                </div>
-              `).join('')}
-            </div>
-          `).join('')}
-        </div>
-
-        <!-- Footer -->
-        <div style="text-align: center; color: #666; font-size: 10px; margin-top: 40px; padding-top: 20px;">
-          PDF generato il ${formatDate(new Date().toISOString())} - GoMutuo
-        </div>
-      </div>
-    `;
-
-    // Create temporary container for rendering
-    const container = document.createElement('div');
-    container.style.cssText = `
-      position: absolute;
-      top: -9999px;
-      left: -9999px;
-      width: ${maxContentWidth}mm;
-      background: white;
-      visibility: hidden;
-    `;
-    container.innerHTML = htmlContent;
-    document.body.appendChild(container);
-
-    // Generate canvas from HTML
-    const canvas = await html2canvas(container, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: '#ffffff',
-      width: container.offsetWidth,
-      height: container.offsetHeight,
-      logging: false
-    });
-
-    // Remove temporary container
-    document.body.removeChild(container);
-
-    // Calculate PDF dimensions
-    const imgWidth = pageWidth;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-    // Add content to PDF, splitting across pages if needed
-    let remainingHeight = imgHeight;
-    let sourceY = 0;
-    let pageCount = 0;
-
-    while (remainingHeight > 0) {
-      if (pageCount > 0) {
-        pdf.addPage();
-      }
-
-      const pageContentHeight = Math.min(remainingHeight, pageHeight);
-      const sourceHeight = (pageContentHeight * canvas.width) / imgWidth;
-
-      // Create canvas for this page
-      const pageCanvas = document.createElement('canvas');
-      const pageCtx = pageCanvas.getContext('2d');
-      pageCanvas.width = canvas.width;
-      pageCanvas.height = sourceHeight;
-
-      if (pageCtx) {
-        pageCtx.drawImage(
-          canvas,
-          0, sourceY,
-          canvas.width, sourceHeight,
-          0, 0,
-          canvas.width, sourceHeight
-        );
-
-        pdf.addImage(
-          pageCanvas.toDataURL('image/png'),
-          'PNG',
-          0, 0,
-          imgWidth, pageContentHeight
-        );
-      }
-
-      remainingHeight -= pageContentHeight;
-      sourceY += sourceHeight;
-      pageCount++;
-    }
-
+    
+    // Generate first page with lead information
+    generateFirstPage(pdf, data);
+    
+    // Generate blocks and responses from page 2 onwards
+    generateBlocksAndResponses(pdf, data);
+    
     // Generate filename and save
     const date = new Date().toISOString().split('T')[0];
+    const fullName = [data.first_name, data.last_name].filter(Boolean).join(' ');
     const nameForFilename = fullName ? `_${fullName.replace(/\s+/g, '_')}` : '';
     const filename = `submission_${data.id.substring(0, 8)}${nameForFilename}_${date}.pdf`;
+    
     pdf.save(filename);
-
+    
   } catch (error) {
     console.error('Error generating PDF:', error);
     throw new Error('Errore nella generazione del PDF');
