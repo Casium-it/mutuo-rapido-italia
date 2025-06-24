@@ -1,3 +1,4 @@
+
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { getQuestionTextWithStyledResponses } from './formUtils';
@@ -40,20 +41,6 @@ const getLeadStatusLabel = (status: string): string => {
 };
 
 /**
- * Gets the color for lead status
- */
-const getLeadStatusColor = (status: string): string => {
-  const colorMap: Record<string, string> = {
-    'not_contacted': '#6b7280', // gray
-    'first_contact': '#3b82f6', // blue
-    'advanced_conversations': '#f59e0b', // yellow
-    'converted': '#10b981', // green
-    'rejected': '#ef4444' // red
-  };
-  return colorMap[status] || '#6b7280';
-};
-
-/**
  * Renders question text with styled placeholders for PDF display
  */
 const renderQuestionTextForPDF = (questionText: string, responseValue: any): string => {
@@ -63,7 +50,7 @@ const renderQuestionTextForPDF = (questionText: string, responseValue: any): str
   
   return parts.map(part => {
     if (part.type === 'response') {
-      return `<span style="font-weight: bold; text-decoration: underline; color: #245C4F;">${escapeHtml(part.content)}</span>`;
+      return `<strong style="color: #245C4F;">${escapeHtml(part.content)}</strong>`;
     } else {
       return escapeHtml(part.content);
     }
@@ -80,72 +67,16 @@ const escapeHtml = (text: string): string => {
 };
 
 /**
- * Creates a temporary container to measure content height
+ * Format response value for display
  */
-const createMeasurementContainer = (): HTMLDivElement => {
-  const container = document.createElement('div');
-  container.style.cssText = `
-    position: absolute;
-    top: -9999px;
-    left: -9999px;
-    width: 210mm;
-    background: white;
-    padding: 20mm;
-    box-sizing: border-box;
-    font-family: Arial, sans-serif;
-    color: #000;
-    visibility: hidden;
-  `;
-  document.body.appendChild(container);
-  return container;
-};
-
-/**
- * Measures the actual height of content in pixels
- */
-const measureContentHeight = async (htmlContent: string): Promise<number> => {
-  const container = createMeasurementContainer();
-  container.innerHTML = htmlContent;
-  
-  // Let the browser render the content
-  await new Promise(resolve => setTimeout(resolve, 10));
-  
-  const height = container.offsetHeight;
-  document.body.removeChild(container);
-  return height;
-};
-
-/**
- * Creates the header section for each page
- */
-const createPageHeader = (data: PDFSubmissionData, pageNumber: number, totalPages: number): string => {
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('it-IT', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const fullName = [data.first_name, data.last_name].filter(Boolean).join(' ');
-  const displayTitle = fullName ? `GoMutuo - ${fullName}` : 'GoMutuo - Dettagli Submission';
-
-  return `
-    <div style="margin-bottom: 20px; border-bottom: 2px solid #245C4F; padding-bottom: 15px;">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div>
-          <h1 style="color: #245C4F; font-size: 20px; margin: 0 0 5px 0;">${displayTitle}</h1>
-          <p style="color: #666; font-size: 12px; margin: 0;">ID: ${data.id}</p>
-        </div>
-        <div style="text-align: right; font-size: 12px; color: #666;">
-          <div>Pagina ${pageNumber} di ${totalPages}</div>
-          <div>${formatDate(data.created_at)}</div>
-        </div>
-      </div>
-    </div>
-  `;
+const formatResponseValue = (value: any): string => {
+  if (typeof value === 'object' && value !== null) {
+    if (Array.isArray(value)) {
+      return value.join(', ');
+    }
+    return JSON.stringify(value, null, 2);
+  }
+  return String(value);
 };
 
 export const generateSubmissionPDF = async (data: PDFSubmissionData): Promise<void> => {
@@ -154,11 +85,7 @@ export const generateSubmissionPDF = async (data: PDFSubmissionData): Promise<vo
     const pageWidth = 210;
     const pageHeight = 297;
     const pageMargin = 20;
-    const headerHeight = 30;
-    const footerHeight = 15;
-    const safetyMargin = 20;
-    const maxContentHeight = pageHeight - (pageMargin * 2) - headerHeight - footerHeight - safetyMargin;
-    const maxContentHeightPx = maxContentHeight * 3.78;
+    const maxContentWidth = pageWidth - (pageMargin * 2);
 
     const formatDate = (dateString: string) => {
       return new Date(dateString).toLocaleString('it-IT', {
@@ -170,196 +97,185 @@ export const generateSubmissionPDF = async (data: PDFSubmissionData): Promise<vo
       });
     };
 
-    // Prepare first page content (General Information and Lead Details)
-    const leadStatusLabel = getLeadStatusLabel(data.lead_status);
-    const leadStatusColor = getLeadStatusColor(data.lead_status);
     const fullName = [data.first_name, data.last_name].filter(Boolean).join(' ');
+    const displayTitle = fullName ? `GoMutuo - ${fullName}` : 'GoMutuo - Dettagli Submission';
+    const leadStatusLabel = getLeadStatusLabel(data.lead_status);
 
-    const firstPageContent = `
-      <div style="margin-bottom: 25px; padding: 15px; border: 1px solid #BEB8AE; border-radius: 8px;">
-        <h2 style="color: #245C4F; font-size: 16px; margin-bottom: 15px;">Informazioni Generali</h2>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-          <div><strong>Tipo Form:</strong> ${data.form_type}</div>
-          <div><strong>Data Invio:</strong> ${formatDate(data.created_at)}</div>
-          ${data.phone_number ? `<div><strong>Telefono:</strong> ${data.phone_number}</div>` : ''}
-          ${data.user_identifier ? `<div><strong>ID Utente:</strong> ${data.user_identifier}</div>` : ''}
-          <div><strong>Consulenza:</strong> ${data.consulting ? 'Richiesta' : 'Non richiesta'}</div>
+    // Create complete HTML content
+    const htmlContent = `
+      <div style="
+        width: ${maxContentWidth}mm; 
+        font-family: Arial, sans-serif; 
+        color: #000; 
+        background: white;
+        padding: 20px;
+        box-sizing: border-box;
+        line-height: 1.4;
+      ">
+        <!-- Header -->
+        <div style="margin-bottom: 30px; text-align: center;">
+          <h1 style="color: #245C4F; font-size: 24px; margin: 0 0 10px 0;">${displayTitle}</h1>
+          <p style="color: #666; font-size: 14px; margin: 0;">ID: ${data.id}</p>
+          <p style="color: #666; font-size: 12px; margin: 5px 0 0 0;">${formatDate(data.created_at)}</p>
         </div>
-        
-        ${data.metadata ? `
-        <div style="background: #f5f5f5; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
-          <h4 style="margin-bottom: 10px;">Metadata</h4>
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; font-size: 12px;">
-            <div><strong>Blocchi attivi:</strong> ${data.metadata.blocks?.length || 0}</div>
-            <div><strong>Blocchi completati:</strong> ${data.metadata.completedBlocks?.length || 0}</div>
-            <div><strong>Blocchi dinamici:</strong> ${data.metadata.dynamicBlocks || 0}</div>
-            ${data.metadata.slug ? `<div style="grid-column: 1/-1;"><strong>Slug:</strong> ${data.metadata.slug}</div>` : ''}
-          </div>
-        </div>
-        ` : ''}
 
-        <div style="background: #f8f5f1; padding: 15px; border-radius: 6px; border-left: 4px solid #245C4F;">
-          <h4 style="color: #245C4F; margin-bottom: 15px;">Informazioni Lead</h4>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-            ${fullName ? `<div><strong>Nome Completo:</strong> ${fullName}</div>` : '<div><strong>Nome:</strong> Non specificato</div>'}
-            ${data.email ? `<div><strong>Email:</strong> ${data.email}</div>` : '<div><strong>Email:</strong> Non specificata</div>'}
-          </div>
+        <!-- General Information -->
+        <div style="margin-bottom: 30px;">
+          <h2 style="color: #245C4F; font-size: 18px; margin-bottom: 15px;">Informazioni Generali</h2>
           <div style="margin-bottom: 15px;">
-            <div style="margin-bottom: 8px;"><strong>Status Lead:</strong></div>
-            <span style="display: inline-block; background: ${leadStatusColor}; color: white; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">
-              ${leadStatusLabel}
-            </span>
+            <div style="margin-bottom: 10px;"><strong>Tipo Form:</strong> ${data.form_type}</div>
+            <div style="margin-bottom: 10px;"><strong>Data Invio:</strong> ${formatDate(data.created_at)}</div>
+            ${data.phone_number ? `<div style="margin-bottom: 10px;"><strong>Telefono:</strong> ${data.phone_number}</div>` : ''}
+            ${data.user_identifier ? `<div style="margin-bottom: 10px;"><strong>ID Utente:</strong> ${data.user_identifier}</div>` : ''}
+            <div style="margin-bottom: 10px;"><strong>Consulenza:</strong> ${data.consulting ? 'Richiesta' : 'Non richiesta'}</div>
           </div>
+        </div>
+
+        <!-- Lead Information -->
+        <div style="margin-bottom: 30px;">
+          <h2 style="color: #245C4F; font-size: 18px; margin-bottom: 15px;">Informazioni Lead</h2>
+          <div style="margin-bottom: 15px;">
+            ${fullName ? `<div style="margin-bottom: 10px;"><strong>Nome Completo:</strong> ${fullName}</div>` : '<div style="margin-bottom: 10px;"><strong>Nome:</strong> Non specificato</div>'}
+            ${data.email ? `<div style="margin-bottom: 10px;"><strong>Email:</strong> ${data.email}</div>` : '<div style="margin-bottom: 10px;"><strong>Email:</strong> Non specificata</div>'}
+            <div style="margin-bottom: 10px;"><strong>Status Lead:</strong> ${leadStatusLabel}</div>
+          </div>
+          
           ${data.notes ? `
-          <div>
+          <div style="margin-bottom: 15px;">
             <div style="margin-bottom: 8px;"><strong>Note:</strong></div>
-            <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #BEB8AE; line-height: 1.4; font-size: 14px;">
+            <div style="background: #f5f5f5; padding: 15px; border-radius: 6px; line-height: 1.6; font-size: 14px;">
               ${escapeHtml(data.notes)}
             </div>
           </div>
           ` : ''}
         </div>
-      </div>
-    `;
 
-    // Prepare responses content sections (for second page onwards)
-    const responsesSections: string[] = [];
-    
-    // Responses section header
-    const responsesHeaderContent = `
-      <div style="margin-bottom: 20px;">
-        <h2 style="color: #245C4F; font-size: 16px;">Risposte (${data.responses.length} totali)</h2>
-      </div>
-    `;
-
-    // Group responses by block
-    const responsesByBlock = data.responses.reduce((acc, response) => {
-      if (!acc[response.block_id]) {
-        acc[response.block_id] = [];
-      }
-      acc[response.block_id].push(response);
-      return acc;
-    }, {} as Record<string, typeof data.responses>);
-
-    if (Object.keys(responsesByBlock).length === 0) {
-      const emptyContent = `
-        <div style="text-align: center; padding: 40px; color: #666;">
-          <p>Nessuna risposta trovata per questa submission.</p>
-        </div>
-      `;
-      responsesSections.push(responsesHeaderContent + emptyContent);
-    } else {
-      // Add responses header
-      responsesSections.push(responsesHeaderContent);
-
-      // Process each block as separate sections
-      for (const [blockId, blockResponses] of Object.entries(responsesByBlock)) {
-        const blockHeader = `
-          <div style="margin-bottom: 15px; margin-top: 25px;">
-            <h3 style="color: #245C4F; font-size: 14px; margin-bottom: 10px; padding: 10px; background: #f8f5f1; border-radius: 6px;">
-              Blocco: ${blockId} (${blockResponses.length} risposte)
-            </h3>
+        ${data.metadata ? `
+        <!-- Metadata -->
+        <div style="margin-bottom: 30px;">
+          <h2 style="color: #245C4F; font-size: 18px; margin-bottom: 15px;">Metadata</h2>
+          <div style="margin-bottom: 15px;">
+            <div style="margin-bottom: 8px;"><strong>Blocchi attivi:</strong> ${data.metadata.blocks?.length || 0}</div>
+            <div style="margin-bottom: 8px;"><strong>Blocchi completati:</strong> ${data.metadata.completedBlocks?.length || 0}</div>
+            <div style="margin-bottom: 8px;"><strong>Blocchi dinamici:</strong> ${data.metadata.dynamicBlocks || 0}</div>
+            ${data.metadata.slug ? `<div style="margin-bottom: 8px;"><strong>Slug:</strong> ${data.metadata.slug}</div>` : ''}
           </div>
-        `;
+        </div>
+        ` : ''}
 
-        responsesSections.push(blockHeader);
-
-        for (const response of blockResponses) {
-          const questionContent = `
-            <div style="margin-bottom: 15px; padding: 12px; border-left: 4px solid #245C4F; background: #fafafa;">
-              <div style="margin-bottom: 8px; line-height: 1.4;">
-                ${renderQuestionTextForPDF(response.question_text, response.response_value)}
-              </div>
-              <div style="color: #666; font-size: 11px;">
-                ID: ${response.question_id}
-              </div>
+        <!-- Responses -->
+        <div style="margin-bottom: 20px;">
+          <h2 style="color: #245C4F; font-size: 18px; margin-bottom: 15px;">Risposte (${data.responses.length} totali)</h2>
+          
+          ${data.responses.length === 0 ? `
+          <div style="text-align: center; padding: 40px; color: #666;">
+            <p>Nessuna risposta trovata per questa submission.</p>
+          </div>
+          ` : ''}
+          
+          ${Object.entries(data.responses.reduce((acc, response) => {
+            if (!acc[response.block_id]) {
+              acc[response.block_id] = [];
+            }
+            acc[response.block_id].push(response);
+            return acc;
+          }, {} as Record<string, typeof data.responses>)).map(([blockId, blockResponses]) => `
+            <div style="margin-bottom: 25px;">
+              <h3 style="color: #245C4F; font-size: 16px; margin-bottom: 15px; background: #f8f5f1; padding: 10px; border-radius: 6px;">
+                Blocco: ${blockId} (${blockResponses.length} risposte)
+              </h3>
+              
+              ${blockResponses.map(response => `
+                <div style="margin-bottom: 15px; padding: 15px; background: #fafafa; border-radius: 6px;">
+                  <div style="margin-bottom: 8px; line-height: 1.6;">
+                    ${renderQuestionTextForPDF(response.question_text, response.response_value)}
+                  </div>
+                  <div style="color: #666; font-size: 11px; margin-top: 8px;">
+                    ID: ${response.question_id}
+                  </div>
+                </div>
+              `).join('')}
             </div>
-          `;
-          responsesSections.push(questionContent);
-        }
-      }
-    }
+          `).join('')}
+        </div>
 
-    // Build pages: First page for general info, remaining pages for responses
-    const pages: string[] = [];
-    
-    // First page - General Information only
-    pages.push(firstPageContent);
+        <!-- Footer -->
+        <div style="text-align: center; color: #666; font-size: 10px; margin-top: 40px; padding-top: 20px;">
+          PDF generato il ${formatDate(new Date().toISOString())} - GoMutuo
+        </div>
+      </div>
+    `;
 
-    // Remaining pages - Responses content with pagination
-    let currentPageContent = '';
-    let currentPageHeight = 0;
+    // Create temporary container for rendering
+    const container = document.createElement('div');
+    container.style.cssText = `
+      position: absolute;
+      top: -9999px;
+      left: -9999px;
+      width: ${maxContentWidth}mm;
+      background: white;
+      visibility: hidden;
+    `;
+    container.innerHTML = htmlContent;
+    document.body.appendChild(container);
 
-    for (const section of responsesSections) {
-      const sectionHeight = await measureContentHeight(section);
-      
-      if (currentPageHeight + sectionHeight > maxContentHeightPx && currentPageContent) {
-        pages.push(currentPageContent);
-        currentPageContent = section;
-        currentPageHeight = sectionHeight;
-      } else {
-        currentPageContent += section;
-        currentPageHeight += sectionHeight;
-      }
-    }
+    // Generate canvas from HTML
+    const canvas = await html2canvas(container, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      width: container.offsetWidth,
+      height: container.offsetHeight,
+      logging: false
+    });
 
-    // Add the last responses page if it has content
-    if (currentPageContent.trim()) {
-      pages.push(currentPageContent);
-    }
+    // Remove temporary container
+    document.body.removeChild(container);
 
-    // Generate PDF pages
-    for (let i = 0; i < pages.length; i++) {
-      if (i > 0) {
+    // Calculate PDF dimensions
+    const imgWidth = pageWidth;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+    // Add content to PDF, splitting across pages if needed
+    let remainingHeight = imgHeight;
+    let sourceY = 0;
+    let pageCount = 0;
+
+    while (remainingHeight > 0) {
+      if (pageCount > 0) {
         pdf.addPage();
       }
 
-      // Create page container with proper dimensions
-      const pageContainer = document.createElement('div');
-      pageContainer.style.cssText = `
-        width: 210mm;
-        min-height: 297mm;
-        max-height: 297mm;
-        background: white;
-        padding: 20mm;
-        box-sizing: border-box;
-        font-family: Arial, sans-serif;
-        color: #000;
-        page-break-after: always;
-        overflow: hidden;
-      `;
+      const pageContentHeight = Math.min(remainingHeight, pageHeight);
+      const sourceHeight = (pageContentHeight * canvas.width) / imgWidth;
 
-      const pageHeader = createPageHeader(data, i + 1, pages.length);
-      
-      pageContainer.innerHTML = `
-        ${pageHeader}
-        <div style="max-height: ${maxContentHeight}mm; overflow: hidden;">
-          ${pages[i]}
-        </div>
-        <div style="position: absolute; bottom: 15px; left: 20px; right: 20px; text-align: center; color: #666; font-size: 10px; border-top: 1px solid #eee; padding-top: 10px;">
-          PDF generato il ${formatDate(new Date().toISOString())} - GoMutuo
-        </div>
-      `;
+      // Create canvas for this page
+      const pageCanvas = document.createElement('canvas');
+      const pageCtx = pageCanvas.getContext('2d');
+      pageCanvas.width = canvas.width;
+      pageCanvas.height = sourceHeight;
 
-      document.body.appendChild(pageContainer);
+      if (pageCtx) {
+        pageCtx.drawImage(
+          canvas,
+          0, sourceY,
+          canvas.width, sourceHeight,
+          0, 0,
+          canvas.width, sourceHeight
+        );
 
-      const canvas = await html2canvas(pageContainer, {
-        scale: 1.5,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        width: pageContainer.offsetWidth,
-        height: pageContainer.offsetHeight,
-        logging: false
-      });
+        pdf.addImage(
+          pageCanvas.toDataURL('image/png'),
+          'PNG',
+          0, 0,
+          imgWidth, pageContentHeight
+        );
+      }
 
-      document.body.removeChild(pageContainer);
-
-      const imgWidth = pageWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      const finalHeight = Math.min(imgHeight, pageHeight);
-      
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, finalHeight);
+      remainingHeight -= pageContentHeight;
+      sourceY += sourceHeight;
+      pageCount++;
     }
 
     // Generate filename and save
