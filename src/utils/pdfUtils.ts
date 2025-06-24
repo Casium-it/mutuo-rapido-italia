@@ -1,3 +1,4 @@
+
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { getQuestionTextWithStyledResponses } from './formUtils';
@@ -148,17 +149,46 @@ const createPageHeader = (data: PDFSubmissionData, pageNumber: number, totalPage
   `;
 };
 
+/**
+ * Creates a single question/response item
+ */
+const createQuestionItem = (response: PDFSubmissionData['responses'][0]): string => {
+  return `
+    <div style="margin-bottom: 20px; padding: 15px; border-left: 4px solid #245C4F; background: #fafafa; border-radius: 0 6px 6px 0; page-break-inside: avoid;">
+      <div style="margin-bottom: 10px; line-height: 1.5; font-size: 14px;">
+        ${renderQuestionTextForPDF(response.question_text, response.response_value)}
+      </div>
+      <div style="color: #666; font-size: 11px; margin-top: 8px;">
+        ID: ${response.question_id} | Blocco: ${response.block_id}
+      </div>
+    </div>
+  `;
+};
+
+/**
+ * Creates a block header
+ */
+const createBlockHeader = (blockId: string, responseCount: number): string => {
+  return `
+    <div style="margin: 25px 0 15px 0; page-break-inside: avoid;">
+      <h3 style="color: #245C4F; font-size: 16px; margin: 0; padding: 12px 15px; background: #f8f5f1; border-radius: 8px; border-left: 4px solid #245C4F;">
+        Blocco: ${blockId} (${responseCount} risposte)
+      </h3>
+    </div>
+  `;
+};
+
 export const generateSubmissionPDF = async (data: PDFSubmissionData): Promise<void> => {
   try {
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pageWidth = 210;
     const pageHeight = 297;
     const pageMargin = 20;
-    const headerHeight = 30;
-    const footerHeight = 15;
-    const safetyMargin = 20;
+    const headerHeight = 35; // Increased for safety
+    const footerHeight = 20; // Increased for safety
+    const safetyMargin = 30; // Increased safety margin
     const maxContentHeight = pageHeight - (pageMargin * 2) - headerHeight - footerHeight - safetyMargin;
-    const maxContentHeightPx = maxContentHeight * 3.78;
+    const maxContentHeightPx = maxContentHeight * 3.78; // Convert mm to px
 
     const formatDate = (dateString: string) => {
       return new Date(dateString).toLocaleString('it-IT', {
@@ -222,15 +252,11 @@ export const generateSubmissionPDF = async (data: PDFSubmissionData): Promise<vo
       </div>
     `;
 
-    // Prepare responses content sections (for second page onwards)
-    const responsesSections: string[] = [];
+    // Process responses with improved pagination
+    const pages: Array<{ content: string; isFirstPage: boolean }> = [];
     
-    // Responses section header
-    const responsesHeaderContent = `
-      <div style="margin-bottom: 20px;">
-        <h2 style="color: #245C4F; font-size: 16px;">Risposte (${data.responses.length} totali)</h2>
-      </div>
-    `;
+    // Add first page
+    pages.push({ content: firstPageContent, isFirstPage: true });
 
     // Group responses by block
     const responsesByBlock = data.responses.reduce((acc, response) => {
@@ -242,70 +268,68 @@ export const generateSubmissionPDF = async (data: PDFSubmissionData): Promise<vo
     }, {} as Record<string, typeof data.responses>);
 
     if (Object.keys(responsesByBlock).length === 0) {
+      // Add empty responses page
       const emptyContent = `
+        <div style="margin-bottom: 20px;">
+          <h2 style="color: #245C4F; font-size: 16px;">Risposte</h2>
+        </div>
         <div style="text-align: center; padding: 40px; color: #666;">
           <p>Nessuna risposta trovata per questa submission.</p>
         </div>
       `;
-      responsesSections.push(responsesHeaderContent + emptyContent);
+      pages.push({ content: emptyContent, isFirstPage: false });
     } else {
-      // Add responses header
-      responsesSections.push(responsesHeaderContent);
+      // Process responses with atomic question handling
+      let currentPageContent = `
+        <div style="margin-bottom: 20px;">
+          <h2 style="color: #245C4F; font-size: 16px;">Risposte (${data.responses.length} totali)</h2>
+        </div>
+      `;
+      let currentPageHeight = await measureContentHeight(currentPageContent);
 
-      // Process each block as separate sections
       for (const [blockId, blockResponses] of Object.entries(responsesByBlock)) {
-        const blockHeader = `
-          <div style="margin-bottom: 15px; margin-top: 25px;">
-            <h3 style="color: #245C4F; font-size: 14px; margin-bottom: 10px; padding: 10px; background: #f8f5f1; border-radius: 6px;">
-              Blocco: ${blockId} (${blockResponses.length} risposte)
-            </h3>
-          </div>
-        `;
+        // Create block header
+        const blockHeader = createBlockHeader(blockId, blockResponses.length);
+        const blockHeaderHeight = await measureContentHeight(blockHeader);
 
-        responsesSections.push(blockHeader);
+        // Check if block header fits on current page
+        if (currentPageHeight + blockHeaderHeight > maxContentHeightPx && currentPageContent.trim()) {
+          // Start new page with block header
+          pages.push({ content: currentPageContent, isFirstPage: false });
+          currentPageContent = blockHeader;
+          currentPageHeight = blockHeaderHeight;
+        } else {
+          // Add block header to current page
+          currentPageContent += blockHeader;
+          currentPageHeight += blockHeaderHeight;
+        }
 
+        // Process each question individually
         for (const response of blockResponses) {
-          const questionContent = `
-            <div style="margin-bottom: 15px; padding: 12px; border-left: 4px solid #245C4F; background: #fafafa;">
-              <div style="margin-bottom: 8px; line-height: 1.4;">
-                ${renderQuestionTextForPDF(response.question_text, response.response_value)}
-              </div>
-              <div style="color: #666; font-size: 11px;">
-                ID: ${response.question_id}
-              </div>
-            </div>
-          `;
-          responsesSections.push(questionContent);
+          const questionItem = createQuestionItem(response);
+          const questionHeight = await measureContentHeight(questionItem);
+          const bufferSpace = 10; // Add 10px buffer between questions
+
+          // Check if question fits on current page with buffer
+          if (currentPageHeight + questionHeight + bufferSpace > maxContentHeightPx) {
+            // Question doesn't fit, start new page
+            if (currentPageContent.trim()) {
+              pages.push({ content: currentPageContent, isFirstPage: false });
+            }
+            currentPageContent = questionItem;
+            currentPageHeight = questionHeight;
+          } else {
+            // Question fits, add to current page
+            currentPageContent += questionItem;
+            currentPageHeight += questionHeight + bufferSpace;
+          }
         }
       }
-    }
 
-    // Build pages: First page for general info, remaining pages for responses
-    const pages: string[] = [];
-    
-    // First page - General Information only
-    pages.push(firstPageContent);
-
-    // Remaining pages - Responses content with pagination
-    let currentPageContent = '';
-    let currentPageHeight = 0;
-
-    for (const section of responsesSections) {
-      const sectionHeight = await measureContentHeight(section);
-      
-      if (currentPageHeight + sectionHeight > maxContentHeightPx && currentPageContent) {
-        pages.push(currentPageContent);
-        currentPageContent = section;
-        currentPageHeight = sectionHeight;
-      } else {
-        currentPageContent += section;
-        currentPageHeight += sectionHeight;
+      // Add the last page if it has content
+      if (currentPageContent.trim()) {
+        pages.push({ content: currentPageContent, isFirstPage: false });
       }
-    }
-
-    // Add the last responses page if it has content
-    if (currentPageContent.trim()) {
-      pages.push(currentPageContent);
     }
 
     // Generate PDF pages
@@ -334,7 +358,7 @@ export const generateSubmissionPDF = async (data: PDFSubmissionData): Promise<vo
       pageContainer.innerHTML = `
         ${pageHeader}
         <div style="max-height: ${maxContentHeight}mm; overflow: hidden;">
-          ${pages[i]}
+          ${pages[i].content}
         </div>
         <div style="position: absolute; bottom: 15px; left: 20px; right: 20px; text-align: center; color: #666; font-size: 10px; border-top: 1px solid #eee; padding-top: 10px;">
           PDF generato il ${formatDate(new Date().toISOString())} - GoMutuo
