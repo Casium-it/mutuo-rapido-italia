@@ -5,7 +5,7 @@ export const finanziamenti_blueprint: Block = {
   block_number: "7D",
   block_id: "finanziamenti_blueprint{copyNumber}",
   title: "Dettagli finanziamento",
-  priority: 71,
+  priority: 1051,
   multiBlock: true,
   invisible: true,
   questions: [
