@@ -35,6 +35,11 @@ export function QuestionNode({ data }: QuestionNodeProps) {
     return 'text-blue-700 bg-blue-50 border-blue-200';
   };
   
+  // Calculate total options for handle positioning
+  const totalOptions = selectPlaceholders.reduce((total, [_, placeholder]) => {
+    return total + (placeholder.type === 'select' ? (placeholder.options?.length || 0) : 0);
+  }, 0);
+  
   return (
     <Card className={`${hasSelectOptions ? 'w-80' : 'w-64'} border-2 border-blue-200 shadow-md`}>
       <CardHeader className="pb-2">
@@ -77,7 +82,7 @@ export function QuestionNode({ data }: QuestionNodeProps) {
                   <div
                     key={option.id}
                     className={`text-xs p-2 rounded border ${getLeadsToColor(option.leads_to)} 
-                              flex items-center justify-between`}
+                              flex items-center justify-between relative`}
                   >
                     <div className="flex-1 min-w-0">
                       <div className="font-medium truncate">{option.label}</div>
@@ -111,25 +116,36 @@ export function QuestionNode({ data }: QuestionNodeProps) {
         className="w-3 h-3 bg-blue-500 border-2 border-white"
       />
       
-      {/* Source handles - one for each connection point */}
+      {/* Source handles - positioned based on select options */}
       {hasSelectOptions ? (
-        // Multiple handles for select options
+        // Multiple handles for select options - positioned to align with each option subcard
         <>
-          {selectPlaceholders.map(([placeholderKey, placeholder]) => 
-            placeholder.type === 'select' && placeholder.options?.map((option, optIndex) => (
-              <React.Fragment key={`${placeholderKey}-${option.id}`}>
-                <Handle
-                  type="source"
-                  position={Position.Right}
-                  id={`option-${placeholderKey}-${option.id}`}
-                  className="w-3 h-3 bg-blue-500 border-2 border-white"
-                  style={{ 
-                    top: `${55 + (optIndex * 25)}%`
-                  }}
-                />
-              </React.Fragment>
-            ))
-          )}
+          {(() => {
+            let currentOptionIndex = 0;
+            return selectPlaceholders.map(([placeholderKey, placeholder]) => 
+              placeholder.type === 'select' && placeholder.options?.map((option, optIndex) => {
+                const handleId = `option-${placeholderKey}-${option.id}`;
+                // Calculate position based on the actual rendered position of the option
+                // Base position starts after header (80px) + options header (30px) + (optionIndex * 50px for each option)
+                const topPosition = 110 + (currentOptionIndex * 50);
+                currentOptionIndex++;
+                
+                return (
+                  <Handle
+                    key={handleId}
+                    type="source"
+                    position={Position.Right}
+                    id={handleId}
+                    className="w-3 h-3 bg-blue-500 border-2 border-white"
+                    style={{ 
+                      top: `${topPosition}px`,
+                      transform: 'translateY(-50%)'
+                    }}
+                  />
+                );
+              })
+            );
+          })()}
         </>
       ) : (
         // Single handle for non-select questions

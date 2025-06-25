@@ -33,11 +33,12 @@ export function BlockFlowMap({ block, isOpen, onClose }: BlockFlowMapProps) {
     const nodes: Node[] = [];
     const edges: Edge[] = [];
     
-    let yPosition = 0;
-    const nodeSpacing = 300;
+    let xPosition = 0;
+    const nodeSpacing = 500;
     
     // Keep track of terminal nodes to avoid duplicates
     const terminalNodes = new Map<string, { x: number; y: number }>();
+    let terminalXOffset = 0;
     
     block.questions.forEach((question, questionIndex) => {
       const questionNodeId = `question-${question.question_id}`;
@@ -46,7 +47,7 @@ export function BlockFlowMap({ block, isOpen, onClose }: BlockFlowMapProps) {
       nodes.push({
         id: questionNodeId,
         type: 'question',
-        position: { x: 0, y: yPosition },
+        position: { x: xPosition, y: 0 },
         data: {
           question,
           questionNumber: questionIndex + 1,
@@ -64,14 +65,15 @@ export function BlockFlowMap({ block, isOpen, onClose }: BlockFlowMapProps) {
             if (option.leads_to === 'stop_flow') {
               const terminalId = 'terminal-stop-flow';
               if (!terminalNodes.has(terminalId)) {
-                const terminalY = yPosition + (terminalNodes.size * 100);
+                const terminalX = terminalXOffset * 200;
                 nodes.push({
                   id: terminalId,
                   type: 'terminal',
-                  position: { x: 600, y: terminalY },
+                  position: { x: terminalX, y: 400 },
                   data: { type: 'stop', label: 'STOP FLOW' },
                 });
-                terminalNodes.set(terminalId, { x: 600, y: terminalY });
+                terminalNodes.set(terminalId, { x: terminalX, y: 400 });
+                terminalXOffset++;
               }
               
               edges.push({
@@ -85,14 +87,15 @@ export function BlockFlowMap({ block, isOpen, onClose }: BlockFlowMapProps) {
             } else if (option.leads_to === 'next_block') {
               const terminalId = 'terminal-next-block';
               if (!terminalNodes.has(terminalId)) {
-                const terminalY = yPosition + (terminalNodes.size * 100);
+                const terminalX = terminalXOffset * 200;
                 nodes.push({
                   id: terminalId,
                   type: 'terminal',
-                  position: { x: 600, y: terminalY },
+                  position: { x: terminalX, y: 400 },
                   data: { type: 'next', label: 'NEXT BLOCK' },
                 });
-                terminalNodes.set(terminalId, { x: 600, y: terminalY });
+                terminalNodes.set(terminalId, { x: terminalX, y: 400 });
+                terminalXOffset++;
               }
               
               edges.push({
@@ -123,14 +126,15 @@ export function BlockFlowMap({ block, isOpen, onClose }: BlockFlowMapProps) {
             if (option.add_block) {
               const addBlockId = `add-block-${option.add_block}`;
               if (!terminalNodes.has(addBlockId)) {
-                const terminalY = yPosition + (terminalNodes.size * 100);
+                const terminalX = terminalXOffset * 200;
                 nodes.push({
                   id: addBlockId,
                   type: 'terminal',
-                  position: { x: 800, y: terminalY },
+                  position: { x: terminalX, y: 500 },
                   data: { type: 'add', label: `ADD BLOCK: ${option.add_block}` },
                 });
-                terminalNodes.set(addBlockId, { x: 800, y: terminalY });
+                terminalNodes.set(addBlockId, { x: terminalX, y: 500 });
+                terminalXOffset++;
               }
               
               edges.push({
@@ -150,14 +154,15 @@ export function BlockFlowMap({ block, isOpen, onClose }: BlockFlowMapProps) {
           if (leadsTo === 'stop_flow') {
             const terminalId = 'terminal-stop-flow';
             if (!terminalNodes.has(terminalId)) {
-              const terminalY = yPosition + (terminalNodes.size * 100);
+              const terminalX = terminalXOffset * 200;
               nodes.push({
                 id: terminalId,
                 type: 'terminal',
-                position: { x: 400, y: terminalY },
+                position: { x: terminalX, y: 400 },
                 data: { type: 'stop', label: 'STOP FLOW' },
               });
-              terminalNodes.set(terminalId, { x: 400, y: terminalY });
+              terminalNodes.set(terminalId, { x: terminalX, y: 400 });
+              terminalXOffset++;
             }
             
             edges.push({
@@ -170,14 +175,15 @@ export function BlockFlowMap({ block, isOpen, onClose }: BlockFlowMapProps) {
           } else if (leadsTo === 'next_block') {
             const terminalId = 'terminal-next-block';
             if (!terminalNodes.has(terminalId)) {
-              const terminalY = yPosition + (terminalNodes.size * 100);
+              const terminalX = terminalXOffset * 200;
               nodes.push({
                 id: terminalId,
                 type: 'terminal',
-                position: { x: 400, y: terminalY },
+                position: { x: terminalX, y: 400 },
                 data: { type: 'next', label: 'NEXT BLOCK' },
               });
-              terminalNodes.set(terminalId, { x: 400, y: terminalY });
+              terminalNodes.set(terminalId, { x: terminalX, y: 400 });
+              terminalXOffset++;
             }
             
             edges.push({
@@ -204,7 +210,7 @@ export function BlockFlowMap({ block, isOpen, onClose }: BlockFlowMapProps) {
         }
       });
       
-      yPosition += nodeSpacing;
+      xPosition += nodeSpacing;
     });
     
     return { nodes, edges };
@@ -215,8 +221,8 @@ export function BlockFlowMap({ block, isOpen, onClose }: BlockFlowMapProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl h-[90vh] p-0" hideCloseButton>
-        <DialogHeader className="p-4 border-b">
+      <DialogContent className="w-screen h-screen max-w-none p-0" hideCloseButton>
+        <DialogHeader className="p-4 border-b bg-white z-10">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-lg font-semibold">
               Mappa Flusso - Blocco #{block.block_number}
