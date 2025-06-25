@@ -16,12 +16,10 @@ import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { QuestionNode } from './flow-nodes/QuestionNode';
 import { TerminalNode } from './flow-nodes/TerminalNode';
-import { SelectOptionNode } from './flow-nodes/SelectOptionNode';
 
 const nodeTypes = {
   question: QuestionNode,
   terminal: TerminalNode,
-  selectOption: SelectOptionNode,
 };
 
 interface BlockFlowMapProps {
@@ -36,11 +34,10 @@ export function BlockFlowMap({ block, isOpen, onClose }: BlockFlowMapProps) {
     const edges: Edge[] = [];
     
     let yPosition = 0;
-    const nodeSpacing = 200;
-    const optionSpacing = 150;
+    const nodeSpacing = 300;
     
     // Keep track of terminal nodes to avoid duplicates
-    const terminalNodes = new Set<string>();
+    const terminalNodes = new Map<string, { x: number; y: number }>();
     
     block.questions.forEach((question, questionIndex) => {
       const questionNodeId = `question-${question.question_id}`;
@@ -56,99 +53,95 @@ export function BlockFlowMap({ block, isOpen, onClose }: BlockFlowMapProps) {
         },
       });
       
-      // Process placeholders
+      // Process placeholders for connections
       Object.entries(question.placeholders).forEach(([placeholderKey, placeholder]) => {
         if (placeholder.type === 'select') {
-          // Create nodes for each select option
-          let optionX = 300;
-          
+          // Handle select placeholder options
           placeholder.options?.forEach((option, optIndex) => {
-            const optionNodeId = `option-${question.question_id}-${placeholderKey}-${option.id}`;
+            const sourceHandle = `option-${placeholderKey}-${option.id}`;
             
-            nodes.push({
-              id: optionNodeId,
-              type: 'selectOption',
-              position: { x: optionX, y: yPosition },
-              data: {
-                option,
-                placeholderKey,
-              },
-            });
-            
-            // Connect question to option
-            edges.push({
-              id: `edge-${questionNodeId}-${optionNodeId}`,
-              source: questionNodeId,
-              target: optionNodeId,
-              type: 'smoothstep',
-              style: { stroke: '#6366f1' },
-            });
-            
-            // Handle option leads_to
-            const leadsTo = option.leads_to;
-            if (leadsTo === 'stop_flow') {
+            // Handle leads_to connections
+            if (option.leads_to === 'stop_flow') {
               const terminalId = 'terminal-stop-flow';
               if (!terminalNodes.has(terminalId)) {
+                const terminalY = yPosition + (terminalNodes.size * 100);
                 nodes.push({
                   id: terminalId,
                   type: 'terminal',
-                  position: { x: 600, y: yPosition + (optIndex * 50) },
+                  position: { x: 600, y: terminalY },
                   data: { type: 'stop', label: 'STOP FLOW' },
                 });
-                terminalNodes.add(terminalId);
+                terminalNodes.set(terminalId, { x: 600, y: terminalY });
               }
               
               edges.push({
-                id: `edge-${optionNodeId}-${terminalId}`,
-                source: optionNodeId,
+                id: `edge-${questionNodeId}-${sourceHandle}-${terminalId}`,
+                source: questionNodeId,
+                sourceHandle,
                 target: terminalId,
                 type: 'smoothstep',
                 style: { stroke: '#ef4444' },
               });
-            } else if (leadsTo === 'next_block') {
+            } else if (option.leads_to === 'next_block') {
               const terminalId = 'terminal-next-block';
               if (!terminalNodes.has(terminalId)) {
+                const terminalY = yPosition + (terminalNodes.size * 100);
                 nodes.push({
                   id: terminalId,
                   type: 'terminal',
-                  position: { x: 600, y: yPosition + (optIndex * 50) },
+                  position: { x: 600, y: terminalY },
                   data: { type: 'next', label: 'NEXT BLOCK' },
                 });
-                terminalNodes.add(terminalId);
+                terminalNodes.set(terminalId, { x: 600, y: terminalY });
               }
               
               edges.push({
-                id: `edge-${optionNodeId}-${terminalId}`,
-                source: optionNodeId,
+                id: `edge-${questionNodeId}-${sourceHandle}-${terminalId}`,
+                source: questionNodeId,
+                sourceHandle,
                 target: terminalId,
                 type: 'smoothstep',
                 style: { stroke: '#eab308' },
               });
+            } else if (option.leads_to) {
+              // Connection to another question
+              const targetQuestion = block.questions.find(q => q.question_id === option.leads_to);
+              if (targetQuestion) {
+                const targetNodeId = `question-${targetQuestion.question_id}`;
+                edges.push({
+                  id: `edge-${questionNodeId}-${sourceHandle}-${targetNodeId}`,
+                  source: questionNodeId,
+                  sourceHandle,
+                  target: targetNodeId,
+                  type: 'smoothstep',
+                  style: { stroke: '#6366f1' },
+                });
+              }
             }
             
-            // Handle add_block
+            // Handle add_block connections
             if (option.add_block) {
               const addBlockId = `add-block-${option.add_block}`;
               if (!terminalNodes.has(addBlockId)) {
+                const terminalY = yPosition + (terminalNodes.size * 100);
                 nodes.push({
                   id: addBlockId,
                   type: 'terminal',
-                  position: { x: 800, y: yPosition + (optIndex * 50) },
+                  position: { x: 800, y: terminalY },
                   data: { type: 'add', label: `ADD BLOCK: ${option.add_block}` },
                 });
-                terminalNodes.add(addBlockId);
+                terminalNodes.set(addBlockId, { x: 800, y: terminalY });
               }
               
               edges.push({
-                id: `edge-${optionNodeId}-${addBlockId}`,
-                source: optionNodeId,
+                id: `edge-${questionNodeId}-${sourceHandle}-${addBlockId}`,
+                source: questionNodeId,
+                sourceHandle,
                 target: addBlockId,
                 type: 'smoothstep',
                 style: { stroke: '#22c55e' },
               });
             }
-            
-            optionX += optionSpacing;
           });
         } else {
           // Handle input and MultiBlockManager placeholders
@@ -157,13 +150,14 @@ export function BlockFlowMap({ block, isOpen, onClose }: BlockFlowMapProps) {
           if (leadsTo === 'stop_flow') {
             const terminalId = 'terminal-stop-flow';
             if (!terminalNodes.has(terminalId)) {
+              const terminalY = yPosition + (terminalNodes.size * 100);
               nodes.push({
                 id: terminalId,
                 type: 'terminal',
-                position: { x: 400, y: yPosition },
+                position: { x: 400, y: terminalY },
                 data: { type: 'stop', label: 'STOP FLOW' },
               });
-              terminalNodes.add(terminalId);
+              terminalNodes.set(terminalId, { x: 400, y: terminalY });
             }
             
             edges.push({
@@ -176,13 +170,14 @@ export function BlockFlowMap({ block, isOpen, onClose }: BlockFlowMapProps) {
           } else if (leadsTo === 'next_block') {
             const terminalId = 'terminal-next-block';
             if (!terminalNodes.has(terminalId)) {
+              const terminalY = yPosition + (terminalNodes.size * 100);
               nodes.push({
                 id: terminalId,
                 type: 'terminal',
-                position: { x: 400, y: yPosition },
+                position: { x: 400, y: terminalY },
                 data: { type: 'next', label: 'NEXT BLOCK' },
               });
-              terminalNodes.add(terminalId);
+              terminalNodes.set(terminalId, { x: 400, y: terminalY });
             }
             
             edges.push({
@@ -220,7 +215,7 @@ export function BlockFlowMap({ block, isOpen, onClose }: BlockFlowMapProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl h-[80vh] p-0">
+      <DialogContent className="max-w-6xl h-[90vh] p-0" hideCloseButton>
         <DialogHeader className="p-4 border-b">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-lg font-semibold">

@@ -4,7 +4,7 @@ import { Handle, Position } from '@xyflow/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Question } from '@/types/form';
-import { FileText } from 'lucide-react';
+import { FileText, List, Plus, ArrowRight, Square } from 'lucide-react';
 
 interface QuestionNodeProps {
   data: {
@@ -16,8 +16,27 @@ interface QuestionNodeProps {
 export function QuestionNode({ data }: QuestionNodeProps) {
   const { question, questionNumber } = data;
   
+  // Check if this question has select placeholders
+  const selectPlaceholders = Object.entries(question.placeholders).filter(
+    ([_, placeholder]) => placeholder.type === 'select'
+  );
+  
+  const hasSelectOptions = selectPlaceholders.length > 0;
+  
+  const getLeadsToIcon = (leadsTo: string) => {
+    if (leadsTo === 'stop_flow') return <Square className="h-3 w-3 text-red-600" />;
+    if (leadsTo === 'next_block') return <ArrowRight className="h-3 w-3 text-yellow-600" />;
+    return <ArrowRight className="h-3 w-3 text-blue-600" />;
+  };
+  
+  const getLeadsToColor = (leadsTo: string) => {
+    if (leadsTo === 'stop_flow') return 'text-red-700 bg-red-50 border-red-200';
+    if (leadsTo === 'next_block') return 'text-yellow-700 bg-yellow-50 border-yellow-200';
+    return 'text-blue-700 bg-blue-50 border-blue-200';
+  };
+  
   return (
-    <Card className="w-64 border-2 border-blue-200 shadow-md">
+    <Card className={`${hasSelectOptions ? 'w-80' : 'w-64'} border-2 border-blue-200 shadow-md`}>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm flex items-center gap-2">
           <FileText className="h-4 w-4 text-blue-600" />
@@ -31,7 +50,9 @@ export function QuestionNode({ data }: QuestionNodeProps) {
         <p className="text-xs text-gray-700 mb-2 line-clamp-3">
           {question.question_text.replace(/\{\{[^}]+\}\}/g, '____')}
         </p>
-        <div className="flex gap-1 flex-wrap">
+        
+        {/* Question Properties */}
+        <div className="flex gap-1 flex-wrap mb-2">
           {question.inline && (
             <Badge variant="secondary" className="text-xs">Inline</Badge>
           )}
@@ -42,7 +63,43 @@ export function QuestionNode({ data }: QuestionNodeProps) {
             <Badge variant="secondary" className="text-xs">Saltabile</Badge>
           )}
         </div>
-        <code className="text-xs text-gray-500 block mt-1 truncate">
+        
+        {/* Select Options */}
+        {hasSelectOptions && (
+          <div className="mt-3 space-y-2">
+            <div className="text-xs font-medium text-gray-600 flex items-center gap-1">
+              <List className="h-3 w-3" />
+              Opzioni:
+            </div>
+            {selectPlaceholders.map(([placeholderKey, placeholder]) => (
+              <div key={placeholderKey} className="space-y-1">
+                {placeholder.type === 'select' && placeholder.options?.map((option, optIndex) => (
+                  <div
+                    key={option.id}
+                    className={`text-xs p-2 rounded border ${getLeadsToColor(option.leads_to)} 
+                              flex items-center justify-between`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">{option.label}</div>
+                      <div className="flex items-center gap-1 mt-1">
+                        {getLeadsToIcon(option.leads_to)}
+                        <code className="text-xs">{option.leads_to}</code>
+                      </div>
+                    </div>
+                    {option.add_block && (
+                      <div className="flex items-center gap-1 ml-2">
+                        <Plus className="h-3 w-3 text-green-600" />
+                        <code className="text-xs text-green-700">{option.add_block}</code>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+        
+        <code className="text-xs text-gray-500 block mt-2 truncate">
           {question.question_id}
         </code>
       </CardContent>
@@ -53,11 +110,35 @@ export function QuestionNode({ data }: QuestionNodeProps) {
         position={Position.Left}
         className="w-3 h-3 bg-blue-500 border-2 border-white"
       />
-      <Handle
-        type="source"
-        position={Position.Right}
-        className="w-3 h-3 bg-blue-500 border-2 border-white"
-      />
+      
+      {/* Source handles - one for each connection point */}
+      {hasSelectOptions ? (
+        // Multiple handles for select options
+        <>
+          {selectPlaceholders.map(([placeholderKey, placeholder]) => 
+            placeholder.type === 'select' && placeholder.options?.map((option, optIndex) => (
+              <React.Fragment key={`${placeholderKey}-${option.id}`}>
+                <Handle
+                  type="source"
+                  position={Position.Right}
+                  id={`option-${placeholderKey}-${option.id}`}
+                  className="w-3 h-3 bg-blue-500 border-2 border-white"
+                  style={{ 
+                    top: `${55 + (optIndex * 25)}%`
+                  }}
+                />
+              </React.Fragment>
+            ))
+          )}
+        </>
+      ) : (
+        // Single handle for non-select questions
+        <Handle
+          type="source"
+          position={Position.Right}
+          className="w-3 h-3 bg-blue-500 border-2 border-white"
+        />
+      )}
     </Card>
   );
 }
