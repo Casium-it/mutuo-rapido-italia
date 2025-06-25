@@ -6,8 +6,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { Eye, LogOut, Phone, Calendar, FileText, Mail, User, StickyNote } from 'lucide-react';
+import { Eye, LogOut, Phone, Calendar, FileText, Mail, User, StickyNote, Trash2 } from 'lucide-react';
 import { LeadStatusBadge } from '@/components/admin/LeadStatusBadge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface FormSubmission {
   id: string;
@@ -27,6 +38,7 @@ interface FormSubmission {
 export default function Admin() {
   const [submissions, setSubmissions] = useState<FormSubmission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
 
@@ -60,6 +72,49 @@ export default function Admin() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteSubmission = async (submissionId: string) => {
+    setDeletingId(submissionId);
+    
+    try {
+      // First delete related responses
+      const { error: responsesError } = await supabase
+        .from('form_responses')
+        .delete()
+        .eq('submission_id', submissionId);
+
+      if (responsesError) {
+        throw responsesError;
+      }
+
+      // Then delete the submission
+      const { error: submissionError } = await supabase
+        .from('form_submissions')
+        .delete()
+        .eq('id', submissionId);
+
+      if (submissionError) {
+        throw submissionError;
+      }
+
+      // Update local state
+      setSubmissions(prev => prev.filter(s => s.id !== submissionId));
+      
+      toast({
+        title: "Successo",
+        description: "Submission eliminata con successo",
+      });
+    } catch (error) {
+      console.error('Error deleting submission:', error);
+      toast({
+        title: "Errore",
+        description: "Errore nell'eliminazione della submission",
+        variant: "destructive"
+      });
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -214,14 +269,60 @@ export default function Admin() {
                     </div>
                   )}
                   
-                  <div className="flex justify-end">
-                    <Button
-                      onClick={() => navigate(`/admin/form/${submission.id}`)}
-                      className="bg-[#245C4F] hover:bg-[#1e4f44] flex items-center gap-2"
-                    >
-                      <Eye className="h-4 w-4" />
-                      Visualizza Dettagli
-                    </Button>
+                  <div className="flex justify-between items-center">
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => navigate(`/admin/form/${submission.id}`)}
+                        className="bg-[#245C4F] hover:bg-[#1e4f44] flex items-center gap-2"
+                      >
+                        <Eye className="h-4 w-4" />
+                        Visualizza Dettagli
+                      </Button>
+                    </div>
+                    
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 flex items-center gap-2"
+                          disabled={deletingId === submission.id}
+                        >
+                          {deletingId === submission.id ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                          Elimina
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Conferma Eliminazione</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Sei sicuro di voler eliminare questa submission? 
+                            {(submission.first_name || submission.last_name) && (
+                              <span className="font-medium">
+                                {' '}({submission.first_name} {submission.last_name})
+                              </span>
+                            )}
+                            <br />
+                            <span className="text-red-600 font-medium">
+                              Questa azione non può essere annullata e eliminerà anche tutte le risposte associate.
+                            </span>
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Annulla</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDeleteSubmission(submission.id)}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            Elimina Definitivamente
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </CardContent>
               </Card>
