@@ -19,11 +19,13 @@ export default function AdminBlocks() {
     navigate('/');
   };
 
-  // Filter blocks based on search term
-  const filteredBlocks = allBlocks.filter(block => 
-    block.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    block.block_id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter blocks based on search term and ensure they're sorted by priority
+  const filteredBlocks = allBlocks
+    .filter(block => 
+      block.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      block.block_id.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => a.priority - b.priority);
 
   const getBlockTypeLabel = (block: any) => {
     const labels = [];
@@ -117,17 +119,15 @@ export default function AdminBlocks() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <CardTitle className="text-lg flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs font-mono">
+                          Priorità: {block.priority}
+                        </Badge>
                         <span className="text-[#245C4F]">#{block.block_number}</span>
                         {block.title}
                       </CardTitle>
                       <p className="text-sm text-gray-500 mt-1">
                         ID: <code className="bg-gray-100 px-1 rounded text-xs">{block.block_id}</code>
                       </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">
-                        Priorità: {block.priority}
-                      </Badge>
                     </div>
                   </div>
                 </CardHeader>
@@ -169,32 +169,16 @@ export default function AdminBlocks() {
                     </div>
                   </div>
 
-                  {/* Questions Preview */}
-                  {block.questions.length > 0 && (
-                    <div className="mt-4">
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">Domande nel blocco:</h4>
-                      <div className="space-y-1">
-                        {block.questions.slice(0, 3).map((question) => (
-                          <div key={question.question_id} className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
-                            <span className="font-medium text-xs text-gray-500">
-                              {question.question_number}:
-                            </span>
-                            <span className="ml-2">
-                              {question.question_text.length > 80 
-                                ? `${question.question_text.substring(0, 80)}...` 
-                                : question.question_text
-                              }
-                            </span>
-                          </div>
-                        ))}
-                        {block.questions.length > 3 && (
-                          <div className="text-xs text-gray-500 text-center py-1">
-                            ... e altre {block.questions.length - 3} domande
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
+                  {/* Action Button */}
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={() => navigate(`/admin/blocks/${block.block_id}`)}
+                      className="bg-[#245C4F] hover:bg-[#1e4f44] flex items-center gap-2"
+                    >
+                      <Eye className="h-4 w-4" />
+                      Visualizza Dettagli
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}
