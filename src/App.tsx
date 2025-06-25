@@ -20,6 +20,7 @@ import Simulazioni from "./pages/Simulazioni";
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
+import AdminBlocks from "./pages/AdminBlocks";
 import AdminFormDetail from "./pages/AdminFormDetail";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,11 @@ const AppWithTracking = () => {
       <Route path="/admin" element={
         <ProtectedRoute requireAdmin>
           <Admin />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/blocks" element={
+        <ProtectedRoute requireAdmin>
+          <AdminBlocks />
         </ProtectedRoute>
       } />
       <Route path="/admin/form/:submissionId" element={

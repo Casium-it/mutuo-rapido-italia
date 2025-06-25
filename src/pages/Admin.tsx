@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { Eye, LogOut, Phone, Calendar, FileText, Mail, User, StickyNote, Trash2 } from 'lucide-react';
+import { Eye, LogOut, Phone, Calendar, FileText, Mail, User, StickyNote, Trash2, Blocks } from 'lucide-react';
 import { LeadStatusBadge } from '@/components/admin/LeadStatusBadge';
 import {
   AlertDialog,
@@ -161,14 +162,24 @@ export default function Admin() {
             <h1 className="text-2xl font-bold text-[#245C4F]">Admin Dashboard</h1>
             <p className="text-gray-600">Benvenuto, {user?.email}</p>
           </div>
-          <Button 
-            onClick={handleSignOut}
-            variant="outline"
-            className="flex items-center gap-2"
-          >
-            <LogOut className="h-4 w-4" />
-            Esci
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => navigate('/admin/blocks')}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Blocks className="h-4 w-4" />
+              Gestisci Blocchi
+            </Button>
+            <Button 
+              onClick={handleSignOut}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Esci
+            </Button>
+          </div>
         </div>
       </header>
 
