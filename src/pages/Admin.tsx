@@ -79,6 +79,8 @@ export default function Admin() {
     setDeletingId(submissionId);
     
     try {
+      console.log('Starting deletion process for submission:', submissionId);
+      
       // First delete related responses
       const { error: responsesError } = await supabase
         .from('form_responses')
@@ -86,8 +88,11 @@ export default function Admin() {
         .eq('submission_id', submissionId);
 
       if (responsesError) {
+        console.error('Error deleting responses:', responsesError);
         throw responsesError;
       }
+
+      console.log('Successfully deleted responses for submission:', submissionId);
 
       // Then delete the submission
       const { error: submissionError } = await supabase
@@ -96,8 +101,11 @@ export default function Admin() {
         .eq('id', submissionId);
 
       if (submissionError) {
+        console.error('Error deleting submission:', submissionError);
         throw submissionError;
       }
+
+      console.log('Successfully deleted submission:', submissionId);
 
       // Update local state
       setSubmissions(prev => prev.filter(s => s.id !== submissionId));
@@ -110,7 +118,7 @@ export default function Admin() {
       console.error('Error deleting submission:', error);
       toast({
         title: "Errore",
-        description: "Errore nell'eliminazione della submission",
+        description: `Errore nell'eliminazione della submission: ${error.message}`,
         variant: "destructive"
       });
     } finally {
@@ -269,16 +277,14 @@ export default function Admin() {
                     </div>
                   )}
                   
-                  <div className="flex justify-between items-center">
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => navigate(`/admin/form/${submission.id}`)}
-                        className="bg-[#245C4F] hover:bg-[#1e4f44] flex items-center gap-2"
-                      >
-                        <Eye className="h-4 w-4" />
-                        Visualizza Dettagli
-                      </Button>
-                    </div>
+                  <div className="flex justify-end items-center gap-2">
+                    <Button
+                      onClick={() => navigate(`/admin/form/${submission.id}`)}
+                      className="bg-[#245C4F] hover:bg-[#1e4f44] flex items-center gap-2"
+                    >
+                      <Eye className="h-4 w-4" />
+                      Visualizza Dettagli
+                    </Button>
                     
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
