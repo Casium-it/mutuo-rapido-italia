@@ -5,7 +5,7 @@ export const la_sua_da_vendere: Block = {
   block_number: "9",
   block_id: "la_sua_da_vendere",
   title: "La casa da vendere",
-  priority: 1800,
+  priority: 2400,
   default_active: false,
   questions: [
     {
