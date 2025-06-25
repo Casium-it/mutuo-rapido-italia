@@ -5,7 +5,7 @@ export const reddito_secondario_blueprint: Block = {
   block_number: "6D",
   block_id: "reddito_secondario_blueprint{copyNumber}",
   title: "Dettagli reddito secondario",
-  priority: 61,
+  priority: 1001,
   multiBlock: true,
   invisible: true,
   questions: [
