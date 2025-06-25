@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { LogOut, ArrowLeft, Blocks, Settings, Users, FileText, Hash, Eye, EyeOff } from 'lucide-react';
+import { LogOut, ArrowLeft, Blocks, Settings, Users, FileText, Hash, Eye, EyeOff, ExternalLink, Plus } from 'lucide-react';
 import { allBlocks } from '@/data/blocks';
 
 export default function AdminBlockDetail() {
@@ -239,56 +239,124 @@ export default function AdminBlockDetail() {
                         {Object.keys(question.placeholders).length === 0 ? (
                           <p className="text-gray-500 text-sm">Nessun placeholder configurato</p>
                         ) : (
-                          <div className="grid gap-3">
+                          <div className="grid gap-4">
                             {Object.entries(question.placeholders).map(([key, placeholder]) => (
-                              <div key={key} className="border rounded p-3 bg-gray-50">
-                                <div className="flex items-center gap-2 mb-2">
+                              <div key={key} className="border rounded-lg p-4 bg-white shadow-sm">
+                                <div className="flex items-center gap-2 mb-3">
                                   {getPlaceholderTypeIcon(placeholder.type)}
-                                  <span className="font-medium text-sm">{key}</span>
+                                  <span className="font-semibold text-base">{key}</span>
                                   <Badge variant="outline" className="text-xs">
                                     {placeholder.type}
                                   </Badge>
                                 </div>
                                 
+                                {/* Select Placeholder Details */}
                                 {placeholder.type === 'select' && (
-                                  <div className="text-sm">
-                                    <p className="text-gray-600 mb-1">
-                                      Opzioni: {placeholder.options?.length || 0}
-                                    </p>
+                                  <div className="space-y-3">
                                     {placeholder.placeholder_label && (
-                                      <p className="text-gray-600">
-                                        Label: {placeholder.placeholder_label}
-                                      </p>
+                                      <div className="text-sm">
+                                        <span className="font-medium text-gray-700">Label:</span>
+                                        <span className="ml-2 text-gray-600">{placeholder.placeholder_label}</span>
+                                      </div>
+                                    )}
+                                    <div>
+                                      <span className="font-medium text-gray-700 text-sm">
+                                        Opzioni ({placeholder.options?.length || 0}):
+                                      </span>
+                                      <div className="mt-2 space-y-2">
+                                        {placeholder.options?.map((option, optIndex) => (
+                                          <div key={optIndex} className="bg-gray-50 rounded p-3 border-l-2 border-blue-200">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                                              <div>
+                                                <span className="font-medium text-gray-700">ID:</span>
+                                                <code className="ml-2 bg-white px-2 py-1 rounded text-xs">{option.id}</code>
+                                              </div>
+                                              <div>
+                                                <span className="font-medium text-gray-700">Label:</span>
+                                                <span className="ml-2 text-gray-600">{option.label}</span>
+                                              </div>
+                                              <div>
+                                                <span className="font-medium text-gray-700">Leads to:</span>
+                                                <code className="ml-2 bg-white px-2 py-1 rounded text-xs">{option.leads_to}</code>
+                                              </div>
+                                              {option.add_block && (
+                                                <div>
+                                                  <span className="font-medium text-gray-700">Add block:</span>
+                                                  <div className="flex items-center gap-1 mt-1">
+                                                    <Plus className="h-3 w-3 text-green-600" />
+                                                    <code className="bg-green-50 px-2 py-1 rounded text-xs text-green-800">{option.add_block}</code>
+                                                  </div>
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        )) || (
+                                          <p className="text-gray-500 text-sm italic">Nessuna opzione configurata</p>
+                                        )}
+                                      </div>
+                                    </div>
+                                    {placeholder.multiple && (
+                                      <div className="text-sm">
+                                        <Badge variant="secondary" className="text-xs">Selezione multipla</Badge>
+                                      </div>
                                     )}
                                   </div>
                                 )}
                                 
+                                {/* Input Placeholder Details */}
                                 {placeholder.type === 'input' && (
-                                  <div className="text-sm">
-                                    <p className="text-gray-600">
-                                      Tipo: {placeholder.input_type}
-                                    </p>
-                                    <p className="text-gray-600">
-                                      Validazione: {placeholder.input_validation}
-                                    </p>
-                                    {placeholder.placeholder_label && (
-                                      <p className="text-gray-600">
-                                        Label: {placeholder.placeholder_label}
-                                      </p>
-                                    )}
+                                  <div className="space-y-2">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                      <div>
+                                        <span className="font-medium text-gray-700">Tipo input:</span>
+                                        <Badge variant="outline" className="ml-2 text-xs">{placeholder.input_type}</Badge>
+                                      </div>
+                                      <div>
+                                        <span className="font-medium text-gray-700">Validazione:</span>
+                                        <Badge variant="outline" className="ml-2 text-xs">{placeholder.input_validation}</Badge>
+                                      </div>
+                                      {placeholder.placeholder_label && (
+                                        <div>
+                                          <span className="font-medium text-gray-700">Label:</span>
+                                          <span className="ml-2 text-gray-600">{placeholder.placeholder_label}</span>
+                                        </div>
+                                      )}
+                                      {placeholder.leads_to && (
+                                        <div>
+                                          <span className="font-medium text-gray-700">Leads to:</span>
+                                          <code className="ml-2 bg-white px-2 py-1 rounded text-xs">{placeholder.leads_to}</code>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 )}
                                 
+                                {/* MultiBlockManager Placeholder Details */}
                                 {placeholder.type === 'MultiBlockManager' && (
-                                  <div className="text-sm">
-                                    <p className="text-gray-600">
-                                      Blueprint: {placeholder.blockBlueprint}
-                                    </p>
-                                    {placeholder.placeholder_label && (
-                                      <p className="text-gray-600">
-                                        Label: {placeholder.placeholder_label}
-                                      </p>
-                                    )}
+                                  <div className="space-y-3">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                      <div>
+                                        <span className="font-medium text-gray-700">Blueprint:</span>
+                                        <div className="flex items-center gap-1 mt-1">
+                                          <Blocks className="h-3 w-3 text-blue-600" />
+                                          <code className="bg-blue-50 px-2 py-1 rounded text-xs text-blue-800">{placeholder.blockBlueprint}</code>
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <span className="font-medium text-gray-700">Add Block Label:</span>
+                                        <span className="ml-2 text-gray-600">{placeholder.add_block_label}</span>
+                                      </div>
+                                      {placeholder.placeholder_label && (
+                                        <div>
+                                          <span className="font-medium text-gray-700">Label:</span>
+                                          <span className="ml-2 text-gray-600">{placeholder.placeholder_label}</span>
+                                        </div>
+                                      )}
+                                      <div>
+                                        <span className="font-medium text-gray-700">Leads to:</span>
+                                        <code className="ml-2 bg-white px-2 py-1 rounded text-xs">{placeholder.leads_to}</code>
+                                      </div>
+                                    </div>
                                   </div>
                                 )}
                               </div>
