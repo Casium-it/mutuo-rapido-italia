@@ -60,6 +60,16 @@ export default function AdminBlockDetail() {
     }
   };
 
+  const getLeadsToStyles = (leadsTo: string) => {
+    if (leadsTo === 'next_block') {
+      return 'bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-xs';
+    } else if (leadsTo === 'stop_flow') {
+      return 'bg-red-200 text-red-800 px-2 py-1 rounded text-xs';
+    } else {
+      return 'bg-white px-2 py-1 rounded text-xs';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#f8f5f1]">
       {/* Header */}
@@ -277,7 +287,7 @@ export default function AdminBlockDetail() {
                                               </div>
                                               <div>
                                                 <span className="font-medium text-gray-700">Leads to:</span>
-                                                <code className="ml-2 bg-white px-2 py-1 rounded text-xs">{option.leads_to}</code>
+                                                <code className={getLeadsToStyles(option.leads_to)}>{option.leads_to}</code>
                                               </div>
                                               {option.add_block && (
                                                 <div>
@@ -324,7 +334,7 @@ export default function AdminBlockDetail() {
                                       {placeholder.leads_to && (
                                         <div>
                                           <span className="font-medium text-gray-700">Leads to:</span>
-                                          <code className="ml-2 bg-white px-2 py-1 rounded text-xs">{placeholder.leads_to}</code>
+                                          <code className={getLeadsToStyles(placeholder.leads_to)}>{placeholder.leads_to}</code>
                                         </div>
                                       )}
                                     </div>
@@ -354,7 +364,7 @@ export default function AdminBlockDetail() {
                                       )}
                                       <div>
                                         <span className="font-medium text-gray-700">Leads to:</span>
-                                        <code className="ml-2 bg-white px-2 py-1 rounded text-xs">{placeholder.leads_to}</code>
+                                        <code className={getLeadsToStyles(placeholder.leads_to)}>{placeholder.leads_to}</code>
                                       </div>
                                     </div>
                                   </div>
