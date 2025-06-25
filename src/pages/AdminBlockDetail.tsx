@@ -1,17 +1,18 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { LogOut, ArrowLeft, Blocks, Settings, Users, FileText, Hash, Eye, EyeOff, ExternalLink, Plus } from 'lucide-react';
+import { LogOut, ArrowLeft, Blocks, Settings, Users, FileText, Hash, Eye, EyeOff, ExternalLink, Plus, GitBranch } from 'lucide-react';
 import { allBlocks } from '@/data/blocks';
+import { BlockFlowMap } from '@/components/admin/BlockFlowMap';
 
 export default function AdminBlockDetail() {
   const { blockId } = useParams<{ blockId: string }>();
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
+  const [showFlowMap, setShowFlowMap] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -109,15 +110,27 @@ export default function AdminBlockDetail() {
         {/* Block Overview */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-xl flex items-center gap-2">
-              <Badge variant="outline" className="text-sm font-mono">
-                Priorità: {block.priority}
-              </Badge>
-              {block.title}
-            </CardTitle>
-            <p className="text-gray-600">
-              ID: <code className="bg-gray-100 px-2 py-1 rounded text-sm">{block.block_id}</code>
-            </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <Badge variant="outline" className="text-sm font-mono">
+                    Priorità: {block.priority}
+                  </Badge>
+                  {block.title}
+                </CardTitle>
+                <p className="text-gray-600">
+                  ID: <code className="bg-gray-100 px-2 py-1 rounded text-sm">{block.block_id}</code>
+                </p>
+              </div>
+              <Button
+                onClick={() => setShowFlowMap(true)}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <GitBranch className="h-4 w-4" />
+                Visualizza Mappa Flusso
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -382,6 +395,13 @@ export default function AdminBlockDetail() {
           </CardContent>
         </Card>
       </main>
+
+      {/* Flow Map Dialog */}
+      <BlockFlowMap 
+        block={block}
+        isOpen={showFlowMap}
+        onClose={() => setShowFlowMap(false)}
+      />
     </div>
   );
 }
