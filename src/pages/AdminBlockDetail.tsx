@@ -276,7 +276,7 @@ export default function AdminBlockDetail() {
                                       <div className="mt-2 space-y-2">
                                         {placeholder.options?.map((option, optIndex) => (
                                           <div key={optIndex} className="bg-gray-50 rounded p-3 border-l-2 border-blue-200">
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                                            <div className="space-y-2 text-sm">
                                               <div>
                                                 <span className="font-medium text-gray-700">ID:</span>
                                                 <code className="ml-2 bg-white px-2 py-1 rounded text-xs">{option.id}</code>
@@ -316,7 +316,7 @@ export default function AdminBlockDetail() {
                                 {/* Input Placeholder Details */}
                                 {placeholder.type === 'input' && (
                                   <div className="space-y-2">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                    <div className="space-y-2 text-sm">
                                       <div>
                                         <span className="font-medium text-gray-700">Tipo input:</span>
                                         <Badge variant="outline" className="ml-2 text-xs">{placeholder.input_type}</Badge>
@@ -344,7 +344,7 @@ export default function AdminBlockDetail() {
                                 {/* MultiBlockManager Placeholder Details */}
                                 {placeholder.type === 'MultiBlockManager' && (
                                   <div className="space-y-3">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                    <div className="space-y-2 text-sm">
                                       <div>
                                         <span className="font-medium text-gray-700">Blueprint:</span>
                                         <div className="flex items-center gap-1 mt-1">
