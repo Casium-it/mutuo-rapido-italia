@@ -5,7 +5,7 @@ export const reddito_suo_secondario_blueprint: Block = {
   block_number: "12D",
   block_id: "reddito_suo_secondario_blueprint{copyNumber}",
   title: "Dettagli reddito secondario cointestatario",
-  priority: 121,
+  priority: 2001,
   multiBlock: true,
   invisible: true,
   questions: [

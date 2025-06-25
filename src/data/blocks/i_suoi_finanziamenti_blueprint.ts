@@ -5,7 +5,7 @@ export const i_suoi_finanziamenti_blueprint: Block = {
   block_number: "13D",
   block_id: "i_suoi_finanziamenti_blueprint{copyNumber}",
   title: "Dettagli finanziamento cointestatario",
-  priority: 131,
+  priority: 2201,
   multiBlock: true,
   invisible: true,
   questions: [
