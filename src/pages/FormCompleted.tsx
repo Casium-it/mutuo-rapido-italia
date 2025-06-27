@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
@@ -21,6 +20,7 @@ import {
 import { validatePhoneNumber } from "@/utils/validationUtils";
 import { toast } from "sonner";
 import { updateSubmissionWithContact } from "@/services/contactSubmissionService";
+import { sendAisensyMessage } from "@/services/aisensyService";
 import { trackSimulationContactDetails, trackSimulationLostDetails } from "@/utils/analytics";
 
 export default function FormCompleted() {
@@ -240,6 +240,20 @@ export default function FormCompleted() {
         // Calculate time spent on this page and track the contact details submission
         const timeSpentOnPage = Math.floor((Date.now() - pageStartTimeRef.current) / 1000);
         trackSimulationContactDetails(timeSpentOnPage, consultationRequest);
+        
+        // Send WhatsApp message via AiSensy (non-blocking)
+        console.log("Sending WhatsApp message via AiSensy...");
+        sendAisensyMessage(firstName.trim(), phoneNumber).then((aisensyResult) => {
+          if (aisensyResult.success) {
+            console.log("WhatsApp message sent successfully via AiSensy");
+          } else {
+            console.error("Failed to send WhatsApp message via AiSensy:", aisensyResult.error);
+            // We don't show this error to the user as it shouldn't block their flow
+          }
+        }).catch((error) => {
+          console.error("Error sending WhatsApp message via AiSensy:", error);
+          // We don't show this error to the user as it shouldn't block their flow
+        });
         
         toast.success("Perfetto!", {
           description: "Riceverai presto i risultati su WhatsApp"
