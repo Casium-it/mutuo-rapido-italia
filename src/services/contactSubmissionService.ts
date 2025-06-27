@@ -10,17 +10,19 @@ type ContactSubmissionResult = {
 /**
  * Aggiorna una submission esistente con i dati di contatto WhatsApp
  * @param submissionId - ID della submission da aggiornare
+ * @param firstName - Nome dell'utente
  * @param phoneNumber - Numero di telefono (verrà formattato come +390000000000)
  * @param consulting - Se l'utente ha richiesto la consulenza
  * @returns Risultato dell'operazione
  */
 export async function updateSubmissionWithContact(
   submissionId: string,
+  firstName: string,
   phoneNumber: string,
   consulting: boolean
 ): Promise<ContactSubmissionResult> {
   try {
-    console.log("Aggiornamento submission con dati contatto...", { submissionId, phoneNumber, consulting });
+    console.log("Aggiornamento submission con dati contatto...", { submissionId, firstName, phoneNumber, consulting });
     
     // First, check if the submission exists and hasn't expired
     const { data: existingSubmission, error: checkError } = await supabase
@@ -68,6 +70,7 @@ export async function updateSubmissionWithContact(
     const { error } = await supabase
       .from('form_submissions')
       .update({
+        first_name: firstName,
         phone_number: formattedPhone,
         consulting: consulting
       })

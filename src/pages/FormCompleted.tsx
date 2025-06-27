@@ -1,8 +1,9 @@
+
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { Link } from "react-router-dom";
-import { ArrowRight, CheckCircle, Phone } from "lucide-react";
+import { ArrowRight, CheckCircle, Phone, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -30,9 +31,11 @@ export default function FormCompleted() {
   const hasSubmittedRef = useRef<boolean>(false);
 
   // Form state for WhatsApp contact
+  const [firstName, setFirstName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [privacyConsent, setPrivacyConsent] = useState(false);
   const [consultationRequest, setConsultationRequest] = useState(false);
+  const [firstNameError, setFirstNameError] = useState("");
   const [phoneError, setPhoneError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasStartedTyping, setHasStartedTyping] = useState(false);
@@ -108,6 +111,25 @@ export default function FormCompleted() {
     }
   };
 
+  // First name validation and handling
+  const handleFirstNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFirstName(value);
+    
+    // Clear error when user starts typing
+    if (firstNameError) {
+      setFirstNameError("");
+    }
+  };
+
+  const handleFirstNameBlur = () => {
+    if (firstName.trim().length === 0) {
+      setFirstNameError("Il nome è obbligatorio");
+    } else if (firstName.trim().length < 2) {
+      setFirstNameError("Il nome deve essere di almeno 2 caratteri");
+    }
+  };
+
   // Phone number validation and formatting
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -157,6 +179,16 @@ export default function FormCompleted() {
   const handleWhatsAppSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate name
+    if (firstName.trim().length === 0) {
+      setFirstNameError("Il nome è obbligatorio");
+      return;
+    }
+    if (firstName.trim().length < 2) {
+      setFirstNameError("Il nome deve essere di almeno 2 caratteri");
+      return;
+    }
+    
     // Extract just the phone number without +39 prefix
     const phoneDigits = phoneNumber.replace("+39 ", "").replace(/\s/g, "");
     if (!validatePhoneNumber(phoneDigits)) {
@@ -181,6 +213,7 @@ export default function FormCompleted() {
     const submissionId = submissionData.submissionId || submissionData.id;
     
     console.log("Using submission ID:", submissionId);
+    console.log("First name to submit:", firstName);
     console.log("Phone number to submit:", phoneNumber);
     console.log("Consultation request:", consultationRequest);
     
@@ -195,6 +228,7 @@ export default function FormCompleted() {
     try {
       const result = await updateSubmissionWithContact(
         submissionId,
+        firstName.trim(),
         phoneNumber,
         consultationRequest
       );
@@ -238,9 +272,11 @@ export default function FormCompleted() {
     }
   };
 
-  // Extract just the phone number without +39 prefix for validation
+  // Validation functions
+  const isNameValid = firstName.trim().length >= 2;
   const phoneDigits = phoneNumber.replace("+39 ", "").replace(/\s/g, "");
-  const isFormValid = validatePhoneNumber(phoneDigits) && privacyConsent;
+  const isPhoneValid = validatePhoneNumber(phoneDigits);
+  const isFormValid = isNameValid && isPhoneValid && privacyConsent;
   
   if (!submissionData) {
     return null; // Non mostrare nulla durante il reindirizzamento
@@ -272,6 +308,28 @@ export default function FormCompleted() {
             </div>
 
             <form onSubmit={handleWhatsAppSubmit} className="space-y-4">
+              {/* First Name Input */}
+              <div className="space-y-2">
+                <Input 
+                  id="firstName" 
+                  type="text" 
+                  placeholder="Il tuo nome" 
+                  value={firstName} 
+                  onChange={handleFirstNameChange} 
+                  onBlur={handleFirstNameBlur} 
+                  className={`
+                    text-left px-[18px] py-[18px] border-[1.5px] rounded-[10px] 
+                    font-['Inter'] text-[19px] md:text-[19px] font-bold transition-all
+                    shadow-[0_3px_0_0_#AFA89F] mb-[10px] w-full h-auto
+                    hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)]
+                    focus-visible:outline-none focus-visible:ring-0 focus-visible:border-black
+                    ${firstNameError ? 'border-red-500' : 'border-[#BEB8AE]'}
+                    ${firstName ? 'border-black bg-gray-50' : 'border-[#BEB8AE]'}
+                  `} 
+                />
+                {firstNameError && <p className="text-red-500 text-sm">{firstNameError}</p>}
+              </div>
+
               {/* Phone Number Input */}
               <div className="space-y-2">
                 <Input 
@@ -354,15 +412,21 @@ export default function FormCompleted() {
         <AlertDialogContent className="w-[calc(100vw-3rem)] max-w-sm mx-auto sm:max-w-md sm:w-full">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-center text-xl font-bold text-gray-900">
-              Conferma il tuo numero
+              Conferma i tuoi dati
             </AlertDialogTitle>
             <AlertDialogDescription className="text-center text-gray-600 mt-4">
-              Stai per inviare la simulazione a questo numero WhatsApp:
+              Stai per inviare la simulazione a:
             </AlertDialogDescription>
           </AlertDialogHeader>
           
-          <div className="my-6 text-center">
-            <div className="inline-flex items-center justify-center bg-[#F8F4EF] px-4 py-3 rounded-lg border-2 border-[#245C4F]">
+          <div className="my-6 space-y-3">
+            <div className="flex items-center justify-center bg-[#F8F4EF] px-4 py-3 rounded-lg border-2 border-[#245C4F]">
+              <User className="h-5 w-5 text-[#245C4F] mr-2" />
+              <span className="text-lg font-bold text-[#245C4F]">
+                {firstName}
+              </span>
+            </div>
+            <div className="flex items-center justify-center bg-[#F8F4EF] px-4 py-3 rounded-lg border-2 border-[#245C4F]">
               <Phone className="h-5 w-5 text-[#245C4F] mr-2" />
               <span className="text-lg font-bold text-[#245C4F]">
                 {phoneNumber}
@@ -372,7 +436,7 @@ export default function FormCompleted() {
           
           <AlertDialogFooter className="!flex !flex-col !items-center !justify-center gap-3 sm:!flex-row sm:!justify-center sm:gap-4">
             <AlertDialogCancel className="w-full max-w-[200px] sm:w-auto order-2 sm:order-1 border-[#245C4F] text-[#245C4F] hover:bg-[#245C4F] hover:text-white">
-              Modifica numero
+              Modifica dati
             </AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleConfirmedSubmission}
