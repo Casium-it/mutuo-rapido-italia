@@ -22,18 +22,18 @@ serve(async (req) => {
       throw new Error('AISENSY_API_KEY not configured');
     }
 
-    // AiSensy API call
+    // AiSensy API call - Updated to match their documentation
     const aisensyResponse = await fetch('https://backend.aisensy.com/campaign/t1/api/v2', {
       method: 'POST',
       headers: {
-        'X-AiSensy-API-KEY': aisensyApiKey,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+        apiKey: aisensyApiKey,
         campaignName: 'submit form welcome1',
         destination: phoneNumber,
         userName: firstName,
-        templateParams: [firstName], // Pass first name as template parameter
+        templateParams: [firstName],
         source: 'new-api-integration'
       }),
     });
