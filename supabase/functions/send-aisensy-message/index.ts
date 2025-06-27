@@ -33,7 +33,6 @@ serve(async (req) => {
         campaignName: 'submit form welcome1',
         destination: phoneNumber,
         userName: firstName,
-        templateParams: [firstName],
         source: 'new-api-integration'
       }),
     });
