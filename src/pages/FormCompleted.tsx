@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
@@ -20,7 +21,7 @@ import {
 import { validatePhoneNumber } from "@/utils/validationUtils";
 import { toast } from "sonner";
 import { updateSubmissionWithContact } from "@/services/contactSubmissionService";
-import { sendAisensyMessage } from "@/services/aisensyService";
+import { sendFormCompletionMessage } from "@/services/aisensyService";
 import { trackSimulationContactDetails, trackSimulationLostDetails } from "@/utils/analytics";
 
 export default function FormCompleted() {
@@ -241,9 +242,9 @@ export default function FormCompleted() {
         const timeSpentOnPage = Math.floor((Date.now() - pageStartTimeRef.current) / 1000);
         trackSimulationContactDetails(timeSpentOnPage, consultationRequest);
         
-        // Send WhatsApp message via AiSensy (non-blocking)
+        // Send WhatsApp message via AiSensy using the new form completion method
         console.log("Sending WhatsApp message via AiSensy...");
-        sendAisensyMessage(firstName.trim(), phoneNumber).then((aisensyResult) => {
+        sendFormCompletionMessage(firstName.trim(), phoneNumber).then((aisensyResult) => {
           if (aisensyResult.success) {
             console.log("WhatsApp message sent successfully via AiSensy");
           } else {
