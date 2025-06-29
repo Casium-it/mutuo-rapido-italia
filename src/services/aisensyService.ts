@@ -93,8 +93,8 @@ export async function sendFormCompletionMessage(
     userName: firstName,
     source: 'form-completion',
     media: {
-      url: `${window.location.origin}/images/simulazione-ricevuta.png`,
-      filename: 'simulazione-ricevuta.png'
+      url: `https://i.ibb.co/20RqqT9k/banner.png`,
+      filename: 'banner.png'
     },
     templateParams: [
       firstName,
