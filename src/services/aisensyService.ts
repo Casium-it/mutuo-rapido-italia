@@ -93,7 +93,7 @@ export async function sendFormCompletionMessage(
     userName: firstName,
     source: 'form-completion',
     media: {
-      url: 'https://lovable-uploads.s3.amazonaws.com/a49fb2ba-a6fd-40cb-93aa-2806d6c5be88.png',
+      url: `${window.location.origin}/images/simulazione-ricevuta.png`,
       filename: 'simulazione-ricevuta.png'
     },
     templateParams: [
