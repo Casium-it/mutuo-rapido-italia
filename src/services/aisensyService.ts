@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 // Type definitions for AiSensy API
@@ -76,20 +75,30 @@ export async function sendCustomAisensyMessage(
 }
 
 /**
- * Send form completion message (current implementation for backward compatibility)
+ * Send form completion message with new welcome3 campaign
  * @param firstName - User's first name
  * @param phoneNumber - Phone number in format +390000000000
+ * @param consultationRequest - Whether user requested consultation
  * @returns Result of the operation
  */
 export async function sendFormCompletionMessage(
   firstName: string,
-  phoneNumber: string
+  phoneNumber: string,
+  consultationRequest: boolean = false
 ): Promise<AisensyMessageResult> {
   return sendCustomAisensyMessage({
-    campaignName: 'submit form welcome1',
+    campaignName: 'welcome3',
     destination: phoneNumber,
     userName: firstName,
-    source: 'form-completion'
+    source: 'form-completion',
+    media: {
+      url: '/lovable-uploads/a49fb2ba-a6fd-40cb-93aa-2806d6c5be88.png',
+      filename: 'simulazione-ricevuta.png'
+    },
+    templateParams: [
+      firstName,
+      consultationRequest ? "Si ✅" : "No ❌"
+    ]
   });
 }
 
