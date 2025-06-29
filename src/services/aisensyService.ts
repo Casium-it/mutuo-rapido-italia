@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 // Type definitions for AiSensy API
@@ -92,7 +93,7 @@ export async function sendFormCompletionMessage(
     userName: firstName,
     source: 'form-completion',
     media: {
-      url: '/lovable-uploads/a49fb2ba-a6fd-40cb-93aa-2806d6c5be88.png',
+      url: 'https://lovable-uploads.s3.amazonaws.com/a49fb2ba-a6fd-40cb-93aa-2806d6c5be88.png',
       filename: 'simulazione-ricevuta.png'
     },
     templateParams: [
