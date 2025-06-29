@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -38,6 +37,24 @@ interface AisensyRequestBody {
   location?: string;
 }
 
+// Utility function to clean and normalize phone numbers
+function normalizePhoneNumber(phoneNumber: string): string {
+  // Remove all spaces, dashes, and other formatting characters, but keep the +
+  return phoneNumber.replace(/[\s\-\(\)\.]/g, '');
+}
+
+// Utility function to validate phone number format
+function validatePhoneNumber(phoneNumber: string): boolean {
+  // Clean the phone number first
+  const cleanPhone = normalizePhoneNumber(phoneNumber);
+  
+  // Italian phone number with country code: +39 followed by 8-11 digits
+  // Also supports other international formats: + followed by 1-3 digit country code and 4-14 digits
+  const phoneRegex = /^\+\d{1,3}\d{4,14}$/;
+  
+  return phoneRegex.test(cleanPhone);
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -58,15 +75,23 @@ serve(async (req) => {
       throw new Error('userName is required');
     }
 
+    // Normalize the phone number for validation and API call
+    const normalizedPhone = normalizePhoneNumber(requestBody.destination);
+    
     // Validate phone number format
-    const phoneRegex = /^\+\d{1,3}\d{4,14}$/;
-    if (!phoneRegex.test(requestBody.destination)) {
-      throw new Error('destination must be a valid phone number with country code (e.g., +39xxxxxxxxx)');
+    if (!validatePhoneNumber(normalizedPhone)) {
+      console.error('Phone number validation failed:', {
+        original: requestBody.destination,
+        normalized: normalizedPhone,
+        expectedFormat: '+39xxxxxxxxx (or other international format)'
+      });
+      throw new Error(`destination must be a valid phone number with country code (e.g., +39xxxxxxxxx). Received: "${requestBody.destination}"`);
     }
 
     console.log('Sending AiSensy message with parameters:', {
       campaignName: requestBody.campaignName,
       destination: requestBody.destination,
+      normalizedDestination: normalizedPhone,
       userName: requestBody.userName,
       source: requestBody.source,
       hasMedia: !!requestBody.media,
@@ -81,11 +106,11 @@ serve(async (req) => {
       throw new Error('AISENSY_API_KEY not configured');
     }
 
-    // Build the payload for AiSensy API, only including provided fields
+    // Build the payload for AiSensy API, using the normalized phone number
     const aisensyPayload: AisensyRequest = {
       apiKey: aisensyApiKey,
       campaignName: requestBody.campaignName,
-      destination: requestBody.destination,
+      destination: normalizedPhone, // Use normalized phone number
       userName: requestBody.userName,
     };
 

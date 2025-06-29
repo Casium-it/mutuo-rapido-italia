@@ -1,5 +1,6 @@
 
 import { ValidationTypes } from "@/types/form";
+import { normalizePhoneNumber } from "./phoneUtils";
 
 // Function for validating input based on type
 export const validateInput = (value: string, type: ValidationTypes): boolean => {
@@ -50,4 +51,15 @@ export const validatePhoneNumber = (phone: string): boolean => {
   const cleanPhone = phone.replace(/\D/g, "");
   // Italian mobile numbers are exactly 10 digits
   return /^[0-9]{10}$/.test(cleanPhone);
+};
+
+// New function for validating international phone numbers with country code
+export const validateInternationalPhoneNumber = (phone: string): boolean => {
+  // Normalize the phone number (remove spaces, dashes, etc.)
+  const normalizedPhone = normalizePhoneNumber(phone);
+  
+  // International format: + followed by 1-3 digit country code and 4-14 digits
+  const phoneRegex = /^\+\d{1,3}\d{4,14}$/;
+  
+  return phoneRegex.test(normalizedPhone);
 };
