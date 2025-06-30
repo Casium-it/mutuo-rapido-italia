@@ -10,15 +10,15 @@ const Simulazioni = () => {
   const navigate = useNavigate();
 
   const simpleKeyPoints = [
-    { icon: Clock, text: "minuti per completare", highlight: "3" },
+    { icon: Clock, text: "minuti per completare", highlight: "2" },
     { icon: Building2, text: "banche, offerte e condizioni confrontate", highlight: "48" },
     { icon: Percent, text: "di precisione", highlight: "68%" },
     { icon: Calculator, text: "Solo calcolatore fattibilità mutuo" },
   ];
 
   const advancedKeyPoints = [
-    { icon: Clock, text: "minuti per completare", highlight: "11" },
-    { icon: Building2, text: "banche, offerte e condizioni confrontate", highlight: "122" },
+    { icon: Clock, text: "minuti per completare", highlight: "6" },
+    { icon: Building2, text: "banche, offerte e condizioni confrontate", highlight: "108" },
     { icon: Percent, text: "di precisione (il migliore in Italia!)", highlight: "98%" },
     { icon: Check, text: "Ottieni il tuo mutuo 100% online" },
   ];
