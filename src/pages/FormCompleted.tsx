@@ -244,7 +244,7 @@ export default function FormCompleted() {
         
         // Send WhatsApp message via AiSensy using the new form completion method
         console.log("Sending WhatsApp message via AiSensy...");
-        sendFormCompletionMessage(firstName.trim(), phoneNumber).then((aisensyResult) => {
+        sendFormCompletionMessage(firstName.trim(), phoneNumber, consultationRequest).then((aisensyResult) => {
           if (aisensyResult.success) {
             console.log("WhatsApp message sent successfully via AiSensy");
           } else {
