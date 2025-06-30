@@ -2,11 +2,9 @@
 import { supabase } from "@/integrations/supabase/client";
 
 type AdminNotificationData = {
-  submitterName: string;
-  submitterAge: string;
-  submitterProvince: string;
-  consulting: string;
-  submitterPhone: string;
+  firstName: string;
+  phoneNumber: string;
+  consulting: boolean;
 };
 
 type NotificationResult = {
@@ -19,11 +17,7 @@ type NotificationResult = {
  */
 export async function sendAdminNotifications(
   submissionId: string,
-  contactData: {
-    firstName: string;
-    phoneNumber: string;
-    consulting: boolean;
-  }
+  contactData: AdminNotificationData
 ): Promise<NotificationResult> {
   try {
     console.log("Invio notifiche admin per submission:", submissionId);
@@ -66,20 +60,9 @@ export async function sendAdminNotifications(
       province = responseData.placeholder2 || 'N/A';
     }
 
-    // 4. Prepara i dati per la notifica
-    const notificationData: AdminNotificationData = {
-      submitterName: contactData.firstName,
-      submitterAge: age,
-      submitterProvince: province,
-      consulting: contactData.consulting ? 'Si' : 'No',
-      submitterPhone: contactData.phoneNumber
-    };
-
-    console.log("Dati notifica admin:", notificationData);
-
-    // 5. Invia notifiche a tutti gli admin abilitati
+    // 4. Invia notifiche a tutti gli admin abilitati usando il servizio esistente
     const notificationPromises = adminSettings.map(admin => 
-      sendSingleAdminNotification(admin.phone_number, admin.admin_name, notificationData)
+      sendSingleAdminNotification(admin.phone_number, contactData.firstName, age, province, contactData.consulting, contactData.phoneNumber)
     );
 
     const results = await Promise.allSettled(notificationPromises);
@@ -106,42 +89,45 @@ export async function sendAdminNotifications(
 }
 
 /**
- * Invia una singola notifica admin tramite AiSensy
+ * Invia una singola notifica admin usando il servizio AiSensy esistente
  */
 async function sendSingleAdminNotification(
   phoneNumber: string, 
-  adminName: string, 
-  data: AdminNotificationData
+  firstName: string,
+  age: string,
+  province: string,
+  consulting: boolean,
+  submitterPhone: string
 ): Promise<void> {
   try {
-    const response = await fetch('/api/send-aisensy-message', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    const { data, error } = await supabase.functions.invoke('send-aisensy-message', {
+      body: {
         phoneNumber: phoneNumber,
         campaignName: 'avvisoadmin1',
         parameters: {
-          parameter1: data.submitterName,
-          parameter2: data.submitterAge,
-          parameter3: data.submitterProvince,
-          parameter4: data.consulting,
-          parameter5: data.submitterPhone
+          parameter1: firstName,
+          parameter2: age,
+          parameter3: province,
+          parameter4: consulting ? 'Si' : 'No',
+          parameter5: submitterPhone
         }
-      }),
+      }
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Errore HTTP ${response.status}: ${errorText}`);
+    if (error) {
+      console.error("Errore nell'invocazione della funzione:", error);
+      throw error;
     }
 
-    const result = await response.json();
-    console.log(`Notifica admin inviata a ${adminName}:`, result);
+    if (!data.success) {
+      console.error("Errore dalla funzione AiSensy:", data.error);
+      throw new Error(data.error || "Errore sconosciuto dall'API AiSensy");
+    }
+
+    console.log("Notifica admin inviata con successo:", data);
 
   } catch (error) {
-    console.error(`Errore invio notifica a ${adminName} (${phoneNumber}):`, error);
+    console.error(`Errore invio notifica a ${phoneNumber}:`, error);
     throw error;
   }
 }
