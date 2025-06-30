@@ -9,33 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      admin_notification_settings: {
-        Row: {
-          admin_name: string
-          created_at: string
-          id: string
-          notifications_enabled: boolean
-          phone_number: string
-          updated_at: string
-        }
-        Insert: {
-          admin_name: string
-          created_at?: string
-          id?: string
-          notifications_enabled?: boolean
-          phone_number: string
-          updated_at?: string
-        }
-        Update: {
-          admin_name?: string
-          created_at?: string
-          id?: string
-          notifications_enabled?: boolean
-          phone_number?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       form_responses: {
         Row: {
           block_id: string

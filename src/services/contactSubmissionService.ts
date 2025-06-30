@@ -1,6 +1,5 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { sendAdminNotifications } from "./adminNotificationService";
 
 type ContactSubmissionResult = {
   success: boolean;
@@ -90,17 +89,6 @@ export async function updateSubmissionWithContact(
     }
 
     console.log("Submission aggiornata con successo");
-
-    // Invia notifiche agli admin (non bloccante)
-    sendAdminNotifications(submissionId, {
-      firstName,
-      phoneNumber: formattedPhone,
-      consulting
-    }).catch(error => {
-      console.error("Errore nell'invio notifiche admin (non bloccante):", error);
-      // Non blocchiamo il flusso principale per errori di notifica admin
-    });
-
     return { success: true };
     
   } catch (error) {
