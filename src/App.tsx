@@ -23,6 +23,7 @@ import Admin from "./pages/Admin";
 import AdminBlocks from "./pages/AdminBlocks";
 import AdminBlockDetail from "./pages/AdminBlockDetail";
 import AdminFormDetail from "./pages/AdminFormDetail";
+import AdminNotifications from "./pages/AdminNotifications";
 
 const queryClient = new QueryClient();
 
@@ -64,6 +65,11 @@ const AppWithTracking = () => {
       <Route path="/admin/form/:submissionId" element={
         <ProtectedRoute requireAdmin>
           <AdminFormDetail />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/notifications" element={
+        <ProtectedRoute requireAdmin>
+          <AdminNotifications />
         </ProtectedRoute>
       } />
       <Route path="*" element={<NotFound />} />

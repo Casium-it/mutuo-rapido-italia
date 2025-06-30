@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { Eye, LogOut, Phone, Calendar, FileText, Mail, User, StickyNote, Trash2, Blocks } from 'lucide-react';
+import { Eye, LogOut, Phone, Calendar, FileText, Mail, User, StickyNote, Trash2, Blocks, Bell } from 'lucide-react';
 import { LeadStatusBadge } from '@/components/admin/LeadStatusBadge';
 import {
   AlertDialog,
@@ -163,6 +163,14 @@ export default function Admin() {
             <p className="text-gray-600">Benvenuto, {user?.email}</p>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              onClick={() => navigate('/admin/notifications')}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Bell className="h-4 w-4" />
+              Gestisci Notifiche
+            </Button>
             <Button
               onClick={() => navigate('/admin/blocks')}
               variant="outline"
