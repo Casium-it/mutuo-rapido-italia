@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
@@ -8,73 +7,60 @@ import { useNavigate } from "react-router-dom";
 import { trackWhatsAppContact, trackSimulationCTA } from "@/utils/analytics";
 import { useTimeTracking } from "@/hooks/useTimeTracking";
 import { LoginButton } from "@/components/LoginButton";
-
 const HomePage = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const [currentNotification, setCurrentNotification] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
-  
+
   // Initialize time tracking for home page - stable reference
-  const { trackCustomExit } = useTimeTracking({ 
+  const {
+    trackCustomExit
+  } = useTimeTracking({
     pageName: 'home_page'
   });
-  
-  const notifications = [
-    {
-      title: "Mutuo accettato!",
-      description: "Hai risparmiato 23.000 €"
-    },
-    {
-      title: "Ciao sono Luca,",
-      description: "Il tuo consulente personale"
-    },
-    {
-      title: "Nuovo tasso → 2.1%",
-      description: "Surroga e risparmia 4.000 €"
-    }
-  ];
-
+  const notifications = [{
+    title: "Mutuo accettato!",
+    description: "Hai risparmiato 23.000 €"
+  }, {
+    title: "Ciao sono Luca,",
+    description: "Il tuo consulente personale"
+  }, {
+    title: "Nuovo tasso → 2.1%",
+    description: "Surroga e risparmia 4.000 €"
+  }];
   useEffect(() => {
     // Inizia dopo 3 secondi
     const initialTimer = setTimeout(() => {
       setIsVisible(true);
     }, 2000);
-
     return () => clearTimeout(initialTimer);
   }, []);
-
   useEffect(() => {
     if (!isVisible) return;
-
     const cycleNotifications = () => {
       // Mostra per 3 secondi
       const showTimer = setTimeout(() => {
         setIsVisible(false);
-        
+
         // Aspetta 1 secondo per il fade out, poi cambia notifica
         const changeTimer = setTimeout(() => {
-          setCurrentNotification((prev) => (prev + 1) % notifications.length);
+          setCurrentNotification(prev => (prev + 1) % notifications.length);
           setIsVisible(true);
         }, 2000);
-
         return () => clearTimeout(changeTimer);
       }, 5000);
-
       return () => clearTimeout(showTimer);
     };
-
     const cleanup = cycleNotifications();
-    
+
     // Ripeti il ciclo ogni 4 secondi (3 sec visibile + 1 sec nascosto)
     const intervalId = setInterval(cycleNotifications, 7000);
-
     return () => {
       cleanup?.();
       clearInterval(intervalId);
     };
   }, [isVisible, currentNotification, notifications.length]);
-
   const benefits = [{
     title: "Il miglior Mutuo",
     description: "Confrontiamo e parliamo con più di 100 banche senza che devi andare in filiale"
@@ -88,21 +74,18 @@ const HomePage = () => {
     title: "Mutuo per tutti",
     description: "Mutuo difficile? Partita Iva? Segnalazioni? Ci pensiamo noi a te siamo esperti in questo"
   }];
-
   const handleWhatsAppContact = () => {
     trackWhatsAppContact('home_page');
     // Track custom exit since user is leaving for WhatsApp
     trackCustomExit('whatsapp_contact');
     window.open('https://wa.me/393518681491', '_blank');
   };
-
   const handleSimulationClick = (position: string) => {
     trackSimulationCTA(position);
     // Track custom exit since user is navigating away
     trackCustomExit('simulation_navigation');
     navigate("/simulazioni");
   };
-
   return <div className="min-h-screen flex flex-col bg-[#fff7f0]">
       {/* Header */}
       <header className="py-6 px-4 md:px-6 relative flex items-center justify-between z-10 animate-[fade-in_0.6s_ease-out_0.1s_both] opacity-0">
@@ -157,7 +140,7 @@ const HomePage = () => {
             <div className="flex items-center justify-center lg:justify-start gap-8 mb-4 animate-[fade-in_0.6s_ease-out_1.2s_both] opacity-0">
               <div className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-green-600 opacity-50" />
-                <span className="text-sm text-gray-600">Online in 10 min</span>
+                <span className="text-sm text-gray-600">Online in 6 min</span>
               </div>
               <div className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-green-600 opacity-50" />
@@ -239,5 +222,4 @@ const BenefitCard = ({
       <p className="text-sm text-gray-600 leading-relaxed">{description}</p>
     </div>;
 };
-
 export default HomePage;
