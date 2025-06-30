@@ -1,188 +1,123 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-// AiSensy API interface matching their full documentation
-interface AisensyRequest {
-  apiKey?: string; // Will be set from environment
-  campaignName: string;
-  destination: string;
-  userName: string;
-  source?: string;
-  media?: {
-    url: string;
-    filename: string;
-  };
-  templateParams?: string[];
-  tags?: string[];
-  attributes?: Record<string, string>;
-  location?: string;
-}
-
-interface AisensyRequestBody {
-  campaignName: string;
-  destination: string;
-  userName: string;
-  source?: string;
-  media?: {
-    url: string;
-    filename: string;
-  };
-  templateParams?: string[];
-  tags?: string[];
-  attributes?: Record<string, string>;
-  location?: string;
-}
-
-// Utility function to clean and normalize phone numbers
-function normalizePhoneNumber(phoneNumber: string): string {
-  // Remove all spaces, dashes, and other formatting characters, but keep the +
-  return phoneNumber.replace(/[\s\-\(\)\.]/g, '');
-}
-
-// Utility function to validate phone number format
-function validatePhoneNumber(phoneNumber: string): boolean {
-  // Clean the phone number first
-  const cleanPhone = normalizePhoneNumber(phoneNumber);
-  
-  // Italian phone number with country code: +39 followed by 8-11 digits
-  // Also supports other international formats: + followed by 1-3 digit country code and 4-14 digits
-  const phoneRegex = /^\+\d{1,3}\d{4,14}$/;
-  
-  return phoneRegex.test(cleanPhone);
-}
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { corsHeaders } from '../_shared/cors.ts';
 
 serve(async (req) => {
-  // Handle CORS preflight requests
+  // This is needed if you're planning to invoke your function from a browser.
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    const requestBody: AisensyRequestBody = await req.json();
+    const { phoneNumber, campaignName, parameters } = await req.json();
     
+    console.log('Richiesta ricevuta:', { phoneNumber, campaignName, parameters });
+
     // Validate required fields
-    if (!requestBody.campaignName) {
-      throw new Error('campaignName is required');
-    }
-    if (!requestBody.destination) {
-      throw new Error('destination is required');
-    }
-    if (!requestBody.userName) {
-      throw new Error('userName is required');
-    }
-
-    // Normalize the phone number for validation and API call
-    const normalizedPhone = normalizePhoneNumber(requestBody.destination);
-    
-    // Validate phone number format
-    if (!validatePhoneNumber(normalizedPhone)) {
-      console.error('Phone number validation failed:', {
-        original: requestBody.destination,
-        normalized: normalizedPhone,
-        expectedFormat: '+39xxxxxxxxx (or other international format)'
-      });
-      throw new Error(`destination must be a valid phone number with country code (e.g., +39xxxxxxxxx). Received: "${requestBody.destination}"`);
+    if (!phoneNumber || !campaignName) {
+      return new Response(
+        JSON.stringify({ error: 'phoneNumber e campaignName sono obbligatori' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
     }
 
-    console.log('Sending AiSensy message with parameters:', {
-      campaignName: requestBody.campaignName,
-      destination: requestBody.destination,
-      normalizedDestination: normalizedPhone,
-      userName: requestBody.userName,
-      source: requestBody.source,
-      hasMedia: !!requestBody.media,
-      templateParamsCount: requestBody.templateParams?.length || 0,
-      tagsCount: requestBody.tags?.length || 0,
-      attributesCount: Object.keys(requestBody.attributes || {}).length,
-      hasLocation: !!requestBody.location
-    });
-
-    const aisensyApiKey = Deno.env.get('AISENSY_API_KEY');
-    if (!aisensyApiKey) {
-      throw new Error('AISENSY_API_KEY not configured');
+    const AISENSY_API_KEY = Deno.env.get('AISENSY_API_KEY');
+    if (!AISENSY_API_KEY) {
+      console.error('AISENSY_API_KEY non configurata');
+      return new Response(
+        JSON.stringify({ error: 'Configurazione API mancante' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
     }
 
-    // Build the payload for AiSensy API, using the normalized phone number
-    const aisensyPayload: AisensyRequest = {
-      apiKey: aisensyApiKey,
-      campaignName: requestBody.campaignName,
-      destination: normalizedPhone, // Use normalized phone number
-      userName: requestBody.userName,
+    // Prepare the request body for AiSensy
+    const requestBody: any = {
+      apiKey: AISENSY_API_KEY,
+      campaignName: campaignName,
+      destination: phoneNumber,
     };
 
-    // Add optional fields only if they are provided
-    if (requestBody.source) {
-      aisensyPayload.source = requestBody.source;
-    }
-    
-    if (requestBody.media) {
-      aisensyPayload.media = requestBody.media;
-    }
-    
-    if (requestBody.templateParams && requestBody.templateParams.length > 0) {
-      aisensyPayload.templateParams = requestBody.templateParams;
-    }
-    
-    if (requestBody.tags && requestBody.tags.length > 0) {
-      aisensyPayload.tags = requestBody.tags;
-    }
-    
-    if (requestBody.attributes && Object.keys(requestBody.attributes).length > 0) {
-      aisensyPayload.attributes = requestBody.attributes;
-    }
-    
-    if (requestBody.location) {
-      aisensyPayload.location = requestBody.location;
+    // Add parameters if provided
+    if (parameters && Object.keys(parameters).length > 0) {
+      requestBody.templateParams = [
+        parameters.parameter1 || '',
+        parameters.parameter2 || '',
+        parameters.parameter3 || '',
+        parameters.parameter4 || '',
+        parameters.parameter5 || '',
+        parameters.parameter6 || '',
+        parameters.parameter7 || '',
+        parameters.parameter8 || '',
+        parameters.parameter9 || '',
+        parameters.parameter10 || ''
+      ];
     }
 
-    console.log('Final AiSensy payload (excluding API key):', {
-      ...aisensyPayload,
-      apiKey: '[REDACTED]'
-    });
+    console.log('Invio richiesta ad AiSensy:', JSON.stringify(requestBody, null, 2));
 
-    // AiSensy API call
-    const aisensyResponse = await fetch('https://backend.aisensy.com/campaign/t1/api/v2', {
+    // Send request to AiSensy
+    const response = await fetch('https://backend.aisensy.com/campaign/t1/api/v2', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(aisensyPayload),
+      body: JSON.stringify(requestBody),
     });
 
-    const aisensyData = await aisensyResponse.json();
-    
-    if (!aisensyResponse.ok) {
-      console.error('AiSensy API error:', {
-        status: aisensyResponse.status,
-        statusText: aisensyResponse.statusText,
-        response: aisensyData
-      });
-      throw new Error(`AiSensy API error: ${aisensyData.message || aisensyData.error || 'Unknown error'}`);
+    const responseData = await response.text();
+    console.log('Risposta AiSensy:', responseData);
+
+    if (!response.ok) {
+      console.error('Errore AiSensy:', response.status, responseData);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Errore invio messaggio', 
+          details: responseData,
+          status: response.status 
+        }),
+        { 
+          status: response.status, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
     }
 
-    console.log('AiSensy message sent successfully:', aisensyData);
+    // Try to parse response as JSON, fallback to text
+    let parsedResponse;
+    try {
+      parsedResponse = JSON.parse(responseData);
+    } catch {
+      parsedResponse = { message: responseData };
+    }
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      message: 'WhatsApp message sent successfully',
-      aisensyResponse: aisensyData 
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        data: parsedResponse,
+        campaign: campaignName,
+        destination: phoneNumber
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
 
   } catch (error) {
-    console.error('Error in send-aisensy-message function:', error);
-    
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error sending WhatsApp message' 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('Errore nella funzione:', error);
+    return new Response(
+      JSON.stringify({ 
+        error: 'Errore interno del server', 
+        details: error.message || 'Errore sconosciuto' 
+      }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
   }
 });
