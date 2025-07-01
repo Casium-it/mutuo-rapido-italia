@@ -1,106 +1,104 @@
 
-import { Block } from "@/types/form";
-import { allBlocks } from "@/data/blocks";
-import { FormSnapshot, formSnapshotService } from "./formSnapshotService";
+import { Block } from '@/types/form';
+import { formCacheService } from './formCacheService';
+import { formSnapshotService, FormSnapshot } from './formSnapshotService';
 
 export interface FormDefinition {
-  blocks: Block[];
-  source: 'database' | 'hardcoded';
   formSlug?: string;
+  blocks: Block[];
+  source: 'database' | 'static';
   version?: number;
+  title?: string;
+  description?: string;
 }
 
 class FormDefinitionService {
   /**
-   * Get form definition - first try database, fallback to hard-coded blocks
+   * Get form definition with enhanced caching
    */
   async getFormDefinition(formSlug?: string): Promise<FormDefinition> {
     console.log(`FormDefinitionService: Getting form definition for ${formSlug || 'default'}`);
 
-    // If no form slug provided, use hard-coded blocks
-    if (!formSlug) {
-      console.log('FormDefinitionService: No form slug provided, using hard-coded blocks');
-      return {
-        blocks: allBlocks,
-        source: 'hardcoded'
-      };
-    }
-
-    try {
-      // Try to load from database first
-      const snapshot = await formSnapshotService.loadFormSnapshot(formSlug);
-      
-      if (snapshot && this.validateFormSnapshot(snapshot)) {
-        console.log(`FormDefinitionService: Using database form definition for ${formSlug}`);
-        return {
-          blocks: snapshot.blocks,
-          source: 'database',
-          formSlug: snapshot.slug,
-          version: snapshot.version
-        };
-      } else {
-        console.log(`FormDefinitionService: Database form not found or invalid, falling back to hard-coded blocks for ${formSlug}`);
+    // For database-driven forms
+    if (formSlug) {
+      try {
+        // Use the enhanced cache service
+        const snapshot = await formCacheService.getFormSnapshot(formSlug);
+        
+        if (snapshot) {
+          console.log(`FormDefinitionService: Found database form for ${formSlug}`, {
+            blocksCount: snapshot.blocks.length,
+            version: snapshot.version
+          });
+          
+          return {
+            formSlug: snapshot.slug,
+            blocks: snapshot.blocks,
+            source: 'database',
+            version: snapshot.version,
+            title: snapshot.title,
+            description: snapshot.description
+          };
+        } else {
+          console.log(`FormDefinitionService: No database form found for ${formSlug}, falling back to static`);
+        }
+      } catch (error) {
+        console.error(`FormDefinitionService: Error loading database form ${formSlug}:`, error);
       }
-    } catch (error) {
-      console.error(`FormDefinitionService: Error loading database form ${formSlug}, falling back to hard-coded:`, error);
     }
 
-    // Fallback to hard-coded blocks
+    // Fallback to static form blocks (legacy support)
+    console.log('FormDefinitionService: Using static form blocks as fallback');
+    
+    // Import static blocks dynamically to avoid circular dependencies
+    const { formBlocks } = await import('@/data/formBlocks');
+    
     return {
-      blocks: allBlocks,
-      source: 'hardcoded'
+      blocks: formBlocks,
+      source: 'static'
     };
   }
 
   /**
-   * Check if a form exists in database
+   * Preload common forms
    */
-  async isFormInDatabase(formSlug: string): Promise<boolean> {
-    try {
-      return await formSnapshotService.formExists(formSlug);
-    } catch (error) {
-      console.error(`FormDefinitionService: Error checking if form exists in database: ${formSlug}`, error);
-      return false;
-    }
+  async preloadCommonForms(): Promise<void> {
+    await formCacheService.preloadCommonForms();
   }
 
   /**
-   * Validate form snapshot has required structure
+   * Clear cache for specific form
    */
-  private validateFormSnapshot(snapshot: FormSnapshot): boolean {
-    if (!snapshot || !Array.isArray(snapshot.blocks)) {
-      console.error('FormDefinitionService: Invalid snapshot - missing or invalid blocks array');
-      return false;
-    }
-
-    // Validate each block has required properties
-    for (const block of snapshot.blocks) {
-      if (!block.block_id || !block.title || !Array.isArray(block.questions)) {
-        console.error('FormDefinitionService: Invalid block structure:', block);
-        return false;
-      }
-
-      // Validate each question has required properties
-      for (const question of block.questions) {
-        if (!question.question_id || !question.question_text) {
-          console.error('FormDefinitionService: Invalid question structure:', question);
-          return false;
-        }
-      }
-    }
-
-    console.log(`FormDefinitionService: Form snapshot validation passed for ${snapshot.slug}`);
-    return true;
+  clearFormCache(formSlug: string): void {
+    formCacheService.clearFormCache(formSlug);
   }
 
   /**
-   * Transform hard-coded blocks to database format (for migration)
+   * Clear all caches
    */
-  transformBlocksForDatabase(blocks: Block[]): any[] {
-    return blocks.map((block, index) => ({
-      block_data: block,
-      sort_order: index
-    }));
+  clearAllCaches(): void {
+    formCacheService.clearAllCaches();
+  }
+
+  /**
+   * Get cache statistics
+   */
+  getCacheStats() {
+    return formCacheService.getCacheStats();
+  }
+
+  /**
+   * Check if form exists in database
+   */
+  async formExists(formSlug: string): Promise<boolean> {
+    return await formSnapshotService.formExists(formSlug);
+  }
+
+  /**
+   * Get all available forms
+   */
+  async getAllForms() {
+    return await formSnapshotService.getAllForms();
   }
 }
 

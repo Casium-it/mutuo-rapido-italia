@@ -7,6 +7,7 @@ import React, {
   useReducer,
   useRef,
   ReactNode,
+  useMemo,
 } from "react";
 import { Block, FormState, FormResponse, NavigationHistory, Placeholder, SelectPlaceholder, PendingRemoval } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
@@ -396,10 +397,15 @@ export const FormProvider: React.FC<FormProviderProps> = ({ children, blocks }) 
     isFormSlugRoute: !!params.formSlug
   });
   
-  const sortedBlocks = [...formBlocks].sort((a, b) => a.priority - b.priority);
+  // Memoize sortedBlocks to prevent infinite re-renders
+  const sortedBlocks = useMemo(() => {
+    return [...formBlocks].sort((a, b) => a.priority - b.priority);
+  }, [formBlocks]);
   
   // Create dynamic initial state based on available blocks
-  const dynamicInitialState = createInitialState(sortedBlocks);
+  const dynamicInitialState = useMemo(() => {
+    return createInitialState(sortedBlocks);
+  }, [sortedBlocks]);
   
   const [state, dispatch] = useReducer(formReducer, dynamicInitialState);
 
@@ -580,7 +586,10 @@ export const FormProvider: React.FC<FormProviderProps> = ({ children, blocks }) 
     return newBlockId;
   }, [formBlocks, state.dynamicBlocks]);
 
+  // Separate effect for default active blocks
   useEffect(() => {
+    if (formBlocks.length === 0) return;
+    
     const defaultActiveBlockIds = formBlocks
       .filter(b => b.default_active)
       .map(b => b.block_id);
@@ -590,7 +599,7 @@ export const FormProvider: React.FC<FormProviderProps> = ({ children, blocks }) 
         dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
       }
     });
-  }, [formBlocks]);
+  }, [formBlocks, state.activeBlocks]);
 
   const resetForm = useCallback(() => {
     const formType = params.formSlug || params.blockType;
@@ -609,11 +618,18 @@ export const FormProvider: React.FC<FormProviderProps> = ({ children, blocks }) 
     }
   }, [params.formSlug, params.blockType, navigate, sortedBlocks]);
 
+  // Main navigation effect - optimized to prevent loops
   useEffect(() => {
     const { blockId, questionId, formSlug } = params;
     
+    // Guard: Don't run if blocks are not loaded yet
+    if (formBlocks.length === 0) {
+      console.log('FormProvider: Waiting for blocks to load...');
+      return;
+    }
+    
     // Handle database-driven forms (with formSlug)
-    if (formSlug && formBlocks.length > 0) {
+    if (formSlug) {
       console.log('FormProvider: Handling database-driven form', { formSlug, blocksCount: formBlocks.length });
       
       if (blockId && questionId) {
@@ -649,48 +665,6 @@ export const FormProvider: React.FC<FormProviderProps> = ({ children, blocks }) 
           
           // Update URL to match the current question
           navigate(`/form/${formSlug}/${firstActiveBlock.block_id}/${firstQuestion.question_id}`, { replace: true });
-        }
-      }
-      
-      // Load saved state for database forms
-      const savedState = localStorage.getItem(`form-state-${formSlug}`);
-      if (savedState) {
-        try {
-          const parsedState = JSON.parse(savedState);
-          
-          if (Array.isArray(parsedState.answeredQuestions)) {
-            parsedState.answeredQuestions = new Set(parsedState.answeredQuestions);
-          } else {
-            parsedState.answeredQuestions = new Set();
-          }
-          
-          if (Array.isArray(parsedState.dynamicBlocks)) {
-            parsedState.dynamicBlocks = parsedState.dynamicBlocks.map(block => 
-              ensureBlockHasPriority(block)
-            );
-          } else {
-            parsedState.dynamicBlocks = [];
-          }
-          
-          if (!parsedState.pendingRemovals) {
-            parsedState.pendingRemovals = [];
-          }
-          
-          dispatch({ type: "SET_FORM_STATE", state: parsedState });
-          
-          if (parsedState.activeBlocks) {
-            parsedState.activeBlocks.forEach((blockId: string) => {
-              if (!state.activeBlocks.includes(blockId)) {
-                dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
-              }
-            });
-          }
-          
-          if (parsedState.responses) {
-            activateRequiredBlocksBasedOnResponses(parsedState.responses);
-          }
-        } catch (e) {
-          console.error("Errore nel caricamento dello stato salvato:", e);
         }
       }
     } 
@@ -731,62 +705,54 @@ export const FormProvider: React.FC<FormProviderProps> = ({ children, blocks }) 
         });
       }
     }
-    
-    // Handle saved state for legacy forms
-    if (params.blockType) {
-      const savedState = localStorage.getItem(`form-state-${params.blockType}`);
-      if (savedState) {
-        try {
-          const parsedState = JSON.parse(savedState);
-          
-          if (Array.isArray(parsedState.answeredQuestions)) {
-            parsedState.answeredQuestions = new Set(parsedState.answeredQuestions);
-          } else {
-            parsedState.answeredQuestions = new Set();
-          }
-          
-          if (Array.isArray(parsedState.dynamicBlocks)) {
-            parsedState.dynamicBlocks = parsedState.dynamicBlocks.map(block => 
-              ensureBlockHasPriority(block)
-            );
-          } else {
-            parsedState.dynamicBlocks = [];
-          }
-          
-          if (!parsedState.pendingRemovals) {
-            parsedState.pendingRemovals = [];
-          }
-          
-          dispatch({ type: "SET_FORM_STATE", state: parsedState });
-          
-          if (parsedState.activeBlocks) {
-            parsedState.activeBlocks.forEach((blockId: string) => {
-              if (!state.activeBlocks.includes(blockId)) {
-                dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
-              }
-            });
-          }
-          
-          if (parsedState.responses) {
-            activateRequiredBlocksBasedOnResponses(parsedState.responses);
-          }
-        } catch (e) {
-          console.error("Errore nel caricamento dello stato salvato:", e);
-        }
-      }
-    }
-  }, [params.blockId, params.questionId, params.blockType, params.formSlug, formBlocks, navigate, sortedBlocks]);
+  }, [params.blockId, params.questionId, params.blockType, params.formSlug, formBlocks.length, navigate, state.activeBlocks]);
 
+  // Separate effect for saved state loading
   useEffect(() => {
     const formType = params.formSlug || params.blockType;
-    if (formType) {
-      const stateToSave = {
-        ...state,
-        answeredQuestions: Array.from(state.answeredQuestions)
-      };
-      localStorage.setItem(`form-state-${formType}`, JSON.stringify(stateToSave));
+    if (!formType || formBlocks.length === 0) return;
+    
+    const savedState = localStorage.getItem(`form-state-${formType}`);
+    if (savedState) {
+      try {
+        const parsedState = JSON.parse(savedState);
+        
+        if (Array.isArray(parsedState.answeredQuestions)) {
+          parsedState.answeredQuestions = new Set(parsedState.answeredQuestions);
+        } else {
+          parsedState.answeredQuestions = new Set();
+        }
+        
+        if (Array.isArray(parsedState.dynamicBlocks)) {
+          parsedState.dynamicBlocks = parsedState.dynamicBlocks.map(block => 
+            ensureBlockHasPriority(block)
+          );
+        } else {
+          parsedState.dynamicBlocks = [];
+        }
+        
+        if (!parsedState.pendingRemovals) {
+          parsedState.pendingRemovals = [];
+        }
+        
+        dispatch({ type: "SET_FORM_STATE", state: parsedState });
+        
+        if (parsedState.activeBlocks) {
+          parsedState.activeBlocks.forEach((blockId: string) => {
+            if (!state.activeBlocks.includes(blockId)) {
+              dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
+            }
+          });
+        }
+        
+        if (parsedState.responses) {
+          activateRequiredBlocksBasedOnResponses(parsedState.responses);
+        }
+      } catch (e) {
+        console.error("Errore nel caricamento dello stato salvato:", e);
+      }
     }
-  }, [state, params.blockType, params.formSlug]);
+  }, [params.blockType, params.formSlug, formBlocks.length, state.activeBlocks]);
 
   const activateRequiredBlocksBasedOnResponses = (responses: FormResponse) => {
     for (const questionId of Object.keys(responses)) {
