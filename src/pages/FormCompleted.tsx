@@ -314,7 +314,7 @@ export default function FormCompleted() {
                 Numero di telefono
               </Label>
               <Input id="phone" type="tel" placeholder="xxx xxx xxx" value={phoneNumber} onChange={handlePhoneChange} onBlur={handlePhoneBlur} className={`
-                  text-left px-[18px] py-[18px] border-[1.5px] rounded-[10px] 
+                  text-left px-[18px] py-[12px] border-[1.5px] rounded-[10px] 
                   font-['Inter'] text-[16px] md:text-[16px] font-medium transition-all
                   shadow-[0_3px_0_0_#AFA89F] mb-[10px] w-full h-auto
                   hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)]
