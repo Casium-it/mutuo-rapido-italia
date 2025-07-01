@@ -285,9 +285,7 @@ export default function FormCompleted() {
         <div className="w-full max-w-md mb-8">
           <div className="bg-[#F8F4EF] p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="text-center mb-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-2">
-                Ricevi subito il risultato della tua simulazione su WhatsApp
-              </h2>
+              <h2 className="text-xl font-bold text-gray-800 mb-2">Ricevi il risultato della tua simulazione su WhatsApp</h2>
             </div>
 
             <form onSubmit={handleWhatsAppSubmit} className="space-y-4">
