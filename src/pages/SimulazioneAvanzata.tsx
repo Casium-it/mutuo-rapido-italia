@@ -71,6 +71,19 @@ const SimulazioneAvanzata = () => {
     // Naviga al percorso specificato
     navigate(path);
   };
+
+  // Function to handle surroga form navigation
+  const startSurrogaForm = () => {
+    // Track simulation start
+    trackSimulationStart("Surroga al mio mutuo");
+    trackCustomExit('simulation_start');
+    
+    // Clear any existing surroga form state
+    localStorage.removeItem('form-state-surroga');
+    
+    // Navigate to the database-driven surroga form
+    navigate('/form/surroga');
+  };
   
   return (
     <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
@@ -163,9 +176,8 @@ const SimulazioneAvanzata = () => {
             icon={Badge}
             title="Surroga al mio mutuo"
             description="Voglio rinegoziare il mio mutuo"
-            href="/simulazione/surroga"
-            disabled={true}
-            badge="Presto disponibile"
+            href="/form/surroga"
+            onClick={startSurrogaForm}
           />
         </div>
         
