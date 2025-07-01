@@ -1243,19 +1243,6 @@ export const FormProvider: React.FC<FormProviderProps> = ({ children, blocks }) 
     dispatch({ type: "DELETE_QUESTION_RESPONSES", questionIds });
   }, []);
 
-  // Add debug context exposure
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.formDebugContext = {
-        state,
-        blocks: [
-          ...sortedBlocks,
-          ...state.dynamicBlocks
-        ].sort((a, b) => a.priority - b.priority)
-      };
-    }
-  }, [state, sortedBlocks]);
-
   return (
     <FormContext.Provider
       value={{
