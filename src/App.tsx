@@ -1,6 +1,7 @@
+
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -19,19 +20,13 @@ import Simulazioni from './pages/Simulazioni';
 import SimulazioneAvanzata from './pages/SimulazioneAvanzata';
 import ResumeSimulation from './pages/ResumeSimulation';
 import Privacy from './pages/Privacy';
-import { initializeAnalytics } from './utils/analytics';
 import { FormRouteHandler } from '@/components/form/FormRouteHandler';
 
 const queryClient = new QueryClient();
 
 function App() {
-  useEffect(() => {
-    // Initialize analytics
-    initializeAnalytics();
-  }, []);
-
   return (
-    <QueryClient client={queryClient}>
+    <QueryClientProvider client={queryClient}>
       <Toaster />
       <AuthProvider>
         <Router>
@@ -90,7 +85,7 @@ function App() {
           </Routes>
         </Router>
       </AuthProvider>
-    </QueryClient>
+    </QueryClientProvider>
   );
 }
 
