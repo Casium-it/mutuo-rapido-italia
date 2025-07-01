@@ -51,10 +51,10 @@ class FormDefinitionService {
     console.log('FormDefinitionService: Using static form blocks as fallback');
     
     // Import static blocks dynamically to avoid circular dependencies
-    const { formBlocks } = await import('@/data/formBlocks');
+    const { allBlocks } = await import('@/data/formBlocks');
     
     return {
-      blocks: formBlocks,
+      blocks: allBlocks,
       source: 'static'
     };
   }
