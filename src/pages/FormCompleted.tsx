@@ -285,15 +285,11 @@ export default function FormCompleted() {
         {/* WhatsApp Contact Card */}
         <div className="bg-white rounded-[12px] border border-[#BEB8AE] shadow-[0_3px_0_0_#AFA89F] hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)] transition-all p-8 mb-8">
           <div className="text-center mb-8">
-            <div className="flex items-center justify-center mb-4">
-              <CheckCircle className="w-8 h-8 text-[#245C4F] mr-3" />
-              <h1 className="text-3xl md:text-4xl font-bold">
-                <span className="gradient-text">Simulazione pronta!</span>
-              </h1>
-            </div>
-            <h2 className="text-xl font-semibold text-gray-800 mb-3 flex items-center justify-center gap-1">
+            <h1 className="text-2xl md:text-3xl font-bold mb-4">
+              <span className="gradient-text">Simulazione pronta!</span>
+            </h1>
+            <h2 className="text-xl font-semibold text-gray-800 mb-3">
               Ricevi il risultato su WhatsApp
-              <img src="/lovable-uploads/02ffc051-86bc-4a4c-867f-4df1bd57c76a.png" alt="WhatsApp" className="w-6 h-6 ml-1" />
             </h2>
             <p className="text-sm text-gray-600 mb-2">
               Abbiamo confrontato più di 109 banche ed offerte di mutui, ricevi il tuo report dettagliato.
