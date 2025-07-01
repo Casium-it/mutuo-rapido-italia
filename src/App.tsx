@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -40,9 +39,13 @@ function App() {
             {/* Privacy policy */}
             <Route path="/privacy" element={<Privacy />} />
             
-            {/* Form routes - now with snapshot loading support */}
-            <Route path="/form" element={<FormRouteHandler />} />
+            {/* Database-driven form routes - with support for block/question navigation */}
             <Route path="/form/:formSlug" element={<FormRouteHandler />} />
+            <Route path="/form/:formSlug/:blockId" element={<FormRouteHandler />} />
+            <Route path="/form/:formSlug/:blockId/:questionId" element={<FormRouteHandler />} />
+
+            {/* Legacy form routes - keeping for backward compatibility */}
+            <Route path="/form" element={<FormRouteHandler />} />
 
             {/* Form completion */}
             <Route path="/form-completed" element={<FormCompleted />} />

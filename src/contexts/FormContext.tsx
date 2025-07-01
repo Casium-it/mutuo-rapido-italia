@@ -60,20 +60,46 @@ type Action =
   | { type: "REMOVE_FROM_PENDING_REMOVALS"; questionIds: string[] }
   | { type: "PROCESS_PENDING_REMOVALS"; currentBlockId: string };
 
-const initialState: FormState = {
-  activeBlocks: [],
-  activeQuestion: {
-    block_id: "introduzione",
-    question_id: "soggetto_acquisto"
-  },
-  responses: {},
-  answeredQuestions: new Set(),
-  isNavigating: false,
-  navigationHistory: [],
-  dynamicBlocks: [],
-  blockActivations: {}, // Track which questions/placeholders activated which blocks
-  completedBlocks: [], // Track completed blocks
-  pendingRemovals: [] // Track questions pending removal
+// Helper function to create initial state based on available blocks
+const createInitialState = (blocks: Block[]): FormState => {
+  if (blocks.length === 0) {
+    return {
+      activeBlocks: [],
+      activeQuestion: {
+        block_id: "introduzione",
+        question_id: "soggetto_acquisto"
+      },
+      responses: {},
+      answeredQuestions: new Set(),
+      isNavigating: false,
+      navigationHistory: [],
+      dynamicBlocks: [],
+      blockActivations: {},
+      completedBlocks: [],
+      pendingRemovals: []
+    };
+  }
+
+  // Find the first active block and its first question
+  const defaultActiveBlocks = blocks.filter(b => b.default_active);
+  const firstBlock = defaultActiveBlocks.length > 0 ? defaultActiveBlocks[0] : blocks[0];
+  const firstQuestion = firstBlock?.questions?.[0];
+
+  return {
+    activeBlocks: defaultActiveBlocks.map(b => b.block_id),
+    activeQuestion: {
+      block_id: firstBlock?.block_id || "introduzione",
+      question_id: firstQuestion?.question_id || "soggetto_acquisto"
+    },
+    responses: {},
+    answeredQuestions: new Set(),
+    isNavigating: false,
+    navigationHistory: [],
+    dynamicBlocks: [],
+    blockActivations: {},
+    completedBlocks: [],
+    pendingRemovals: []
+  };
 };
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
@@ -353,32 +379,29 @@ interface FormProviderProps {
 
 export const FormProvider: React.FC<FormProviderProps> = ({ children, blocks }) => {
   const navigate = useNavigate();
-  const params = useParams<{ blockType?: string; blockId?: string; questionId?: string }>();
+  const params = useParams<{ blockType?: string; blockId?: string; questionId?: string, formSlug?: string }>();
   const location = useLocation();
   const previousBlockIdRef = useRef<string | null>(null);
   const previousQuestionIdRef = useRef<string | null>(null);
   const isNavigatingRef = useRef<boolean | undefined>(false);
   const usedNextBlockNavRef = useRef<boolean>(false);
   
-  // Use provided blocks or fall back to empty array (will be populated by default blocks if not provided)
+  // Use provided blocks or fall back to empty array
   const formBlocks = blocks || [];
   
   console.log('FormProvider: Initializing with blocks:', {
     blocksCount: formBlocks.length,
-    source: blocks ? 'provided' : 'empty (will use default)',
-    firstBlock: formBlocks[0]?.block_id
+    source: blocks ? 'provided' : 'empty',
+    firstBlock: formBlocks[0]?.block_id,
+    isFormSlugRoute: !!params.formSlug
   });
   
   const sortedBlocks = [...formBlocks].sort((a, b) => a.priority - b.priority);
   
-  const [state, dispatch] = useReducer(formReducer, {
-    ...initialState,
-    activeBlocks: sortedBlocks.filter(b => b.default_active).map(b => b.block_id),
-    dynamicBlocks: [],
-    blockActivations: {},
-    completedBlocks: [],
-    pendingRemovals: []
-  });
+  // Create dynamic initial state based on available blocks
+  const dynamicInitialState = createInitialState(sortedBlocks);
+  
+  const [state, dispatch] = useReducer(formReducer, dynamicInitialState);
 
   // Funzione per trovare a quale blocco appartiene una domanda specifica
   const findBlockByQuestionId = useCallback((questionId: string): string | null => {
@@ -570,19 +593,108 @@ export const FormProvider: React.FC<FormProviderProps> = ({ children, blocks }) 
   }, [formBlocks]);
 
   const resetForm = useCallback(() => {
-    if (params.blockType) {
-      localStorage.removeItem(`form-state-${params.blockType}`);
+    const formType = params.formSlug || params.blockType;
+    if (formType) {
+      localStorage.removeItem(`form-state-${formType}`);
     }
     
     dispatch({ type: "RESET_FORM" });
     
-    navigate("/simulazione/pensando/introduzione/soggetto_acquisto", { replace: true });
-  }, [params.blockType, navigate]);
+    // For database-driven forms, navigate to the form slug route
+    if (params.formSlug) {
+      navigate(`/form/${params.formSlug}`, { replace: true });
+    } else {
+      navigate("/simulazione/pensando/introduzione/soggetto_acquisto", { replace: true });
+    }
+  }, [params.formSlug, params.blockType, navigate]);
 
   useEffect(() => {
-    const { blockId, questionId } = params;
+    const { blockId, questionId, formSlug } = params;
     
-    if (blockId && questionId) {
+    // Handle database-driven forms (with formSlug)
+    if (formSlug && formBlocks.length > 0) {
+      console.log('FormProvider: Handling database-driven form', { formSlug, blocksCount: formBlocks.length });
+      
+      if (blockId && questionId) {
+        // URL has specific block and question
+        dispatch({ 
+          type: "GO_TO_QUESTION", 
+          block_id: blockId, 
+          question_id: questionId 
+        });
+        
+        if (!state.activeBlocks.includes(blockId)) {
+          dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
+        }
+      } else {
+        // Navigate to the first question of the first active block
+        const firstActiveBlock = sortedBlocks.find(b => b.default_active) || sortedBlocks[0];
+        if (firstActiveBlock && firstActiveBlock.questions.length > 0) {
+          const firstQuestion = firstActiveBlock.questions[0];
+          console.log('FormProvider: Navigating to first question', { 
+            blockId: firstActiveBlock.block_id, 
+            questionId: firstQuestion.question_id 
+          });
+          
+          dispatch({ 
+            type: "GO_TO_QUESTION", 
+            block_id: firstActiveBlock.block_id, 
+            question_id: firstQuestion.question_id 
+          });
+          
+          if (!state.activeBlocks.includes(firstActiveBlock.block_id)) {
+            dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: firstActiveBlock.block_id });
+          }
+          
+          // Update URL to match the current question
+          navigate(`/form/${formSlug}/${firstActiveBlock.block_id}/${firstQuestion.question_id}`, { replace: true });
+        }
+      }
+      
+      // Load saved state for database forms
+      const savedState = localStorage.getItem(`form-state-${formSlug}`);
+      if (savedState) {
+        try {
+          const parsedState = JSON.parse(savedState);
+          
+          if (Array.isArray(parsedState.answeredQuestions)) {
+            parsedState.answeredQuestions = new Set(parsedState.answeredQuestions);
+          } else {
+            parsedState.answeredQuestions = new Set();
+          }
+          
+          if (Array.isArray(parsedState.dynamicBlocks)) {
+            parsedState.dynamicBlocks = parsedState.dynamicBlocks.map(block => 
+              ensureBlockHasPriority(block)
+            );
+          } else {
+            parsedState.dynamicBlocks = [];
+          }
+          
+          if (!parsedState.pendingRemovals) {
+            parsedState.pendingRemovals = [];
+          }
+          
+          dispatch({ type: "SET_FORM_STATE", state: parsedState });
+          
+          if (parsedState.activeBlocks) {
+            parsedState.activeBlocks.forEach((blockId: string) => {
+              if (!state.activeBlocks.includes(blockId)) {
+                dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
+              }
+            });
+          }
+          
+          if (parsedState.responses) {
+            activateRequiredBlocksBasedOnResponses(parsedState.responses);
+          }
+        } catch (e) {
+          console.error("Errore nel caricamento dello stato salvato:", e);
+        }
+      }
+    } 
+    // Handle legacy URL-based forms (blockType routes)
+    else if (blockId && questionId) {
       dispatch({ 
         type: "GO_TO_QUESTION", 
         block_id: blockId, 
@@ -619,58 +731,61 @@ export const FormProvider: React.FC<FormProviderProps> = ({ children, blocks }) 
       }
     }
     
-    const savedState = localStorage.getItem(`form-state-${params.blockType}`);
-    if (savedState) {
-      try {
-        const parsedState = JSON.parse(savedState);
-        
-        if (Array.isArray(parsedState.answeredQuestions)) {
-          parsedState.answeredQuestions = new Set(parsedState.answeredQuestions);
-        } else {
-          parsedState.answeredQuestions = new Set();
+    // Handle saved state for legacy forms
+    if (params.blockType) {
+      const savedState = localStorage.getItem(`form-state-${params.blockType}`);
+      if (savedState) {
+        try {
+          const parsedState = JSON.parse(savedState);
+          
+          if (Array.isArray(parsedState.answeredQuestions)) {
+            parsedState.answeredQuestions = new Set(parsedState.answeredQuestions);
+          } else {
+            parsedState.answeredQuestions = new Set();
+          }
+          
+          if (Array.isArray(parsedState.dynamicBlocks)) {
+            parsedState.dynamicBlocks = parsedState.dynamicBlocks.map(block => 
+              ensureBlockHasPriority(block)
+            );
+          } else {
+            parsedState.dynamicBlocks = [];
+          }
+          
+          if (!parsedState.pendingRemovals) {
+            parsedState.pendingRemovals = [];
+          }
+          
+          dispatch({ type: "SET_FORM_STATE", state: parsedState });
+          
+          if (parsedState.activeBlocks) {
+            parsedState.activeBlocks.forEach((blockId: string) => {
+              if (!state.activeBlocks.includes(blockId)) {
+                dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
+              }
+            });
+          }
+          
+          if (parsedState.responses) {
+            activateRequiredBlocksBasedOnResponses(parsedState.responses);
+          }
+        } catch (e) {
+          console.error("Errore nel caricamento dello stato salvato:", e);
         }
-        
-        if (Array.isArray(parsedState.dynamicBlocks)) {
-          parsedState.dynamicBlocks = parsedState.dynamicBlocks.map(block => 
-            ensureBlockHasPriority(block)
-          );
-        } else {
-          parsedState.dynamicBlocks = [];
-        }
-        
-        // Initialize pendingRemovals if not present
-        if (!parsedState.pendingRemovals) {
-          parsedState.pendingRemovals = [];
-        }
-        
-        dispatch({ type: "SET_FORM_STATE", state: parsedState });
-        
-        if (parsedState.activeBlocks) {
-          parsedState.activeBlocks.forEach((blockId: string) => {
-            if (!state.activeBlocks.includes(blockId)) {
-              dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
-            }
-          });
-        }
-        
-        if (parsedState.responses) {
-          activateRequiredBlocksBasedOnResponses(parsedState.responses);
-        }
-      } catch (e) {
-        console.error("Errore nel caricamento dello stato salvato:", e);
       }
     }
-  }, [params.blockId, params.questionId, params.blockType, formBlocks, navigate]);
+  }, [params.blockId, params.questionId, params.blockType, params.formSlug, formBlocks, navigate, sortedBlocks]);
 
   useEffect(() => {
-    if (params.blockType) {
+    const formType = params.formSlug || params.blockType;
+    if (formType) {
       const stateToSave = {
         ...state,
         answeredQuestions: Array.from(state.answeredQuestions)
       };
-      localStorage.setItem(`form-state-${params.blockType}`, JSON.stringify(stateToSave));
+      localStorage.setItem(`form-state-${formType}`, JSON.stringify(stateToSave));
     }
-  }, [state, params.blockType]);
+  }, [state, params.blockType, params.formSlug]);
 
   const activateRequiredBlocksBasedOnResponses = (responses: FormResponse) => {
     for (const questionId of Object.keys(responses)) {
@@ -741,9 +856,16 @@ export const FormProvider: React.FC<FormProviderProps> = ({ children, blocks }) 
       }
     });
     
-    // Handle URL navigation
-    const blockType = params.blockType || "funnel";
-    const newPath = `/simulazione/${blockType}/${block_id}/${question_id}`;
+    // Handle URL navigation - updated for database-driven forms
+    let newPath: string;
+    if (params.formSlug) {
+      // Database-driven form
+      newPath = `/form/${params.formSlug}/${block_id}/${question_id}`;
+    } else {
+      // Legacy URL-based form
+      const blockType = params.blockType || "funnel";
+      newPath = `/simulazione/${blockType}/${block_id}/${question_id}`;
+    }
     
     if (replace) {
       navigate(newPath, { replace: true });
@@ -755,7 +877,7 @@ export const FormProvider: React.FC<FormProviderProps> = ({ children, blocks }) 
     setTimeout(() => {
       dispatch({ type: "SET_NAVIGATING", isNavigating: false });
     }, 300);
-  }, [params.blockType, navigate, state.activeQuestion, isQuestionPendingRemoval]);
+  }, [params.blockType, params.formSlug, navigate, state.activeQuestion, isQuestionPendingRemoval]);
 
   const setResponse = useCallback((question_id: string, placeholder_key: string, value: string | string[]) => {
     const previousValue = state.responses[question_id]?.[placeholder_key];
