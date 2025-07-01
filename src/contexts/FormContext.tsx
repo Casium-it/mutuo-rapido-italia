@@ -48,7 +48,7 @@ type Action =
   | { type: "REMOVE_ACTIVE_BLOCK"; block_id: string }
   | { type: "MARK_QUESTION_ANSWERED"; question_id: string }
   | { type: "SET_FORM_STATE"; state: Partial<FormState> }
-  | { type: "RESET_FORM" }
+  | { type: "RESET_FORM"; initialState: FormState }
   | { type: "SET_NAVIGATING"; isNavigating: boolean }
   | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory }
   | { type: "ADD_DYNAMIC_BLOCK"; block: Block }
@@ -213,9 +213,9 @@ function formReducer(state: FormState, action: Action): FormState {
     }
     case "RESET_FORM": {
       return {
-        ...initialState,
+        ...action.initialState,
         activeBlocks: state.activeBlocks.filter(blockId => 
-          initialState.activeBlocks.includes(blockId)),
+          action.initialState.activeBlocks.includes(blockId)),
         dynamicBlocks: [],
         blockActivations: {},
         completedBlocks: [],
@@ -598,7 +598,8 @@ export const FormProvider: React.FC<FormProviderProps> = ({ children, blocks }) 
       localStorage.removeItem(`form-state-${formType}`);
     }
     
-    dispatch({ type: "RESET_FORM" });
+    const resetInitialState = createInitialState(sortedBlocks);
+    dispatch({ type: "RESET_FORM", initialState: resetInitialState });
     
     // For database-driven forms, navigate to the form slug route
     if (params.formSlug) {
@@ -606,7 +607,7 @@ export const FormProvider: React.FC<FormProviderProps> = ({ children, blocks }) 
     } else {
       navigate("/simulazione/pensando/introduzione/soggetto_acquisto", { replace: true });
     }
-  }, [params.formSlug, params.blockType, navigate]);
+  }, [params.formSlug, params.blockType, navigate, sortedBlocks]);
 
   useEffect(() => {
     const { blockId, questionId, formSlug } = params;
