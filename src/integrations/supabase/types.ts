@@ -222,6 +222,15 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      get_masked_admin_notifications: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          admin_id: string
+          admin_display_name: string
+          phone_masked: string
+          phone_full: string
+        }[]
+      }
       has_role: {
         Args: {
           _user_id: string

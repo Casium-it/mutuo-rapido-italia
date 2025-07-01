@@ -8,6 +8,13 @@ type AdminNotificationResult = {
   notificationsSent?: number;
 };
 
+type MaskedAdminData = {
+  admin_id: string;
+  admin_display_name: string;
+  phone_masked: string;
+  phone_full: string;
+};
+
 /**
  * Send admin notifications for a form submission
  * @param submissionId - ID of the form submission
@@ -19,18 +26,16 @@ export async function sendAdminNotifications(
   try {
     console.log("Sending admin notifications for submission:", submissionId);
     
-    // 1. Fetch enabled admin notification settings
-    const { data: adminSettings, error: adminError } = await supabase
-      .from('admin_notification_settings')
-      .select('admin_name, phone_number')
-      .eq('notifications_enabled', true);
+    // 1. Fetch enabled admin notification settings using secure masked function
+    const { data: maskedAdminData, error: adminError } = await supabase
+      .rpc('get_masked_admin_notifications');
 
     if (adminError) {
-      console.error("Error fetching admin settings:", adminError);
+      console.error("Error fetching masked admin settings:", adminError);
       return { success: false, error: "Failed to fetch admin settings" };
     }
 
-    if (!adminSettings || adminSettings.length === 0) {
+    if (!maskedAdminData || maskedAdminData.length === 0) {
       console.log("No enabled admin notifications found");
       return { success: true, notificationsSent: 0 };
     }
@@ -50,29 +55,32 @@ export async function sendAdminNotifications(
     // 3. Extract age and province from form responses
     const { ageData, provinceData } = await extractAgeAndProvince(submissionId);
 
-    // 4. Prepare message parameters
+    // 4. Prepare message parameters (using masked data for logging)
     const submitterName = submission.first_name || "Nome non disponibile";
     const submitterAge = ageData || "Età non disponibile";
     const submitterProvince = provinceData || "Provincia non disponibile";
     const consultingStatus = submission.consulting ? "Si ✅" : "No ❌";
     const submitterPhone = submission.phone_number || "Telefono non disponibile";
 
-    console.log("Admin notification data:", {
+    console.log("Admin notification data (privacy-safe):", {
+      submissionId: submissionId,
       name: submitterName,
       age: submitterAge,
       province: submitterProvince,
       consulting: consultingStatus,
-      phone: submitterPhone
+      adminCount: maskedAdminData.length
     });
 
     // 5. Send notifications to all enabled admins
     let successCount = 0;
-    const notificationPromises = adminSettings.map(async (admin) => {
+    const notificationPromises = maskedAdminData.map(async (admin: MaskedAdminData) => {
       try {
+        console.log(`Sending notification to admin: ${admin.admin_display_name} (${admin.phone_masked})`);
+        
         const result = await sendCustomAisensyMessage({
           campaignName: 'avvisoadmin1',
-          destination: admin.phone_number,
-          userName: admin.admin_name,
+          destination: admin.phone_full, // Use full phone number for sending
+          userName: admin.admin_display_name, // Use masked name in template
           source: 'admin-notification',
           templateParams: [
             submitterName,
@@ -84,24 +92,24 @@ export async function sendAdminNotifications(
         });
 
         if (result.success) {
-          console.log(`Admin notification sent successfully to ${admin.admin_name}`);
+          console.log(`✅ Admin notification sent successfully to ${admin.admin_display_name} (${admin.phone_masked})`);
           successCount++;
         } else {
-          console.error(`Failed to send notification to ${admin.admin_name}:`, result.error);
+          console.error(`❌ Failed to send notification to ${admin.admin_display_name} (${admin.phone_masked}):`, result.error);
         }
       } catch (error) {
-        console.error(`Error sending notification to ${admin.admin_name}:`, error);
+        console.error(`❌ Error sending notification to ${admin.admin_display_name} (${admin.phone_masked}):`, error);
       }
     });
 
     // Wait for all notifications to complete (non-blocking for user flow)
     await Promise.allSettled(notificationPromises);
 
-    console.log(`Admin notifications completed. Sent: ${successCount}/${adminSettings.length}`);
+    console.log(`🎯 Admin notifications completed. Sent: ${successCount}/${maskedAdminData.length}`);
     return { success: true, notificationsSent: successCount };
 
   } catch (error) {
-    console.error("Error in sendAdminNotifications:", error);
+    console.error("❌ Error in sendAdminNotifications:", error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : "Unknown error" 
@@ -137,7 +145,11 @@ async function extractAgeAndProvince(submissionId: string): Promise<{
     const ageData = responseValue?.placeholder1 || null;
     const provinceData = responseValue?.placeholder2 || null;
 
-    console.log("Extracted data:", { age: ageData, province: provinceData });
+    console.log("Extracted form data:", { 
+      age: ageData ? "✓ Present" : "✗ Missing", 
+      province: provinceData ? "✓ Present" : "✗ Missing" 
+    });
+    
     return { ageData, provinceData };
 
   } catch (error) {
