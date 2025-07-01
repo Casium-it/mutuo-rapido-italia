@@ -1,11 +1,9 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { Progress } from "@/components/ui/progress";
 import { FormResponse } from "@/types/form";
 import { submitFormToSupabase } from "@/services/formSubmissionService";
-import { allBlocks } from "@/data/blocks";
 import { toast } from "sonner";
 import { useSimulationTimer } from "@/hooks/useSimulationTimer";
 import { trackSimulationCompleted } from "@/utils/analytics";
@@ -25,26 +23,48 @@ export default function FormLoading() {
   // Get global simulation timer for completion event
   const { getTotalTimeSpent } = useSimulationTimer();
   
-  // Get form data from location state
+  // Get form data from location state with enhanced debugging
   const formData = location.state?.formData as {
     responses: FormResponse;
     activeBlocks: string[];
     completedBlocks: string[];
     dynamicBlocks: any[];
     submissionId?: string;
+    blocks?: any[]; // Add blocks from FormContext
+    formSource?: 'database' | 'static'; // Add form source info
+    formSlug?: string; // Add form slug
   };
   
   useEffect(() => {
-    console.log("FormLoading: Component mounted, starting initialization");
+    console.log("🔍 FormLoading: Component mounted, starting debug analysis");
+    console.log("📊 FormLoading: Form data received:", {
+      hasFormData: !!formData,
+      responsesCount: formData?.responses ? Object.keys(formData.responses).length : 0,
+      activeBlocksCount: formData?.activeBlocks?.length || 0,
+      completedBlocksCount: formData?.completedBlocks?.length || 0,
+      dynamicBlocksCount: formData?.dynamicBlocks?.length || 0,
+      hasBlocks: !!formData?.blocks,
+      blocksCount: formData?.blocks?.length || 0,
+      formSource: formData?.formSource || 'unknown',
+      formSlug: formData?.formSlug || 'unknown'
+    });
+    
+    // Debug responses structure
+    if (formData?.responses) {
+      console.log("📝 FormLoading: Form responses detail:");
+      Object.entries(formData.responses).forEach(([questionId, response]) => {
+        console.log(`   Question ${questionId}:`, response);
+      });
+    }
     
     // Enhanced validation - if no form data, redirect to home
     if (!formData || !formData.responses || !formData.activeBlocks) {
-      console.error("FormLoading: No valid form data found, redirecting to home");
+      console.error("❌ FormLoading: No valid form data found, redirecting to home");
       navigate("/");
       return;
     }
     
-    console.log("FormLoading: Valid form data found, starting progress and submission");
+    console.log("✅ FormLoading: Valid form data found, starting progress and submission");
     
     // Always start progress animation immediately for good UX
     startProgressAnimation();
@@ -54,7 +74,7 @@ export default function FormLoading() {
     
     // Cleanup function
     return () => {
-      console.log("FormLoading: Component unmounting, cleaning up");
+      console.log("🧹 FormLoading: Component unmounting, cleaning up");
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
       }
@@ -63,10 +83,15 @@ export default function FormLoading() {
 
   // Handle navigation when both progress and submission are complete
   useEffect(() => {
-    console.log("FormLoading: Checking navigation conditions - Progress:", loadingProgress, "Submission completed:", submissionCompleted, "Submission ID:", actualSubmissionId, "Error:", submissionError);
+    console.log("🚦 FormLoading: Checking navigation conditions", {
+      progress: loadingProgress, 
+      submissionCompleted, 
+      submissionId: actualSubmissionId, 
+      error: submissionError
+    });
     
     if (loadingProgress >= 100 && submissionCompleted && actualSubmissionId) {
-      console.log("FormLoading: All conditions met, navigating to completion page");
+      console.log("✅ FormLoading: All conditions met, navigating to completion page");
       setTimeout(() => {
         navigate("/form-completed", { 
           state: { 
@@ -78,9 +103,9 @@ export default function FormLoading() {
             }
           }
         });
-      }, 500); // Small delay for smooth UX
+      }, 500);
     } else if (loadingProgress >= 100 && submissionError) {
-      console.error("FormLoading: Submission failed, showing error and going back");
+      console.error("❌ FormLoading: Submission failed, showing error and going back");
       toast.error("Errore durante l'invio", {
         description: submissionError
       });
@@ -93,30 +118,31 @@ export default function FormLoading() {
   const handleFormSubmission = async () => {
     // Prevent duplicate submissions
     if (submissionStartedRef.current) {
-      console.log("FormLoading: Submission already in progress, skipping");
+      console.log("⚠️ FormLoading: Submission already in progress, skipping");
       return;
     }
     
-    console.log("FormLoading: Starting form submission process");
+    console.log("🚀 FormLoading: Starting form submission process");
     submissionStartedRef.current = true;
     setIsSubmitting(true);
     
     try {
-      console.log("FormLoading: Beginning form submission to Supabase");
-      console.log("FormLoading: Form responses:", Object.keys(formData.responses).length);
-      console.log("FormLoading: Active blocks:", formData.activeBlocks.length);
-      console.log("FormLoading: Dynamic blocks:", formData.dynamicBlocks?.length || 0);
+      console.log("📡 FormLoading: Beginning enhanced form submission to Supabase");
+      console.log("📊 FormLoading: Enhanced submission data:", {
+        responsesCount: Object.keys(formData.responses).length,
+        activeBlocksCount: formData.activeBlocks.length,
+        dynamicBlocksCount: formData.dynamicBlocks?.length || 0,
+        providedBlocksCount: formData.blocks?.length || 0,
+        formSource: formData.formSource,
+        formSlug: formData.formSlug
+      });
       
-      // Combine all blocks for submission service
-      const allAvailableBlocks = [...allBlocks, ...(formData.dynamicBlocks || [])];
-      console.log("FormLoading: Total blocks available:", allAvailableBlocks.length);
-      
-      // Create form state for submission service with proper types
-      const formStateForSubmission = {
+      // Create enhanced form state for submission service
+      const enhancedFormState = {
         activeBlocks: formData.activeBlocks,
         responses: formData.responses,
         completedBlocks: formData.completedBlocks,
-        dynamicBlocks: formData.dynamicBlocks,
+        dynamicBlocks: formData.dynamicBlocks || [],
         activeQuestion: { block_id: '', question_id: '' },
         answeredQuestions: new Set<string>(),
         navigationHistory: [],
@@ -124,10 +150,39 @@ export default function FormLoading() {
         pendingRemovals: []
       };
       
-      const result = await submitFormToSupabase(formStateForSubmission, allAvailableBlocks);
+      console.log("📋 FormLoading: Enhanced form state created:", {
+        responsesKeys: Object.keys(enhancedFormState.responses),
+        activeBlocks: enhancedFormState.activeBlocks,
+        dynamicBlocksCount: enhancedFormState.dynamicBlocks.length
+      });
+      
+      // Use provided blocks or fallback to import
+      let blocksForSubmission = formData.blocks;
+      if (!blocksForSubmission) {
+        console.log("📦 FormLoading: No blocks provided, importing static blocks");
+        const { allBlocks } = await import('@/data/formBlocks');
+        blocksForSubmission = allBlocks;
+      }
+      
+      // Combine all blocks for submission service
+      const allAvailableBlocks = [...blocksForSubmission, ...(formData.dynamicBlocks || [])];
+      console.log("🔧 FormLoading: Total blocks for submission:", {
+        staticBlocks: blocksForSubmission.length,
+        dynamicBlocks: formData.dynamicBlocks?.length || 0,
+        totalBlocks: allAvailableBlocks.length
+      });
+      
+      const result = await submitFormToSupabase(
+        enhancedFormState, 
+        allAvailableBlocks,
+        {
+          formSource: formData.formSource || 'static',
+          formSlug: formData.formSlug
+        }
+      );
       
       if (result.success && result.submissionId) {
-        console.log("FormLoading: Form submitted successfully, ID:", result.submissionId);
+        console.log("✅ FormLoading: Form submitted successfully, ID:", result.submissionId);
         
         // Track successful completion with total time spent from simulation start
         const totalTimeSpent = getTotalTimeSpent();
@@ -136,12 +191,12 @@ export default function FormLoading() {
         setActualSubmissionId(result.submissionId);
         setSubmissionCompleted(true);
       } else {
-        console.error("FormLoading: Submission failed:", result.error);
+        console.error("❌ FormLoading: Submission failed:", result.error);
         setSubmissionError(result.error || "Si è verificato un errore durante l'invio del modulo.");
       }
       
     } catch (error) {
-      console.error('FormLoading: Unexpected error during submission:', error);
+      console.error('💥 FormLoading: Unexpected error during submission:', error);
       setSubmissionError("Si è verificato un errore imprevisto. Riprova più tardi.");
     } finally {
       setIsSubmitting(false);
@@ -149,7 +204,7 @@ export default function FormLoading() {
   };
 
   const startProgressAnimation = () => {
-    console.log("FormLoading: Starting progress animation");
+    console.log("⏳ FormLoading: Starting progress animation");
     const totalDuration = 5000; // 5 seconds
     const intervalTime = 50; // Update every 50ms
     const totalSteps = totalDuration / intervalTime;
@@ -164,7 +219,7 @@ export default function FormLoading() {
       setLoadingProgress(newProgress);
       
       if (newProgress >= 100) {
-        console.log("FormLoading: Progress animation completed");
+        console.log("✅ FormLoading: Progress animation completed");
         if (progressIntervalRef.current) {
           clearInterval(progressIntervalRef.current);
           progressIntervalRef.current = null;
@@ -291,4 +346,44 @@ export default function FormLoading() {
       </footer>
     </div>
   );
+
+  // Helper functions
+  function getDisplayMessage() {
+    if (submissionError) {
+      return "Errore durante l'invio";
+    }
+    if (loadingProgress >= 100 && !submissionCompleted) {
+      return "Quasi finito... attendi";
+    }
+    if (loadingProgress >= 100 && submissionCompleted) {
+      return "Completato!";
+    }
+    return "Stiamo elaborando la tua richiesta";
+  }
+
+  function getDisplayDescription() {
+    if (submissionError) {
+      return "Si è verificato un errore. Verrai reindirizzato.";
+    }
+    if (loadingProgress >= 100 && !submissionCompleted) {
+      return "Finalizzazione in corso...";
+    }
+    if (loadingProgress >= 100 && submissionCompleted) {
+      return "Reindirizzamento alla pagina dei risultati...";
+    }
+    return "I tuoi dati vengono salvati in modo sicuro. Tra un momento verrai reindirizzato.";
+  }
+
+  function getProgressSubtext() {
+    if (submissionError) {
+      return "Errore";
+    }
+    if (loadingProgress >= 100 && !submissionCompleted) {
+      return "Finalizzazione...";
+    }
+    if (loadingProgress >= 100 && submissionCompleted) {
+      return "Reindirizzamento...";
+    }
+    return "Salvataggio dati...";
+  }
 }

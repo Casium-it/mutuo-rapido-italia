@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { FormQuestion } from "./FormQuestion";
@@ -16,7 +17,7 @@ export function QuestionView() {
   } = useFormExtended();
   const location = useLocation();
   const navigate = useNavigate();
-  const params = useParams<{ blockId?: string, questionId?: string }>();
+  const params = useParams<{ blockId?: string, questionId?: string, formSlug?: string }>();
   const [showStopFlow, setShowStopFlow] = useState<boolean>(false);
   
   // Sincronizza il componente con l'URL quando cambia
@@ -79,21 +80,53 @@ export function QuestionView() {
   // Check if there are any dynamic blocks that are not completed
   const isEndOfFormQuestion = activeQuestion?.endOfForm === true;
   
-  // Handle form submission - Navigate immediately to loading page
+  // Enhanced form submission with complete context
   const handleSubmitForm = async () => {
     if (!allBlocksCompleted) {
       return;
     }
 
-    // Navigate immediately to loading page with form data
+    console.log("📊 QuestionView: Preparing enhanced form submission data");
+    console.log("📝 QuestionView: Form state at submission:", {
+      responsesCount: Object.keys(state.responses).length,
+      activeBlocksCount: state.activeBlocks.length,
+      completedBlocksCount: state.completedBlocks.length,
+      dynamicBlocksCount: state.dynamicBlocks?.length || 0,
+      blocksCount: blocks.length
+    });
+
+    // Determine form source and context
+    const formSource = params.formSlug ? 'database' : 'static';
+    const formSlug = params.formSlug;
+
+    // Create enhanced form data with complete context
+    const enhancedFormData = {
+      responses: state.responses,
+      activeBlocks: state.activeBlocks,
+      completedBlocks: state.completedBlocks,
+      dynamicBlocks: state.dynamicBlocks || [],
+      blocks: blocks, // Pass the actual blocks used
+      formSource: formSource,
+      formSlug: formSlug,
+      submissionContext: {
+        totalQuestions: Object.keys(state.responses).length,
+        totalBlocks: blocks.length,
+        formType: formSlug || 'simulazione',
+        timestamp: new Date().toISOString()
+      }
+    };
+
+    console.log("🚀 QuestionView: Enhanced form data prepared:", {
+      hasResponses: !!enhancedFormData.responses,
+      hasBlocks: !!enhancedFormData.blocks,
+      formSource: enhancedFormData.formSource,
+      formSlug: enhancedFormData.formSlug
+    });
+
+    // Navigate immediately to loading page with enhanced form data
     navigate("/form-loading", {
       state: { 
-        formData: {
-          responses: state.responses,
-          activeBlocks: state.activeBlocks,
-          completedBlocks: state.completedBlocks,
-          dynamicBlocks: state.dynamicBlocks
-        }
+        formData: enhancedFormData
       }
     });
   };
