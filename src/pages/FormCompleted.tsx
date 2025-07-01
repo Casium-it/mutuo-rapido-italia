@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { updateSubmissionWithContact } from "@/services/contactSubmissionService";
 import { sendFormCompletionMessage } from "@/services/aisensyService";
 import { trackSimulationContactDetails, trackSimulationLostDetails } from "@/utils/analytics";
+
 export default function FormCompleted() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -22,13 +23,12 @@ export default function FormCompleted() {
 
   // Form state for WhatsApp contact
   const [firstName, setFirstName] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("+39 ");
   const [privacyConsent, setPrivacyConsent] = useState(false);
   const [consultationRequest, setConsultationRequest] = useState(false);
   const [firstNameError, setFirstNameError] = useState("");
   const [phoneError, setPhoneError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hasStartedTyping, setHasStartedTyping] = useState(false);
 
   // New state for confirmation dialog
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -85,14 +85,14 @@ export default function FormCompleted() {
     // Remove all non-digits
     const cleaned = value.replace(/\D/g, "");
 
-    // Apply formatting: first 3 digits, space, then the rest
+    // Apply formatting: first 3 digits, space, then groups of 3
     if (cleaned.length <= 3) {
       return cleaned;
-    } else if (cleaned.length <= 10) {
+    } else if (cleaned.length <= 6) {
       return `${cleaned.slice(0, 3)} ${cleaned.slice(3)}`;
     } else {
-      // Limit to 10 digits total
-      return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 10)}`;
+      // Limit to 10 digits total and format as xxx xxx xxx
+      return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6, 10)}`;
     }
   };
 
@@ -123,34 +123,28 @@ export default function FormCompleted() {
       setPhoneError("");
     }
 
-    // If user starts typing and hasn't started before, add +39 prefix
-    if (!hasStartedTyping && value.length > 0) {
-      setHasStartedTyping(true);
+    // Ensure +39 prefix is always there
+    if (!value.startsWith("+39 ")) {
+      if (value === "" || value === "+39") {
+        setPhoneNumber("+39 ");
+        return;
+      }
+      // If user tries to type without +39, add it
       const cleanValue = value.replace(/\D/g, "");
       const formatted = formatPhoneNumber(cleanValue);
       setPhoneNumber(`+39 ${formatted}`);
       return;
     }
 
-    // Only allow digits, spaces, and + for the prefix
-    if (!/^[\d\s+]*$/.test(value)) {
-      return;
-    }
-
     // Handle the +39 prefix
-    if (value.startsWith("+39 ")) {
-      const phoneDigits = value.slice(4); // Remove "+39 "
-      const formatted = formatPhoneNumber(phoneDigits);
-      setPhoneNumber(`+39 ${formatted}`);
-    } else if (value === "") {
-      setPhoneNumber("");
-      setHasStartedTyping(false);
-    }
+    const phoneDigits = value.slice(4); // Remove "+39 "
+    const formatted = formatPhoneNumber(phoneDigits);
+    setPhoneNumber(`+39 ${formatted}`);
   };
 
   // Handle blur event for validation
   const handlePhoneBlur = () => {
-    if (phoneNumber) {
+    if (phoneNumber && phoneNumber !== "+39 ") {
       // Extract just the phone number without +39 prefix
       const phoneDigits = phoneNumber.replace("+39 ", "").replace(/\s/g, "");
       if (!validatePhoneNumber(phoneDigits)) {
@@ -261,12 +255,13 @@ export default function FormCompleted() {
   // Validation functions
   const isNameValid = firstName.trim().length >= 2;
   const phoneDigits = phoneNumber.replace("+39 ", "").replace(/\s/g, "");
-  const isPhoneValid = validatePhoneNumber(phoneDigits);
+  const isPhoneValid = phoneDigits.length > 0 && validatePhoneNumber(phoneDigits);
   const isFormValid = isNameValid && isPhoneValid && privacyConsent;
   if (!submissionData) {
     return null; // Non mostrare nulla durante il reindirizzamento
   }
-  return <div className="min-h-screen flex flex-col bg-white">
+  return (
+    <div className="min-h-screen flex flex-col bg-white">
       {/* Header */}
       <header className="py-3 px-4 md:px-6 flex justify-between items-center bg-white border-b border-gray-200">
         <Link to="/">
@@ -285,13 +280,27 @@ export default function FormCompleted() {
         <div className="w-full max-w-md mb-8">
           <div className="bg-[#F8F4EF] p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="text-center mb-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-2">Ricevi il risultato della tua simulazione su WhatsApp</h2>
+              <h2 className="text-xl font-bold text-gray-800 mb-2 flex items-center justify-center gap-3">
+                Ricevi il risultato della tua simulazione su WhatsApp
+                <img 
+                  src="/lovable-uploads/0459d165-9a3f-4fe2-a520-9495dc3f45a7.png" 
+                  alt="WhatsApp" 
+                  className="w-6 h-6"
+                />
+              </h2>
             </div>
 
             <form onSubmit={handleWhatsAppSubmit} className="space-y-4">
               {/* First Name Input */}
               <div className="space-y-2">
-                <Input id="firstName" type="text" placeholder="Il tuo nome" value={firstName} onChange={handleFirstNameChange} onBlur={handleFirstNameBlur} className={`
+                <Input
+                  id="firstName"
+                  type="text"
+                  placeholder="Il tuo nome"
+                  value={firstName}
+                  onChange={handleFirstNameChange}
+                  onBlur={handleFirstNameBlur}
+                  className={`
                     text-left px-[18px] py-[18px] border-[1.5px] rounded-[10px] 
                     font-['Inter'] text-[19px] md:text-[19px] font-bold transition-all
                     shadow-[0_3px_0_0_#AFA89F] mb-[10px] w-full h-auto
@@ -299,21 +308,31 @@ export default function FormCompleted() {
                     focus-visible:outline-none focus-visible:ring-0 focus-visible:border-black
                     ${firstNameError ? 'border-red-500' : 'border-[#BEB8AE]'}
                     ${firstName ? 'border-black bg-gray-50' : 'border-[#BEB8AE]'}
-                  `} />
+                  `}
+                />
                 {firstNameError && <p className="text-red-500 text-sm">{firstNameError}</p>}
               </div>
 
               {/* Phone Number Input */}
               <div className="space-y-2">
-                <Input id="phone" type="tel" placeholder="Il tuo numero di telefono" value={phoneNumber} onChange={handlePhoneChange} onBlur={handlePhoneBlur} className={`
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+39 xxx xxx xxx"
+                  value={phoneNumber}
+                  onChange={handlePhoneChange}
+                  onBlur={handlePhoneBlur}
+                  className={`
                     text-left px-[18px] py-[18px] border-[1.5px] rounded-[10px] 
                     font-['Inter'] text-[19px] md:text-[19px] font-bold transition-all
                     shadow-[0_3px_0_0_#AFA89F] mb-[10px] w-full h-auto
                     hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)]
                     focus-visible:outline-none focus-visible:ring-0 focus-visible:border-black
                     ${phoneError ? 'border-red-500' : 'border-[#BEB8AE]'}
-                    ${phoneNumber ? 'border-black bg-gray-50' : 'border-[#BEB8AE]'}
-                  `} inputMode="numeric" />
+                    ${phoneNumber && phoneNumber !== '+39 ' ? 'border-black bg-gray-50' : 'border-[#BEB8AE]'}
+                  `}
+                  inputMode="numeric"
+                />
                 {phoneError && <p className="text-red-500 text-sm">{phoneError}</p>}
               </div>
 
@@ -333,20 +352,32 @@ export default function FormCompleted() {
                 </Label>
               </div>
 
-              {/* Submit Button with 3D effect */}
-              <button type="submit" disabled={!isFormValid || isSubmitting} className={`
+              {/* Submit Button with improved disabled state */}
+              <button
+                type="submit"
+                disabled={!isFormValid || isSubmitting}
+                className={`
                   w-full px-[32px] py-[16px] border-[1.5px] rounded-[10px] 
                   font-['Inter'] text-[17px] font-medium transition-all
                   shadow-[0_3px_0_0_rgba(36,92,79,0.3)] mb-[10px]
                   hover:shadow-[0_3px_4px_rgba(36,92,79,0.25)]
                   active:shadow-[0_1px_0_0_rgba(36,92,79,0.3)] active:translate-y-[2px]
                   inline-flex items-center justify-center gap-[12px]
-                  ${isFormValid && !isSubmitting ? 'bg-[#245C4F] text-white border-[#245C4F] cursor-pointer hover:bg-[#1e4f44]' : 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'}
-                `}>
-                {isSubmitting ? "Invio in corso..." : <>
+                  bg-[#245C4F] text-white border-[#245C4F]
+                  ${isFormValid && !isSubmitting 
+                    ? 'cursor-pointer hover:bg-[#1e4f44]' 
+                    : 'cursor-not-allowed opacity-50'
+                  }
+                `}
+              >
+                {isSubmitting ? (
+                  "Invio in corso..."
+                ) : (
+                  <>
                     Ricevi su WhatsApp
                     <ArrowRight className="h-5 w-5" />
-                  </>}
+                  </>
+                )}
               </button>
             </form>
           </div>
@@ -397,5 +428,6 @@ export default function FormCompleted() {
           <p>&copy; {new Date().getFullYear()} GoMutuo. Tutti i diritti riservati.</p>
         </div>
       </footer>
-    </div>;
+    </div>
+  );
 }
