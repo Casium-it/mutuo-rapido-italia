@@ -295,7 +295,7 @@ export default function FormCompleted() {
         <div className="w-full max-w-md mb-8">
           <div className="bg-[#F8F4EF] p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="text-center mb-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-2 flex items-center justify-center gap-3">
+              <h2 className="text-xl font-bold text-gray-800 mb-2 flex items-center justify-center gap-1">
                 Ricevi il risultato della tua simulazione su WhatsApp
                 <img 
                   src="/lovable-uploads/02ffc051-86bc-4a4c-867f-4df1bd57c76a.png" 
@@ -330,29 +330,24 @@ export default function FormCompleted() {
 
               {/* Phone Number Input */}
               <div className="space-y-2">
-                <div className="relative">
-                  <span className="absolute left-[18px] top-1/2 transform -translate-y-1/2 font-['Inter'] text-[19px] font-bold text-gray-900 z-10">
-                    +39
-                  </span>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="+39 xxx xxx xxx"
-                    value={phoneNumber}
-                    onChange={handlePhoneChange}
-                    onBlur={handlePhoneBlur}
-                    className={`
-                      text-left pl-[60px] pr-[18px] py-[18px] border-[1.5px] rounded-[10px] 
-                      font-['Inter'] text-[19px] md:text-[19px] font-bold transition-all
-                      shadow-[0_3px_0_0_#AFA89F] mb-[10px] w-full h-auto
-                      hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)]
-                      focus-visible:outline-none focus-visible:ring-0 focus-visible:border-black
-                      ${phoneError ? 'border-red-500' : 'border-[#BEB8AE]'}
-                      ${phoneNumber && phoneNumber !== '+39 ' ? 'border-black bg-gray-50' : 'border-[#BEB8AE]'}
-                    `}
-                    inputMode="numeric"
-                  />
-                </div>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="xxx xxx xxx"
+                  value={phoneNumber}
+                  onChange={handlePhoneChange}
+                  onBlur={handlePhoneBlur}
+                  className={`
+                    text-left px-[18px] py-[18px] border-[1.5px] rounded-[10px] 
+                    font-['Inter'] text-[19px] md:text-[19px] font-bold transition-all
+                    shadow-[0_3px_0_0_#AFA89F] mb-[10px] w-full h-auto
+                    hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)]
+                    focus-visible:outline-none focus-visible:ring-0 focus-visible:border-black
+                    ${phoneError ? 'border-red-500' : 'border-[#BEB8AE]'}
+                    ${phoneNumber && phoneNumber !== '+39 ' ? 'border-black bg-gray-50' : 'border-[#BEB8AE]'}
+                  `}
+                  inputMode="numeric"
+                />
                 {phoneError && <p className="text-red-500 text-sm">{phoneError}</p>}
               </div>
 
