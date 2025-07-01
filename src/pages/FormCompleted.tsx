@@ -13,7 +13,6 @@ import { toast } from "sonner";
 import { updateSubmissionWithContact } from "@/services/contactSubmissionService";
 import { sendFormCompletionMessage } from "@/services/aisensyService";
 import { trackSimulationContactDetails, trackSimulationLostDetails } from "@/utils/analytics";
-
 export default function FormCompleted() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -162,7 +161,6 @@ export default function FormCompleted() {
     setFirstNameError("");
     setPhoneError("");
     setPrivacyError("");
-
     let hasErrors = false;
 
     // Validate name
@@ -187,7 +185,6 @@ export default function FormCompleted() {
       toast.error("Devi accettare la privacy policy per continuare");
       hasErrors = true;
     }
-
     if (hasErrors) {
       return;
     }
@@ -270,21 +267,16 @@ export default function FormCompleted() {
   const isNameValid = firstName.trim().length >= 2;
   const phoneDigits = phoneNumber.replace("+39 ", "").replace(/\s/g, "");
   const isPhoneValid = phoneDigits.length > 0 && validatePhoneNumber(phoneDigits);
-
   if (!submissionData) {
     return null; // Non mostrare nulla durante il reindirizzamento
   }
-
-  return (
-    <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
+  return <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
       {/* Header */}
       <header className="py-6 px-4 md:px-6 flex justify-between items-center">
         <Link to="/">
           <Logo />
         </Link>
-        <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-vibe-green">
-          Accedi
-        </Button>
+        
       </header>
 
       {/* Main content */}
@@ -310,11 +302,7 @@ export default function FormCompleted() {
             </div>
             <h3 className="text-xl font-semibold text-gray-800 mb-2 flex items-center justify-center gap-1">
               Ricevi il risultato della tua simulazione su WhatsApp
-              <img 
-                src="/lovable-uploads/02ffc051-86bc-4a4c-867f-4df1bd57c76a.png" 
-                alt="WhatsApp" 
-                className="w-6 h-6"
-              />
+              <img src="/lovable-uploads/02ffc051-86bc-4a4c-867f-4df1bd57c76a.png" alt="WhatsApp" className="w-6 h-6" />
             </h3>
             <p className="text-sm text-gray-600">
               Ti invieremo un riassunto dettagliato con le migliori offerte per te
@@ -327,14 +315,7 @@ export default function FormCompleted() {
               <Label htmlFor="firstName" className="text-sm font-medium text-gray-700">
                 Il tuo nome
               </Label>
-              <Input
-                id="firstName"
-                type="text"
-                placeholder="Inserisci il tuo nome"
-                value={firstName}
-                onChange={handleFirstNameChange}
-                onBlur={handleFirstNameBlur}
-                className={`
+              <Input id="firstName" type="text" placeholder="Inserisci il tuo nome" value={firstName} onChange={handleFirstNameChange} onBlur={handleFirstNameBlur} className={`
                   text-left px-[18px] py-[18px] border-[1.5px] rounded-[10px] 
                   font-['Inter'] text-[16px] md:text-[16px] font-medium transition-all
                   shadow-[0_3px_0_0_#AFA89F] mb-[10px] w-full h-auto
@@ -342,8 +323,7 @@ export default function FormCompleted() {
                   focus-visible:outline-none focus-visible:ring-0 focus-visible:border-[#245C4F]
                   ${firstNameError ? 'border-red-500' : 'border-[#BEB8AE]'}
                   ${firstName ? 'border-[#245C4F] bg-gray-50' : 'border-[#BEB8AE]'}
-                `}
-              />
+                `} />
               {firstNameError && <p className="text-red-500 text-sm">{firstNameError}</p>}
             </div>
 
@@ -352,14 +332,7 @@ export default function FormCompleted() {
               <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
                 Numero di telefono
               </Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="xxx xxx xxx"
-                value={phoneNumber}
-                onChange={handlePhoneChange}
-                onBlur={handlePhoneBlur}
-                className={`
+              <Input id="phone" type="tel" placeholder="xxx xxx xxx" value={phoneNumber} onChange={handlePhoneChange} onBlur={handlePhoneBlur} className={`
                   text-left px-[18px] py-[18px] border-[1.5px] rounded-[10px] 
                   font-['Inter'] text-[16px] md:text-[16px] font-medium transition-all
                   shadow-[0_3px_0_0_#AFA89F] mb-[10px] w-full h-auto
@@ -367,20 +340,13 @@ export default function FormCompleted() {
                   focus-visible:outline-none focus-visible:ring-0 focus-visible:border-[#245C4F]
                   ${phoneError ? 'border-red-500' : 'border-[#BEB8AE]'}
                   ${phoneNumber && phoneNumber !== '+39 ' ? 'border-[#245C4F] bg-gray-50' : 'border-[#BEB8AE]'}
-                `}
-                inputMode="numeric"
-              />
+                `} inputMode="numeric" />
               {phoneError && <p className="text-red-500 text-sm">{phoneError}</p>}
             </div>
 
             {/* Consultation Checkbox */}
             <div className="flex items-start space-x-3 p-4 bg-[#f8f5f1] rounded-lg border border-[#BEB8AE]">
-              <Checkbox 
-                id="consultation" 
-                checked={consultationRequest} 
-                onCheckedChange={checked => setConsultationRequest(checked as boolean)} 
-                className="h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b] flex-shrink-0 mt-0.5" 
-              />
+              <Checkbox id="consultation" checked={consultationRequest} onCheckedChange={checked => setConsultationRequest(checked as boolean)} className="h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b] flex-shrink-0 mt-0.5" />
               <div>
                 <Label htmlFor="consultation" className="text-sm font-medium text-gray-700 cursor-pointer leading-relaxed">
                   Aggiungi prima consulenza gratuita
@@ -393,17 +359,12 @@ export default function FormCompleted() {
 
             {/* Privacy Policy Checkbox */}
             <div className="flex items-start space-x-3">
-              <Checkbox 
-                id="privacy" 
-                checked={privacyConsent} 
-                onCheckedChange={checked => {
-                  setPrivacyConsent(checked as boolean);
-                  if (privacyError && checked) {
-                    setPrivacyError("");
-                  }
-                }} 
-                className="h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b] flex-shrink-0 mt-0.5" 
-              />
+              <Checkbox id="privacy" checked={privacyConsent} onCheckedChange={checked => {
+              setPrivacyConsent(checked as boolean);
+              if (privacyError && checked) {
+                setPrivacyError("");
+              }
+            }} className="h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b] flex-shrink-0 mt-0.5" />
               <Label htmlFor="privacy" className="text-sm text-gray-600 leading-relaxed cursor-pointer">
                 Ho preso visione e accetto la <Link to="/privacy" className="text-[#245C4F] underline hover:text-[#1a453b] font-medium">privacy policy</Link>.
               </Label>
@@ -411,10 +372,7 @@ export default function FormCompleted() {
             {privacyError && <p className="text-red-500 text-sm">{privacyError}</p>}
 
             {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className={`
+            <button type="submit" disabled={isSubmitting} className={`
                 w-full px-[32px] py-[16px] border-[1.5px] rounded-[10px] 
                 font-['Inter'] text-[17px] font-medium transition-all
                 shadow-[0_3px_0_0_#1a453e] mb-[10px]
@@ -424,16 +382,11 @@ export default function FormCompleted() {
                 bg-[#245C4F] text-white border-[#245C4F]
                 cursor-pointer hover:bg-[#1e4f44]
                 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}
-              `}
-            >
-              {isSubmitting ? (
-                "Invio in corso..."
-              ) : (
-                <>
+              `}>
+              {isSubmitting ? "Invio in corso..." : <>
                   Ricevi su WhatsApp
                   <ArrowRight className="h-5 w-5" />
-                </>
-              )}
+                </>}
             </button>
           </form>
         </div>
@@ -483,6 +436,5 @@ export default function FormCompleted() {
           <p>&copy; {new Date().getFullYear()} GoMutuo. Tutti i diritti riservati.</p>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 }
