@@ -28,6 +28,7 @@ export default function FormCompleted() {
   const [consultationRequest, setConsultationRequest] = useState(false);
   const [firstNameError, setFirstNameError] = useState("");
   const [phoneError, setPhoneError] = useState("");
+  const [privacyError, setPrivacyError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // New state for confirmation dialog
@@ -153,32 +154,45 @@ export default function FormCompleted() {
     }
   };
 
-  // Form submission
+  // Form submission with privacy validation
   const handleWhatsAppSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Clear previous errors
+    setFirstNameError("");
+    setPhoneError("");
+    setPrivacyError("");
+
+    let hasErrors = false;
 
     // Validate name
     if (firstName.trim().length === 0) {
       setFirstNameError("Il nome è obbligatorio");
-      return;
-    }
-    if (firstName.trim().length < 2) {
+      hasErrors = true;
+    } else if (firstName.trim().length < 2) {
       setFirstNameError("Il nome deve essere di almeno 2 caratteri");
-      return;
+      hasErrors = true;
     }
 
     // Extract just the phone number without +39 prefix
     const phoneDigits = phoneNumber.replace("+39 ", "").replace(/\s/g, "");
     if (!validatePhoneNumber(phoneDigits)) {
       setPhoneError("Inserisci un numero valido");
-      return;
+      hasErrors = true;
     }
+
+    // Check privacy policy
     if (!privacyConsent) {
+      setPrivacyError("Devi accettare la privacy policy per continuare");
       toast.error("Devi accettare la privacy policy per continuare");
+      hasErrors = true;
+    }
+
+    if (hasErrors) {
       return;
     }
 
-    // Show confirmation dialog instead of submitting directly
+    // Show confirmation dialog if all validation passes
     setShowConfirmDialog(true);
   };
 
@@ -256,10 +270,11 @@ export default function FormCompleted() {
   const isNameValid = firstName.trim().length >= 2;
   const phoneDigits = phoneNumber.replace("+39 ", "").replace(/\s/g, "");
   const isPhoneValid = phoneDigits.length > 0 && validatePhoneNumber(phoneDigits);
-  const isFormValid = isNameValid && isPhoneValid && privacyConsent;
+
   if (!submissionData) {
     return null; // Non mostrare nulla durante il reindirizzamento
   }
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       {/* Header */}
@@ -283,7 +298,7 @@ export default function FormCompleted() {
               <h2 className="text-xl font-bold text-gray-800 mb-2 flex items-center justify-center gap-3">
                 Ricevi il risultato della tua simulazione su WhatsApp
                 <img 
-                  src="/lovable-uploads/0459d165-9a3f-4fe2-a520-9495dc3f45a7.png" 
+                  src="/lovable-uploads/02ffc051-86bc-4a4c-867f-4df1bd57c76a.png" 
                   alt="WhatsApp" 
                   className="w-6 h-6"
                 />
@@ -315,24 +330,29 @@ export default function FormCompleted() {
 
               {/* Phone Number Input */}
               <div className="space-y-2">
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="+39 xxx xxx xxx"
-                  value={phoneNumber}
-                  onChange={handlePhoneChange}
-                  onBlur={handlePhoneBlur}
-                  className={`
-                    text-left px-[18px] py-[18px] border-[1.5px] rounded-[10px] 
-                    font-['Inter'] text-[19px] md:text-[19px] font-bold transition-all
-                    shadow-[0_3px_0_0_#AFA89F] mb-[10px] w-full h-auto
-                    hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)]
-                    focus-visible:outline-none focus-visible:ring-0 focus-visible:border-black
-                    ${phoneError ? 'border-red-500' : 'border-[#BEB8AE]'}
-                    ${phoneNumber && phoneNumber !== '+39 ' ? 'border-black bg-gray-50' : 'border-[#BEB8AE]'}
-                  `}
-                  inputMode="numeric"
-                />
+                <div className="relative">
+                  <span className="absolute left-[18px] top-1/2 transform -translate-y-1/2 font-['Inter'] text-[19px] font-bold text-gray-900 z-10">
+                    +39
+                  </span>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="+39 xxx xxx xxx"
+                    value={phoneNumber}
+                    onChange={handlePhoneChange}
+                    onBlur={handlePhoneBlur}
+                    className={`
+                      text-left pl-[60px] pr-[18px] py-[18px] border-[1.5px] rounded-[10px] 
+                      font-['Inter'] text-[19px] md:text-[19px] font-bold transition-all
+                      shadow-[0_3px_0_0_#AFA89F] mb-[10px] w-full h-auto
+                      hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)]
+                      focus-visible:outline-none focus-visible:ring-0 focus-visible:border-black
+                      ${phoneError ? 'border-red-500' : 'border-[#BEB8AE]'}
+                      ${phoneNumber && phoneNumber !== '+39 ' ? 'border-black bg-gray-50' : 'border-[#BEB8AE]'}
+                    `}
+                    inputMode="numeric"
+                  />
+                </div>
                 {phoneError && <p className="text-red-500 text-sm">{phoneError}</p>}
               </div>
 
@@ -346,16 +366,27 @@ export default function FormCompleted() {
 
               {/* Privacy Policy Checkbox */}
               <div className="flex items-center space-x-3">
-                <Checkbox id="privacy" checked={privacyConsent} onCheckedChange={checked => setPrivacyConsent(checked as boolean)} className="h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b] flex-shrink-0" />
+                <Checkbox 
+                  id="privacy" 
+                  checked={privacyConsent} 
+                  onCheckedChange={checked => {
+                    setPrivacyConsent(checked as boolean);
+                    if (privacyError && checked) {
+                      setPrivacyError("");
+                    }
+                  }} 
+                  className="h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b] flex-shrink-0" 
+                />
                 <Label htmlFor="privacy" className="text-sm text-gray-600 leading-relaxed cursor-pointer">
                   Ho preso visione e accetto la <Link to="/privacy" className="text-[#245C4F] underline hover:text-[#1a453b]">privacy policy</Link>.
                 </Label>
               </div>
+              {privacyError && <p className="text-red-500 text-sm">{privacyError}</p>}
 
-              {/* Submit Button with improved disabled state */}
+              {/* Submit Button - Always Active */}
               <button
                 type="submit"
-                disabled={!isFormValid || isSubmitting}
+                disabled={isSubmitting}
                 className={`
                   w-full px-[32px] py-[16px] border-[1.5px] rounded-[10px] 
                   font-['Inter'] text-[17px] font-medium transition-all
@@ -364,10 +395,8 @@ export default function FormCompleted() {
                   active:shadow-[0_1px_0_0_rgba(36,92,79,0.3)] active:translate-y-[2px]
                   inline-flex items-center justify-center gap-[12px]
                   bg-[#245C4F] text-white border-[#245C4F]
-                  ${isFormValid && !isSubmitting 
-                    ? 'cursor-pointer hover:bg-[#1e4f44]' 
-                    : 'cursor-not-allowed opacity-50'
-                  }
+                  cursor-pointer hover:bg-[#1e4f44]
+                  ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}
                 `}
               >
                 {isSubmitting ? (
