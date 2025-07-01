@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { Link } from "react-router-dom";
-import { ArrowRight, CheckCircle, Phone, User } from "lucide-react";
+import { ArrowRight, User, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { updateSubmissionWithContact } from "@/services/contactSubmissionService";
 import { sendFormCompletionMessage } from "@/services/aisensyService";
 import { trackSimulationContactDetails, trackSimulationLostDetails } from "@/utils/analytics";
+
 export default function FormCompleted() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -283,11 +284,11 @@ export default function FormCompleted() {
         {/* WhatsApp Contact Card */}
         <div className="bg-white rounded-[12px] border border-[#BEB8AE] shadow-[0_3px_0_0_#AFA89F] hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)] transition-all p-8 mb-8">
           <div className="text-center mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold mb-4">
-              <span className="gradient-text">Simulazione pronta!</span>
+            <h1 className="text-xl md:text-2xl font-bold mb-4 text-gray-900">
+              Simulazione pronta, ricevila ora su WhatsApp 
+              <img src="/lovable-uploads/f2895a7f-b3f5-43ac-aed7-c5fe560df948.png" alt="WhatsApp" className="inline-block w-6 h-6 ml-2" />
             </h1>
-            <h2 className="text-xl font-semibold text-gray-800 mb-3">Ricevila su WhatsApp</h2>
-            <p className="text-sm text-gray-600 mb-2">Abbiamo confrontato più di 109 banche ed offerte di mutui, ricevi subito il tuo report dettagliato.</p>
+            <p className="text-sm text-gray-600 mb-2">Abbiamo confrontato più di 109 banche ed offerte di mutui, ricevi il tuo report dettagliato.</p>
           </div>
 
           <form onSubmit={handleWhatsAppSubmit} className="space-y-6">
