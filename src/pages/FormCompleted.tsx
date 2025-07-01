@@ -287,7 +287,7 @@ export default function FormCompleted() {
               Simulazione pronta, ricevila ora su WhatsApp 
               <img src="/lovable-uploads/f2895a7f-b3f5-43ac-aed7-c5fe560df948.png" alt="WhatsApp" className="inline-block w-6 h-6 ml-2" />
             </h1>
-            <p className="text-sm text-gray-600 mb-2">Abbiamo confrontato più di 109 banche ed offerte di mutui, ricevi il tuo report dettagliato.</p>
+            <p className="text-sm text-gray-600 mb-2">Abbiamo confrontato più di 109 banche ed offerte di mutui, ricevi subito su WhatsApp il tuo report dettagliato.</p>
           </div>
 
           <form onSubmit={handleWhatsAppSubmit} className="space-y-6">
