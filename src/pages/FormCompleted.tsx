@@ -354,7 +354,7 @@ export default function FormCompleted() {
 
             {/* Submit Button */}
             <button type="submit" disabled={isSubmitting} className={`
-                w-full px-[32px] py-[16px] border-[1.5px] rounded-[10px] 
+                w-full px-[32px] py-[14px] border-[1.5px] rounded-[10px] 
                 font-['Inter'] text-[17px] font-medium transition-all
                 shadow-[0_3px_0_0_#1a453e] mb-[10px]
                 hover:shadow-[0_3px_4px_rgba(36,92,79,0.25)]
