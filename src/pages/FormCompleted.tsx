@@ -284,7 +284,7 @@ export default function FormCompleted() {
       <main className="flex-1 px-4 md:px-6 py-8 md:py-12 max-w-3xl mx-auto w-full">
         {/* WhatsApp Contact Card */}
         <div className="bg-white rounded-[12px] border border-[#BEB8AE] shadow-[0_3px_0_0_#AFA89F] hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)] transition-all p-8 mb-8 py-[20px] px-[21px]">
-          <div className="text-center mb-8">
+          <div className="text-center mb-4">
             <h1 className="text-xl md:text-2xl font-bold mb-4 text-gray-900">
               Simulazione pronta, ricevila ora su WhatsApp 
               <img src="/lovable-uploads/f2895a7f-b3f5-43ac-aed7-c5fe560df948.png" alt="WhatsApp" className="inline-block w-6 h-6 ml-2" />
