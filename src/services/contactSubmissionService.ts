@@ -1,6 +1,5 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { sendAdminNotifications } from "./adminNotificationService";
 
 type ContactSubmissionResult = {
   success: boolean;
@@ -68,6 +67,7 @@ export async function updateSubmissionWithContact(
     console.log("Numero formattato:", formattedPhone);
     
     // Aggiorna la submission esistente
+    // Il trigger del database si occuperà automaticamente delle notifiche admin
     const { error } = await supabase
       .from('form_submissions')
       .update({
@@ -89,19 +89,7 @@ export async function updateSubmissionWithContact(
       throw error;
     }
 
-    console.log("Submission aggiornata con successo");
-
-    // Send admin notifications (non-blocking)
-    console.log("Triggering admin notifications...");
-    sendAdminNotifications(submissionId).then((result) => {
-      if (result.success) {
-        console.log(`Admin notifications completed: ${result.notificationsSent} sent`);
-      } else {
-        console.error("Admin notifications failed:", result.error);
-      }
-    }).catch((error) => {
-      console.error("Error in admin notifications:", error);
-    });
+    console.log("Submission aggiornata con successo - le notifiche admin verranno inviate automaticamente dal trigger del database");
 
     return { success: true };
     
