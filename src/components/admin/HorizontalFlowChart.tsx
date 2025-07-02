@@ -38,7 +38,7 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
     }
   };
 
-  if (flowData.steps.length === 0) {
+  if (flowData.levels.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
         Nessuna domanda trovata in questo blocco
@@ -48,59 +48,68 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
 
   return (
     <div className="overflow-x-auto">
-      <div className="flex gap-6 p-4 min-w-max">
-        {flowData.steps.map((step, index) => (
-          <div key={step.id} className="flex items-center">
-            {/* Question Card */}
-            <Card className={`w-80 ${getStepColor(step.type)} border transition-all hover:shadow-md`}>
-              <CardContent className="p-4">
-                {/* Header */}
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-lg">{getStepIcon(step.type)}</span>
-                  <Badge variant="outline" className="text-xs font-mono">
-                    {step.questionNumber}
-                  </Badge>
-                  {step.isInline && (
-                    <Badge variant="secondary" className="text-xs">
-                      Inline
-                    </Badge>
-                  )}
-                </div>
-                
-                {/* Question Text */}
-                <p className="text-sm text-gray-800 font-medium mb-3 leading-relaxed">
-                  {step.questionText}
-                </p>
-                
-                {/* Connections */}
-                {step.connections.length > 0 && (
-                  <div className="space-y-2">
-                    <span className="text-xs text-gray-500 font-medium">Leads to:</span>
-                    {step.connections.map((connection, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-gray-400 rounded-full flex-shrink-0"></div>
-                        <span className="text-xs text-gray-700 truncate flex-1">
-                          {connection.label}
-                        </span>
-                        <Badge className={`text-xs ${getConnectionColor(connection.type)}`}>
-                          {connection.type === 'add_block' && <Plus className="w-3 h-3 mr-1" />}
-                          {connection.targetId === 'next_block' ? 'Next Block' : 
-                           connection.targetId === 'stop' ? 'End' : 
-                           connection.targetId}
+      <div className="flex gap-8 p-6 min-w-max">
+        {flowData.levels.map((level, levelIndex) => (
+          <div key={levelIndex} className="flex flex-col gap-6">
+            {level.steps.map((step, stepIndex) => (
+              <div key={step.id} className="flex items-center">
+                {/* Question Card */}
+                <Card className={`w-80 ${getStepColor(step.type)} border transition-all hover:shadow-md`}>
+                  <CardContent className="p-4">
+                    {/* Header */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-lg">{getStepIcon(step.type)}</span>
+                      <Badge variant="outline" className="text-xs font-mono">
+                        {step.questionNumber}
+                      </Badge>
+                      {step.isInline && (
+                        <Badge variant="secondary" className="text-xs">
+                          Inline
                         </Badge>
+                      )}
+                      {step.branchIndex > 0 && (
+                        <Badge variant="outline" className="text-xs">
+                          Branch {step.branchIndex + 1}
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    {/* Question Text */}
+                    <p className="text-sm text-gray-800 font-medium mb-3 leading-relaxed">
+                      {step.questionText}
+                    </p>
+                    
+                    {/* Connections */}
+                    {step.connections.length > 0 && (
+                      <div className="space-y-2">
+                        <span className="text-xs text-gray-500 font-medium">Leads to:</span>
+                        {step.connections.map((connection, idx) => (
+                          <div key={idx} className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-gray-400 rounded-full flex-shrink-0"></div>
+                            <span className="text-xs text-gray-700 truncate flex-1">
+                              {connection.label}
+                            </span>
+                            <Badge className={`text-xs ${getConnectionColor(connection.type)}`}>
+                              {connection.type === 'add_block' && <Plus className="w-3 h-3 mr-1" />}
+                              {connection.targetId === 'next_block' ? 'Next Block' : 
+                               connection.targetId === 'stop' ? 'End' : 
+                               connection.targetId}
+                            </Badge>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
+                  </CardContent>
+                </Card>
+                
+                {/* Arrow to next level */}
+                {levelIndex < flowData.levels.length - 1 && stepIndex === 0 && (
+                  <div className="flex items-center justify-center w-16 h-full">
+                    <ArrowRight className="w-6 h-6 text-gray-400" />
                   </div>
                 )}
-              </CardContent>
-            </Card>
-            
-            {/* Arrow to next step */}
-            {index < flowData.steps.length - 1 && (
-              <div className="flex items-center justify-center w-12">
-                <ArrowRight className="w-5 h-5 text-gray-400" />
               </div>
-            )}
+            ))}
           </div>
         ))}
       </div>
