@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { FormResponse, FormState, Block } from "@/types/form";
 import { findQuestionInfo, validateQuestionsExist } from "@/utils/questionLookup";
@@ -41,9 +40,6 @@ export async function submitFormToSupabase(
     const searchParams = new URLSearchParams(window.location.search);
     const referralId = searchParams.get('ref');
     
-    // Determina il tipo di form dall'URL
-    const formType = window.location.pathname.includes("mutuo") ? "mutuo" : "simulazione";
-    
     // Calculate expiry time (48 hours from now)
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 48);
@@ -59,12 +55,12 @@ export async function submitFormToSupabase(
       console.log("Available dynamic blocks:", (state.dynamicBlocks || []).map(b => ({ id: b.block_id, questions: b.questions.length })));
     }
     
-    // 1. Crea la submission principale
+    // 1. Crea la submission principale - using formSlug as form_type
     const { data: submission, error: submissionError } = await supabase
       .from('form_submissions')
       .insert({
         user_identifier: referralId || null,
-        form_type: formType,
+        form_type: formSlug, // Use the actual form slug instead of hardcoded type
         expires_at: expiresAt.toISOString(),
         metadata: { 
           blocks: state.activeBlocks || [],
