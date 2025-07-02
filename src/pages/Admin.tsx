@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,7 +8,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { Eye, LogOut, Phone, Calendar, FileText, Mail, User, StickyNote, Trash2, Blocks, Bell } from 'lucide-react';
 import { LeadStatusBadge } from '@/components/admin/LeadStatusBadge';
-import { BlockMigrationButton } from '@/components/admin/BlockMigrationButton';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -164,7 +162,6 @@ export default function Admin() {
             <p className="text-gray-600">Benvenuto, {user?.email}</p>
           </div>
           <div className="flex items-center gap-2">
-            <BlockMigrationButton />
             <Button
               onClick={() => navigate('/admin/notifications')}
               variant="outline"
