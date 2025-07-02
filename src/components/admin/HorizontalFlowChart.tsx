@@ -2,25 +2,26 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Block } from '@/types/form';
-import { FlowAnalyzer, FlowNode, FlowConnection } from '@/utils/flowAnalysis';
+import { FlowAnalyzer, FlowStep } from '@/utils/flowAnalysis';
+import { ArrowRight, Plus } from 'lucide-react';
 
 interface HorizontalFlowChartProps {
   block: Block;
 }
 
 export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block }) => {
-  const flowGraph = FlowAnalyzer.analyzeBlock(block);
+  const flowData = FlowAnalyzer.analyzeBlock(block);
   
-  const getNodeColor = (type: FlowNode['type']) => {
+  const getStepColor = (type: FlowStep['type']) => {
     switch (type) {
-      case 'branching': return 'bg-orange-50 border-orange-200';
-      case 'inline': return 'bg-blue-50 border-blue-200';
-      case 'terminal': return 'bg-gray-50 border-gray-200';
-      default: return 'bg-green-50 border-green-200';
+      case 'branching': return 'border-orange-200 bg-orange-50';
+      case 'inline': return 'border-blue-200 bg-blue-50';
+      case 'terminal': return 'border-gray-200 bg-gray-50';
+      default: return 'border-green-200 bg-green-50';
     }
   };
 
-  const getNodeIcon = (type: FlowNode['type']) => {
+  const getStepIcon = (type: FlowStep['type']) => {
     switch (type) {
       case 'branching': return '🔀';
       case 'inline': return '📝';
@@ -29,87 +30,15 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
     }
   };
 
-  const renderNode = (node: FlowNode) => {
-    const connections = flowGraph.connections.filter(c => c.from === node.id);
-    
-    return (
-      <div
-        key={node.id}
-        className="flex flex-col items-center mb-4"
-        style={{
-          gridColumn: node.column + 1,
-          gridRow: node.row + 1,
-        }}
-      >
-        <Card className={`w-64 ${getNodeColor(node.type)} transition-all hover:shadow-md`}>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-lg">{getNodeIcon(node.type)}</span>
-              <Badge variant="outline" className="text-xs">
-                {node.questionNumber}
-              </Badge>
-              {node.isInline && (
-                <Badge variant="secondary" className="text-xs">
-                  Inline
-                </Badge>
-              )}
-            </div>
-            <p className="text-sm text-gray-700 leading-tight">
-              {node.questionText}
-            </p>
-            
-            {connections.length > 0 && (
-              <div className="mt-3 space-y-1">
-                {connections.map((connection, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                    <span className="text-xs text-gray-600 truncate">
-                      {connection.label || 'Continua'}
-                    </span>
-                    {connection.type === 'add_block' && (
-                      <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-800">
-                        +Block
-                      </Badge>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    );
+  const getConnectionColor = (type: string) => {
+    switch (type) {
+      case 'add_block': return 'text-orange-600 bg-orange-100';
+      case 'stop': return 'text-red-600 bg-red-100';
+      default: return 'text-blue-600 bg-blue-100';
+    }
   };
 
-  const renderConnections = () => {
-    return flowGraph.connections.map((connection, index) => {
-      const fromNode = flowGraph.nodes.find(n => n.id === connection.from);
-      const toNode = flowGraph.nodes.find(n => n.id === connection.to);
-      
-      if (!fromNode || !toNode) return null;
-      
-      const fromX = (fromNode.column + 1) * 280; // 264px card width + 16px gap
-      const fromY = (fromNode.row + 1) * 120 + 60; // Approximate center of card
-      const toX = (toNode.column + 1) * 280;
-      const toY = (toNode.row + 1) * 120 + 60;
-      
-      return (
-        <line
-          key={`${connection.from}-${connection.to}-${index}`}
-          x1={fromX}
-          y1={fromY}
-          x2={toX}
-          y2={toY}
-          stroke="#94a3b8"
-          strokeWidth="2"
-          markerEnd="url(#arrowhead)"
-          className="transition-all"
-        />
-      );
-    });
-  };
-
-  if (flowGraph.nodes.length === 0) {
+  if (flowData.steps.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
         Nessuna domanda trovata in questo blocco
@@ -117,53 +46,63 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
     );
   }
 
-  const gridWidth = flowGraph.columns * 280;
-  const gridHeight = flowGraph.maxRowsPerColumn * 120;
-
   return (
-    <div className="relative overflow-auto">
-      <div 
-        className="relative"
-        style={{ 
-          width: `${gridWidth}px`,
-          height: `${gridHeight}px`,
-          minWidth: '100%'
-        }}
-      >
-        {/* SVG for connections */}
-        <svg
-          className="absolute inset-0 pointer-events-none"
-          width={gridWidth}
-          height={gridHeight}
-        >
-          <defs>
-            <marker
-              id="arrowhead"
-              markerWidth="10"
-              markerHeight="7"
-              refX="9"
-              refY="3.5"
-              orient="auto"
-            >
-              <polygon
-                points="0 0, 10 3.5, 0 7"
-                fill="#94a3b8"
-              />
-            </marker>
-          </defs>
-          {renderConnections()}
-        </svg>
-        
-        {/* Grid for nodes */}
-        <div
-          className="grid gap-4 p-4"
-          style={{
-            gridTemplateColumns: `repeat(${flowGraph.columns}, 264px)`,
-            gridTemplateRows: `repeat(${flowGraph.maxRowsPerColumn}, 120px)`,
-          }}
-        >
-          {flowGraph.nodes.map(renderNode)}
-        </div>
+    <div className="overflow-x-auto">
+      <div className="flex gap-6 p-4 min-w-max">
+        {flowData.steps.map((step, index) => (
+          <div key={step.id} className="flex items-center">
+            {/* Question Card */}
+            <Card className={`w-80 ${getStepColor(step.type)} border transition-all hover:shadow-md`}>
+              <CardContent className="p-4">
+                {/* Header */}
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-lg">{getStepIcon(step.type)}</span>
+                  <Badge variant="outline" className="text-xs font-mono">
+                    {step.questionNumber}
+                  </Badge>
+                  {step.isInline && (
+                    <Badge variant="secondary" className="text-xs">
+                      Inline
+                    </Badge>
+                  )}
+                </div>
+                
+                {/* Question Text */}
+                <p className="text-sm text-gray-800 font-medium mb-3 leading-relaxed">
+                  {step.questionText}
+                </p>
+                
+                {/* Connections */}
+                {step.connections.length > 0 && (
+                  <div className="space-y-2">
+                    <span className="text-xs text-gray-500 font-medium">Leads to:</span>
+                    {step.connections.map((connection, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-gray-400 rounded-full flex-shrink-0"></div>
+                        <span className="text-xs text-gray-700 truncate flex-1">
+                          {connection.label}
+                        </span>
+                        <Badge className={`text-xs ${getConnectionColor(connection.type)}`}>
+                          {connection.type === 'add_block' && <Plus className="w-3 h-3 mr-1" />}
+                          {connection.targetId === 'next_block' ? 'Next Block' : 
+                           connection.targetId === 'stop' ? 'End' : 
+                           connection.targetId}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            {/* Arrow to next step */}
+            {index < flowData.steps.length - 1 && (
+              <div className="flex items-center justify-center w-12">
+                <ArrowRight className="w-5 h-5 text-gray-400" />
+              </div>
+            )}
+          </div>
+        ))}
       </div>
       
       {/* Legend */}
@@ -181,8 +120,13 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
           <span className="text-sm text-gray-600">Domanda inline</span>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-800">
-            +Block
+          <span>🏁</span>
+          <span className="text-sm text-gray-600">Fine flusso</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge className="text-xs bg-orange-100 text-orange-600">
+            <Plus className="w-3 h-3 mr-1" />
+            Block
           </Badge>
           <span className="text-sm text-gray-600">Aggiunge un blocco</span>
         </div>
