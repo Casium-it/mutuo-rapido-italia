@@ -9,10 +9,17 @@ export interface FlowStep {
   connections: FlowConnection[];
   level: number;
   branchIndex: number;
+  sourceConnections: SourceConnection[];
 }
 
 export interface FlowConnection {
   targetId: string;
+  label: string;
+  type: 'next' | 'option' | 'add_block' | 'stop';
+}
+
+export interface SourceConnection {
+  sourceId: string;
   label: string;
   type: 'next' | 'option' | 'add_block' | 'stop';
 }
@@ -24,6 +31,16 @@ export interface FlowLevel {
 export interface SimpleFlowData {
   levels: FlowLevel[];
   maxLevel: number;
+  connections: FlowVisualConnection[];
+}
+
+export interface FlowVisualConnection {
+  fromLevel: number;
+  fromIndex: number;
+  toLevel: number;
+  toIndex: number;
+  label: string;
+  type: 'next' | 'option' | 'add_block' | 'stop';
 }
 
 export class FlowAnalyzer {
@@ -52,31 +69,41 @@ export class FlowAnalyzer {
         isInline: question.inline,
         connections,
         level: 0,
-        branchIndex: 0
+        branchIndex: 0,
+        sourceConnections: []
       });
     });
     
     // Calculate levels and branching
-    return this.calculateLevelsAndBranching(stepMap, block.questions);
+    return this.calculateBranchingFlow(stepMap, block.questions);
   }
 
-  private static calculateLevelsAndBranching(stepMap: Map<string, FlowStep>, questions: Question[]): SimpleFlowData {
+  private static calculateBranchingFlow(stepMap: Map<string, FlowStep>, questions: Question[]): SimpleFlowData {
+    if (questions.length === 0) return { levels: [], maxLevel: 0, connections: [] };
+    
     const levels: FlowLevel[] = [];
-    const visited = new Set<string>();
-    const levelMap = new Map<string, number>();
+    const connections: FlowVisualConnection[] = [];
+    const levelAssignments = new Map<string, number>();
+    const branchAssignments = new Map<string, number>();
+    const processed = new Set<string>();
     
-    // Start with the first question
-    if (questions.length === 0) return { levels: [], maxLevel: 0 };
-    
+    // Start with first question at level 0
     const firstQuestion = questions[0];
-    this.assignLevels(firstQuestion.question_id, 0, stepMap, levelMap, visited);
+    levelAssignments.set(firstQuestion.question_id, 0);
+    branchAssignments.set(firstQuestion.question_id, 0);
     
-    // Group steps by level
+    // Process all questions level by level
+    this.assignLevelsAndBranches(firstQuestion.question_id, 0, stepMap, levelAssignments, branchAssignments, processed);
+    
+    // Group steps by level and assign branch indices
     const stepsByLevel = new Map<number, FlowStep[]>();
     
     stepMap.forEach((step, id) => {
-      const level = levelMap.get(id) || 0;
+      const level = levelAssignments.get(id) || 0;
+      const branchIndex = branchAssignments.get(id) || 0;
+      
       step.level = level;
+      step.branchIndex = branchIndex;
       
       if (!stepsByLevel.has(level)) {
         stepsByLevel.set(level, []);
@@ -84,47 +111,84 @@ export class FlowAnalyzer {
       stepsByLevel.get(level)!.push(step);
     });
     
-    // Calculate branch indices for each level
-    stepsByLevel.forEach((steps, level) => {
-      steps.forEach((step, index) => {
-        step.branchIndex = index;
-      });
-      
-      levels[level] = { steps };
+    // Sort steps within each level by branch index
+    stepsByLevel.forEach(steps => {
+      steps.sort((a, b) => a.branchIndex - b.branchIndex);
     });
     
+    // Create level structure
     const maxLevel = Math.max(...Array.from(stepsByLevel.keys()));
+    for (let i = 0; i <= maxLevel; i++) {
+      levels[i] = { steps: stepsByLevel.get(i) || [] };
+    }
     
-    return { levels, maxLevel };
+    // Create visual connections
+    stepMap.forEach((step, stepId) => {
+      const fromLevel = levelAssignments.get(stepId) || 0;
+      const fromIndex = levels[fromLevel].steps.findIndex(s => s.id === stepId);
+      
+      step.connections.forEach(conn => {
+        if (conn.targetId !== 'stop' && conn.targetId !== 'next_block') {
+          const toLevel = levelAssignments.get(conn.targetId) || 0;
+          const toIndex = levels[toLevel]?.steps.findIndex(s => s.id === conn.targetId) || 0;
+          
+          connections.push({
+            fromLevel,
+            fromIndex,
+            toLevel,
+            toIndex,
+            label: conn.label,
+            type: conn.type
+          });
+        }
+      });
+    });
+    
+    return { levels, maxLevel, connections };
   }
   
-  private static assignLevels(
-    questionId: string, 
-    level: number, 
-    stepMap: Map<string, FlowStep>, 
-    levelMap: Map<string, number>,
-    visited: Set<string>
+  private static assignLevelsAndBranches(
+    questionId: string,
+    level: number,
+    stepMap: Map<string, FlowStep>,
+    levelAssignments: Map<string, number>,
+    branchAssignments: Map<string, number>,
+    processed: Set<string>
   ): void {
-    if (visited.has(questionId)) return;
-    visited.add(questionId);
-    
-    const currentLevel = levelMap.get(questionId) || 0;
-    levelMap.set(questionId, Math.max(currentLevel, level));
+    if (processed.has(questionId)) return;
+    processed.add(questionId);
     
     const step = stepMap.get(questionId);
     if (!step) return;
     
-    // Process connections to next level
-    const targetQuestions = new Set<string>();
-    step.connections.forEach(conn => {
-      if (conn.targetId !== 'stop' && conn.targetId !== 'next_block') {
-        targetQuestions.add(conn.targetId);
-      }
-    });
+    // Set current question level
+    const currentLevel = Math.max(levelAssignments.get(questionId) || 0, level);
+    levelAssignments.set(questionId, currentLevel);
     
-    targetQuestions.forEach(targetId => {
-      this.assignLevels(targetId, level + 1, stepMap, levelMap, visited);
-    });
+    // Process connections to assign next level
+    const targetQuestions = step.connections
+      .filter(conn => conn.targetId !== 'stop' && conn.targetId !== 'next_block')
+      .map(conn => conn.targetId);
+    
+    if (targetQuestions.length > 0) {
+      const nextLevel = currentLevel + 1;
+      
+      // Assign branch indices for target questions
+      targetQuestions.forEach((targetId, index) => {
+        const existingLevel = levelAssignments.get(targetId);
+        if (!existingLevel || existingLevel < nextLevel) {
+          levelAssignments.set(targetId, nextLevel);
+          
+          // Calculate branch index
+          const currentBranchCount = Array.from(branchAssignments.entries())
+            .filter(([id, _]) => levelAssignments.get(id) === nextLevel).length;
+          
+          branchAssignments.set(targetId, currentBranchCount);
+        }
+        
+        this.assignLevelsAndBranches(targetId, nextLevel, stepMap, levelAssignments, branchAssignments, processed);
+      });
+    }
   }
 
   private static getQuestionConnections(question: Question, allQuestions: Question[]): FlowConnection[] {
@@ -198,6 +262,6 @@ export class FlowAnalyzer {
 
   private static truncateText(text: string, maxLength: number): string {
     if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + '...';
+    return text.substring(0, maxLength) + "...";
   }
 }
