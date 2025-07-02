@@ -5,10 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { LogOut, ArrowLeft, Blocks, Settings, Users, MessageSquare, Eye, FileText, ChevronDown, ChevronRight } from 'lucide-react';
+import { LogOut, ArrowLeft, Blocks, Settings, Users, FileText } from 'lucide-react';
 import { adminBlockService, type AdminBlockDetail as AdminBlockDetailType } from '@/services/adminBlockService';
 import { toast } from '@/hooks/use-toast';
-import { BlockFlowMap } from '@/components/admin/BlockFlowMap';
 import { Placeholder, SelectPlaceholder, InputPlaceholder, MultiBlockManagerPlaceholder } from '@/types/form';
 
 export default function AdminBlockDetail() {
@@ -18,7 +17,7 @@ export default function AdminBlockDetail() {
   const [block, setBlock] = useState<AdminBlockDetailType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showFlowMap, setShowFlowMap] = useState(false);
+  
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
 
@@ -327,50 +326,8 @@ export default function AdminBlockDetail() {
                 </div>
               </div>
             )}
-
-            {/* Action Buttons */}
-            <div className="flex gap-2">
-              <Button
-                onClick={() => setShowFlowMap(!showFlowMap)}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <Eye className="h-4 w-4" />
-                {showFlowMap ? 'Nascondi' : 'Mostra'} Mappa Flusso
-              </Button>
-            </div>
           </CardContent>
         </Card>
-
-        {/* Flow Map */}
-        {showFlowMap && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5" />
-                Mappa del Flusso delle Domande
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <BlockFlowMap 
-                block={{
-                  block_id: block.blockId,
-                  block_number: block.blockNumber,
-                  title: block.title,
-                  priority: block.priority,
-                  questions: block.questions,
-                  default_active: block.properties.defaultActive,
-                  invisible: block.properties.invisible,
-                  multiBlock: block.properties.multiBlock,
-                  blueprint_id: block.properties.blueprintId,
-                  copy_number: block.properties.copyNumber
-                }}
-                isOpen={showFlowMap}
-                onClose={() => setShowFlowMap(false)}
-              />
-            </CardContent>
-          </Card>
-        )}
 
         {/* Questions List */}
         <Card>
