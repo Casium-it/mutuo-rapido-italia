@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { LogOut, ArrowLeft, Blocks, Settings, Users, MessageSquare, Eye, FileText } from 'lucide-react';
-import { adminBlockService, AdminBlockDetail } from '@/services/adminBlockService';
+import { adminBlockService, type AdminBlockDetail as AdminBlockDetailType } from '@/services/adminBlockService';
 import { toast } from '@/hooks/use-toast';
 import { BlockFlowMap } from '@/components/admin/BlockFlowMap';
 
@@ -14,7 +14,7 @@ export default function AdminBlockDetail() {
   const { blockId } = useParams<{ blockId: string }>();
   const [searchParams] = useSearchParams();
   const formSlug = searchParams.get('form');
-  const [block, setBlock] = useState<AdminBlockDetail | null>(null);
+  const [block, setBlock] = useState<AdminBlockDetailType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFlowMap, setShowFlowMap] = useState(false);
@@ -60,7 +60,7 @@ export default function AdminBlockDetail() {
     navigate('/');
   };
 
-  const getBlockTypeLabels = (block: AdminBlockDetail) => {
+  const getBlockTypeLabels = (block: AdminBlockDetailType) => {
     const labels = [];
     if (block.properties.defaultActive) labels.push('Attivo di default');
     if (block.properties.multiBlock) labels.push('Multi-blocco');
@@ -245,7 +245,22 @@ export default function AdminBlockDetail() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <BlockFlowMap block={block} />
+              <BlockFlowMap 
+                block={{
+                  block_id: block.blockId,
+                  block_number: block.blockNumber,
+                  title: block.title,
+                  priority: block.priority,
+                  questions: block.questions,
+                  default_active: block.properties.defaultActive,
+                  invisible: block.properties.invisible,
+                  multiBlock: block.properties.multiBlock,
+                  blueprint_id: block.properties.blueprintId,
+                  copy_number: block.properties.copyNumber
+                }}
+                isOpen={showFlowMap}
+                onClose={() => setShowFlowMap(false)}
+              />
             </CardContent>
           </Card>
         )}
