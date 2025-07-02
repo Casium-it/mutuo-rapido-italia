@@ -39,9 +39,38 @@ export default function FormLoading() {
   };
   
   useEffect(() => {
+    // STRATEGIC LOGGING: Track what FormLoading receives
+    console.log("=== FORM LOADING COMPONENT MOUNT ===");
     console.log("FormLoading: Component mounted, starting initialization");
+    console.log("FormLoading: Current location:", {
+      pathname: location.pathname,
+      search: location.search,
+      hasState: !!location.state
+    });
     console.log("FormLoading: location.state:", location.state);
-    console.log("FormLoading: formData:", formData);
+    console.log("FormLoading: location.state type:", typeof location.state);
+    console.log("FormLoading: location.state keys:", location.state ? Object.keys(location.state) : 'null');
+    
+    if (location.state?.formData) {
+      console.log("FormLoading: formData found in location.state");
+      console.log("FormLoading: formData keys:", Object.keys(location.state.formData));
+      console.log("FormLoading: formData.formSlug:", location.state.formData.formSlug);
+      console.log("FormLoading: formData type:", typeof location.state.formData);
+      console.log("FormLoading: Full formData object:", location.state.formData);
+    } else {
+      console.error("FormLoading: NO formData found in location.state");
+    }
+    
+    console.log("FormLoading: formData variable after extraction:", formData);
+    console.log("FormLoading: formData type after extraction:", typeof formData);
+    
+    if (formData) {
+      console.log("FormLoading: formData exists, checking properties:");
+      console.log("FormLoading: formData.formSlug:", formData.formSlug);
+      console.log("FormLoading: formData.responses count:", Object.keys(formData.responses || {}).length);
+      console.log("FormLoading: formData.activeBlocks:", formData.activeBlocks);
+    }
+    console.log("=== FORM LOADING COMPONENT MOUNT END ===");
     
     // Enhanced validation - check for formData existence first
     if (!formData) {
