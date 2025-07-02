@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { LogOut, ArrowLeft, Blocks, Settings, Users, MessageSquare, Eye, FileText } from 'lucide-react';
+import { LogOut, ArrowLeft, Blocks, Settings, Users, MessageSquare, Eye, FileText, ChevronDown, ChevronRight } from 'lucide-react';
 import { adminBlockService, type AdminBlockDetail as AdminBlockDetailType } from '@/services/adminBlockService';
 import { toast } from '@/hooks/use-toast';
 import { BlockFlowMap } from '@/components/admin/BlockFlowMap';
+import { Placeholder, SelectPlaceholder, InputPlaceholder, MultiBlockManagerPlaceholder } from '@/types/form';
 
 export default function AdminBlockDetail() {
   const { blockId } = useParams<{ blockId: string }>();
@@ -77,6 +78,112 @@ export default function AdminBlockDetail() {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const getLeadsToColor = (leadsTo: string) => {
+    if (leadsTo === 'next_block') return 'bg-green-100 text-green-800';
+    if (leadsTo === 'stop_flow') return 'bg-red-100 text-red-800';
+    return 'bg-blue-100 text-blue-800';
+  };
+
+  const renderSelectPlaceholder = (placeholder: SelectPlaceholder, placeholderKey: string) => (
+    <div key={placeholderKey} className="mb-3 p-3 bg-gray-50 rounded-lg border">
+      <div className="flex items-center gap-2 mb-2">
+        <Badge variant="outline" className="text-xs">select</Badge>
+        <code className="text-xs font-mono">{placeholderKey}</code>
+        {placeholder.multiple && <Badge variant="secondary" className="text-xs">Multiple</Badge>}
+      </div>
+      {placeholder.placeholder_label && (
+        <p className="text-sm text-gray-600 mb-2">"{placeholder.placeholder_label}"</p>
+      )}
+      <div className="space-y-2">
+        <span className="text-xs font-medium text-gray-700">Opzioni:</span>
+        {placeholder.options.map((option, index) => (
+          <div key={index} className="ml-4 p-2 bg-white rounded border border-gray-200">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-medium text-sm">"{option.label}"</span>
+              <code className="text-xs bg-gray-100 px-1 rounded">{option.id}</code>
+              <Badge className={`text-xs ${getLeadsToColor(option.leads_to)}`}>
+                → {option.leads_to}
+              </Badge>
+              {option.add_block && (
+                <Badge variant="outline" className="text-xs bg-orange-100 text-orange-800">
+                  + {option.add_block}
+                </Badge>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderInputPlaceholder = (placeholder: InputPlaceholder, placeholderKey: string) => (
+    <div key={placeholderKey} className="mb-3 p-3 bg-gray-50 rounded-lg border">
+      <div className="flex items-center gap-2 mb-2">
+        <Badge variant="outline" className="text-xs">input:{placeholder.input_type}</Badge>
+        <code className="text-xs font-mono">{placeholderKey}</code>
+      </div>
+      <p className="text-sm text-gray-600 mb-2">"{placeholder.placeholder_label}"</p>
+      <div className="flex items-center gap-2 flex-wrap">
+        <Badge variant="secondary" className="text-xs">
+          Validazione: {placeholder.input_validation}
+        </Badge>
+        {placeholder.leads_to && (
+          <Badge className={`text-xs ${getLeadsToColor(placeholder.leads_to)}`}>
+            → {placeholder.leads_to}
+          </Badge>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderMultiBlockManagerPlaceholder = (placeholder: MultiBlockManagerPlaceholder, placeholderKey: string) => (
+    <div key={placeholderKey} className="mb-3 p-3 bg-gray-50 rounded-lg border">
+      <div className="flex items-center gap-2 mb-2">
+        <Badge variant="outline" className="text-xs">MultiBlockManager</Badge>
+        <code className="text-xs font-mono">{placeholderKey}</code>
+      </div>
+      <p className="text-sm text-gray-600 mb-2">"{placeholder.placeholder_label}"</p>
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-600">Pulsante:</span>
+          <span className="text-sm font-medium">"{placeholder.add_block_label}"</span>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Badge variant="secondary" className="text-xs">
+            Blueprint: {placeholder.blockBlueprint}
+          </Badge>
+          <Badge className={`text-xs ${getLeadsToColor(placeholder.leads_to)}`}>
+            → {placeholder.leads_to}
+          </Badge>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderPlaceholders = (placeholders: Record<string, Placeholder>) => {
+    const placeholderEntries = Object.entries(placeholders || {});
+    
+    if (placeholderEntries.length === 0) {
+      return <p className="text-sm text-gray-500">Nessun placeholder</p>;
+    }
+
+    return (
+      <div className="space-y-2">
+        <span className="text-sm font-medium text-gray-700">Placeholders ({placeholderEntries.length}):</span>
+        {placeholderEntries.map(([key, placeholder]) => {
+          if (placeholder.type === 'select') {
+            return renderSelectPlaceholder(placeholder as SelectPlaceholder, key);
+          } else if (placeholder.type === 'input') {
+            return renderInputPlaceholder(placeholder as InputPlaceholder, key);
+          } else if (placeholder.type === 'MultiBlockManager') {
+            return renderMultiBlockManagerPlaceholder(placeholder as MultiBlockManagerPlaceholder, key);
+          }
+          return null;
+        })}
+      </div>
+    );
   };
 
   if (loading) {
@@ -298,11 +405,15 @@ export default function AdminBlockDetail() {
                         </div>
                       )}
                       
-                      <div className="flex items-center gap-4 text-xs text-gray-500">
-                        <span>Placeholders: {Object.keys(question.placeholders || {}).length}</span>
+                      <div className="flex items-center gap-4 text-xs text-gray-500 mb-4">
                         {question.inline && <Badge variant="secondary" className="text-xs">Inline</Badge>}
                         {question.endOfForm && <Badge variant="secondary" className="text-xs">Fine Form</Badge>}
                         {question.skippableWithNotSure && <Badge variant="secondary" className="text-xs">Saltabile</Badge>}
+                      </div>
+                      
+                      {/* Detailed Placeholder Display */}
+                      <div className="mt-4">
+                        {renderPlaceholders(question.placeholders)}
                       </div>
                     </CardContent>
                   </Card>
