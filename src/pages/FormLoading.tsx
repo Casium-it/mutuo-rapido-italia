@@ -23,7 +23,7 @@ export default function FormLoading() {
   // Get global simulation timer for completion event
   const { getTotalTimeSpent } = useSimulationTimer();
   
-  // Get form data from location state - ora non contiene più staticBlocks
+  // Get form data from location state
   const formData = location.state?.formData as {
     responses: FormResponse;
     activeBlocks: string[];
@@ -39,16 +39,45 @@ export default function FormLoading() {
   
   useEffect(() => {
     console.log("FormLoading: Component mounted, starting initialization");
+    console.log("FormLoading: location.state:", location.state);
+    console.log("FormLoading: formData:", formData);
     
-    // Enhanced validation - if no form data or formSlug, redirect to home
-    if (!formData || !formData.responses || !formData.activeBlocks || !formData.formSlug) {
-      console.error("FormLoading: No valid form data or formSlug found, redirecting to home");
+    // Enhanced validation - more lenient for database-driven forms
+    if (!formData) {
+      console.error("FormLoading: No formData found in location.state, redirecting to home");
+      navigate("/");
+      return;
+    }
+
+    if (!formData.formSlug) {
+      console.error("FormLoading: No formSlug found in formData, redirecting to home");
+      navigate("/");
+      return;
+    }
+
+    // More lenient validation - allow empty responses/activeBlocks for database-driven forms
+    const hasValidData = formData.formSlug && (
+      // Either we have some responses
+      (formData.responses && Object.keys(formData.responses).length > 0) ||
+      // Or we have active blocks (even if empty responses)
+      (formData.activeBlocks && formData.activeBlocks.length > 0) ||
+      // Or we allow submission with just formSlug for database-driven forms like "surroga"
+      true
+    );
+
+    if (!hasValidData) {
+      console.error("FormLoading: Invalid form data structure, redirecting to home");
+      console.error("FormLoading: responses keys:", Object.keys(formData.responses || {}));
+      console.error("FormLoading: activeBlocks:", formData.activeBlocks);
+      console.error("FormLoading: formSlug:", formData.formSlug);
       navigate("/");
       return;
     }
     
     console.log("FormLoading: Valid form data found, starting progress and submission");
     console.log("FormLoading: Form slug:", formData.formSlug);
+    console.log("FormLoading: Responses count:", Object.keys(formData.responses || {}).length);
+    console.log("FormLoading: Active blocks:", formData.activeBlocks?.length || 0);
     
     // Always start progress animation immediately for good UX
     startProgressAnimation();
@@ -107,16 +136,16 @@ export default function FormLoading() {
     
     try {
       console.log("FormLoading: Beginning form submission to Supabase");
-      console.log("FormLoading: Form responses:", Object.keys(formData.responses).length);
-      console.log("FormLoading: Active blocks:", formData.activeBlocks.length);
+      console.log("FormLoading: Form responses:", Object.keys(formData.responses || {}).length);
+      console.log("FormLoading: Active blocks:", formData.activeBlocks?.length || 0);
       console.log("FormLoading: Dynamic blocks:", formData.dynamicBlocks?.length || 0);
       console.log("FormLoading: Using form slug for cache memory blocks:", formData.formSlug);
       
-      // Create complete form state for submission service
+      // Create complete form state for submission service with fallbacks
       const formStateForSubmission: FormState = {
-        activeBlocks: formData.activeBlocks,
-        responses: formData.responses,
-        completedBlocks: formData.completedBlocks,
+        activeBlocks: formData.activeBlocks || [],
+        responses: formData.responses || {},
+        completedBlocks: formData.completedBlocks || [],
         dynamicBlocks: formData.dynamicBlocks || [],
         activeQuestion: { block_id: '', question_id: '' },
         answeredQuestions: new Set<string>(formData.answeredQuestions || []),

@@ -8,33 +8,50 @@ import { useForm } from "@/contexts/FormContext";
 export const CompleteFormButton = ({ className }: { className?: string }) => {
   const navigate = useNavigate();
   const params = useParams();
-  const { state } = useForm(); // Remove blocks from destructuring
+  const { state } = useForm();
 
   const handleSubmitForm = async () => {
-    // Navigate immediately to loading page with form data (no staticBlocks)
+    // Enhanced debugging for form submission
+    console.log("CompleteFormButton: Attempting to submit form");
+    console.log("CompleteFormButton: params:", params);
+    console.log("CompleteFormButton: params.formSlug:", params.formSlug);
+    console.log("CompleteFormButton: state.responses:", state.responses);
+    console.log("CompleteFormButton: Object.keys(state.responses).length:", Object.keys(state.responses || {}).length);
+    console.log("CompleteFormButton: state.activeBlocks:", state.activeBlocks);
+    console.log("CompleteFormButton: state.completedBlocks:", state.completedBlocks);
+    console.log("CompleteFormButton: state.dynamicBlocks:", state.dynamicBlocks);
+
+    // Navigate immediately to loading page with form data
     navigate('/form-loading', { 
       state: { 
         formData: {
-          responses: state.responses,
-          activeBlocks: state.activeBlocks,
-          completedBlocks: state.completedBlocks,
-          dynamicBlocks: state.dynamicBlocks,
-          answeredQuestions: Array.from(state.answeredQuestions),
-          navigationHistory: state.navigationHistory,
-          blockActivations: state.blockActivations,
-          pendingRemovals: state.pendingRemovals,
-          formSlug: params.formSlug // FormLoading will use this to get cache memory blocks
+          responses: state.responses || {},
+          activeBlocks: state.activeBlocks || [],
+          completedBlocks: state.completedBlocks || [],
+          dynamicBlocks: state.dynamicBlocks || [],
+          answeredQuestions: Array.from(state.answeredQuestions || new Set()),
+          navigationHistory: state.navigationHistory || [],
+          blockActivations: state.blockActivations || {},
+          pendingRemovals: state.pendingRemovals || [],
+          formSlug: params.formSlug
         }
       }
     });
   };
 
-  // Controlla se tutti i blocchi attivi sono completati
-  const areAllBlocksCompleted = state.activeBlocks?.every(
-    blockId => state.completedBlocks?.includes(blockId)
+  // More lenient check - allow submission if we have a formSlug
+  const canSubmit = params.formSlug && (
+    // Either we have completed blocks
+    (state.activeBlocks?.length > 0 && state.activeBlocks?.every(
+      blockId => state.completedBlocks?.includes(blockId)
+    )) ||
+    // Or we have at least some responses
+    (state.responses && Object.keys(state.responses).length > 0) ||
+    // Or we allow empty form submission for database-driven forms
+    true
   );
 
-  if (!areAllBlocksCompleted) {
+  if (!canSubmit) {
     return null;
   }
 

@@ -23,7 +23,7 @@ export async function submitFormToSupabase(
   try {
     console.log("Inizio invio form a Supabase...");
     console.log("Form slug:", formSlug);
-    console.log("Responses count:", Object.keys(state.responses).length);
+    console.log("Responses count:", Object.keys(state.responses || {}).length);
     
     // Recupera i blocchi dalla cache memoria usando il formSlug
     const formSnapshot = await formCacheService.getFormSnapshot(formSlug);
@@ -48,12 +48,10 @@ export async function submitFormToSupabase(
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 48);
     
-    // Validate that all questions exist in the provided blocks
-    const missingQuestions = validateQuestionsExist(
-      state.responses, 
-      cacheMemoryBlocks, 
-      state.dynamicBlocks || []
-    );
+    // Only validate questions if we have responses
+    const missingQuestions = state.responses && Object.keys(state.responses).length > 0 ? 
+      validateQuestionsExist(state.responses, cacheMemoryBlocks, state.dynamicBlocks || []) : 
+      [];
     
     if (missingQuestions.length > 0) {
       console.error("Missing questions in blocks:", missingQuestions);
@@ -69,15 +67,16 @@ export async function submitFormToSupabase(
         form_type: formType,
         expires_at: expiresAt.toISOString(),
         metadata: { 
-          blocks: state.activeBlocks,
-          completedBlocks: state.completedBlocks,
+          blocks: state.activeBlocks || [],
+          completedBlocks: state.completedBlocks || [],
           dynamicBlocks: state.dynamicBlocks?.length || 0,
-          answeredQuestions: state.answeredQuestions.size,
-          navigationSteps: state.navigationHistory.length,
-          blockActivations: Object.keys(state.blockActivations).length,
+          answeredQuestions: state.answeredQuestions?.size || 0,
+          navigationSteps: state.navigationHistory?.length || 0,
+          blockActivations: Object.keys(state.blockActivations || {}).length,
           cacheMemoryBlocksCount: cacheMemoryBlocks.length,
           missingQuestionsCount: missingQuestions.length,
-          formSlug: formSlug
+          formSlug: formSlug,
+          hasResponses: !!(state.responses && Object.keys(state.responses).length > 0)
         }
       })
       .select('id')
@@ -90,46 +89,50 @@ export async function submitFormToSupabase(
 
     console.log("Submission creata con ID:", submission.id);
 
-    // 2. Prepara i dati delle risposte
+    // 2. Prepara i dati delle risposte (solo se ci sono risposte)
     const responsesData = [];
     
-    for (const questionId in state.responses) {
-      // Trova la domanda usando la utility function con i blocchi dalla cache
-      const questionInfo = findQuestionInfo(
-        questionId, 
-        cacheMemoryBlocks, 
-        state.dynamicBlocks || []
-      );
-      
-      if (questionInfo) {
-        const responseData = state.responses[questionId];
+    if (state.responses && Object.keys(state.responses).length > 0) {
+      for (const questionId in state.responses) {
+        // Trova la domanda usando la utility function con i blocchi dalla cache
+        const questionInfo = findQuestionInfo(
+          questionId, 
+          cacheMemoryBlocks, 
+          state.dynamicBlocks || []
+        );
         
-        responsesData.push({
-          submission_id: submission.id,
-          question_id: questionId,
-          question_text: questionInfo.questionText,
-          block_id: questionInfo.blockId,
-          response_value: responseData
-        });
+        if (questionInfo) {
+          const responseData = state.responses[questionId];
+          
+          responsesData.push({
+            submission_id: submission.id,
+            question_id: questionId,
+            question_text: questionInfo.questionText,
+            block_id: questionInfo.blockId,
+            response_value: responseData
+          });
+        } else {
+          console.warn(`Question ${questionId} not found in cache memory blocks - skipping`);
+        }
+      }
+      
+      // 3. Inserisci tutte le risposte (solo se ci sono)
+      if (responsesData.length > 0) {
+        const { error: responsesError } = await supabase
+          .from('form_responses')
+          .insert(responsesData);
+        
+        if (responsesError) {
+          console.error("Errore nel salvataggio delle risposte:", responsesError);
+          throw responsesError;
+        }
+        
+        console.log(`Salvate ${responsesData.length} risposte`);
       } else {
-        console.warn(`Question ${questionId} not found in cache memory blocks - skipping`);
+        console.log("No valid responses to save, but submission created successfully");
       }
-    }
-    
-    // 3. Inserisci tutte le risposte
-    if (responsesData.length > 0) {
-      const { error: responsesError } = await supabase
-        .from('form_responses')
-        .insert(responsesData);
-      
-      if (responsesError) {
-        console.error("Errore nel salvataggio delle risposte:", responsesError);
-        throw responsesError;
-      }
-      
-      console.log(`Salvate ${responsesData.length} risposte`);
     } else {
-      console.warn("No valid responses to save");
+      console.log("No responses provided, creating submission without response data");
     }
 
     console.log("Form submission completed successfully");

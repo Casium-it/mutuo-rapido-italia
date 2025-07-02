@@ -5,29 +5,36 @@ import { Button } from "@/components/ui/button";
 import { useForm } from "@/contexts/FormContext";
 
 export function FormSubmitButton() {
-  const { state } = useForm(); // Remove blocks from destructuring
+  const { state } = useForm();
   const [isNavigating, setIsNavigating] = useState(false);
   const navigate = useNavigate();
   const params = useParams();
 
   const handleSubmit = async () => {
     setIsNavigating(true);
-    console.log("FormSubmitButton: Navigating to FormLoading...");
+    console.log("FormSubmitButton: Attempting to submit form");
+    console.log("FormSubmitButton: params:", params);
+    console.log("FormSubmitButton: params.formSlug:", params.formSlug);
+    console.log("FormSubmitButton: state.responses:", state.responses);
+    console.log("FormSubmitButton: Object.keys(state.responses).length:", Object.keys(state.responses || {}).length);
+    console.log("FormSubmitButton: state.activeBlocks:", state.activeBlocks);
+    console.log("FormSubmitButton: state.completedBlocks:", state.completedBlocks);
+    console.log("FormSubmitButton: state.dynamicBlocks:", state.dynamicBlocks);
     
     try {
-      // Navigate to FormLoading with form data (no staticBlocks)
+      // Navigate to FormLoading with form data
       navigate('/form-loading', { 
         state: { 
           formData: {
-            responses: state.responses,
-            activeBlocks: state.activeBlocks,
-            completedBlocks: state.completedBlocks,
-            dynamicBlocks: state.dynamicBlocks,
-            answeredQuestions: Array.from(state.answeredQuestions),
-            navigationHistory: state.navigationHistory,
-            blockActivations: state.blockActivations,
-            pendingRemovals: state.pendingRemovals,
-            formSlug: params.formSlug // FormLoading will use this to get cache memory blocks
+            responses: state.responses || {},
+            activeBlocks: state.activeBlocks || [],
+            completedBlocks: state.completedBlocks || [],
+            dynamicBlocks: state.dynamicBlocks || [],
+            answeredQuestions: Array.from(state.answeredQuestions || new Set()),
+            navigationHistory: state.navigationHistory || [],
+            blockActivations: state.blockActivations || {},
+            pendingRemovals: state.pendingRemovals || [],
+            formSlug: params.formSlug
           }
         } 
       });
