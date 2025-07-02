@@ -1,22 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
-import { Block, Question } from '@/types/form';
-
-interface FormState {
-  responses: {
-    [questionId: string]: {
-      [placeholderKey: string]: string | string[] | undefined;
-    };
-  };
-  activeQuestion: {
-    block_id: string;
-    question_id: string;
-  };
-  activeBlocks: string[];
-  completedBlocks: string[];
-  dynamicBlocks: Block[];
-  formSlug: string | null;
-  answeredQuestions: Set<string>;
-}
+import { Block, Question, FormState } from '@/types/form';
 
 interface FormContextProps {
   state: FormState;
@@ -32,6 +15,9 @@ interface FormContextProps {
   deleteQuestionResponses: (questionIds: string[]) => void;
   isBlockCompleted: (blockId: string) => boolean;
   markBlockAsCompleted: (blockId: string) => void;
+  removeBlockFromCompleted: (blockId: string) => void;
+  getProgress: () => number;
+  resetForm: () => void;
 }
 
 interface FormProviderProps {
@@ -56,7 +42,10 @@ const initializeState = (blocks: Block[]): FormState => {
     completedBlocks: [],
     dynamicBlocks: [],
     formSlug: null,
-    answeredQuestions: new Set<string>()
+    answeredQuestions: new Set<string>(),
+    navigationHistory: [],
+    blockActivations: {},
+    pendingRemovals: []
   };
 };
 
@@ -276,12 +265,32 @@ export const FormProvider: React.FC<FormProviderProps> = ({ children, blocks }) 
     });
   }, []);
 
+  const removeBlockFromCompleted = useCallback((blockId: string): void => {
+    setState(prevState => ({
+      ...prevState,
+      completedBlocks: prevState.completedBlocks.filter(id => id !== blockId),
+    }));
+  }, []);
+
+  const getProgress = useCallback((): number => {
+    const totalBlocks = state.activeBlocks.length;
+    const completedBlocksCount = state.completedBlocks.length;
+    
+    if (totalBlocks === 0) return 0;
+    
+    return Math.round((completedBlocksCount / totalBlocks) * 100);
+  }, [state.activeBlocks.length, state.completedBlocks.length]);
+
+  const resetForm = useCallback((): void => {
+    setState(initializeState(blocks));
+  }, [blocks]);
+
   // FIXED: Stabilize getResponse with useMemo to prevent infinite re-renders
   const getResponse = useMemo(() => {
     return (questionId: string, placeholderKey: string): string | string[] | undefined => {
       return state.responses[questionId]?.[placeholderKey];
     };
-  }, [state.responses]); // No dependencies - function reference stays stable
+  }, [state.responses]);
 
   const value = {
     state,
@@ -296,7 +305,10 @@ export const FormProvider: React.FC<FormProviderProps> = ({ children, blocks }) 
     removeActiveBlock,
     deleteQuestionResponses,
     isBlockCompleted,
-    markBlockAsCompleted
+    markBlockAsCompleted,
+    removeBlockFromCompleted,
+    getProgress,
+    resetForm
   };
 
   return (
