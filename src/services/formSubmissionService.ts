@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { FormResponse, FormState, Block } from "@/types/form";
 import { findQuestionInfo, validateQuestionsExist } from "@/utils/questionLookup";
+import { formCacheService } from "@/services/formCacheService";
 
 type SubmissionResult = {
   success: boolean;
@@ -12,18 +13,29 @@ type SubmissionResult = {
 /**
  * Invia i dati del form completato a Supabase utilizzando lo stato del form
  * @param state - Lo stato completo del form con tutti i dati
- * @param staticBlocks - I blocchi statici dal FormContext (cached database blocks)
+ * @param formSlug - Lo slug del form per recuperare i blocchi dalla cache
  * @returns Risultato dell'operazione con l'ID della submission
  */
 export async function submitFormToSupabase(
   state: FormState,
-  staticBlocks: Block[]
+  formSlug: string
 ): Promise<SubmissionResult> {
   try {
     console.log("Inizio invio form a Supabase...");
-    console.log("Static blocks count:", staticBlocks.length);
-    console.log("Dynamic blocks count:", state.dynamicBlocks?.length || 0);
+    console.log("Form slug:", formSlug);
     console.log("Responses count:", Object.keys(state.responses).length);
+    
+    // Recupera i blocchi dalla cache memoria usando il formSlug
+    const formSnapshot = await formCacheService.getFormSnapshot(formSlug);
+    
+    if (!formSnapshot || !formSnapshot.blocks || formSnapshot.blocks.length === 0) {
+      console.error("FormSubmissionService: No cache memory blocks found for form:", formSlug);
+      throw new Error(`Nessun blocco trovato nella cache per il form: ${formSlug}`);
+    }
+    
+    const cacheMemoryBlocks = formSnapshot.blocks;
+    console.log("Cache memory blocks count:", cacheMemoryBlocks.length);
+    console.log("Dynamic blocks count:", state.dynamicBlocks?.length || 0);
     
     // Ottieni il parametro referral dall'URL se presente
     const searchParams = new URLSearchParams(window.location.search);
@@ -39,13 +51,13 @@ export async function submitFormToSupabase(
     // Validate that all questions exist in the provided blocks
     const missingQuestions = validateQuestionsExist(
       state.responses, 
-      staticBlocks, 
+      cacheMemoryBlocks, 
       state.dynamicBlocks || []
     );
     
     if (missingQuestions.length > 0) {
       console.error("Missing questions in blocks:", missingQuestions);
-      console.log("Available static blocks:", staticBlocks.map(b => ({ id: b.block_id, questions: b.questions.length })));
+      console.log("Available cache memory blocks:", cacheMemoryBlocks.map(b => ({ id: b.block_id, questions: b.questions.length })));
       console.log("Available dynamic blocks:", (state.dynamicBlocks || []).map(b => ({ id: b.block_id, questions: b.questions.length })));
     }
     
@@ -63,8 +75,9 @@ export async function submitFormToSupabase(
           answeredQuestions: state.answeredQuestions.size,
           navigationSteps: state.navigationHistory.length,
           blockActivations: Object.keys(state.blockActivations).length,
-          staticBlocksCount: staticBlocks.length,
-          missingQuestionsCount: missingQuestions.length
+          cacheMemoryBlocksCount: cacheMemoryBlocks.length,
+          missingQuestionsCount: missingQuestions.length,
+          formSlug: formSlug
         }
       })
       .select('id')
@@ -81,10 +94,10 @@ export async function submitFormToSupabase(
     const responsesData = [];
     
     for (const questionId in state.responses) {
-      // Trova la domanda usando la utility function
+      // Trova la domanda usando la utility function con i blocchi dalla cache
       const questionInfo = findQuestionInfo(
         questionId, 
-        staticBlocks, 
+        cacheMemoryBlocks, 
         state.dynamicBlocks || []
       );
       
@@ -99,7 +112,7 @@ export async function submitFormToSupabase(
           response_value: responseData
         });
       } else {
-        console.warn(`Question ${questionId} not found in blocks - skipping`);
+        console.warn(`Question ${questionId} not found in cache memory blocks - skipping`);
       }
     }
     

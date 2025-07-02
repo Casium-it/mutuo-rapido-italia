@@ -8,10 +8,10 @@ import { useForm } from "@/contexts/FormContext";
 export const CompleteFormButton = ({ className }: { className?: string }) => {
   const navigate = useNavigate();
   const params = useParams();
-  const { state, blocks } = useForm(); // Get blocks from FormContext
+  const { state } = useForm(); // Remove blocks from destructuring
 
   const handleSubmitForm = async () => {
-    // Navigate immediately to loading page with complete form data including static blocks from FormContext
+    // Navigate immediately to loading page with form data (no staticBlocks)
     navigate('/form-loading', { 
       state: { 
         formData: {
@@ -23,8 +23,7 @@ export const CompleteFormButton = ({ className }: { className?: string }) => {
           navigationHistory: state.navigationHistory,
           blockActivations: state.blockActivations,
           pendingRemovals: state.pendingRemovals,
-          formSlug: params.formSlug,
-          staticBlocks: blocks // Pass FormContext blocks (cached database blocks)
+          formSlug: params.formSlug // FormLoading will use this to get cache memory blocks
         }
       }
     });

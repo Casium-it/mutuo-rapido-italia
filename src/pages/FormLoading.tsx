@@ -23,7 +23,7 @@ export default function FormLoading() {
   // Get global simulation timer for completion event
   const { getTotalTimeSpent } = useSimulationTimer();
   
-  // Get form data from location state
+  // Get form data from location state - ora non contiene più staticBlocks
   const formData = location.state?.formData as {
     responses: FormResponse;
     activeBlocks: string[];
@@ -35,20 +35,20 @@ export default function FormLoading() {
     pendingRemovals?: any[];
     formSlug?: string;
     submissionId?: string;
-    staticBlocks?: any[]; // Blocks from FormContext
   };
   
   useEffect(() => {
     console.log("FormLoading: Component mounted, starting initialization");
     
-    // Enhanced validation - if no form data, redirect to home
-    if (!formData || !formData.responses || !formData.activeBlocks) {
-      console.error("FormLoading: No valid form data found, redirecting to home");
+    // Enhanced validation - if no form data or formSlug, redirect to home
+    if (!formData || !formData.responses || !formData.activeBlocks || !formData.formSlug) {
+      console.error("FormLoading: No valid form data or formSlug found, redirecting to home");
       navigate("/");
       return;
     }
     
     console.log("FormLoading: Valid form data found, starting progress and submission");
+    console.log("FormLoading: Form slug:", formData.formSlug);
     
     // Always start progress animation immediately for good UX
     startProgressAnimation();
@@ -110,12 +110,7 @@ export default function FormLoading() {
       console.log("FormLoading: Form responses:", Object.keys(formData.responses).length);
       console.log("FormLoading: Active blocks:", formData.activeBlocks.length);
       console.log("FormLoading: Dynamic blocks:", formData.dynamicBlocks?.length || 0);
-      console.log("FormLoading: Static blocks:", formData.staticBlocks?.length || 0);
-      
-      // Check if we have static blocks from FormContext
-      if (!formData.staticBlocks || formData.staticBlocks.length === 0) {
-        throw new Error("Nessun blocco statico disponibile per l'invio");
-      }
+      console.log("FormLoading: Using form slug for cache memory blocks:", formData.formSlug);
       
       // Create complete form state for submission service
       const formStateForSubmission: FormState = {
@@ -130,8 +125,8 @@ export default function FormLoading() {
         pendingRemovals: formData.pendingRemovals || []
       };
       
-      // Submit using static blocks from FormContext (no re-fetching)
-      const result = await submitFormToSupabase(formStateForSubmission, formData.staticBlocks);
+      // Submit using formSlug to get cache memory blocks internally
+      const result = await submitFormToSupabase(formStateForSubmission, formData.formSlug);
       
       if (result.success && result.submissionId) {
         console.log("FormLoading: Form submitted successfully, ID:", result.submissionId);
