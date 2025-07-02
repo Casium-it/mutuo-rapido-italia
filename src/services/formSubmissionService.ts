@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { FormResponse, FormState } from "@/types/form";
+import { FormResponse, FormState, Block } from "@/types/form";
+import { findQuestionInfo } from "@/utils/submissionUtils";
 
 type SubmissionResult = {
   success: boolean;
@@ -11,12 +12,12 @@ type SubmissionResult = {
 /**
  * Invia i dati del form completato a Supabase utilizzando lo stato del form
  * @param state - Lo stato completo del form con tutti i dati
- * @param blocks - I blocchi del form per ottenere i testi delle domande
+ * @param staticBlocks - I blocchi statici dal FormContext
  * @returns Risultato dell'operazione con l'ID della submission
  */
 export async function submitFormToSupabase(
   state: FormState,
-  blocks: any[]
+  staticBlocks: Block[]
 ): Promise<SubmissionResult> {
   try {
     console.log("Inizio invio form a Supabase...");
@@ -63,40 +64,20 @@ export async function submitFormToSupabase(
     const responsesData = [];
     
     for (const questionId in state.responses) {
-      // Trova la domanda nei blocchi statici e dinamici
-      let question = blocks
-        .flatMap(block => block.questions)
-        .find(q => q.question_id === questionId);
+      const questionInfo = findQuestionInfo(questionId, staticBlocks, state.dynamicBlocks || []);
       
-      // Se non trovata nei blocchi statici, cerca nei blocchi dinamici
-      if (!question && state.dynamicBlocks) {
-        question = state.dynamicBlocks
-          .flatMap(block => block.questions)
-          .find(q => q.question_id === questionId);
-      }
-      
-      if (question) {
-        // Trova il block_id corretto
-        let blockId = blocks.find(
-          block => block.questions.some(q => q.question_id === questionId)
-        )?.block_id;
-        
-        // Se non trovato nei blocchi statici, cerca nei dinamici
-        if (!blockId && state.dynamicBlocks) {
-          blockId = state.dynamicBlocks.find(
-            block => block.questions.some(q => q.question_id === questionId)
-          )?.block_id;
-        }
-        
+      if (questionInfo) {
         const responseData = state.responses[questionId];
         
         responsesData.push({
           submission_id: submission.id,
           question_id: questionId,
-          question_text: question.question_text,
-          block_id: blockId || 'unknown',
+          question_text: questionInfo.questionText,
+          block_id: questionInfo.blockId,
           response_value: responseData
         });
+      } else {
+        console.warn(`Question not found in blocks: ${questionId}`);
       }
     }
     
