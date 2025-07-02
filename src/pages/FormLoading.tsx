@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
@@ -42,20 +43,22 @@ export default function FormLoading() {
     console.log("FormLoading: location.state:", location.state);
     console.log("FormLoading: formData:", formData);
     
-    // Enhanced validation - more lenient for database-driven forms
+    // Enhanced validation - check for formData existence first
     if (!formData) {
       console.error("FormLoading: No formData found in location.state, redirecting to home");
       navigate("/");
       return;
     }
 
+    // Check for formSlug - this is now the primary requirement
     if (!formData.formSlug) {
       console.error("FormLoading: No formSlug found in formData, redirecting to home");
+      console.error("FormLoading: Available formData keys:", Object.keys(formData));
       navigate("/");
       return;
     }
 
-    // More lenient validation - allow empty responses/activeBlocks for database-driven forms
+    // More lenient validation for database-driven forms
     const hasValidData = formData.formSlug && (
       // Either we have some responses
       (formData.responses && Object.keys(formData.responses).length > 0) ||
@@ -151,7 +154,8 @@ export default function FormLoading() {
         answeredQuestions: new Set<string>(formData.answeredQuestions || []),
         navigationHistory: formData.navigationHistory || [],
         blockActivations: formData.blockActivations || {},
-        pendingRemovals: formData.pendingRemovals || []
+        pendingRemovals: formData.pendingRemovals || [],
+        formSlug: formData.formSlug
       };
       
       // Submit using formSlug to get cache memory blocks internally

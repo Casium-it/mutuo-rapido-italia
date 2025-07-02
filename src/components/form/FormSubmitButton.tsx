@@ -15,11 +15,15 @@ export function FormSubmitButton() {
     console.log("FormSubmitButton: Attempting to submit form");
     console.log("FormSubmitButton: params:", params);
     console.log("FormSubmitButton: params.formSlug:", params.formSlug);
+    console.log("FormSubmitButton: state.formSlug:", state.formSlug);
     console.log("FormSubmitButton: state.responses:", state.responses);
     console.log("FormSubmitButton: Object.keys(state.responses).length:", Object.keys(state.responses || {}).length);
     console.log("FormSubmitButton: state.activeBlocks:", state.activeBlocks);
     console.log("FormSubmitButton: state.completedBlocks:", state.completedBlocks);
     console.log("FormSubmitButton: state.dynamicBlocks:", state.dynamicBlocks);
+    
+    // Use formSlug from state (preferred) or params as fallback
+    const formSlug = state.formSlug || params.formSlug;
     
     try {
       // Navigate to FormLoading with form data
@@ -34,7 +38,7 @@ export function FormSubmitButton() {
             navigationHistory: state.navigationHistory || [],
             blockActivations: state.blockActivations || {},
             pendingRemovals: state.pendingRemovals || [],
-            formSlug: params.formSlug
+            formSlug: formSlug
           }
         } 
       });
