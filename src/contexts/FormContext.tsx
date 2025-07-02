@@ -387,6 +387,10 @@ export const FormProvider: React.FC<FormProviderProps> = ({ children, blocks }) 
   const isNavigatingRef = useRef<boolean | undefined>(false);
   const usedNextBlockNavRef = useRef<boolean>(false);
   
+  // Add refs for debounced saving
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSavedStateRef = useRef<string>('');
+  
   // Use provided blocks or fall back to empty array
   const formBlocks = blocks || [];
   
@@ -408,6 +412,84 @@ export const FormProvider: React.FC<FormProviderProps> = ({ children, blocks }) 
   }, [sortedBlocks]);
   
   const [state, dispatch] = useReducer(formReducer, dynamicInitialState);
+
+  // RESTORED: Auto-save form state to localStorage with debouncing
+  useEffect(() => {
+    const formType = params.formSlug || params.blockType;
+    
+    if (!formType) {
+      console.log('[FORM-STATE-SAVE] Skipping save: formType is undefined');
+      return;
+    }
+    
+    // Skip save if blocks aren't loaded yet (prevents saving incomplete state)
+    if (formBlocks.length === 0 && !params.formSlug) {
+      console.log('[FORM-STATE-SAVE] Skipping save: blocks not loaded yet');
+      return;
+    }
+    
+    // Serialize state for comparison (to avoid unnecessary saves)
+    const stateToSave = {
+      activeBlocks: state.activeBlocks,
+      activeQuestion: state.activeQuestion,
+      responses: state.responses,
+      answeredQuestions: Array.from(state.answeredQuestions), // Convert Set to Array
+      navigationHistory: state.navigationHistory,
+      dynamicBlocks: state.dynamicBlocks,
+      blockActivations: state.blockActivations,
+      completedBlocks: state.completedBlocks,
+      pendingRemovals: state.pendingRemovals
+    };
+    
+    const serializedState = JSON.stringify(stateToSave);
+    
+    // Skip save if state hasn't actually changed
+    if (serializedState === lastSavedStateRef.current) {
+      return;
+    }
+    
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    // Debounced save (300ms delay)
+    saveTimeoutRef.current = setTimeout(() => {
+      try {
+        localStorage.setItem(`form-state-${formType}`, serializedState);
+        lastSavedStateRef.current = serializedState;
+        
+        console.log(`[FORM-STATE-SAVE] ✅ State saved for key: form-state-${formType}`, {
+          responses: Object.keys(state.responses).length,
+          answeredQuestions: state.answeredQuestions.size,
+          activeBlocks: state.activeBlocks.length,
+          completedBlocks: state.completedBlocks.length
+        });
+      } catch (error) {
+        console.error('[FORM-STATE-SAVE] ❌ Failed to save state:', error);
+      }
+    }, 300);
+    
+    // Cleanup timeout on unmount
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [
+    state.activeBlocks, 
+    state.activeQuestion, 
+    state.responses, 
+    state.answeredQuestions, 
+    state.navigationHistory,
+    state.dynamicBlocks,
+    state.blockActivations,
+    state.completedBlocks,
+    state.pendingRemovals,
+    params.formSlug, 
+    params.blockType,
+    formBlocks.length
+  ]);
 
   // Funzione per trovare a quale blocco appartiene una domanda specifica
   const findBlockByQuestionId = useCallback((questionId: string): string | null => {
@@ -707,7 +789,7 @@ export const FormProvider: React.FC<FormProviderProps> = ({ children, blocks }) 
     }
   }, [params.blockId, params.questionId, params.blockType, params.formSlug, formBlocks.length, navigate, state.activeBlocks]);
 
-  // Separate effect for saved state loading
+  // Separate effect for saved state loading - ENHANCED with better error handling
   useEffect(() => {
     const formType = params.formSlug || params.blockType;
     if (!formType || formBlocks.length === 0) return;
@@ -717,40 +799,66 @@ export const FormProvider: React.FC<FormProviderProps> = ({ children, blocks }) 
       try {
         const parsedState = JSON.parse(savedState);
         
+        // Validate and restore Set objects
         if (Array.isArray(parsedState.answeredQuestions)) {
           parsedState.answeredQuestions = new Set(parsedState.answeredQuestions);
         } else {
           parsedState.answeredQuestions = new Set();
         }
         
-        if (Array.isArray(parsedState.dynamicBlocks)) {
+        // Ensure required arrays exist
+        if (!Array.isArray(parsedState.dynamicBlocks)) {
+          parsedState.dynamicBlocks = [];
+        } else {
           parsedState.dynamicBlocks = parsedState.dynamicBlocks.map(block => 
             ensureBlockHasPriority(block)
           );
-        } else {
-          parsedState.dynamicBlocks = [];
         }
         
-        if (!parsedState.pendingRemovals) {
+        if (!Array.isArray(parsedState.pendingRemovals)) {
           parsedState.pendingRemovals = [];
+        }
+        
+        if (!Array.isArray(parsedState.completedBlocks)) {
+          parsedState.completedBlocks = [];
+        }
+        
+        if (!Array.isArray(parsedState.activeBlocks)) {
+          parsedState.activeBlocks = [];
+        }
+        
+        // Ensure blockActivations exists
+        if (!parsedState.blockActivations) {
+          parsedState.blockActivations = {};
         }
         
         dispatch({ type: "SET_FORM_STATE", state: parsedState });
         
-        if (parsedState.activeBlocks) {
-          parsedState.activeBlocks.forEach((blockId: string) => {
-            if (!state.activeBlocks.includes(blockId)) {
-              dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
-            }
-          });
-        }
+        console.log(`[FORM-STATE-LOAD] ✅ State loaded for key: form-state-${formType}`, {
+          responses: Object.keys(parsedState.responses || {}).length,
+          answeredQuestions: parsedState.answeredQuestions.size,
+          activeBlocks: parsedState.activeBlocks.length,
+          completedBlocks: parsedState.completedBlocks.length
+        });
         
+        // Activate required blocks based on loaded responses
         if (parsedState.responses) {
           activateRequiredBlocksBasedOnResponses(parsedState.responses);
         }
+        
+        // Set initial saved state reference
+        lastSavedStateRef.current = JSON.stringify({
+          ...parsedState,
+          answeredQuestions: Array.from(parsedState.answeredQuestions)
+        });
+        
       } catch (e) {
-        console.error("Errore nel caricamento dello stato salvato:", e);
+        console.error("[FORM-STATE-LOAD] ❌ Error loading saved state:", e);
+        console.log("[FORM-STATE-LOAD] Clearing corrupted state from localStorage");
+        localStorage.removeItem(`form-state-${formType}`);
       }
+    } else {
+      console.log(`[FORM-STATE-LOAD] No saved state found for key: form-state-${formType}`);
     }
   }, [params.blockType, params.formSlug, formBlocks.length, state.activeBlocks]);
 
