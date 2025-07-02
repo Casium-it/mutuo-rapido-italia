@@ -46,16 +46,46 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
     );
   }
 
-  const cardHeight = 220; // Height of each card + margin
+  // Calculate dynamic heights for each step
+  const calculateStepHeight = (step: FlowStep): number => {
+    const baseHeight = 120; // Base height for question text and header
+    const optionHeight = 40; // Height per option
+    const padding = 40; // Additional padding
+    
+    return baseHeight + (step.connections.length * optionHeight) + padding;
+  };
+
+  // Calculate cumulative positions for each level
+  const calculateLevelPositions = () => {
+    const levelPositions: { [levelIndex: number]: number[] } = {};
+    
+    flowData.levels.forEach((level, levelIndex) => {
+      levelPositions[levelIndex] = [];
+      let currentY = containerPadding;
+      
+      level.steps.forEach((step, stepIndex) => {
+        levelPositions[levelIndex][stepIndex] = currentY;
+        const stepHeight = calculateStepHeight(step);
+        currentY += stepHeight + verticalSpacing;
+      });
+    });
+    
+    return levelPositions;
+  };
+
   const cardWidth = 350; // Width of each card
   const levelWidth = 500; // Width between levels (increased)
-  const verticalSpacing = 60; // Vertical spacing between cards
+  const verticalSpacing = 40; // Vertical spacing between cards
   const containerPadding = 50;
+  
+  const levelPositions = calculateLevelPositions();
 
   // Calculate total dimensions
   const totalWidth = flowData.levels.length * levelWidth + containerPadding * 2;
-  const maxCardsInLevel = Math.max(...flowData.levels.map(l => l.steps.length));
-  const totalHeight = maxCardsInLevel * (cardHeight + verticalSpacing) + containerPadding * 2;
+  const maxY = Math.max(...Object.values(levelPositions).map(positions => 
+    Math.max(...positions) + 300 // Add some extra space for the last card
+  ));
+  const totalHeight = maxY + containerPadding;
 
   return (
     <div className="overflow-x-auto overflow-y-auto bg-gray-50 rounded-lg border">
@@ -78,61 +108,71 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
               top: containerPadding
             }}
           >
-            {level.steps.map((step, stepIndex) => (
-              <div
-                key={step.id}
-                className="absolute"
-                style={{
-                  top: `${stepIndex * (cardHeight + verticalSpacing)}px`,
-                  width: `${cardWidth}px`
-                }}
-              >
-                <Card className={`${getStepColor(step.type)} border-2 transition-all hover:shadow-lg`}>
-                  <CardContent className="p-5">
-                    {/* Header */}
-                    <div className="flex items-center gap-2 mb-4">
-                      <span className="text-xl">{getStepIcon(step.type)}</span>
-                      <Badge variant="outline" className="text-xs font-mono font-bold">
-                        {step.questionNumber}
-                      </Badge>
-                      {step.isInline && (
-                        <Badge variant="secondary" className="text-xs">
-                          Inline
+            {level.steps.map((step, stepIndex) => {
+              const stepHeight = calculateStepHeight(step);
+              const yPosition = levelPositions[levelIndex][stepIndex] - containerPadding;
+              
+              return (
+                <div
+                  key={step.id}
+                  className="absolute"
+                  style={{
+                    top: `${yPosition}px`,
+                    width: `${cardWidth}px`,
+                    height: `${stepHeight}px`
+                  }}
+                >
+                  <Card className={`${getStepColor(step.type)} border-2 transition-all hover:shadow-lg h-full`}>
+                    <CardContent className="p-5 h-full flex flex-col">
+                      {/* Header */}
+                      <div className="flex items-center gap-2 mb-4">
+                        <span className="text-xl">{getStepIcon(step.type)}</span>
+                        <Badge variant="outline" className="text-xs font-mono font-bold">
+                          {step.questionNumber}
                         </Badge>
-                      )}
-                    </div>
-                    
-                    {/* Question Text */}
-                    <p className="text-sm text-gray-800 font-medium mb-4 leading-relaxed min-h-[3rem]">
-                      {step.questionText}
-                    </p>
-                    
-                    {/* Connections */}
-                    {step.connections.length > 0 && (
-                      <div className="space-y-2 border-t pt-3">
-                        <span className="text-xs text-gray-500 font-semibold uppercase tracking-wide">
-                          Opzioni:
-                        </span>
-                        {step.connections.map((connection, idx) => (
-                          <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 rounded border">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
-                            <span className="text-xs text-gray-700 font-medium flex-1">
-                              {connection.label}
-                            </span>
-                            <Badge className={`text-xs font-medium ${getConnectionColor(connection.type)}`}>
-                              {connection.type === 'add_block' && <Plus className="w-3 h-3 mr-1" />}
-                              {connection.targetId === 'next_block' ? 'Next Block' : 
-                               connection.targetId === 'stop' ? 'End' : 
-                               connection.targetId}
-                            </Badge>
-                          </div>
-                        ))}
+                        {step.isInline && (
+                          <Badge variant="secondary" className="text-xs">
+                            Inline
+                          </Badge>
+                        )}
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            ))}
+                      
+                      {/* Question Text */}
+                      <p className="text-sm text-gray-800 font-medium mb-4 leading-relaxed min-h-[3rem] flex-shrink-0">
+                        {step.questionText}
+                      </p>
+                      
+                      {/* Connections */}
+                      {step.connections.length > 0 && (
+                        <div className="flex-1 flex flex-col">
+                          <div className="border-t pt-3 flex-1">
+                            <span className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-2 block">
+                              Opzioni:
+                            </span>
+                            <div className="space-y-2">
+                              {step.connections.map((connection, idx) => (
+                                <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 rounded border">
+                                  <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
+                                  <span className="text-xs text-gray-700 font-medium flex-1">
+                                    {connection.label}
+                                  </span>
+                                  <Badge className={`text-xs font-medium ${getConnectionColor(connection.type)}`}>
+                                    {connection.type === 'add_block' && <Plus className="w-3 h-3 mr-1" />}
+                                    {connection.targetId === 'next_block' ? 'Next Block' : 
+                                     connection.targetId === 'stop' ? 'End' : 
+                                     connection.targetId}
+                                  </Badge>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              );
+            })}
           </div>
         ))}
 
@@ -160,9 +200,9 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
           
           {flowData.connections.map((connection, index) => {
             const fromX = containerPadding + (connection.fromLevel * levelWidth) + cardWidth; // End of source card
-            const fromY = containerPadding + (connection.fromIndex * (cardHeight + verticalSpacing)) + (cardHeight / 2); // Middle of source card
+            const fromY = levelPositions[connection.fromLevel][connection.fromIndex] + (calculateStepHeight(flowData.levels[connection.fromLevel].steps[connection.fromIndex]) / 2); // Middle of source card
             const toX = containerPadding + connection.toLevel * levelWidth; // Start of target card
-            const toY = containerPadding + (connection.toIndex * (cardHeight + verticalSpacing)) + (cardHeight / 2); // Middle of target card
+            const toY = levelPositions[connection.toLevel][connection.toIndex] + (calculateStepHeight(flowData.levels[connection.toLevel].steps[connection.toIndex]) / 2); // Middle of target card
             
             // Calculate control points for curved line
             const midX = fromX + (toX - fromX) / 2;
