@@ -149,7 +149,7 @@ export class FlowAnalyzer {
     stepMap: Map<string, FlowStep>,
     levelAssignments: Map<string, number>
   ): void {
-    // For each level, calculate optimal positions based on source connections
+    // For each level, calculate optimal positions with staggered column starts
     stepsByLevel.forEach((steps, level) => {
       if (level === 0) {
         // First level - just assign sequential indices
@@ -159,10 +159,13 @@ export class FlowAnalyzer {
         return;
       }
 
-      // PASS 1: Detect multi-source questions and build dependency map
-      const multiSourceSteps = new Set<string>();
-      const sourceMap = new Map<string, string[]>();
+      // Start each new column one slot lower than the previous column
+      // This prevents line crossings by creating natural vertical separation
+      let nextAvailablePosition = level; // Start offset by level number
+      const assignedPositions = new Set<number>();
       
+      // Build source map for reference
+      const sourceMap = new Map<string, string[]>();
       steps.forEach(step => {
         const sources: string[] = [];
         stepMap.forEach((sourceStep, sourceId) => {
@@ -171,75 +174,11 @@ export class FlowAnalyzer {
           }
         });
         sourceMap.set(step.id, sources);
-        
-        // Mark as multi-source if it has more than one incoming connection
-        if (sources.length > 1) {
-          multiSourceSteps.add(step.id);
-        }
       });
 
-      // PASS 2: Calculate required space for each branching source
-      const branchingFootprint = new Map<string, number>();
-      stepMap.forEach((sourceStep, sourceId) => {
-        const targets = sourceStep.connections
-          .filter(conn => conn.targetId !== 'stop' && conn.targetId !== 'next_block')
-          .map(conn => conn.targetId);
-        
-        if (targets.length > 1) {
-          // Calculate how much vertical space this branching source needs
-          let requiredSpace = targets.length;
-          
-          // Add extra space for multi-source targets that need to be separated
-          targets.forEach(targetId => {
-            if (multiSourceSteps.has(targetId)) {
-              requiredSpace += 1; // Extra spacing for multi-source questions
-            }
-          });
-          
-          branchingFootprint.set(sourceId, requiredSpace);
-        }
-      });
-
-      // PASS 3: Smart positioning with conflict avoidance
-      const assignedPositions = new Set<number>();
-      const reservedSlots = new Map<string, number>(); // questionId -> reserved position
-      let nextAvailablePosition = 0;
-
-      // First, handle single-source questions (maintain alignment when possible)
-      const singleSourceSteps = steps.filter(step => {
-        const sources = sourceMap.get(step.id) || [];
-        return sources.length === 1 && !multiSourceSteps.has(step.id);
-      });
-
-      singleSourceSteps.forEach(step => {
-        const sources = sourceMap.get(step.id) || [];
-        if (sources.length === 1) {
-          const sourceStep = stepMap.get(sources[0]);
-          if (sourceStep) {
-            const sourcePosition = sourceStep.branchIndex;
-            
-            // Try to align with source position if available
-            if (!assignedPositions.has(sourcePosition)) {
-              step.branchIndex = sourcePosition;
-              assignedPositions.add(sourcePosition);
-            } else {
-              // Find next available position
-              while (assignedPositions.has(nextAvailablePosition)) {
-                nextAvailablePosition++;
-              }
-              step.branchIndex = nextAvailablePosition;
-              assignedPositions.add(nextAvailablePosition);
-              nextAvailablePosition++;
-            }
-          }
-        }
-      });
-
-      // Second, handle multi-source questions (need separate positioning)
-      const multiSourceStepsList = steps.filter(step => multiSourceSteps.has(step.id));
-      
-      multiSourceStepsList.forEach(step => {
-        // Find next available position that ensures separation
+      // Assign positions to all steps, starting from the offset
+      steps.forEach(step => {
+        // Find next available position starting from our offset
         while (assignedPositions.has(nextAvailablePosition)) {
           nextAvailablePosition++;
         }
@@ -249,56 +188,13 @@ export class FlowAnalyzer {
         nextAvailablePosition++;
       });
 
-      // Third, handle any remaining steps from branching sources
-      const remainingSteps = steps.filter(step => {
-        const sources = sourceMap.get(step.id) || [];
-        return sources.length === 1 && !singleSourceSteps.includes(step) && !multiSourceSteps.has(step.id);
-      });
-
-      // Group remaining steps by their source and handle branching
-      const sourceToTargets = new Map<string, FlowStep[]>();
-      remainingSteps.forEach(step => {
-        const sources = sourceMap.get(step.id) || [];
-        sources.forEach(sourceId => {
-          if (!sourceToTargets.has(sourceId)) {
-            sourceToTargets.set(sourceId, []);
-          }
-          sourceToTargets.get(sourceId)!.push(step);
-        });
-      });
-
-      // Process each branching source
-      sourceToTargets.forEach((targetSteps, sourceId) => {
-        const sourceStep = stepMap.get(sourceId);
-        if (!sourceStep || targetSteps.length <= 1) return;
-
-        // For multiple targets, ensure they're spread vertically
-        targetSteps.forEach((targetStep, index) => {
-          while (assignedPositions.has(nextAvailablePosition)) {
-            nextAvailablePosition++;
-          }
-          targetStep.branchIndex = nextAvailablePosition;
-          assignedPositions.add(nextAvailablePosition);
-          nextAvailablePosition++;
-        });
-      });
-
-      // Handle any unassigned steps
+      // Sort steps by their assigned positions
+      steps.sort((a, b) => a.branchIndex - b.branchIndex);
+      
+      // Normalize indices to be sequential starting from 0 (but maintain relative spacing)
+      const minIndex = Math.min(...steps.map(s => s.branchIndex));
       steps.forEach(step => {
-        if (step.branchIndex === undefined) {
-          while (assignedPositions.has(nextAvailablePosition)) {
-            nextAvailablePosition++;
-          }
-          step.branchIndex = nextAvailablePosition;
-          assignedPositions.add(nextAvailablePosition);
-          nextAvailablePosition++;
-        }
-      });
-
-      // Normalize all indices to start from 0 and be sequential
-      const sortedSteps = [...steps].sort((a, b) => a.branchIndex - b.branchIndex);
-      sortedSteps.forEach((step, index) => {
-        step.branchIndex = index;
+        step.branchIndex = step.branchIndex - minIndex;
       });
     });
   }
