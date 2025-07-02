@@ -19,7 +19,7 @@ import AdminBlockDetail from "./pages/AdminBlockDetail";
 import AdminFormDetail from "./pages/AdminFormDetail";
 import AdminNotifications from "./pages/AdminNotifications";
 import NotFound from "./pages/NotFound";
-import ProtectedRoute from "./components/ProtectedRoute";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 import { FormRouteHandler } from "./components/form/FormRouteHandler";
 
 // Import debuggers for global availability
