@@ -46,21 +46,36 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
     );
   }
 
-  const cardHeight = 200; // Height of each card
-  const levelWidth = 400; // Width between levels
-  const connectionGap = 50; // Gap for connections
+  const cardHeight = 220; // Height of each card + margin
+  const cardWidth = 350; // Width of each card
+  const levelWidth = 500; // Width between levels (increased)
+  const verticalSpacing = 60; // Vertical spacing between cards
+  const containerPadding = 50;
+
+  // Calculate total dimensions
+  const totalWidth = flowData.levels.length * levelWidth + containerPadding * 2;
+  const maxCardsInLevel = Math.max(...flowData.levels.map(l => l.steps.length));
+  const totalHeight = maxCardsInLevel * (cardHeight + verticalSpacing) + containerPadding * 2;
 
   return (
-    <div className="overflow-x-auto relative">
-      <div className="relative p-8" style={{ minWidth: `${flowData.levels.length * levelWidth}px` }}>
+    <div className="overflow-x-auto overflow-y-auto bg-gray-50 rounded-lg border">
+      <div 
+        className="relative bg-white"
+        style={{ 
+          width: `${totalWidth}px`,
+          height: `${totalHeight}px`,
+          minWidth: '100%',
+          minHeight: '400px'
+        }}
+      >
         {/* Render questions by level */}
         {flowData.levels.map((level, levelIndex) => (
           <div 
             key={levelIndex} 
             className="absolute"
             style={{ 
-              left: `${levelIndex * levelWidth}px`,
-              top: 0
+              left: `${containerPadding + levelIndex * levelWidth}px`,
+              top: containerPadding
             }}
           >
             {level.steps.map((step, stepIndex) => (
@@ -68,16 +83,16 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
                 key={step.id}
                 className="absolute"
                 style={{
-                  top: `${stepIndex * (cardHeight + 40)}px`,
-                  width: '320px'
+                  top: `${stepIndex * (cardHeight + verticalSpacing)}px`,
+                  width: `${cardWidth}px`
                 }}
               >
-                <Card className={`${getStepColor(step.type)} border transition-all hover:shadow-md`}>
-                  <CardContent className="p-4">
+                <Card className={`${getStepColor(step.type)} border-2 transition-all hover:shadow-lg`}>
+                  <CardContent className="p-5">
                     {/* Header */}
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="text-lg">{getStepIcon(step.type)}</span>
-                      <Badge variant="outline" className="text-xs font-mono">
+                    <div className="flex items-center gap-2 mb-4">
+                      <span className="text-xl">{getStepIcon(step.type)}</span>
+                      <Badge variant="outline" className="text-xs font-mono font-bold">
                         {step.questionNumber}
                       </Badge>
                       {step.isInline && (
@@ -88,21 +103,23 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
                     </div>
                     
                     {/* Question Text */}
-                    <p className="text-sm text-gray-800 font-medium mb-3 leading-relaxed">
+                    <p className="text-sm text-gray-800 font-medium mb-4 leading-relaxed min-h-[3rem]">
                       {step.questionText}
                     </p>
                     
                     {/* Connections */}
                     {step.connections.length > 0 && (
-                      <div className="space-y-2">
-                        <span className="text-xs text-gray-500 font-medium">Opzioni:</span>
+                      <div className="space-y-2 border-t pt-3">
+                        <span className="text-xs text-gray-500 font-semibold uppercase tracking-wide">
+                          Opzioni:
+                        </span>
                         {step.connections.map((connection, idx) => (
-                          <div key={idx} className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-gray-400 rounded-full flex-shrink-0"></div>
-                            <span className="text-xs text-gray-700 truncate flex-1">
+                          <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 rounded border">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
+                            <span className="text-xs text-gray-700 font-medium flex-1">
                               {connection.label}
                             </span>
-                            <Badge className={`text-xs ${getConnectionColor(connection.type)}`}>
+                            <Badge className={`text-xs font-medium ${getConnectionColor(connection.type)}`}>
                               {connection.type === 'add_block' && <Plus className="w-3 h-3 mr-1" />}
                               {connection.targetId === 'next_block' ? 'Next Block' : 
                                connection.targetId === 'stop' ? 'End' : 
@@ -122,56 +139,71 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
         {/* Render connection arrows */}
         <svg 
           className="absolute inset-0 pointer-events-none"
-          style={{ 
-            width: `${flowData.levels.length * levelWidth}px`,
-            height: `${Math.max(...flowData.levels.map(l => l.steps.length)) * (cardHeight + 40)}px`
-          }}
+          width={totalWidth}
+          height={totalHeight}
         >
           <defs>
             <marker
               id="arrowhead"
-              markerWidth="10"
-              markerHeight="7"
-              refX="9"
-              refY="3.5"
+              markerWidth="12"
+              markerHeight="8"
+              refX="10"
+              refY="4"
               orient="auto"
             >
               <polygon
-                points="0 0, 10 3.5, 0 7"
-                fill="#94a3b8"
+                points="0 0, 12 4, 0 8"
+                fill="#3b82f6"
               />
             </marker>
           </defs>
           
           {flowData.connections.map((connection, index) => {
-            const fromX = (connection.fromLevel * levelWidth) + 320; // End of source card
-            const fromY = (connection.fromIndex * (cardHeight + 40)) + (cardHeight / 2); // Middle of source card
-            const toX = connection.toLevel * levelWidth; // Start of target card
-            const toY = (connection.toIndex * (cardHeight + 40)) + (cardHeight / 2); // Middle of target card
+            const fromX = containerPadding + (connection.fromLevel * levelWidth) + cardWidth; // End of source card
+            const fromY = containerPadding + (connection.fromIndex * (cardHeight + verticalSpacing)) + (cardHeight / 2); // Middle of source card
+            const toX = containerPadding + connection.toLevel * levelWidth; // Start of target card
+            const toY = containerPadding + (connection.toIndex * (cardHeight + verticalSpacing)) + (cardHeight / 2); // Middle of target card
+            
+            // Calculate control points for curved line
+            const midX = fromX + (toX - fromX) / 2;
+            const controlX1 = fromX + 60;
+            const controlX2 = toX - 60;
             
             return (
               <g key={index}>
-                {/* Connection line */}
-                <line
-                  x1={fromX}
-                  y1={fromY}
-                  x2={toX}
-                  y2={toY}
-                  stroke="#94a3b8"
-                  strokeWidth="2"
+                {/* Connection path with curve */}
+                <path
+                  d={`M ${fromX} ${fromY} C ${controlX1} ${fromY}, ${controlX2} ${toY}, ${toX} ${toY}`}
+                  stroke="#3b82f6"
+                  strokeWidth="3"
+                  fill="none"
                   markerEnd="url(#arrowhead)"
+                  className="drop-shadow-sm"
+                />
+                
+                {/* Connection label background */}
+                <rect
+                  x={midX - 40}
+                  y={fromY + (toY - fromY) / 2 - 12}
+                  width="80"
+                  height="16"
+                  fill="white"
+                  stroke="#e5e7eb"
+                  strokeWidth="1"
+                  rx="8"
+                  className="drop-shadow-sm"
                 />
                 
                 {/* Connection label */}
                 <text
-                  x={fromX + (toX - fromX) / 2}
-                  y={fromY + (toY - fromY) / 2 - 5}
-                  fill="#6b7280"
-                  fontSize="11"
+                  x={midX}
+                  y={fromY + (toY - fromY) / 2 - 2}
+                  fill="#374151"
+                  fontSize="10"
                   textAnchor="middle"
-                  className="font-medium"
+                  className="font-semibold"
                 >
-                  {connection.label}
+                  {connection.label.length > 12 ? connection.label.substring(0, 12) + "..." : connection.label}
                 </text>
               </g>
             );
