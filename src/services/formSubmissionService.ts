@@ -10,7 +10,7 @@ type SubmissionResult = {
 
 /**
  * Invia i dati del form completato a Supabase utilizzando lo stato del form
- * @param state - Lo stato attuale del form
+ * @param state - Lo stato completo del form con tutti i dati
  * @param blocks - I blocchi del form per ottenere i testi delle domande
  * @returns Risultato dell'operazione con l'ID della submission
  */
@@ -42,7 +42,10 @@ export async function submitFormToSupabase(
         metadata: { 
           blocks: state.activeBlocks,
           completedBlocks: state.completedBlocks,
-          dynamicBlocks: state.dynamicBlocks?.length || 0
+          dynamicBlocks: state.dynamicBlocks?.length || 0,
+          answeredQuestions: state.answeredQuestions.size,
+          navigationSteps: state.navigationHistory.length,
+          blockActivations: Object.keys(state.blockActivations).length
         }
       })
       .select('id')

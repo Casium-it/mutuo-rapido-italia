@@ -61,8 +61,43 @@ type Action =
   | { type: "REMOVE_FROM_PENDING_REMOVALS"; questionIds: string[] }
   | { type: "PROCESS_PENDING_REMOVALS"; currentBlockId: string };
 
+// Helper function to restore state from localStorage
+const restoreStateFromLocalStorage = (formType: string, blocks: Block[]): FormState | null => {
+  try {
+    const savedState = localStorage.getItem(`form-state-${formType}`);
+    if (!savedState) return null;
+
+    const parsedState = JSON.parse(savedState);
+    
+    // Reconstruct Set from Array
+    if (parsedState.answeredQuestions && Array.isArray(parsedState.answeredQuestions)) {
+      parsedState.answeredQuestions = new Set(parsedState.answeredQuestions);
+    }
+    
+    console.log(`FormContext: Restored form state for ${formType}:`, {
+      activeBlocks: parsedState.activeBlocks?.length || 0,
+      answeredQuestions: parsedState.answeredQuestions?.size || 0,
+      responses: Object.keys(parsedState.responses || {}).length,
+      timestamp: new Date().toISOString()
+    });
+    
+    return parsedState as FormState;
+  } catch (error) {
+    console.warn('Failed to restore form state from localStorage:', error);
+    return null;
+  }
+};
+
 // Helper function to create initial state based on available blocks
-const createInitialState = (blocks: Block[]): FormState => {
+const createInitialState = (blocks: Block[], formType?: string): FormState => {
+  // Try to restore from localStorage first
+  if (formType) {
+    const restoredState = restoreStateFromLocalStorage(formType, blocks);
+    if (restoredState) {
+      return restoredState;
+    }
+  }
+
   if (blocks.length === 0) {
     return {
       activeBlocks: [],
@@ -404,8 +439,8 @@ export const FormProvider: React.FC<FormProviderProps> = ({ children, blocks }) 
   
   // Create dynamic initial state based on available blocks
   const dynamicInitialState = useMemo(() => {
-    return createInitialState(sortedBlocks);
-  }, [sortedBlocks]);
+    return createInitialState(sortedBlocks, params.formSlug);
+  }, [sortedBlocks, params.formSlug]);
   
   const [state, dispatch] = useReducer(formReducer, dynamicInitialState);
 

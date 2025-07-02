@@ -3,9 +3,9 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { Progress } from "@/components/ui/progress";
-import { FormResponse } from "@/types/form";
+import { FormResponse, FormState } from "@/types/form";
 import { submitFormToSupabase } from "@/services/formSubmissionService";
-import { allBlocks } from "@/data/blocks";
+import { formDefinitionService } from "@/services/formDefinitionService";
 import { toast } from "sonner";
 import { useSimulationTimer } from "@/hooks/useSimulationTimer";
 import { trackSimulationCompleted } from "@/utils/analytics";
@@ -31,6 +31,11 @@ export default function FormLoading() {
     activeBlocks: string[];
     completedBlocks: string[];
     dynamicBlocks: any[];
+    answeredQuestions?: string[];
+    navigationHistory?: any[];
+    blockActivations?: any;
+    pendingRemovals?: any[];
+    formSlug?: string;
     submissionId?: string;
   };
   
@@ -107,21 +112,29 @@ export default function FormLoading() {
       console.log("FormLoading: Active blocks:", formData.activeBlocks.length);
       console.log("FormLoading: Dynamic blocks:", formData.dynamicBlocks?.length || 0);
       
+      // Get form definition to resolve all blocks dynamically
+      const formSlug = formData.formSlug || location.pathname.split('/').pop();
+      const formDefinition = await formDefinitionService.getFormDefinition(formSlug);
+      console.log("FormLoading: Form definition loaded", {
+        source: formDefinition.source,
+        blocksCount: formDefinition.blocks.length
+      });
+      
       // Combine all blocks for submission service
-      const allAvailableBlocks = [...allBlocks, ...(formData.dynamicBlocks || [])];
+      const allAvailableBlocks = [...formDefinition.blocks, ...(formData.dynamicBlocks || [])];
       console.log("FormLoading: Total blocks available:", allAvailableBlocks.length);
       
-      // Create form state for submission service with proper types
-      const formStateForSubmission = {
+      // Create complete form state for submission service
+      const formStateForSubmission: FormState = {
         activeBlocks: formData.activeBlocks,
         responses: formData.responses,
         completedBlocks: formData.completedBlocks,
-        dynamicBlocks: formData.dynamicBlocks,
+        dynamicBlocks: formData.dynamicBlocks || [],
         activeQuestion: { block_id: '', question_id: '' },
-        answeredQuestions: new Set<string>(),
-        navigationHistory: [],
-        blockActivations: {},
-        pendingRemovals: []
+        answeredQuestions: new Set<string>(formData.answeredQuestions || []),
+        navigationHistory: formData.navigationHistory || [],
+        blockActivations: formData.blockActivations || {},
+        pendingRemovals: formData.pendingRemovals || []
       };
       
       const result = await submitFormToSupabase(formStateForSubmission, allAvailableBlocks);
@@ -132,6 +145,16 @@ export default function FormLoading() {
         // Track successful completion with total time spent from simulation start
         const totalTimeSpent = getTotalTimeSpent();
         trackSimulationCompleted(totalTimeSpent);
+        
+        // Clear saved form state after successful submission
+        if (formSlug) {
+          try {
+            localStorage.removeItem(`form-state-${formSlug}`);
+            console.log(`FormLoading: Cleared saved form state for ${formSlug}`);
+          } catch (error) {
+            console.warn('Failed to clear saved form state:', error);
+          }
+        }
         
         setActualSubmissionId(result.submissionId);
         setSubmissionCompleted(true);

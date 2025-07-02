@@ -2,22 +2,28 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "@/contexts/FormContext";
 
 export const CompleteFormButton = ({ className }: { className?: string }) => {
   const navigate = useNavigate();
+  const params = useParams();
   const { state } = useForm();
 
   const handleSubmitForm = async () => {
-    // Navigate immediately to loading page with form data
+    // Navigate immediately to loading page with complete form data
     navigate('/form-loading', { 
       state: { 
         formData: {
           responses: state.responses,
           activeBlocks: state.activeBlocks,
           completedBlocks: state.completedBlocks,
-          dynamicBlocks: state.dynamicBlocks
+          dynamicBlocks: state.dynamicBlocks,
+          answeredQuestions: Array.from(state.answeredQuestions),
+          navigationHistory: state.navigationHistory,
+          blockActivations: state.blockActivations,
+          pendingRemovals: state.pendingRemovals,
+          formSlug: params.formSlug
         }
       }
     });
