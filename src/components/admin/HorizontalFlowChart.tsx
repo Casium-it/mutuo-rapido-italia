@@ -14,10 +14,10 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
   
   const getStepColor = (type: FlowStep['type']) => {
     switch (type) {
-      case 'branching': return 'border-orange-200 bg-orange-50';
-      case 'inline': return 'border-blue-200 bg-blue-50';
-      case 'terminal': return 'border-gray-200 bg-gray-50';
-      default: return 'border-green-200 bg-green-50';
+      case 'branching': return 'border-green-600 bg-green-100';
+      case 'inline': return 'border-gray-400 bg-gray-100';
+      case 'terminal': return 'border-red-500 bg-red-100';
+      default: return 'border-green-400 bg-green-50';
     }
   };
 
@@ -52,12 +52,19 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
     const questionTextHeight = Math.max(60, Math.ceil(step.questionText.length / 60) * 20); // Estimate based on text length
     const optionsHeaderHeight = step.connections.length > 0 ? 30 : 0; // "OPZIONI:" header
     const optionHeight = 50; // Height per option (including padding and margins)
+    const addBlockHeight = 45; // Height for ADD BLOCK elements
     const cardPadding = 40; // Card internal padding
     const borderSpacing = 20; // Border and spacing
     
-    const totalOptionsHeight = step.connections.length * optionHeight;
+    // Count ADD BLOCK elements
+    const addBlockCount = step.connections.filter(conn => 
+      conn.type === 'add_block' && conn.addBlockName
+    ).length;
     
-    return headerHeight + questionTextHeight + optionsHeaderHeight + totalOptionsHeight + cardPadding + borderSpacing;
+    const totalOptionsHeight = step.connections.length * optionHeight;
+    const totalAddBlockHeight = addBlockCount * addBlockHeight;
+    
+    return headerHeight + questionTextHeight + optionsHeaderHeight + totalOptionsHeight + totalAddBlockHeight + cardPadding + borderSpacing;
   };
 
   // Calculate cumulative positions for each level
@@ -305,19 +312,19 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
           <h5 className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Colori delle Card:</h5>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 border-2 border-orange-200 bg-orange-50 rounded"></div>
+              <div className="w-4 h-4 border-2 border-green-600 bg-green-100 rounded"></div>
               <span className="text-xs text-gray-600">Domande con opzioni multiple (branching)</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 border-2 border-green-200 bg-green-50 rounded"></div>
+              <div className="w-4 h-4 border-2 border-green-400 bg-green-50 rounded"></div>
               <span className="text-xs text-gray-600">Domande semplici</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 border-2 border-blue-200 bg-blue-50 rounded"></div>
+              <div className="w-4 h-4 border-2 border-gray-400 bg-gray-100 rounded"></div>
               <span className="text-xs text-gray-600">Domande inline</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 border-2 border-gray-200 bg-gray-50 rounded"></div>
+              <div className="w-4 h-4 border-2 border-red-500 bg-red-100 rounded"></div>
               <span className="text-xs text-gray-600">Fine del flusso (terminal)</span>
             </div>
           </div>
