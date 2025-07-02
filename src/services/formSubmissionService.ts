@@ -59,44 +59,34 @@ export async function submitFormToSupabase(
     console.log("Submission creata con ID:", submission.id);
     console.log("Submission object returned:", submission);
 
-    // 2. Prepara i dati delle risposte
+    // 2. Prepara i dati delle risposte - approccio diretto
     const responsesData = [];
     
+    // Crea un lookup map per performance
+    const allQuestions = [...blocks, ...(state.dynamicBlocks || [])].flatMap(block => 
+      block.questions.map(q => ({ ...q, block_id: block.block_id }))
+    );
+    const questionLookup = new Map(allQuestions.map(q => [q.question_id, q]));
+    
+    console.log("Domande disponibili:", Array.from(questionLookup.keys()));
+    console.log("Risposte da salvare:", Object.keys(state.responses));
+    
+    // Per ogni domanda con risposta, crea una entry
     for (const questionId in state.responses) {
-      // Trova la domanda nei blocchi statici e dinamici
-      let question = blocks
-        .flatMap(block => block.questions)
-        .find(q => q.question_id === questionId);
+      const responseValue = state.responses[questionId];
+      const questionInfo = questionLookup.get(questionId);
       
-      // Se non trovata nei blocchi statici, cerca nei blocchi dinamici
-      if (!question && state.dynamicBlocks) {
-        question = state.dynamicBlocks
-          .flatMap(block => block.questions)
-          .find(q => q.question_id === questionId);
-      }
-      
-      if (question) {
-        // Trova il block_id corretto
-        let blockId = blocks.find(
-          block => block.questions.some(q => q.question_id === questionId)
-        )?.block_id;
-        
-        // Se non trovato nei blocchi statici, cerca nei dinamici
-        if (!blockId && state.dynamicBlocks) {
-          blockId = state.dynamicBlocks.find(
-            block => block.questions.some(q => q.question_id === questionId)
-          )?.block_id;
-        }
-        
-        const responseData = state.responses[questionId];
-        
+      if (questionInfo) {
         responsesData.push({
           submission_id: submission.id,
           question_id: questionId,
-          question_text: question.question_text,
-          block_id: blockId || 'unknown',
-          response_value: responseData
+          question_text: questionInfo.question_text,
+          block_id: questionInfo.block_id,
+          response_value: responseValue // Salvato direttamente come JSONB
         });
+        console.log(`Aggiunta risposta per ${questionId}:`, responseValue);
+      } else {
+        console.warn(`Domanda ${questionId} non trovata nella definizione del form`);
       }
     }
     
