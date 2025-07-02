@@ -16,6 +16,7 @@ export interface FlowConnection {
   targetId: string;
   label: string;
   type: 'next' | 'option' | 'add_block' | 'stop';
+  addBlockName?: string;
 }
 
 export interface SourceConnection {
@@ -41,6 +42,7 @@ export interface FlowVisualConnection {
   toIndex: number;
   label: string;
   type: 'next' | 'option' | 'add_block' | 'stop';
+  addBlockName?: string;
 }
 
 export class FlowAnalyzer {
@@ -135,7 +137,8 @@ export class FlowAnalyzer {
             toLevel,
             toIndex,
             label: conn.label,
-            type: conn.type
+            type: conn.type,
+            addBlockName: conn.addBlockName
           });
         }
       });
@@ -261,13 +264,15 @@ export class FlowAnalyzer {
             connections.push({
               targetId: 'next_block',
               label: option.label,
-              type: option.add_block ? 'add_block' : 'next'
+              type: option.add_block ? 'add_block' : 'next',
+              addBlockName: option.add_block || undefined
             });
           } else if (option.leads_to) {
             connections.push({
               targetId: option.leads_to,
               label: option.label,
-              type: option.add_block ? 'add_block' : 'option'
+              type: option.add_block ? 'add_block' : 'option',
+              addBlockName: option.add_block || undefined
             });
           }
         });

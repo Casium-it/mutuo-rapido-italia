@@ -135,6 +135,7 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
                         <Badge variant="outline" className="text-xs font-mono font-bold">
                           {step.questionNumber}
                         </Badge>
+                        <code className="bg-gray-100 px-2 py-1 rounded text-xs">{step.id}</code>
                         {step.isInline && (
                           <Badge variant="secondary" className="text-xs">
                             Inline
@@ -156,17 +157,29 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
                             </span>
                             <div className="space-y-2">
                               {step.connections.map((connection, idx) => (
-                                <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 rounded border">
-                                  <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
-                                  <span className="text-xs text-gray-700 font-medium flex-1">
-                                    {connection.label}
-                                  </span>
-                                  <Badge className={`text-xs font-medium ${getConnectionColor(connection.type)}`}>
-                                    {connection.type === 'add_block' && <Plus className="w-3 h-3 mr-1" />}
-                                    {connection.targetId === 'next_block' ? 'Next Block' : 
-                                     connection.targetId === 'stop' ? 'End' : 
-                                     connection.targetId}
-                                  </Badge>
+                                <div key={idx} className="space-y-1">
+                                  <div className="flex items-center gap-2 p-2 bg-gray-50 rounded border">
+                                    <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
+                                    <span className="text-xs text-gray-700 font-medium flex-1">
+                                      {connection.label}
+                                    </span>
+                                    <Badge className={`text-xs font-medium ${getConnectionColor(connection.type)}`}>
+                                      {connection.targetId === 'next_block' ? 'Next Block' : 
+                                       connection.targetId === 'stop' ? 'End' : 
+                                       connection.targetId}
+                                    </Badge>
+                                  </div>
+                                  {connection.type === 'add_block' && connection.addBlockName && (
+                                    <div className="ml-4 flex items-center gap-2 p-2 bg-orange-50 rounded border border-orange-200">
+                                      <Plus className="w-3 h-3 text-orange-600 flex-shrink-0" />
+                                      <span className="text-xs text-orange-700 font-medium">
+                                        {connection.addBlockName}
+                                      </span>
+                                      <Badge className="text-xs bg-orange-100 text-orange-600">
+                                        ADD BLOCK
+                                      </Badge>
+                                    </div>
+                                  )}
                                 </div>
                               ))}
                             </div>
@@ -257,29 +270,57 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
       </div>
       
       {/* Legend */}
-      <div className="mt-6 flex flex-wrap gap-4 justify-center border-t pt-4">
-        <div className="flex items-center gap-2">
-          <span>🔀</span>
-          <span className="text-sm text-gray-600">Domanda con opzioni multiple</span>
+      <div className="mt-6 border-t pt-4">
+        <h4 className="text-sm font-semibold text-gray-700 mb-3">Legenda</h4>
+        
+        {/* Icons Legend */}
+        <div className="flex flex-wrap gap-4 mb-4">
+          <div className="flex items-center gap-2">
+            <span>🔀</span>
+            <span className="text-sm text-gray-600">Domanda con opzioni multiple</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span>❓</span>
+            <span className="text-sm text-gray-600">Domanda semplice</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span>📝</span>
+            <span className="text-sm text-gray-600">Domanda inline</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span>🏁</span>
+            <span className="text-sm text-gray-600">Fine flusso</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge className="text-xs bg-orange-100 text-orange-600">
+              <Plus className="w-3 h-3 mr-1" />
+              Block
+            </Badge>
+            <span className="text-sm text-gray-600">Aggiunge un blocco</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span>❓</span>
-          <span className="text-sm text-gray-600">Domanda semplice</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span>📝</span>
-          <span className="text-sm text-gray-600">Domanda inline</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span>🏁</span>
-          <span className="text-sm text-gray-600">Fine flusso</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge className="text-xs bg-orange-100 text-orange-600">
-            <Plus className="w-3 h-3 mr-1" />
-            Block
-          </Badge>
-          <span className="text-sm text-gray-600">Aggiunge un blocco</span>
+
+        {/* Card Colors Legend */}
+        <div className="border-t pt-3">
+          <h5 className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Colori delle Card:</h5>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-orange-200 bg-orange-50 rounded"></div>
+              <span className="text-xs text-gray-600">Domande con opzioni multiple (branching)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-green-200 bg-green-50 rounded"></div>
+              <span className="text-xs text-gray-600">Domande semplici</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-blue-200 bg-blue-50 rounded"></div>
+              <span className="text-xs text-gray-600">Domande inline</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-gray-200 bg-gray-50 rounded"></div>
+              <span className="text-xs text-gray-600">Fine del flusso (terminal)</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
