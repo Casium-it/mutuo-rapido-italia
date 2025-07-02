@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { BlockSidebar } from "@/components/form/BlockSidebar";
@@ -47,28 +46,6 @@ export default function Form() {
   useEffect(() => {
     initializeTimer();
   }, [initializeTimer]);
-
-  // STRATEGIC LOGGING: Track navigation to home page
-  useEffect(() => {
-    console.log("=== FORM COMPONENT NAVIGATION TRACKING ===");
-    console.log("Form: Current location:", {
-      pathname: location.pathname,
-      search: location.search,
-      hash: location.hash
-    });
-    console.log("Form: Current params:", params);
-    console.log("Form: State formSlug:", state.formSlug);
-    console.log("Form: Params formSlug:", params.formSlug);
-    
-    // Check if we're on the wrong route
-    if (location.pathname === "/") {
-      console.error("Form: CRITICAL - Form component is mounted but we're on home page!");
-      console.error("Form: This suggests unexpected navigation to / occurred");
-      console.error("Form: Stack trace for debugging:");
-      console.trace("Navigation to home page from Form component");
-    }
-    console.log("=== FORM COMPONENT NAVIGATION TRACKING END ===");
-  }, [location.pathname, params, state.formSlug]);
 
   // Trova il blocco attivo corrente
   const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
