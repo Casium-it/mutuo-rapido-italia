@@ -18,17 +18,18 @@ export function FormSubmitButton() {
       // Navigate to FormLoading with complete form data
       navigate('/form-loading', { 
         state: { 
-          formData: {
-            responses: state.responses,
-            activeBlocks: state.activeBlocks,
-            completedBlocks: state.completedBlocks,
-            dynamicBlocks: state.dynamicBlocks,
-            answeredQuestions: Array.from(state.answeredQuestions),
-            navigationHistory: state.navigationHistory,
-            blockActivations: state.blockActivations,
-            pendingRemovals: state.pendingRemovals,
-            formSlug: params.formSlug
-          }
+        formData: {
+          responses: state.responses,
+          activeBlocks: state.activeBlocks,
+          completedBlocks: state.completedBlocks,
+          dynamicBlocks: state.dynamicBlocks,
+          staticBlocks: blocks, // Include static blocks from context
+          answeredQuestions: Array.from(state.answeredQuestions),
+          navigationHistory: state.navigationHistory,
+          blockActivations: state.blockActivations,
+          pendingRemovals: state.pendingRemovals,
+          formSlug: params.formSlug
+        }
         } 
       });
     } catch (error) {
