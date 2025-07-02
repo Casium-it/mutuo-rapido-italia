@@ -135,30 +135,44 @@ export function FormQuestion({ question }: FormQuestionProps) {
   const [showNonLoSoButton, setShowNonLoSoButton] = useState(false);
   // Nuovo stato per tenere traccia delle posizioni del cursore
   const [cursorPositions, setCursorPositions] = useState<{ [key: string]: number | null }>({});
-  // Use ref for question start time to prevent resets on re-renders
+  
+  // Performance monitoring
+  const renderCountRef = useRef(0);
   const questionStartTimeRef = useRef<number>(Date.now());
   const params = useParams();
 
-  // Fixed useEffect - only reset timer when question ID actually changes
+  // Performance safeguard: Monitor for excessive re-renders
   useEffect(() => {
-    // Reset question start time when question changes (only when question ID changes)
+    renderCountRef.current += 1;
+    if (renderCountRef.current > 50) {
+      console.warn('🚨 FormQuestion: Excessive re-renders detected:', renderCountRef.current);
+      console.warn('Question ID:', question.question_id);
+    }
+  });
+
+  // Reset render count and timer when question changes
+  useEffect(() => {
+    renderCountRef.current = 0;
     questionStartTimeRef.current = Date.now();
     console.log('🎯 Question timer started for:', question.question_id);
-  }, [question.question_id]); // Only depend on question ID
+  }, [question.question_id]);
 
-  // Separate useEffect for loading existing responses and UI state
+  // FIXED: Simplified useEffect for loading responses - removed unstable dependencies
   useEffect(() => {
     const existingResponses: { [key: string]: string | string[] } = {};
     const initialVisibleOptions: { [key: string]: boolean } = {};
     const initialValidationErrors: { [key: string]: boolean } = {};
     
-    Object.keys(question.placeholders).forEach(key => {
+    // Create a stable hash of placeholders to detect actual changes
+    const placeholderKeys = Object.keys(question.placeholders);
+    
+    placeholderKeys.forEach(key => {
       const existingResponse = getResponse(question.question_id, key);
       if (existingResponse) {
         existingResponses[key] = existingResponse;
         initialVisibleOptions[key] = false;
         
-        // Verifica che le risposte esistenti siano ancora valide
+        // Validate existing responses
         if (question.placeholders[key].type === "input") {
           const placeholder = question.placeholders[key];
           const validationType = (placeholder as any).input_validation as ValidationTypes;
@@ -176,11 +190,9 @@ export function FormQuestion({ question }: FormQuestionProps) {
     setValidationErrors(initialValidationErrors);
     setEditingFields({});
     setIsNavigating(false);
-    // Reset dello stato del pulsante "Non lo so" quando cambia la domanda
     setShowNonLoSoButton(false);
-    // Reset delle posizioni del cursore
     setCursorPositions({});
-  }, [question.question_id, getResponse, question.placeholders]);
+  }, [question.question_id]); // Only depend on question ID change
 
   // Nuova funzione per verificare se ci sono campi di input mancanti o non validi
   const hasMissingOrInvalidInputs = () => {

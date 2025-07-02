@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { FormQuestion } from "./FormQuestion";
+import { FormErrorBoundary } from "./ErrorBoundary";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, AlertCircle } from "lucide-react";
@@ -134,7 +135,7 @@ export function QuestionView() {
         </div>
       )}
 
-      {/* Special End of Form UI */}
+      {/* Wrap FormQuestion in ErrorBoundary to catch infinite re-render loops */}
       {isEndOfFormQuestion ? (
         <div className="space-y-6">
           <div className="p-6 bg-[#F8F4EF] border border-[#BEB8AE] rounded-lg shadow">
@@ -207,9 +208,11 @@ export function QuestionView() {
           </div>
         </div>
       ) : (
-        <div className="space-y-4">
-          <FormQuestion question={activeQuestion} />
-        </div>
+        <FormErrorBoundary>
+          <div className="space-y-4">
+            <FormQuestion question={activeQuestion} />
+          </div>
+        </FormErrorBoundary>
       )}
     </div>
   );
