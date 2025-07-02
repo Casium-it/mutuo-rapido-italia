@@ -8,7 +8,7 @@ import { useForm } from "@/contexts/FormContext";
 export const CompleteFormButton = ({ className }: { className?: string }) => {
   const navigate = useNavigate();
   const params = useParams();
-  const { state, blocks } = useForm();
+  const { state } = useForm();
 
   const handleSubmitForm = async () => {
     // Navigate immediately to loading page with complete form data
@@ -19,7 +19,6 @@ export const CompleteFormButton = ({ className }: { className?: string }) => {
           activeBlocks: state.activeBlocks,
           completedBlocks: state.completedBlocks,
           dynamicBlocks: state.dynamicBlocks,
-          staticBlocks: blocks, // Include static blocks from context
           answeredQuestions: Array.from(state.answeredQuestions),
           navigationHistory: state.navigationHistory,
           blockActivations: state.blockActivations,

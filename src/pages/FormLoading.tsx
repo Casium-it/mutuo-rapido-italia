@@ -5,6 +5,7 @@ import { Logo } from "@/components/Logo";
 import { Progress } from "@/components/ui/progress";
 import { FormResponse, FormState } from "@/types/form";
 import { submitFormToSupabase } from "@/services/formSubmissionService";
+import { formDefinitionService } from "@/services/formDefinitionService";
 import { toast } from "sonner";
 import { useSimulationTimer } from "@/hooks/useSimulationTimer";
 import { trackSimulationCompleted } from "@/utils/analytics";
@@ -30,7 +31,6 @@ export default function FormLoading() {
     activeBlocks: string[];
     completedBlocks: string[];
     dynamicBlocks: any[];
-    staticBlocks?: any[]; // Static blocks from form context
     answeredQuestions?: string[];
     navigationHistory?: any[];
     blockActivations?: any;
@@ -112,11 +112,17 @@ export default function FormLoading() {
       console.log("FormLoading: Active blocks:", formData.activeBlocks.length);
       console.log("FormLoading: Dynamic blocks:", formData.dynamicBlocks?.length || 0);
       
-      // Use blocks from form context (already contains all blocks used during form filling)
-      const allAvailableBlocks = [...(formData.staticBlocks || []), ...(formData.dynamicBlocks || [])];
+      // Get form definition to resolve all blocks dynamically
+      const formSlug = formData.formSlug || location.pathname.split('/').pop();
+      const formDefinition = await formDefinitionService.getFormDefinition(formSlug);
+      console.log("FormLoading: Form definition loaded", {
+        source: formDefinition.source,
+        blocksCount: formDefinition.blocks.length
+      });
+      
+      // Combine all blocks for submission service
+      const allAvailableBlocks = [...formDefinition.blocks, ...(formData.dynamicBlocks || [])];
       console.log("FormLoading: Total blocks available:", allAvailableBlocks.length);
-      console.log("FormLoading: Static blocks:", formData.staticBlocks?.length || 0);
-      console.log("FormLoading: Dynamic blocks:", formData.dynamicBlocks?.length || 0);
       
       // Create complete form state for submission service
       const formStateForSubmission: FormState = {
@@ -141,7 +147,6 @@ export default function FormLoading() {
         trackSimulationCompleted(totalTimeSpent);
         
         // Clear saved form state after successful submission
-        const formSlug = formData.formSlug || location.pathname.split('/').pop();
         if (formSlug) {
           try {
             localStorage.removeItem(`form-state-${formSlug}`);
