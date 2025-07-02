@@ -422,15 +422,12 @@ export const FormProvider: React.FC<FormProviderProps> = ({ children, blocks }) 
   const isNavigatingRef = useRef<boolean | undefined>(false);
   const usedNextBlockNavRef = useRef<boolean>(false);
   
+  // Add refs to track initialization state and prevent duplicate logs
+  const hasInitializedRef = useRef<boolean>(false);
+  const hasLoggedNavigationSetupRef = useRef<boolean>(false);
+  
   // Use provided blocks or fall back to empty array
   const formBlocks = blocks || [];
-  
-  console.log('FormProvider: Initializing with blocks:', {
-    blocksCount: formBlocks.length,
-    source: blocks ? 'provided' : 'empty',
-    firstBlock: formBlocks[0]?.block_id,
-    isFormSlugRoute: !!params.formSlug
-  });
   
   // Memoize sortedBlocks to prevent infinite re-renders
   const sortedBlocks = useMemo(() => {
@@ -443,6 +440,19 @@ export const FormProvider: React.FC<FormProviderProps> = ({ children, blocks }) 
   }, [sortedBlocks, params.formSlug]);
   
   const [state, dispatch] = useReducer(formReducer, dynamicInitialState);
+
+  // Dedicated effect for initialization logging - only runs once when blocks are loaded
+  useEffect(() => {
+    if (formBlocks.length > 0 && !hasInitializedRef.current) {
+      console.log('FormProvider: Initializing with blocks:', {
+        blocksCount: formBlocks.length,
+        source: blocks ? 'provided' : 'empty',
+        firstBlock: formBlocks[0]?.block_id,
+        isFormSlugRoute: !!params.formSlug
+      });
+      hasInitializedRef.current = true;
+    }
+  }, [formBlocks.length, blocks, params.formSlug]);
 
   // Funzione per trovare a quale blocco appartiene una domanda specifica
   const findBlockByQuestionId = useCallback((questionId: string): string | null => {
@@ -653,19 +663,25 @@ export const FormProvider: React.FC<FormProviderProps> = ({ children, blocks }) 
     }
   }, [params.formSlug, params.blockType, navigate, sortedBlocks]);
 
-  // Main navigation effect - optimized to prevent loops
+  // Main navigation effect - optimized to reduce unnecessary logging
   useEffect(() => {
     const { blockId, questionId, formSlug } = params;
     
     // Guard: Don't run if blocks are not loaded yet
     if (formBlocks.length === 0) {
-      console.log('FormProvider: Waiting for blocks to load...');
       return;
     }
     
     // Handle database-driven forms (with formSlug)
     if (formSlug) {
-      console.log('FormProvider: Handling database-driven form', { formSlug, blocksCount: formBlocks.length });
+      // Only log on initial navigation setup, not on every activeBlocks change
+      if (!hasLoggedNavigationSetupRef.current) {
+        console.log('FormProvider: Handling database-driven form', { 
+          formSlug, 
+          blocksCount: formBlocks.length 
+        });
+        hasLoggedNavigationSetupRef.current = true;
+      }
       
       if (blockId && questionId) {
         // URL has specific block and question
@@ -683,10 +699,6 @@ export const FormProvider: React.FC<FormProviderProps> = ({ children, blocks }) 
         const firstActiveBlock = sortedBlocks.find(b => b.default_active) || sortedBlocks[0];
         if (firstActiveBlock && firstActiveBlock.questions.length > 0) {
           const firstQuestion = firstActiveBlock.questions[0];
-          console.log('FormProvider: Navigating to first question', { 
-            blockId: firstActiveBlock.block_id, 
-            questionId: firstQuestion.question_id 
-          });
           
           dispatch({ 
             type: "GO_TO_QUESTION", 
@@ -740,7 +752,12 @@ export const FormProvider: React.FC<FormProviderProps> = ({ children, blocks }) 
         });
       }
     }
-  }, [params.blockId, params.questionId, params.blockType, params.formSlug, formBlocks.length, navigate, state.activeBlocks]);
+  }, [params.blockId, params.questionId, params.blockType, params.formSlug, formBlocks.length, navigate]);
+
+  // Reset the logging flag when formSlug changes (new form)
+  useEffect(() => {
+    hasLoggedNavigationSetupRef.current = false;
+  }, [params.formSlug]);
 
   // Separate effect for saved state loading
   useEffect(() => {
