@@ -60,17 +60,18 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
     return headerHeight + questionTextHeight + optionsHeaderHeight + totalOptionsHeight + cardPadding + borderSpacing;
   };
 
-  // Calculate positions for each level using branchIndex for proper staggering
+  // Calculate cumulative positions for each level
   const calculateLevelPositions = () => {
-    const levelPositions: { [levelIndex: number]: { [branchIndex: number]: number } } = {};
+    const levelPositions: { [levelIndex: number]: number[] } = {};
     
     flowData.levels.forEach((level, levelIndex) => {
-      levelPositions[levelIndex] = {};
+      levelPositions[levelIndex] = [];
+      let currentY = containerPadding;
       
-      level.steps.forEach((step) => {
-        // Use branchIndex for Y positioning to respect staggering
-        const yPosition = containerPadding + (step.branchIndex * (calculateStepHeight(step) + verticalSpacing));
-        levelPositions[levelIndex][step.branchIndex] = yPosition;
+      level.steps.forEach((step, stepIndex) => {
+        levelPositions[levelIndex][stepIndex] = currentY;
+        const stepHeight = calculateStepHeight(step);
+        currentY += stepHeight + verticalSpacing;
       });
     });
     
@@ -86,8 +87,8 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
 
   // Calculate total dimensions
   const totalWidth = flowData.levels.length * levelWidth + containerPadding * 2;
-  const maxY = Math.max(...Object.values(levelPositions).map(levelPos => 
-    Math.max(...Object.values(levelPos)) + 300 // Add some extra space for the last card
+  const maxY = Math.max(...Object.values(levelPositions).map(positions => 
+    Math.max(...positions) + 300 // Add some extra space for the last card
   ));
   const totalHeight = maxY + containerPadding;
 
@@ -114,7 +115,7 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
           >
             {level.steps.map((step, stepIndex) => {
               const stepHeight = calculateStepHeight(step);
-              const yPosition = levelPositions[levelIndex][step.branchIndex] - containerPadding;
+              const yPosition = levelPositions[levelIndex][stepIndex] - containerPadding;
               
               return (
                 <div
@@ -203,13 +204,10 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
           </defs>
           
           {flowData.connections.map((connection, index) => {
-            const fromStep = flowData.levels[connection.fromLevel].steps[connection.fromIndex];
-            const toStep = flowData.levels[connection.toLevel].steps[connection.toIndex];
-            
             const fromX = containerPadding + (connection.fromLevel * levelWidth) + cardWidth; // End of source card
-            const fromY = levelPositions[connection.fromLevel][fromStep.branchIndex] + (calculateStepHeight(fromStep) / 2); // Middle of source card
+            const fromY = levelPositions[connection.fromLevel][connection.fromIndex] + (calculateStepHeight(flowData.levels[connection.fromLevel].steps[connection.fromIndex]) / 2); // Middle of source card
             const toX = containerPadding + connection.toLevel * levelWidth; // Start of target card
-            const toY = levelPositions[connection.toLevel][toStep.branchIndex] + (calculateStepHeight(toStep) / 2); // Middle of target card
+            const toY = levelPositions[connection.toLevel][connection.toIndex] + (calculateStepHeight(flowData.levels[connection.toLevel].steps[connection.toIndex]) / 2); // Middle of target card
             
             // Calculate control points for curved line
             const midX = fromX + (toX - fromX) / 2;
