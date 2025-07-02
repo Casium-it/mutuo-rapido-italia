@@ -1237,6 +1237,40 @@ export const FormProvider: React.FC<FormProviderProps> = ({ children, blocks }) 
       return false;
     }
   }, [state.dynamicBlocks]);
+
+  // Auto-save form state to localStorage with debouncing
+  useEffect(() => {
+    const formType = params.formSlug;
+    
+    // Safety guards - only save when form is properly initialized
+    if (!formType || sortedBlocks.length === 0) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      try {
+        // Serialize state with Set conversion for answeredQuestions
+        const stateToSave = {
+          ...state,
+          answeredQuestions: Array.from(state.answeredQuestions)
+        };
+        
+        const serializedState = JSON.stringify(stateToSave);
+        localStorage.setItem(`form-state-${formType}`, serializedState);
+        
+        console.log(`Form state auto-saved for ${formType}:`, {
+          activeBlocks: state.activeBlocks.length,
+          answeredQuestions: state.answeredQuestions.size,
+          responses: Object.keys(state.responses).length,
+          timestamp: new Date().toISOString()
+        });
+      } catch (error) {
+        console.warn('Failed to save form state to localStorage:', error);
+      }
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [state, params.formSlug, sortedBlocks.length]);
   
   const deleteQuestionResponses = useCallback((questionIds: string[]) => {
     if (!questionIds || questionIds.length === 0) return;
