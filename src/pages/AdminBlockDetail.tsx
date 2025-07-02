@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { LogOut, ArrowLeft, Blocks, Settings, Users, FileText } from 'lucide-react';
+import { LogOut, ArrowLeft, Blocks, Settings, Users, FileText, Eye } from 'lucide-react';
 import { adminBlockService, type AdminBlockDetail as AdminBlockDetailType } from '@/services/adminBlockService';
 import { toast } from '@/hooks/use-toast';
 import { Placeholder, SelectPlaceholder, InputPlaceholder, MultiBlockManagerPlaceholder } from '@/types/form';
+import { HorizontalFlowChart } from '@/components/admin/HorizontalFlowChart';
 
 export default function AdminBlockDetail() {
   const { blockId } = useParams<{ blockId: string }>();
@@ -17,6 +18,7 @@ export default function AdminBlockDetail() {
   const [block, setBlock] = useState<AdminBlockDetailType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showFlowChart, setShowFlowChart] = useState(false);
   
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
@@ -326,8 +328,48 @@ export default function AdminBlockDetail() {
                 </div>
               </div>
             )}
+
+            {/* Flow Chart Toggle */}
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setShowFlowChart(!showFlowChart)}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Eye className="h-4 w-4" />
+                {showFlowChart ? 'Nascondi' : 'Mostra'} Mappa Flusso
+              </Button>
+            </div>
           </CardContent>
         </Card>
+
+        {/* Flow Chart */}
+        {showFlowChart && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Blocks className="h-5 w-5" />
+                Mappa del Flusso delle Domande
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <HorizontalFlowChart 
+                block={{
+                  block_id: block.blockId,
+                  block_number: block.blockNumber,
+                  title: block.title,
+                  priority: block.priority,
+                  questions: block.questions,
+                  default_active: block.properties.defaultActive,
+                  invisible: block.properties.invisible,
+                  multiBlock: block.properties.multiBlock,
+                  blueprint_id: block.properties.blueprintId,
+                  copy_number: block.properties.copyNumber
+                }}
+              />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Questions List */}
         <Card>
