@@ -1,11 +1,9 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { Progress } from "@/components/ui/progress";
 import { FormResponse, FormState } from "@/types/form";
 import { submitFormToSupabase } from "@/services/formSubmissionService";
-import { formDefinitionService } from "@/services/formDefinitionService";
 import { toast } from "sonner";
 import { useSimulationTimer } from "@/hooks/useSimulationTimer";
 import { trackSimulationCompleted } from "@/utils/analytics";
@@ -37,6 +35,7 @@ export default function FormLoading() {
     pendingRemovals?: any[];
     formSlug?: string;
     submissionId?: string;
+    staticBlocks?: any[]; // Blocks from FormContext
   };
   
   useEffect(() => {
@@ -111,18 +110,12 @@ export default function FormLoading() {
       console.log("FormLoading: Form responses:", Object.keys(formData.responses).length);
       console.log("FormLoading: Active blocks:", formData.activeBlocks.length);
       console.log("FormLoading: Dynamic blocks:", formData.dynamicBlocks?.length || 0);
+      console.log("FormLoading: Static blocks:", formData.staticBlocks?.length || 0);
       
-      // Get form definition to resolve all blocks dynamically
-      const formSlug = formData.formSlug || location.pathname.split('/').pop();
-      const formDefinition = await formDefinitionService.getFormDefinition(formSlug);
-      console.log("FormLoading: Form definition loaded", {
-        source: formDefinition.source,
-        blocksCount: formDefinition.blocks.length
-      });
-      
-      // Combine all blocks for submission service
-      const allAvailableBlocks = [...formDefinition.blocks, ...(formData.dynamicBlocks || [])];
-      console.log("FormLoading: Total blocks available:", allAvailableBlocks.length);
+      // Check if we have static blocks from FormContext
+      if (!formData.staticBlocks || formData.staticBlocks.length === 0) {
+        throw new Error("Nessun blocco statico disponibile per l'invio");
+      }
       
       // Create complete form state for submission service
       const formStateForSubmission: FormState = {
@@ -137,7 +130,8 @@ export default function FormLoading() {
         pendingRemovals: formData.pendingRemovals || []
       };
       
-      const result = await submitFormToSupabase(formStateForSubmission, allAvailableBlocks);
+      // Submit using static blocks from FormContext (no re-fetching)
+      const result = await submitFormToSupabase(formStateForSubmission, formData.staticBlocks);
       
       if (result.success && result.submissionId) {
         console.log("FormLoading: Form submitted successfully, ID:", result.submissionId);
@@ -147,10 +141,10 @@ export default function FormLoading() {
         trackSimulationCompleted(totalTimeSpent);
         
         // Clear saved form state after successful submission
-        if (formSlug) {
+        if (formData.formSlug) {
           try {
-            localStorage.removeItem(`form-state-${formSlug}`);
-            console.log(`FormLoading: Cleared saved form state for ${formSlug}`);
+            localStorage.removeItem(`form-state-${formData.formSlug}`);
+            console.log(`FormLoading: Cleared saved form state for ${formData.formSlug}`);
           } catch (error) {
             console.warn('Failed to clear saved form state:', error);
           }
@@ -196,7 +190,6 @@ export default function FormLoading() {
     }, intervalTime);
   };
 
-  // Determine display messages based on current state
   const getDisplayMessage = () => {
     if (submissionError) {
       return "Errore durante l'invio";

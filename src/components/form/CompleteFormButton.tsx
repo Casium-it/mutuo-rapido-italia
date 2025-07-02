@@ -8,10 +8,10 @@ import { useForm } from "@/contexts/FormContext";
 export const CompleteFormButton = ({ className }: { className?: string }) => {
   const navigate = useNavigate();
   const params = useParams();
-  const { state } = useForm();
+  const { state, blocks } = useForm(); // Get blocks from FormContext
 
   const handleSubmitForm = async () => {
-    // Navigate immediately to loading page with complete form data
+    // Navigate immediately to loading page with complete form data including static blocks from FormContext
     navigate('/form-loading', { 
       state: { 
         formData: {
@@ -23,7 +23,8 @@ export const CompleteFormButton = ({ className }: { className?: string }) => {
           navigationHistory: state.navigationHistory,
           blockActivations: state.blockActivations,
           pendingRemovals: state.pendingRemovals,
-          formSlug: params.formSlug
+          formSlug: params.formSlug,
+          staticBlocks: blocks // Pass FormContext blocks (cached database blocks)
         }
       }
     });

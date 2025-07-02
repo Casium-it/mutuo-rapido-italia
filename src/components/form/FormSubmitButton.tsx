@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useForm } from "@/contexts/FormContext";
 
 export function FormSubmitButton() {
-  const { state, blocks } = useForm();
+  const { state, blocks } = useForm(); // Get blocks from FormContext
   const [isNavigating, setIsNavigating] = useState(false);
   const navigate = useNavigate();
   const params = useParams();
@@ -15,7 +15,7 @@ export function FormSubmitButton() {
     console.log("FormSubmitButton: Navigating to FormLoading...");
     
     try {
-      // Navigate to FormLoading with complete form data
+      // Navigate to FormLoading with complete form data including static blocks from FormContext
       navigate('/form-loading', { 
         state: { 
           formData: {
@@ -27,7 +27,8 @@ export function FormSubmitButton() {
             navigationHistory: state.navigationHistory,
             blockActivations: state.blockActivations,
             pendingRemovals: state.pendingRemovals,
-            formSlug: params.formSlug
+            formSlug: params.formSlug,
+            staticBlocks: blocks // Pass FormContext blocks (cached database blocks)
           }
         } 
       });

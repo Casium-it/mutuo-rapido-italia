@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { FormResponse, FormState } from "@/types/form";
+import { FormResponse, FormState, Block } from "@/types/form";
+import { findQuestionInfo, validateQuestionsExist } from "@/utils/questionLookup";
 
 type SubmissionResult = {
   success: boolean;
@@ -11,15 +12,18 @@ type SubmissionResult = {
 /**
  * Invia i dati del form completato a Supabase utilizzando lo stato del form
  * @param state - Lo stato completo del form con tutti i dati
- * @param blocks - I blocchi del form per ottenere i testi delle domande
+ * @param staticBlocks - I blocchi statici dal FormContext (cached database blocks)
  * @returns Risultato dell'operazione con l'ID della submission
  */
 export async function submitFormToSupabase(
   state: FormState,
-  blocks: any[]
+  staticBlocks: Block[]
 ): Promise<SubmissionResult> {
   try {
     console.log("Inizio invio form a Supabase...");
+    console.log("Static blocks count:", staticBlocks.length);
+    console.log("Dynamic blocks count:", state.dynamicBlocks?.length || 0);
+    console.log("Responses count:", Object.keys(state.responses).length);
     
     // Ottieni il parametro referral dall'URL se presente
     const searchParams = new URLSearchParams(window.location.search);
@@ -31,6 +35,19 @@ export async function submitFormToSupabase(
     // Calculate expiry time (48 hours from now)
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 48);
+    
+    // Validate that all questions exist in the provided blocks
+    const missingQuestions = validateQuestionsExist(
+      state.responses, 
+      staticBlocks, 
+      state.dynamicBlocks || []
+    );
+    
+    if (missingQuestions.length > 0) {
+      console.error("Missing questions in blocks:", missingQuestions);
+      console.log("Available static blocks:", staticBlocks.map(b => ({ id: b.block_id, questions: b.questions.length })));
+      console.log("Available dynamic blocks:", (state.dynamicBlocks || []).map(b => ({ id: b.block_id, questions: b.questions.length })));
+    }
     
     // 1. Crea la submission principale
     const { data: submission, error: submissionError } = await supabase
@@ -45,7 +62,9 @@ export async function submitFormToSupabase(
           dynamicBlocks: state.dynamicBlocks?.length || 0,
           answeredQuestions: state.answeredQuestions.size,
           navigationSteps: state.navigationHistory.length,
-          blockActivations: Object.keys(state.blockActivations).length
+          blockActivations: Object.keys(state.blockActivations).length,
+          staticBlocksCount: staticBlocks.length,
+          missingQuestionsCount: missingQuestions.length
         }
       })
       .select('id')
@@ -57,46 +76,30 @@ export async function submitFormToSupabase(
     }
 
     console.log("Submission creata con ID:", submission.id);
-    console.log("Submission object returned:", submission);
 
     // 2. Prepara i dati delle risposte
     const responsesData = [];
     
     for (const questionId in state.responses) {
-      // Trova la domanda nei blocchi statici e dinamici
-      let question = blocks
-        .flatMap(block => block.questions)
-        .find(q => q.question_id === questionId);
+      // Trova la domanda usando la utility function
+      const questionInfo = findQuestionInfo(
+        questionId, 
+        staticBlocks, 
+        state.dynamicBlocks || []
+      );
       
-      // Se non trovata nei blocchi statici, cerca nei blocchi dinamici
-      if (!question && state.dynamicBlocks) {
-        question = state.dynamicBlocks
-          .flatMap(block => block.questions)
-          .find(q => q.question_id === questionId);
-      }
-      
-      if (question) {
-        // Trova il block_id corretto
-        let blockId = blocks.find(
-          block => block.questions.some(q => q.question_id === questionId)
-        )?.block_id;
-        
-        // Se non trovato nei blocchi statici, cerca nei dinamici
-        if (!blockId && state.dynamicBlocks) {
-          blockId = state.dynamicBlocks.find(
-            block => block.questions.some(q => q.question_id === questionId)
-          )?.block_id;
-        }
-        
+      if (questionInfo) {
         const responseData = state.responses[questionId];
         
         responsesData.push({
           submission_id: submission.id,
           question_id: questionId,
-          question_text: question.question_text,
-          block_id: blockId || 'unknown',
+          question_text: questionInfo.questionText,
+          block_id: questionInfo.blockId,
           response_value: responseData
         });
+      } else {
+        console.warn(`Question ${questionId} not found in blocks - skipping`);
       }
     }
     
@@ -112,9 +115,11 @@ export async function submitFormToSupabase(
       }
       
       console.log(`Salvate ${responsesData.length} risposte`);
+    } else {
+      console.warn("No valid responses to save");
     }
 
-    console.log("Returning submission result with ID:", submission.id);
+    console.log("Form submission completed successfully");
     return { 
       success: true, 
       submissionId: submission.id 
