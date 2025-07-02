@@ -159,14 +159,12 @@ export class FlowAnalyzer {
         return;
       }
 
-      // Calculate position based on source questions
-      const positionMap = new Map<string, number>();
-      let currentPosition = 0;
+      // Track assigned positions to avoid conflicts
+      const assignedPositions = new Set<number>();
+      let nextAvailablePosition = 0;
 
-      // Group steps by their source questions
-      const sourceGroups = new Map<string, FlowStep[]>();
-      
-      steps.forEach(step => {
+      // Process steps in order of their source branch indices for consistency
+      const stepsWithSources = steps.map(step => {
         // Find which question(s) lead to this step
         const sources: string[] = [];
         stepMap.forEach((sourceStep, sourceId) => {
@@ -174,44 +172,81 @@ export class FlowAnalyzer {
             sources.push(sourceId);
           }
         });
+        return { step, sources };
+      });
 
+      // Sort by source branch index to maintain visual flow consistency
+      stepsWithSources.sort((a, b) => {
+        const aSourceIndex = a.sources.length > 0 ? 
+          (stepMap.get(a.sources[0])?.branchIndex || 0) : 0;
+        const bSourceIndex = b.sources.length > 0 ? 
+          (stepMap.get(b.sources[0])?.branchIndex || 0) : 0;
+        return aSourceIndex - bSourceIndex;
+      });
+
+      // Group steps by their immediate source to handle branching correctly
+      const sourceToTargets = new Map<string, FlowStep[]>();
+      
+      stepsWithSources.forEach(({ step, sources }) => {
         sources.forEach(sourceId => {
-          if (!sourceGroups.has(sourceId)) {
-            sourceGroups.set(sourceId, []);
+          if (!sourceToTargets.has(sourceId)) {
+            sourceToTargets.set(sourceId, []);
           }
-          sourceGroups.get(sourceId)!.push(step);
+          sourceToTargets.get(sourceId)!.push(step);
         });
       });
 
-      // Assign positions based on source grouping
-      sourceGroups.forEach((targetSteps, sourceId) => {
+      // Process each source and assign branch indices to its targets
+      sourceToTargets.forEach((targetSteps, sourceId) => {
         const sourceStep = stepMap.get(sourceId);
         if (!sourceStep) return;
 
-        const sourceLevel = levelAssignments.get(sourceId) || 0;
-        const sourceLevelSteps = stepsByLevel.get(sourceLevel) || [];
-        const sourceIndex = sourceLevelSteps.findIndex(s => s.id === sourceId);
-
-        // Calculate base position from source
-        const basePosition = sourceIndex;
-        
-        // Assign positions to target steps
-        targetSteps.forEach((targetStep, index) => {
-          if (!positionMap.has(targetStep.id)) {
-            positionMap.set(targetStep.id, basePosition + index);
+        // If source has multiple targets (branching), spread them vertically
+        if (targetSteps.length > 1) {
+          targetSteps.forEach((targetStep, index) => {
+            // Find next available position starting from current
+            while (assignedPositions.has(nextAvailablePosition)) {
+              nextAvailablePosition++;
+            }
+            targetStep.branchIndex = nextAvailablePosition;
+            assignedPositions.add(nextAvailablePosition);
+            nextAvailablePosition++;
+          });
+        } else if (targetSteps.length === 1) {
+          // Single target - try to align with source position if available
+          const sourcePosition = sourceStep.branchIndex;
+          let targetPosition = sourcePosition;
+          
+          // If source position is taken, find next available
+          while (assignedPositions.has(targetPosition)) {
+            targetPosition = nextAvailablePosition;
+            while (assignedPositions.has(nextAvailablePosition)) {
+              nextAvailablePosition++;
+            }
           }
-        });
+          
+          targetSteps[0].branchIndex = targetPosition;
+          assignedPositions.add(targetPosition);
+          nextAvailablePosition = Math.max(nextAvailablePosition, targetPosition + 1);
+        }
       });
 
-      // Apply calculated positions
+      // Handle any unassigned steps
       steps.forEach(step => {
-        step.branchIndex = positionMap.get(step.id) || currentPosition++;
+        if (step.branchIndex === undefined) {
+          while (assignedPositions.has(nextAvailablePosition)) {
+            nextAvailablePosition++;
+          }
+          step.branchIndex = nextAvailablePosition;
+          assignedPositions.add(nextAvailablePosition);
+          nextAvailablePosition++;
+        }
       });
 
-      // Normalize indices to start from 0
-      const minIndex = Math.min(...steps.map(s => s.branchIndex));
-      steps.forEach(step => {
-        step.branchIndex -= minIndex;
+      // Normalize all indices to start from 0 and be sequential
+      const sortedSteps = [...steps].sort((a, b) => a.branchIndex - b.branchIndex);
+      sortedSteps.forEach((step, index) => {
+        step.branchIndex = index;
       });
     });
   }
