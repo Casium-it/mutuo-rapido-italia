@@ -2,11 +2,10 @@
 import React, { useEffect, useState } from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, LightbulbIcon, Search, Home, Check, Badge, RotateCcw } from "lucide-react";
+import { ArrowRight, Home, Badge, RotateCcw } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge as UIBadge } from "@/components/ui/badge";
 import { useNavigate, useParams } from "react-router-dom";
-import { allBlocks } from "@/data/blocks";
 import { toast } from "sonner";
 import { useTimeTracking } from "@/hooks/useTimeTracking";
 import { trackSimulationStart } from "@/utils/analytics";
@@ -34,42 +33,18 @@ const SimulazioneAvanzata = () => {
     }
   }, [slug]);
   
-  // Funzione per gestire l'avvio di un nuovo form
-  const startNewForm = (path: string, additionalBlocks: string[] = [], optionTitle: string) => {
-    // Track simulation start with the selected option
-    trackSimulationStart(optionTitle);
-    
-    // Track custom exit since user is navigating to simulation
+  // Funzione per gestire l'avvio del form unificato
+  const startMortgageSimulation = () => {
+    // Track simulation start
+    trackSimulationStart("Simulazione Mutuo");
     trackCustomExit('simulation_start');
     
-    // Rimuoviamo qualsiasi dato salvato in localStorage per i vari tipi di form
-    const pathSegments = path.split('/');
-    const formType = pathSegments[pathSegments.length - 3]; // Estrai il tipo (pensando, cercando, offerta, ecc.)
+    // Clear any existing form state for simulazione-mutuo
+    localStorage.removeItem('form-state-simulazione-mutuo');
+    localStorage.removeItem('form-state-simulazione');
     
-    // Rimuovi tutti i dati salvati dal localStorage per questo tipo di form
-    localStorage.removeItem(`form-state-${formType}`);
-    
-    // Trova tutti i blocchi che sono attivi di default
-    const defaultActiveBlocks = allBlocks
-      .filter(block => block.default_active)
-      .map(block => block.block_id);
-    
-    // Crea uno stato iniziale con i blocchi di default attivi e i blocchi aggiuntivi
-    const initialState = {
-      activeBlocks: [...defaultActiveBlocks, ...additionalBlocks],
-      activeQuestion: {
-        block_id: "introduzione", // Usiamo introduzione come blocco iniziale
-        question_id: "soggetto_acquisto" // Prima domanda del blocco introduzione
-      },
-      responses: {},
-      answeredQuestions: []
-    };
-    
-    // Salva questo stato iniziale nel localStorage
-    localStorage.setItem(`form-state-${formType}`, JSON.stringify(initialState));
-    
-    // Naviga al percorso specificato
-    navigate(path);
+    // Navigate to the unified database-driven form
+    navigate('/form/simulazione-mutuo');
   };
 
   // Function to handle surroga form navigation
@@ -111,65 +86,13 @@ const SimulazioneAvanzata = () => {
         <p className="text-base text-gray-600 mb-10 text-center font-semibold">Da dove partiamo?</p>
         
         <div className="space-y-4">
-          {/* Resume simulation option */}
-          <OptionCard
-            icon={LightbulbIcon}
-            title="Mi sto guardando intorno"
-            description="Non ho ancora iniziato le visite"
-            href="/simulazione/pensando/introduzione/soggetto_acquisto"
-            onClick={() => startNewForm(
-              "/simulazione/pensando/introduzione/soggetto_acquisto", 
-              ["la_tua_ricerca_casa"],
-              "Mi sto guardando intorno"
-            )}
-          />
-          
-          <OptionCard
-            icon={Search}
-            title="Sto cercando attivamente"
-            description="Ho già iniziato o pianificato le visite"
-            href="/simulazione/cercando/introduzione/soggetto_acquisto"
-            onClick={() => startNewForm(
-              "/simulazione/cercando/introduzione/soggetto_acquisto", 
-              ["la_tua_ricerca_casa"],
-              "Sto cercando attivamente"
-            )}
-          />
-          
+          {/* Unified mortgage simulation option */}
           <OptionCard
             icon={Home}
-            title="Ho individuato una casa"
-            description="Ho trovato l'immobile ideale"
-            href="/simulazione/individuata/introduzione/soggetto_acquisto"
-            onClick={() => startNewForm(
-              "/simulazione/individuata/introduzione/soggetto_acquisto", 
-              ["la_casa_individuata"],
-              "Ho individuato una casa"
-            )}
-          />
-          
-          <OptionCard
-            icon={Check}
-            title="Ho fatto un'offerta"
-            description="Sono in attesa dell'accettazione"
-            href="/simulazione/offerta/introduzione/soggetto_acquisto"
-            onClick={() => startNewForm(
-              "/simulazione/offerta/introduzione/soggetto_acquisto", 
-              ["la_tua_offerta"],
-              "Ho fatto un'offerta"
-            )}
-          />
-          
-          <OptionCard
-            icon={Badge}
-            title="Ho un'offerta accettata"
-            description="Sono sicuro dell'immobile"
-            href="/simulazione/accettata/introduzione/soggetto_acquisto"
-            onClick={() => startNewForm(
-              "/simulazione/accettata/introduzione/soggetto_acquisto", 
-              ["la_tua_offerta"],
-              "Ho un'offerta accettata"
-            )}
+            title="Simulazione Mutuo"
+            description="Trova il mutuo perfetto per la tua situazione"
+            href="/form/simulazione-mutuo"
+            onClick={startMortgageSimulation}
           />
           
           <OptionCard
