@@ -1,75 +1,110 @@
-import React, { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { LogOut, ArrowLeft, Blocks, Settings, Users, FileText, Hash, Eye, EyeOff, ExternalLink, Plus, GitBranch } from 'lucide-react';
-import { allBlocks } from '@/data/blocks';
+import { LogOut, ArrowLeft, Blocks, Settings, Users, MessageSquare, Eye, FileText } from 'lucide-react';
+import { adminBlockService, AdminBlockDetail } from '@/services/adminBlockService';
+import { toast } from '@/hooks/use-toast';
 import { BlockFlowMap } from '@/components/admin/BlockFlowMap';
 
 export default function AdminBlockDetail() {
   const { blockId } = useParams<{ blockId: string }>();
+  const [searchParams] = useSearchParams();
+  const formSlug = searchParams.get('form');
+  const [block, setBlock] = useState<AdminBlockDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showFlowMap, setShowFlowMap] = useState(false);
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
-  const [showFlowMap, setShowFlowMap] = useState(false);
+
+  useEffect(() => {
+    if (blockId) {
+      loadBlockDetail();
+    }
+  }, [blockId, formSlug]);
+
+  const loadBlockDetail = async () => {
+    if (!blockId) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const blockData = await adminBlockService.getBlockDetail(blockId, formSlug || undefined);
+      
+      if (!blockData) {
+        setError('Blocco non trovato');
+        return;
+      }
+      
+      setBlock(blockData);
+    } catch (err) {
+      console.error('Error loading block detail:', err);
+      setError(err instanceof Error ? err.message : 'Errore nel caricamento del blocco');
+      toast({
+        title: "Errore",
+        description: "Errore nel caricamento del dettaglio blocco",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
   };
 
-  // Find the block by ID
-  const block = allBlocks.find(b => b.block_id === blockId);
+  const getBlockTypeLabels = (block: AdminBlockDetail) => {
+    const labels = [];
+    if (block.properties.defaultActive) labels.push('Attivo di default');
+    if (block.properties.multiBlock) labels.push('Multi-blocco');
+    if (block.properties.invisible) labels.push('Invisibile');
+    if (block.properties.blueprintId) labels.push('Blueprint');
+    return labels;
+  };
 
-  if (!block) {
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString('it-IT', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-[#f8f5f1] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-[#f8f5f1]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#245C4F] mx-auto"></div>
+          <p className="mt-2 text-gray-600">Caricamento dettaglio blocco...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !block) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f8f5f1]">
         <Card className="max-w-md">
-          <CardContent className="text-center py-12">
-            <Blocks className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Blocco non trovato</h3>
-            <p className="text-gray-600 mb-4">Il blocco con ID "{blockId}" non esiste.</p>
-            <Button onClick={() => navigate('/admin/blocks')} variant="outline">
-              Torna ai Blocchi
-            </Button>
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Errore</h3>
+              <p className="text-gray-600 mb-4">{error || 'Blocco non trovato'}</p>
+              <Button onClick={() => navigate('/admin/blocks')}>Torna ai Blocchi</Button>
+            </div>
           </CardContent>
         </Card>
       </div>
     );
   }
-
-  const getBlockTypeLabel = (block: any) => {
-    const labels = [];
-    if (block.default_active) labels.push('Attivo di default');
-    if (block.multiBlock) labels.push('Multi-blocco');
-    if (block.invisible) labels.push('Invisibile');
-    if (block.blueprint_id) labels.push('Blueprint');
-    return labels;
-  };
-
-  const getPlaceholderTypeIcon = (type: string) => {
-    switch (type) {
-      case 'select':
-        return <Hash className="h-3 w-3" />;
-      case 'input':
-        return <FileText className="h-3 w-3" />;
-      case 'MultiBlockManager':
-        return <Blocks className="h-3 w-3" />;
-      default:
-        return <FileText className="h-3 w-3" />;
-    }
-  };
-
-  const getLeadsToStyles = (leadsTo: string) => {
-    if (leadsTo === 'next_block') {
-      return 'bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-xs';
-    } else if (leadsTo === 'stop_flow') {
-      return 'bg-red-200 text-red-800 px-2 py-1 rounded text-xs';
-    } else {
-      return 'bg-white px-2 py-1 rounded text-xs';
-    }
-  };
 
   return (
     <div className="min-h-screen bg-[#f8f5f1]">
@@ -78,7 +113,7 @@ export default function AdminBlockDetail() {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button
-              onClick={() => navigate('/admin/blocks')}
+              onClick={() => navigate(`/admin/blocks${formSlug ? `?form=${formSlug}` : ''}`)}
               variant="outline"
               size="sm"
               className="flex items-center gap-2"
@@ -89,7 +124,7 @@ export default function AdminBlockDetail() {
             <div>
               <h1 className="text-2xl font-bold text-[#245C4F] flex items-center gap-2">
                 <Blocks className="h-6 w-6" />
-                Dettagli Blocco #{block.block_number}
+                Dettaglio Blocco
               </h1>
               <p className="text-gray-600">Benvenuto, {user?.email}</p>
             </div>
@@ -110,282 +145,149 @@ export default function AdminBlockDetail() {
         {/* Block Overview */}
         <Card className="mb-6">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-xl flex items-center gap-2">
-                  <Badge variant="outline" className="text-sm font-mono">
-                    Priorità: {block.priority}
-                  </Badge>
-                  {block.title}
-                </CardTitle>
-                <p className="text-gray-600">
-                  ID: <code className="bg-gray-100 px-2 py-1 rounded text-sm">{block.block_id}</code>
-                </p>
-              </div>
-              <Button
-                onClick={() => setShowFlowMap(true)}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <GitBranch className="h-4 w-4" />
-                Visualizza Mappa Flusso
-              </Button>
+            <CardTitle className="flex items-center gap-2 flex-wrap">
+              <Badge variant="outline" className="text-xs font-mono">
+                Priorità: {block.priority}
+              </Badge>
+              <span className="text-[#245C4F]">#{block.blockNumber}</span>
+              <span>{block.title}</span>
+            </CardTitle>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge variant="secondary" className="text-sm">
+                {block.formTitle}
+              </Badge>
+              <code className="bg-gray-100 px-2 py-1 rounded text-sm">{block.blockId}</code>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Basic Info */}
-              <div className="space-y-3">
-                <h4 className="font-medium text-gray-900">Informazioni Base</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-gray-500" />
-                    <span className="text-gray-600">Domande:</span>
-                    <span className="font-medium">{block.questions.length}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Hash className="h-4 w-4 text-gray-500" />
-                    <span className="text-gray-600">Numero blocco:</span>
-                    <span className="font-medium">{block.block_number}</span>
-                  </div>
-                  {block.copy_number && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-gray-500" />
+                <span className="text-sm text-gray-600">Domande:</span>
+                <span className="font-medium">{block.questionCount}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Settings className="h-4 w-4 text-gray-500" />
+                <span className="text-sm text-gray-600">Ordine:</span>
+                <span className="font-medium">{block.sortOrder}</span>
+              </div>
+              <div className="text-sm text-gray-600">
+                <span>Creato:</span>
+                <div className="font-medium">{formatDate(block.createdAt)}</div>
+              </div>
+              <div className="text-sm text-gray-600">
+                <span>Aggiornato:</span>
+                <div className="font-medium">{formatDate(block.updatedAt)}</div>
+              </div>
+            </div>
+
+            {/* Block Properties */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-3">Proprietà del Blocco</h3>
+              <div className="flex flex-wrap gap-2">
+                {getBlockTypeLabels(block).map((label, index) => (
+                  <Badge 
+                    key={index} 
+                    variant="secondary"
+                    className="text-sm"
+                  >
+                    {label}
+                  </Badge>
+                ))}
+                {getBlockTypeLabels(block).length === 0 && (
+                  <span className="text-gray-500 text-sm">Nessuna proprietà speciale</span>
+                )}
+              </div>
+            </div>
+
+            {/* Additional Properties */}
+            {(block.properties.blueprintId || block.properties.copyNumber) && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">Informazioni Aggiuntive</h3>
+                <div className="space-y-2">
+                  {block.properties.blueprintId && (
                     <div className="flex items-center gap-2">
-                      <span className="text-gray-600">Copia numero:</span>
-                      <span className="font-medium">{block.copy_number}</span>
+                      <span className="text-sm text-gray-600">Blueprint ID:</span>
+                      <code className="bg-gray-100 px-2 py-1 rounded text-sm">{block.properties.blueprintId}</code>
+                    </div>
+                  )}
+                  {block.properties.copyNumber && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600">Numero Copia:</span>
+                      <span className="font-medium">{block.properties.copyNumber}</span>
                     </div>
                   )}
                 </div>
               </div>
+            )}
 
-              {/* Properties */}
-              <div className="space-y-3">
-                <h4 className="font-medium text-gray-900">Proprietà</h4>
-                <div className="flex flex-wrap gap-2">
-                  {getBlockTypeLabel(block).map((label, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs">
-                      {label}
-                    </Badge>
-                  ))}
-                  {getBlockTypeLabel(block).length === 0 && (
-                    <span className="text-sm text-gray-500">Nessuna proprietà speciale</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Blueprint Info */}
-              {block.blueprint_id && (
-                <div className="space-y-3">
-                  <h4 className="font-medium text-gray-900">Blueprint</h4>
-                  <div className="text-sm">
-                    <div className="flex items-center gap-2">
-                      <Settings className="h-4 w-4 text-gray-500" />
-                      <span className="text-gray-600">ID Blueprint:</span>
-                    </div>
-                    <code className="bg-gray-100 px-2 py-1 rounded text-sm mt-1 block">
-                      {block.blueprint_id}
-                    </code>
-                  </div>
-                </div>
-              )}
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setShowFlowMap(!showFlowMap)}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Eye className="h-4 w-4" />
+                {showFlowMap ? 'Nascondi' : 'Mostra'} Mappa Flusso
+              </Button>
             </div>
           </CardContent>
         </Card>
 
-        {/* Questions Details */}
+        {/* Flow Map */}
+        {showFlowMap && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                Mappa del Flusso delle Domande
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <BlockFlowMap block={block} />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Questions List */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
-              Domande del Blocco ({block.questions.length})
+              Domande del Blocco ({block.questionCount})
             </CardTitle>
           </CardHeader>
           <CardContent>
             {block.questions.length === 0 ? (
-              <div className="text-center py-8">
-                <FileText className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-500">Nessuna domanda in questo blocco</p>
-              </div>
+              <p className="text-gray-500 text-center py-8">Nessuna domanda trovata in questo blocco</p>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {block.questions.map((question, index) => (
-                  <Card key={question.question_id} className="border-l-4 border-l-[#245C4F]">
+                  <Card key={question.question_id} className="border border-gray-200">
                     <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <CardTitle className="text-base flex items-center gap-2">
-                            <Badge variant="outline" className="text-xs">
-                              #{question.question_number}
-                            </Badge>
-                            Domanda {index + 1}
-                          </CardTitle>
-                          <code className="text-xs text-gray-500 mt-1">
-                            ID: {question.question_id}
-                          </code>
-                        </div>
-                        <div className="flex gap-1">
-                          {question.inline && (
-                            <Badge variant="secondary" className="text-xs">Inline</Badge>
-                          )}
-                          {question.endOfForm && (
-                            <Badge variant="secondary" className="text-xs">Fine Form</Badge>
-                          )}
-                          {question.skippableWithNotSure && (
-                            <Badge variant="secondary" className="text-xs">Saltabile</Badge>
-                          )}
-                        </div>
-                      </div>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          {question.question_number}
+                        </Badge>
+                        <code className="bg-gray-100 px-2 py-1 rounded text-xs">{question.question_id}</code>
+                      </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      {/* Question Text */}
-                      <div className="mb-4">
-                        <h5 className="font-medium text-gray-900 mb-2">Testo della domanda:</h5>
-                        <p className="text-gray-700 bg-gray-50 p-3 rounded">
-                          {question.question_text}
-                        </p>
-                      </div>
-
-                      {/* Question Notes */}
+                      <p className="text-sm text-gray-800 mb-3">{question.question_text}</p>
+                      
                       {question.question_notes && (
-                        <div className="mb-4">
-                          <h5 className="font-medium text-gray-900 mb-2">Note:</h5>
-                          <p className="text-gray-600 text-sm bg-blue-50 p-3 rounded">
-                            {question.question_notes}
-                          </p>
+                        <div className="mb-3">
+                          <span className="text-xs text-gray-500">Note:</span>
+                          <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded mt-1">{question.question_notes}</p>
                         </div>
                       )}
-
-                      {/* Placeholders */}
-                      <div>
-                        <h5 className="font-medium text-gray-900 mb-3">
-                          Placeholder ({Object.keys(question.placeholders).length})
-                        </h5>
-                        {Object.keys(question.placeholders).length === 0 ? (
-                          <p className="text-gray-500 text-sm">Nessun placeholder configurato</p>
-                        ) : (
-                          <div className="grid gap-4">
-                            {Object.entries(question.placeholders).map(([key, placeholder]) => (
-                              <div key={key} className="border rounded-lg p-4 bg-white shadow-sm">
-                                <div className="flex items-center gap-2 mb-3">
-                                  {getPlaceholderTypeIcon(placeholder.type)}
-                                  <span className="font-semibold text-base">{key}</span>
-                                  <Badge variant="outline" className="text-xs">
-                                    {placeholder.type}
-                                  </Badge>
-                                </div>
-                                
-                                {/* Select Placeholder Details */}
-                                {placeholder.type === 'select' && (
-                                  <div className="space-y-3">
-                                    {placeholder.placeholder_label && (
-                                      <div className="text-sm">
-                                        <span className="font-medium text-gray-700">Label:</span>
-                                        <span className="ml-2 text-gray-600">{placeholder.placeholder_label}</span>
-                                      </div>
-                                    )}
-                                    <div>
-                                      <span className="font-medium text-gray-700 text-sm">
-                                        Opzioni ({placeholder.options?.length || 0}):
-                                      </span>
-                                      <div className="mt-2 space-y-2">
-                                        {placeholder.options?.map((option, optIndex) => (
-                                          <div key={optIndex} className="bg-gray-50 rounded p-3 border-l-2 border-blue-200">
-                                            <div className="space-y-2 text-sm">
-                                              <div>
-                                                <span className="font-medium text-gray-700">ID:</span>
-                                                <code className="ml-2 bg-white px-2 py-1 rounded text-xs">{option.id}</code>
-                                              </div>
-                                              <div>
-                                                <span className="font-medium text-gray-700">Label:</span>
-                                                <span className="ml-2 text-gray-600">{option.label}</span>
-                                              </div>
-                                              <div>
-                                                <span className="font-medium text-gray-700">Leads to:</span>
-                                                <code className={getLeadsToStyles(option.leads_to)}>{option.leads_to}</code>
-                                              </div>
-                                              {option.add_block && (
-                                                <div>
-                                                  <span className="font-medium text-gray-700">Add block:</span>
-                                                  <div className="flex items-center gap-1 mt-1">
-                                                    <Plus className="h-3 w-3 text-green-600" />
-                                                    <code className="bg-green-50 px-2 py-1 rounded text-xs text-green-800">{option.add_block}</code>
-                                                  </div>
-                                                </div>
-                                              )}
-                                            </div>
-                                          </div>
-                                        )) || (
-                                          <p className="text-gray-500 text-sm italic">Nessuna opzione configurata</p>
-                                        )}
-                                      </div>
-                                    </div>
-                                    {placeholder.multiple && (
-                                      <div className="text-sm">
-                                        <Badge variant="secondary" className="text-xs">Selezione multipla</Badge>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                                
-                                {/* Input Placeholder Details */}
-                                {placeholder.type === 'input' && (
-                                  <div className="space-y-2">
-                                    <div className="space-y-2 text-sm">
-                                      <div>
-                                        <span className="font-medium text-gray-700">Tipo input:</span>
-                                        <Badge variant="outline" className="ml-2 text-xs">{placeholder.input_type}</Badge>
-                                      </div>
-                                      <div>
-                                        <span className="font-medium text-gray-700">Validazione:</span>
-                                        <Badge variant="outline" className="ml-2 text-xs">{placeholder.input_validation}</Badge>
-                                      </div>
-                                      {placeholder.placeholder_label && (
-                                        <div>
-                                          <span className="font-medium text-gray-700">Label:</span>
-                                          <span className="ml-2 text-gray-600">{placeholder.placeholder_label}</span>
-                                        </div>
-                                      )}
-                                      {placeholder.leads_to && (
-                                        <div>
-                                          <span className="font-medium text-gray-700">Leads to:</span>
-                                          <code className={getLeadsToStyles(placeholder.leads_to)}>{placeholder.leads_to}</code>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                                
-                                {/* MultiBlockManager Placeholder Details */}
-                                {placeholder.type === 'MultiBlockManager' && (
-                                  <div className="space-y-3">
-                                    <div className="space-y-2 text-sm">
-                                      <div>
-                                        <span className="font-medium text-gray-700">Blueprint:</span>
-                                        <div className="flex items-center gap-1 mt-1">
-                                          <Blocks className="h-3 w-3 text-blue-600" />
-                                          <code className="bg-blue-50 px-2 py-1 rounded text-xs text-blue-800">{placeholder.blockBlueprint}</code>
-                                        </div>
-                                      </div>
-                                      <div>
-                                        <span className="font-medium text-gray-700">Add Block Label:</span>
-                                        <span className="ml-2 text-gray-600">{placeholder.add_block_label}</span>
-                                      </div>
-                                      {placeholder.placeholder_label && (
-                                        <div>
-                                          <span className="font-medium text-gray-700">Label:</span>
-                                          <span className="ml-2 text-gray-600">{placeholder.placeholder_label}</span>
-                                        </div>
-                                      )}
-                                      <div>
-                                        <span className="font-medium text-gray-700">Leads to:</span>
-                                        <code className={getLeadsToStyles(placeholder.leads_to)}>{placeholder.leads_to}</code>
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                      
+                      <div className="flex items-center gap-4 text-xs text-gray-500">
+                        <span>Placeholders: {Object.keys(question.placeholders || {}).length}</span>
+                        {question.inline && <Badge variant="secondary" className="text-xs">Inline</Badge>}
+                        {question.endOfForm && <Badge variant="secondary" className="text-xs">Fine Form</Badge>}
+                        {question.skippableWithNotSure && <Badge variant="secondary" className="text-xs">Saltabile</Badge>}
                       </div>
                     </CardContent>
                   </Card>
@@ -395,13 +297,6 @@ export default function AdminBlockDetail() {
           </CardContent>
         </Card>
       </main>
-
-      {/* Flow Map Dialog */}
-      <BlockFlowMap 
-        block={block}
-        isOpen={showFlowMap}
-        onClose={() => setShowFlowMap(false)}
-      />
     </div>
   );
 }
