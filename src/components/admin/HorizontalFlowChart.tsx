@@ -48,11 +48,16 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
 
   // Calculate dynamic heights for each step
   const calculateStepHeight = (step: FlowStep): number => {
-    const baseHeight = 120; // Base height for question text and header
-    const optionHeight = 40; // Height per option
-    const padding = 40; // Additional padding
+    const headerHeight = 50; // Header with badges
+    const questionTextHeight = Math.max(60, Math.ceil(step.questionText.length / 60) * 20); // Estimate based on text length
+    const optionsHeaderHeight = step.connections.length > 0 ? 30 : 0; // "OPZIONI:" header
+    const optionHeight = 50; // Height per option (including padding and margins)
+    const cardPadding = 40; // Card internal padding
+    const borderSpacing = 20; // Border and spacing
     
-    return baseHeight + (step.connections.length * optionHeight) + padding;
+    const totalOptionsHeight = step.connections.length * optionHeight;
+    
+    return headerHeight + questionTextHeight + optionsHeaderHeight + totalOptionsHeight + cardPadding + borderSpacing;
   };
 
   // Calculate cumulative positions for each level
