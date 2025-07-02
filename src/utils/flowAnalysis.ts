@@ -164,7 +164,7 @@ export class FlowAnalyzer {
       let nextAvailablePosition = level; // Start offset by level number
       const assignedPositions = new Set<number>();
       
-      // Build source map for reference
+      // Build source map to detect multi-source questions
       const sourceMap = new Map<string, string[]>();
       steps.forEach(step => {
         const sources: string[] = [];
@@ -178,6 +178,13 @@ export class FlowAnalyzer {
 
       // Assign positions to all steps, starting from the offset
       steps.forEach(step => {
+        const sources = sourceMap.get(step.id) || [];
+        
+        // Add extra spacing for multi-source questions to avoid line overlap
+        if (sources.length > 1) {
+          nextAvailablePosition += 1; // Extra spacing for multi-source questions
+        }
+        
         // Find next available position starting from our offset
         while (assignedPositions.has(nextAvailablePosition)) {
           nextAvailablePosition++;
@@ -188,14 +195,8 @@ export class FlowAnalyzer {
         nextAvailablePosition++;
       });
 
-      // Sort steps by their assigned positions
+      // Sort steps by their assigned positions - KEEP the staggered offsets, don't normalize to 0
       steps.sort((a, b) => a.branchIndex - b.branchIndex);
-      
-      // Normalize indices to be sequential starting from 0 (but maintain relative spacing)
-      const minIndex = Math.min(...steps.map(s => s.branchIndex));
-      steps.forEach(step => {
-        step.branchIndex = step.branchIndex - minIndex;
-      });
     });
   }
   
