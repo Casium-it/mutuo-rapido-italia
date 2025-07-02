@@ -80,7 +80,7 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
 
   const cardWidth = 350; // Width of each card
   const levelWidth = 500; // Width between levels (increased)
-  const verticalSpacing = 40; // Vertical spacing between cards
+  const verticalSpacing = 60; // Vertical spacing between cards (increased by 50%)
   const containerPadding = 50;
   
   const levelPositions = calculateLevelPositions();

@@ -159,35 +159,106 @@ export class FlowAnalyzer {
         return;
       }
 
-      // Track assigned positions to avoid conflicts
-      const assignedPositions = new Set<number>();
-      let nextAvailablePosition = 0;
-
-      // Process steps in order of their source branch indices for consistency
-      const stepsWithSources = steps.map(step => {
-        // Find which question(s) lead to this step
+      // PASS 1: Detect multi-source questions and build dependency map
+      const multiSourceSteps = new Set<string>();
+      const sourceMap = new Map<string, string[]>();
+      
+      steps.forEach(step => {
         const sources: string[] = [];
         stepMap.forEach((sourceStep, sourceId) => {
           if (sourceStep.connections.some(conn => conn.targetId === step.id)) {
             sources.push(sourceId);
           }
         });
-        return { step, sources };
+        sourceMap.set(step.id, sources);
+        
+        // Mark as multi-source if it has more than one incoming connection
+        if (sources.length > 1) {
+          multiSourceSteps.add(step.id);
+        }
       });
 
-      // Sort by source branch index to maintain visual flow consistency
-      stepsWithSources.sort((a, b) => {
-        const aSourceIndex = a.sources.length > 0 ? 
-          (stepMap.get(a.sources[0])?.branchIndex || 0) : 0;
-        const bSourceIndex = b.sources.length > 0 ? 
-          (stepMap.get(b.sources[0])?.branchIndex || 0) : 0;
-        return aSourceIndex - bSourceIndex;
+      // PASS 2: Calculate required space for each branching source
+      const branchingFootprint = new Map<string, number>();
+      stepMap.forEach((sourceStep, sourceId) => {
+        const targets = sourceStep.connections
+          .filter(conn => conn.targetId !== 'stop' && conn.targetId !== 'next_block')
+          .map(conn => conn.targetId);
+        
+        if (targets.length > 1) {
+          // Calculate how much vertical space this branching source needs
+          let requiredSpace = targets.length;
+          
+          // Add extra space for multi-source targets that need to be separated
+          targets.forEach(targetId => {
+            if (multiSourceSteps.has(targetId)) {
+              requiredSpace += 1; // Extra spacing for multi-source questions
+            }
+          });
+          
+          branchingFootprint.set(sourceId, requiredSpace);
+        }
       });
 
-      // Group steps by their immediate source to handle branching correctly
-      const sourceToTargets = new Map<string, FlowStep[]>();
+      // PASS 3: Smart positioning with conflict avoidance
+      const assignedPositions = new Set<number>();
+      const reservedSlots = new Map<string, number>(); // questionId -> reserved position
+      let nextAvailablePosition = 0;
+
+      // First, handle single-source questions (maintain alignment when possible)
+      const singleSourceSteps = steps.filter(step => {
+        const sources = sourceMap.get(step.id) || [];
+        return sources.length === 1 && !multiSourceSteps.has(step.id);
+      });
+
+      singleSourceSteps.forEach(step => {
+        const sources = sourceMap.get(step.id) || [];
+        if (sources.length === 1) {
+          const sourceStep = stepMap.get(sources[0]);
+          if (sourceStep) {
+            const sourcePosition = sourceStep.branchIndex;
+            
+            // Try to align with source position if available
+            if (!assignedPositions.has(sourcePosition)) {
+              step.branchIndex = sourcePosition;
+              assignedPositions.add(sourcePosition);
+            } else {
+              // Find next available position
+              while (assignedPositions.has(nextAvailablePosition)) {
+                nextAvailablePosition++;
+              }
+              step.branchIndex = nextAvailablePosition;
+              assignedPositions.add(nextAvailablePosition);
+              nextAvailablePosition++;
+            }
+          }
+        }
+      });
+
+      // Second, handle multi-source questions (need separate positioning)
+      const multiSourceStepsList = steps.filter(step => multiSourceSteps.has(step.id));
       
-      stepsWithSources.forEach(({ step, sources }) => {
+      multiSourceStepsList.forEach(step => {
+        // Find next available position that ensures separation
+        while (assignedPositions.has(nextAvailablePosition)) {
+          nextAvailablePosition++;
+        }
+        
+        step.branchIndex = nextAvailablePosition;
+        assignedPositions.add(nextAvailablePosition);
+        nextAvailablePosition++;
+      });
+
+      // Third, handle any remaining steps from branching sources
+      const remainingSteps = steps.filter(step => {
+        const sources = sourceMap.get(step.id) || [];
+        return sources.length === 1 && !singleSourceSteps.includes(step) && !multiSourceSteps.has(step.id);
+      });
+
+      // Group remaining steps by their source and handle branching
+      const sourceToTargets = new Map<string, FlowStep[]>();
+      remainingSteps.forEach(step => {
+        const sources = sourceMap.get(step.id) || [];
         sources.forEach(sourceId => {
           if (!sourceToTargets.has(sourceId)) {
             sourceToTargets.set(sourceId, []);
@@ -196,39 +267,20 @@ export class FlowAnalyzer {
         });
       });
 
-      // Process each source and assign branch indices to its targets
+      // Process each branching source
       sourceToTargets.forEach((targetSteps, sourceId) => {
         const sourceStep = stepMap.get(sourceId);
-        if (!sourceStep) return;
+        if (!sourceStep || targetSteps.length <= 1) return;
 
-        // If source has multiple targets (branching), spread them vertically
-        if (targetSteps.length > 1) {
-          targetSteps.forEach((targetStep, index) => {
-            // Find next available position starting from current
-            while (assignedPositions.has(nextAvailablePosition)) {
-              nextAvailablePosition++;
-            }
-            targetStep.branchIndex = nextAvailablePosition;
-            assignedPositions.add(nextAvailablePosition);
+        // For multiple targets, ensure they're spread vertically
+        targetSteps.forEach((targetStep, index) => {
+          while (assignedPositions.has(nextAvailablePosition)) {
             nextAvailablePosition++;
-          });
-        } else if (targetSteps.length === 1) {
-          // Single target - try to align with source position if available
-          const sourcePosition = sourceStep.branchIndex;
-          let targetPosition = sourcePosition;
-          
-          // If source position is taken, find next available
-          while (assignedPositions.has(targetPosition)) {
-            targetPosition = nextAvailablePosition;
-            while (assignedPositions.has(nextAvailablePosition)) {
-              nextAvailablePosition++;
-            }
           }
-          
-          targetSteps[0].branchIndex = targetPosition;
-          assignedPositions.add(targetPosition);
-          nextAvailablePosition = Math.max(nextAvailablePosition, targetPosition + 1);
-        }
+          targetStep.branchIndex = nextAvailablePosition;
+          assignedPositions.add(nextAvailablePosition);
+          nextAvailablePosition++;
+        });
       });
 
       // Handle any unassigned steps
