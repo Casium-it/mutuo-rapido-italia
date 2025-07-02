@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { FormQuestion } from "./FormQuestion";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
@@ -19,73 +20,95 @@ export function QuestionView() {
   const params = useParams<{ blockId?: string, questionId?: string }>();
   const [showStopFlow, setShowStopFlow] = useState<boolean>(false);
   
-  // Sincronizza il componente con l'URL quando cambia
-  useEffect(() => {
-    if (params.blockId && params.questionId) {
-      // Se l'URL contiene blockId e questionId, ma sono diversi dallo stato attuale,
-      // aggiorna lo stato interno per allinearlo all'URL
-      if (state.activeQuestion.block_id !== params.blockId || 
-          state.activeQuestion.question_id !== params.questionId) {
-        goToQuestion(params.blockId, params.questionId, true);
-      }
+  // Memoize URL synchronization to prevent unnecessary re-renders
+  const shouldSyncWithUrl = useMemo(() => {
+    return params.blockId && params.questionId && 
+           (state.activeQuestion.block_id !== params.blockId || 
+            state.activeQuestion.question_id !== params.questionId);
+  }, [params.blockId, params.questionId, state.activeQuestion]);
+
+  // Optimize URL synchronization with useCallback
+  const syncWithUrl = useCallback(() => {
+    if (shouldSyncWithUrl && params.blockId && params.questionId) {
+      console.log('🔄 Syncing with URL:', params.blockId, params.questionId);
+      goToQuestion(params.blockId, params.questionId, true);
     }
-  }, [location.pathname, params.blockId, params.questionId, state.activeQuestion, goToQuestion]);
+  }, [shouldSyncWithUrl, params.blockId, params.questionId, goToQuestion]);
+
+  // Stable URL sync effect
+  useEffect(() => {
+    syncWithUrl();
+  }, [syncWithUrl]);
   
-  // Rileva se la navigazione è stata impostata su "stop_flow"
+  // Stable stop flow effect
   useEffect(() => {
     const stopFlowStatus = sessionStorage.getItem("stopFlowActivated");
     if (stopFlowStatus === "true") {
       setShowStopFlow(true);
-      // Pulisci la variabile di sessione dopo l'utilizzo
       sessionStorage.removeItem("stopFlowActivated");
     }
-  }, [state.activeQuestion]);
+  }, [state.activeQuestion.question_id]); // Only depend on question ID
 
-  // Handle end of form question
-  useEffect(() => {
-    // Find the current active block and question
-    const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
-    const activeQuestion = activeBlock?.questions.find(
-      question => question.question_id === state.activeQuestion.question_id
-    );
-    
-    // Check if current question is an end-of-form question
-    if (activeQuestion?.endOfForm && activeBlock) {
-      // Automatically mark the current block as completed
-      if (!isBlockCompleted(activeBlock.block_id)) {
-        markBlockAsCompleted(activeBlock.block_id);
-      }
+  // Memoize active block and question lookups
+  const activeBlock = useMemo(() => 
+    blocks.find(block => block.block_id === state.activeQuestion.block_id),
+    [blocks, state.activeQuestion.block_id]
+  );
+
+  const activeQuestion = useMemo(() => 
+    activeBlock?.questions.find(question => question.question_id === state.activeQuestion.question_id),
+    [activeBlock, state.activeQuestion.question_id]
+  );
+
+  // Optimize end-of-form handling with useCallback
+  const handleEndOfFormCompletion = useCallback(() => {
+    if (activeQuestion?.endOfForm && activeBlock && !isBlockCompleted(activeBlock.block_id)) {
+      console.log('📋 Auto-completing block for end-of-form question:', activeBlock.block_id);
+      markBlockAsCompleted(activeBlock.block_id);
     }
-  }, [state.activeQuestion, blocks, isBlockCompleted, markBlockAsCompleted]);
+  }, [activeQuestion?.endOfForm, activeBlock, isBlockCompleted, markBlockAsCompleted]);
 
-  // Check if all blocks are completed
-  const allActiveBlocks = [...state.activeBlocks];
-  const allBlocksCompleted = allActiveBlocks.every(blockId => 
-    state.completedBlocks.includes(blockId)
+  // Stable end-of-form effect
+  useEffect(() => {
+    handleEndOfFormCompletion();
+  }, [handleEndOfFormCompletion]);
+
+  // Memoize completion calculations
+  const allActiveBlocks = useMemo(() => [...state.activeBlocks], [state.activeBlocks]);
+  
+  const allBlocksCompleted = useMemo(() => 
+    allActiveBlocks.every(blockId => state.completedBlocks.includes(blockId)),
+    [allActiveBlocks, state.completedBlocks]
   );
 
-  // Get list of incomplete blocks for display
-  const incompleteBlocks = allActiveBlocks
-    .filter(blockId => !state.completedBlocks.includes(blockId))
-    .map(blockId => blocks.find(block => block.block_id === blockId))
-    .filter(Boolean);
-  
-  // Find the current active block and question
-  const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
-  const activeQuestion = activeBlock?.questions.find(
-    question => question.question_id === state.activeQuestion.question_id
+  const incompleteBlocks = useMemo(() => 
+    allActiveBlocks
+      .filter(blockId => !state.completedBlocks.includes(blockId))
+      .map(blockId => blocks.find(block => block.block_id === blockId))
+      .filter(Boolean),
+    [allActiveBlocks, state.completedBlocks, blocks]
   );
 
-  // Check if there are any dynamic blocks that are not completed
-  const isEndOfFormQuestion = activeQuestion?.endOfForm === true;
+  const isEndOfFormQuestion = useMemo(() => 
+    activeQuestion?.endOfForm === true,
+    [activeQuestion?.endOfForm]
+  );
   
-  // Handle form submission - Navigate immediately to loading page
-  const handleSubmitForm = async () => {
+  // Optimize form submission with useCallback
+  const handleSubmitForm = useCallback(async () => {
     if (!allBlocksCompleted) {
+      console.warn('⚠️ Attempted to submit incomplete form');
       return;
     }
 
-    // Navigate immediately to loading page with form data - NOW INCLUDING formSlug
+    console.log('📤 Submitting form with data:', {
+      responses: state.responses,
+      activeBlocks: state.activeBlocks,
+      completedBlocks: state.completedBlocks,
+      dynamicBlocks: state.dynamicBlocks,
+      formSlug: state.formSlug
+    });
+
     navigate("/form-loading", {
       state: { 
         formData: {
@@ -93,11 +116,19 @@ export function QuestionView() {
           activeBlocks: state.activeBlocks,
           completedBlocks: state.completedBlocks,
           dynamicBlocks: state.dynamicBlocks,
-          formSlug: state.formSlug  // FIXED: Added missing formSlug
+          formSlug: state.formSlug
         }
       }
     });
-  };
+  }, [allBlocksCompleted, state, navigate]);
+
+  // Optimize navigation to incomplete blocks
+  const navigateToIncompleteBlock = useCallback((block: any) => {
+    if (block && block.questions.length > 0) {
+      console.log('🔍 Navigating to incomplete block:', block.block_id);
+      goToQuestion(block.block_id, block.questions[0].question_id);
+    }
+  }, [goToQuestion]);
 
   if (!activeBlock || !activeQuestion) {
     return (
@@ -134,7 +165,6 @@ export function QuestionView() {
         </div>
       )}
 
-      {/* Special End of Form UI */}
       {isEndOfFormQuestion ? (
         <div className="space-y-6">
           <div className="p-6 bg-[#F8F4EF] border border-[#BEB8AE] rounded-lg shadow">
@@ -172,11 +202,7 @@ export function QuestionView() {
                           size="sm"
                           variant="link"
                           className="ml-2 text-[#245C4F] p-0 h-auto"
-                          onClick={() => {
-                            if (block && block.questions.length > 0) {
-                              goToQuestion(block.block_id, block.questions[0].question_id);
-                            }
-                          }}
+                          onClick={() => navigateToIncompleteBlock(block)}
                         >
                           Vai alla sezione
                         </Button>
