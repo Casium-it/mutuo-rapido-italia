@@ -95,15 +95,12 @@ export class FlowAnalyzer {
     // Process all questions level by level
     this.assignLevelsAndBranches(firstQuestion.question_id, 0, stepMap, levelAssignments, branchAssignments, processed);
     
-    // Group steps by level and assign branch indices
+    // Group steps by level
     const stepsByLevel = new Map<number, FlowStep[]>();
     
     stepMap.forEach((step, id) => {
       const level = levelAssignments.get(id) || 0;
-      const branchIndex = branchAssignments.get(id) || 0;
-      
       step.level = level;
-      step.branchIndex = branchIndex;
       
       if (!stepsByLevel.has(level)) {
         stepsByLevel.set(level, []);
@@ -111,15 +108,15 @@ export class FlowAnalyzer {
       stepsByLevel.get(level)!.push(step);
     });
     
-    // Sort steps within each level by branch index
-    stepsByLevel.forEach(steps => {
-      steps.sort((a, b) => a.branchIndex - b.branchIndex);
-    });
+    // Calculate optimal branch indices to minimize overlaps
+    this.calculateOptimalBranchIndices(stepsByLevel, stepMap, levelAssignments);
     
     // Create level structure
     const maxLevel = Math.max(...Array.from(stepsByLevel.keys()));
     for (let i = 0; i <= maxLevel; i++) {
-      levels[i] = { steps: stepsByLevel.get(i) || [] };
+      const levelSteps = stepsByLevel.get(i) || [];
+      levelSteps.sort((a, b) => a.branchIndex - b.branchIndex);
+      levels[i] = { steps: levelSteps };
     }
     
     // Create visual connections
@@ -145,6 +142,78 @@ export class FlowAnalyzer {
     });
     
     return { levels, maxLevel, connections };
+  }
+
+  private static calculateOptimalBranchIndices(
+    stepsByLevel: Map<number, FlowStep[]>,
+    stepMap: Map<string, FlowStep>,
+    levelAssignments: Map<string, number>
+  ): void {
+    // For each level, calculate optimal positions based on source connections
+    stepsByLevel.forEach((steps, level) => {
+      if (level === 0) {
+        // First level - just assign sequential indices
+        steps.forEach((step, index) => {
+          step.branchIndex = index;
+        });
+        return;
+      }
+
+      // Calculate position based on source questions
+      const positionMap = new Map<string, number>();
+      let currentPosition = 0;
+
+      // Group steps by their source questions
+      const sourceGroups = new Map<string, FlowStep[]>();
+      
+      steps.forEach(step => {
+        // Find which question(s) lead to this step
+        const sources: string[] = [];
+        stepMap.forEach((sourceStep, sourceId) => {
+          if (sourceStep.connections.some(conn => conn.targetId === step.id)) {
+            sources.push(sourceId);
+          }
+        });
+
+        sources.forEach(sourceId => {
+          if (!sourceGroups.has(sourceId)) {
+            sourceGroups.set(sourceId, []);
+          }
+          sourceGroups.get(sourceId)!.push(step);
+        });
+      });
+
+      // Assign positions based on source grouping
+      sourceGroups.forEach((targetSteps, sourceId) => {
+        const sourceStep = stepMap.get(sourceId);
+        if (!sourceStep) return;
+
+        const sourceLevel = levelAssignments.get(sourceId) || 0;
+        const sourceLevelSteps = stepsByLevel.get(sourceLevel) || [];
+        const sourceIndex = sourceLevelSteps.findIndex(s => s.id === sourceId);
+
+        // Calculate base position from source
+        const basePosition = sourceIndex;
+        
+        // Assign positions to target steps
+        targetSteps.forEach((targetStep, index) => {
+          if (!positionMap.has(targetStep.id)) {
+            positionMap.set(targetStep.id, basePosition + index);
+          }
+        });
+      });
+
+      // Apply calculated positions
+      steps.forEach(step => {
+        step.branchIndex = positionMap.get(step.id) || currentPosition++;
+      });
+
+      // Normalize indices to start from 0
+      const minIndex = Math.min(...steps.map(s => s.branchIndex));
+      steps.forEach(step => {
+        step.branchIndex -= minIndex;
+      });
+    });
   }
   
   private static assignLevelsAndBranches(
