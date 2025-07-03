@@ -54,68 +54,123 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
 
   // Calculate dynamic heights for each step
   const calculateStepHeight = (step: FlowStep): number => {
-    const questionIdHeight = 35; // Question ID badge with margin
-    const inlineStatusHeight = 25; // Inline status line with margin
+    const cardWidth = 350;
+    const cardPadding = 40; // Internal card padding (20px each side)
+    const availableTextWidth = cardWidth - cardPadding;
+    const avgCharWidth = 7; // Average character width in pixels
+    const charsPerLine = Math.floor(availableTextWidth / avgCharWidth);
     
-    // Question text height calculation based on card width (350px)
-    const estimatedCharsPerLine = 45; // More accurate for the card width
-    const questionTextLines = Math.max(1, Math.ceil(step.questionText.length / estimatedCharsPerLine));
-    const questionTextHeight = questionTextLines * 20 + 30; // 20px per line + padding/margin
+    // Helper function to calculate text height with line wrapping
+    const calculateTextHeight = (text: string, lineHeight: number = 20, extraPadding: number = 0): number => {
+      const lines = Math.ceil(text.length / charsPerLine);
+      return (lines * lineHeight) + extraPadding;
+    };
     
-    // Question notes height (if present) - blue box with padding
-    const questionNotesHeight = step.questionNotes ? 
-      Math.ceil(step.questionNotes.length / estimatedCharsPerLine) * 16 + 50 : 0; // Box padding + border
+    // GROUP 1: General Information Section
+    let generalInfoHeight = 0;
     
-    // Question attributes height (3 mandatory lines: endOfForm, skippableWithNotSure, priority)
-    const questionAttributesHeight = 75; // 3 lines × 20px + margins + spacing
+    // Question ID badge
+    generalInfoHeight += 35;
     
-    // Placeholders section header
-    const placeholderHeaderHeight = step.placeholderDetails.length > 0 ? 35 : 0;
+    // Inline status
+    generalInfoHeight += 25;
     
-    // Calculate placeholder section height dynamically
-    let placeholderSectionHeight = 0;
+    // Question text (with proper line wrapping)
+    generalInfoHeight += calculateTextHeight(step.questionText, 20, 30);
+    
+    // Question notes (if present) - blue box
+    if (step.questionNotes) {
+      generalInfoHeight += calculateTextHeight(step.questionNotes, 16, 50); // Box padding + border
+    }
+    
+    // Question attributes (3 lines: endOfForm, skippableWithNotSure, priority)
+    generalInfoHeight += 75; // Fixed height for 3 attribute lines
+    
+    // GROUP 2: Placeholders Section
+    let placeholdersTotalHeight = 0;
+    
+    // Placeholders header
+    if (step.placeholderDetails.length > 0) {
+      placeholdersTotalHeight += 35; // "Placeholders (X)" header
+    }
+    
+    // Calculate each placeholder group individually
     step.placeholderDetails.forEach(placeholder => {
-      // Border box with padding for each placeholder
-      const placeholderBorderHeight = 30; // Border + padding for the placeholder container
+      let placeholderGroupHeight = 0;
+      
+      // Placeholder container border + padding
+      placeholderGroupHeight += 30;
+      
+      // Badges line (key + type)
+      placeholderGroupHeight += 25;
       
       if (placeholder.type === 'select') {
-        // Badge line (key + type): 25px
-        // Multiple line: 20px
-        // Label line: 20px 
-        // Options header: 20px
-        let selectHeight = placeholderBorderHeight + 25 + 20 + 20 + 20;
+        // Multiple line
+        placeholderGroupHeight += 20;
         
-        // Each option needs 3 lines:
-        // - Option label: 20px
-        // - ID line with arrow and target: 20px  
-        // - +Block line (if present): 20px
-        const optionCount = placeholder.options?.length || 0;
-        optionCount && placeholder.options?.forEach(option => {
-          selectHeight += 20; // Option label
-          selectHeight += 20; // ID line
+        // Label line
+        placeholderGroupHeight += 20;
+        
+        // Options header
+        placeholderGroupHeight += 20;
+        
+        // Each option with dynamic height calculation
+        placeholder.options?.forEach(option => {
+          // Option label line
+          placeholderGroupHeight += calculateTextHeight(option.label, 20, 5);
+          
+          // ID line with target (this can wrap!)
+          const idText = `ID: ${option.id} → ${option.leads_to}`;
+          placeholderGroupHeight += calculateTextHeight(idText, 20, 5);
+          
+          // Add block line (if present)
           if (option.add_block) {
-            selectHeight += 20; // + Block line
+            const blockText = `+ Block: ${option.add_block}`;
+            placeholderGroupHeight += calculateTextHeight(blockText, 20, 5);
           }
-          selectHeight += 5; // Spacing between options
+          
+          // Spacing between options
+          placeholderGroupHeight += 10;
         });
         
-        placeholderSectionHeight += selectHeight;
       } else if (placeholder.type === 'input') {
-        // Badge line + input_type line + label line + validation line
-        placeholderSectionHeight += placeholderBorderHeight + 25 + 20 + 20 + 20;
+        // Input type line
+        const inputTypeText = `Input Type: ${placeholder.input_type}`;
+        placeholderGroupHeight += calculateTextHeight(inputTypeText, 20, 5);
+        
+        // Label line
+        const labelText = `Label: ${placeholder.placeholder_label}`;
+        placeholderGroupHeight += calculateTextHeight(labelText, 20, 5);
+        
+        // Validation line
+        const validationText = `Validation: ${placeholder.input_validation}`;
+        placeholderGroupHeight += calculateTextHeight(validationText, 20, 5);
+        
       } else if (placeholder.type === 'MultiBlockManager') {
-        // Badge line + label line + add_block_label line + blueprint line
-        placeholderSectionHeight += placeholderBorderHeight + 25 + 20 + 20 + 20;
+        // Label line
+        const labelText = `Label: ${placeholder.placeholder_label}`;
+        placeholderGroupHeight += calculateTextHeight(labelText, 20, 5);
+        
+        // Add block label line
+        const addBlockLabelText = `Add Block Label: ${placeholder.add_block_label}`;
+        placeholderGroupHeight += calculateTextHeight(addBlockLabelText, 20, 5);
+        
+        // Blueprint line
+        const blueprintText = `Blueprint: ${placeholder.blockBlueprint}`;
+        placeholderGroupHeight += calculateTextHeight(blueprintText, 20, 5);
       }
-      placeholderSectionHeight += 20; // Spacing between placeholders
+      
+      // Spacing between placeholder groups
+      placeholderGroupHeight += 20;
+      
+      placeholdersTotalHeight += placeholderGroupHeight;
     });
     
-    const cardPadding = 60; // Card internal padding
-    const safetyMargin = 20; // Reduced safety margin since we're more precise now
+    // Final calculation: General Info + Placeholders + Card Padding + Safety Margin
+    const cardInternalPadding = 40;
+    const safetyMargin = 30;
     
-    return questionIdHeight + inlineStatusHeight + questionTextHeight + questionNotesHeight + 
-           questionAttributesHeight + placeholderHeaderHeight + placeholderSectionHeight + 
-           cardPadding + safetyMargin;
+    return generalInfoHeight + placeholdersTotalHeight + cardInternalPadding + safetyMargin;
   };
 
   // Calculate cumulative positions for each level
