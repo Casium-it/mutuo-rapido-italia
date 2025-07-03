@@ -56,21 +56,37 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
   const calculateStepHeight = (step: FlowStep): number => {
     const questionIdHeight = 25; // Line 1: Question ID
     const inlineStatusHeight = 20; // Line 2: inline status
-    const questionTextHeight = Math.max(60, Math.ceil(step.questionText.length / 60) * 20); // Line 3: Question text
-    const placeholderTypesHeight = step.placeholderInfo.length * 20; // Line 4+: Placeholder types (FIXED)
-    const optionsHeaderHeight = step.connections.length > 0 ? 30 : 0; // "OPZIONI:" header
-    const optionHeight = 50; // Height per option (including padding and margins)
-    const addBlockHeight = 45; // Height for ADD BLOCK elements
-    const cardPadding = 40; // Card internal padding
-    const borderSpacing = 20; // Border and spacing
     
-    // Count ADD BLOCK elements
+    // More accurate question text height calculation based on card width (350px)
+    // Assuming ~40 characters per line at card width, with minimum 2 lines
+    const estimatedCharsPerLine = 40;
+    const questionTextLines = Math.max(2, Math.ceil(step.questionText.length / estimatedCharsPerLine));
+    const questionTextHeight = questionTextLines * 22; // 22px per line with spacing
+    
+    const placeholderTypesHeight = step.placeholderInfo.length * 20; // Line 4+: Placeholder types
+    const optionsHeaderHeight = step.connections.length > 0 ? 35 : 0; // "OPZIONI:" header with padding
+    
+    // Dynamic option height calculation - accounts for text wrapping
+    let totalOptionsHeight = 0;
+    step.connections.forEach(connection => {
+      // Estimate lines needed for each option label (assuming ~25 chars per line in option context)
+      const optionCharsPerLine = 25;
+      const optionLines = Math.max(1, Math.ceil(connection.label.length / optionCharsPerLine));
+      const baseOptionHeight = 50; // Base height for single line
+      const extraHeightPerLine = 20; // Additional height per extra line
+      const optionHeight = baseOptionHeight + ((optionLines - 1) * extraHeightPerLine);
+      totalOptionsHeight += optionHeight;
+    });
+    
+    // ADD BLOCK elements height
     const addBlockCount = step.connections.filter(conn => 
       conn.type === 'add_block' && conn.addBlockName
     ).length;
-    
-    const totalOptionsHeight = step.connections.length * optionHeight;
+    const addBlockHeight = 45; // Height for ADD BLOCK elements
     const totalAddBlockHeight = addBlockCount * addBlockHeight;
+    
+    const cardPadding = 50; // Increased padding for safety
+    const borderSpacing = 30; // Increased spacing
     
     return questionIdHeight + inlineStatusHeight + questionTextHeight + placeholderTypesHeight + optionsHeaderHeight + totalOptionsHeight + totalAddBlockHeight + cardPadding + borderSpacing;
   };
