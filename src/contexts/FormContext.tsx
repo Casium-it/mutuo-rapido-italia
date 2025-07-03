@@ -1143,13 +1143,10 @@ export const FormProvider: React.FC<FormProviderProps> = ({ children, blocks }) 
     }
   }, [state.responses, state.dynamicBlocks, state.activeBlocks, sortedBlocks, state.completedBlocks, findBlockByQuestionId, findQuestionById, findPlaceholderLeadsTo]);
 
-  // Stabilize getResponse to prevent infinite re-renders
-  const getResponse = useMemo(() => {
-    return (question_id: string, placeholder_key: string): string | string[] | undefined => {
-      if (!state.responses[question_id]) return undefined;
-      return state.responses[question_id][placeholder_key];
-    };
-  }, []); // No dependencies - create once and reuse
+  const getResponse = useCallback((question_id: string, placeholder_key: string) => {
+    if (!state.responses[question_id]) return undefined;
+    return state.responses[question_id][placeholder_key];
+  }, [state.responses]);
 
   const addActiveBlock = useCallback((block_id: string) => {
     dispatch({ type: "ADD_ACTIVE_BLOCK", block_id });
