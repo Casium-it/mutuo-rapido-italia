@@ -1,38 +1,131 @@
-import React, { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { LogOut, ArrowLeft, Blocks, Settings, Users, FileText, Hash, Eye, EyeOff, ExternalLink, Plus, GitBranch } from 'lucide-react';
-import { allBlocks } from '@/data/blocks';
+import { LogOut, ArrowLeft, Blocks, Settings, Users, FileText, Hash, Eye, EyeOff, ExternalLink, Plus, GitBranch, Database, RefreshCw } from 'lucide-react';
 import { BlockFlowMap } from '@/components/admin/BlockFlowMap';
+import { supabase } from '@/integrations/supabase/client';
+import { Block } from '@/types/form';
+
+interface AdminBlockDetail extends Block {
+  form_id: string;
+  form_title: string;
+  form_slug: string;
+  form_type: string;
+}
 
 export default function AdminBlockDetail() {
   const { blockId } = useParams<{ blockId: string }>();
+  const [searchParams] = useSearchParams();
+  const formSlug = searchParams.get('form');
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
   const [showFlowMap, setShowFlowMap] = useState(false);
+  const [block, setBlock] = useState<AdminBlockDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
   };
 
-  // Find the block by ID
-  const block = allBlocks.find(b => b.block_id === blockId);
+  useEffect(() => {
+    loadBlockFromDatabase();
+  }, [blockId, formSlug]);
 
-  if (!block) {
+  const loadBlockFromDatabase = async () => {
+    if (!blockId) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      let query = supabase
+        .from('form_blocks')
+        .select(`
+          id,
+          block_data,
+          sort_order,
+          form_id,
+          forms!inner(
+            id,
+            title,
+            slug,
+            form_type
+          )
+        `);
+
+      // If we have a form filter, use it
+      if (formSlug) {
+        query = query.eq('forms.slug', formSlug);
+      }
+
+      const { data, error: queryError } = await query;
+
+      if (queryError) throw queryError;
+
+      // Find the block with matching block_id in the block_data
+      const blockData = data?.find((item: any) => {
+        const blockContent = item.block_data as Block;
+        return blockContent.block_id === blockId;
+      });
+
+      if (!blockData) {
+        setError(`Blocco con ID "${blockId}" non trovato nel database.`);
+        return;
+      }
+
+      const blockContent = blockData.block_data as Block;
+      const blockWithForm: AdminBlockDetail = {
+        ...blockContent,
+        form_id: blockData.form_id,
+        form_title: blockData.forms.title,
+        form_slug: blockData.forms.slug,
+        form_type: blockData.forms.form_type,
+      };
+
+      setBlock(blockWithForm);
+    } catch (err) {
+      console.error('Error loading block from database:', err);
+      setError(err instanceof Error ? err.message : 'Errore sconosciuto');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#f8f5f1] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-[#245C4F] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Caricamento blocco...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !block) {
     return (
       <div className="min-h-screen bg-[#f8f5f1] flex items-center justify-center">
         <Card className="max-w-md">
           <CardContent className="text-center py-12">
-            <Blocks className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <Database className="h-12 w-12 text-red-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Blocco non trovato</h3>
-            <p className="text-gray-600 mb-4">Il blocco con ID "{blockId}" non esiste.</p>
-            <Button onClick={() => navigate('/admin/blocks')} variant="outline">
-              Torna ai Blocchi
-            </Button>
+            <p className="text-gray-600 mb-4">
+              {error || `Il blocco con ID "${blockId}" non esiste nel database.`}
+            </p>
+            <div className="flex gap-2 justify-center">
+              <Button onClick={() => navigate('/admin/blocks')} variant="outline">
+                Torna ai Blocchi
+              </Button>
+              <Button onClick={loadBlockFromDatabase} className="bg-[#245C4F] hover:bg-[#1e4f44]">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Riprova
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -91,17 +184,30 @@ export default function AdminBlockDetail() {
                 <Blocks className="h-6 w-6" />
                 Dettagli Blocco #{block.block_number}
               </h1>
-              <p className="text-gray-600">Benvenuto, {user?.email}</p>
+              <p className="text-gray-600">
+                Form: {block.form_title} • Benvenuto, {user?.email}
+              </p>
             </div>
           </div>
-          <Button 
-            onClick={handleSignOut}
-            variant="outline"
-            className="flex items-center gap-2"
-          >
-            <LogOut className="h-4 w-4" />
-            Esci
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              onClick={loadBlockFromDatabase}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Aggiorna
+            </Button>
+            <Button 
+              onClick={handleSignOut}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Esci
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -112,14 +218,19 @@ export default function AdminBlockDetail() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-xl flex items-center gap-2">
+                <CardTitle className="text-xl flex items-center gap-2 flex-wrap">
                   <Badge variant="outline" className="text-sm font-mono">
                     Priorità: {block.priority}
                   </Badge>
+                  <Badge className="bg-[#245C4F]/10 text-[#245C4F] hover:bg-[#245C4F]/20">
+                    {block.form_title}
+                  </Badge>
                   {block.title}
                 </CardTitle>
-                <p className="text-gray-600">
+                <p className="text-gray-600 mt-1">
                   ID: <code className="bg-gray-100 px-2 py-1 rounded text-sm">{block.block_id}</code>
+                  <span className="mx-2">•</span>
+                  Form: <code className="bg-gray-100 px-2 py-1 rounded text-sm">{block.form_slug}</code>
                 </p>
               </div>
               <Button
@@ -147,6 +258,11 @@ export default function AdminBlockDetail() {
                     <Hash className="h-4 w-4 text-gray-500" />
                     <span className="text-gray-600">Numero blocco:</span>
                     <span className="font-medium">{block.block_number}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Database className="h-4 w-4 text-gray-500" />
+                    <span className="text-gray-600">Tipo form:</span>
+                    <span className="font-medium">{block.form_type}</span>
                   </div>
                   {block.copy_number && (
                     <div className="flex items-center gap-2">
