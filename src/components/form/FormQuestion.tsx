@@ -146,6 +146,14 @@ export function FormQuestion({ question }: FormQuestionProps) {
     console.log('🎯 Question timer started for:', question.question_id);
   }, [question.question_id]); // Only depend on question ID
 
+  // Render counter for debugging infinite loops
+  const renderCount = React.useRef(0);
+  renderCount.current += 1;
+  
+  if (renderCount.current > 50) {
+    console.error('🚨 FormQuestion infinite render detected for question:', question.question_id);
+  }
+
   // Separate useEffect for loading existing responses and UI state
   useEffect(() => {
     const existingResponses: { [key: string]: string | string[] } = {};
@@ -180,7 +188,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
     setShowNonLoSoButton(false);
     // Reset delle posizioni del cursore
     setCursorPositions({});
-  }, [question.question_id, getResponse, question.placeholders]);
+  }, [question.question_id]); // Removed unstable dependencies
 
   // Nuova funzione per verificare se ci sono campi di input mancanti o non validi
   const hasMissingOrInvalidInputs = () => {
