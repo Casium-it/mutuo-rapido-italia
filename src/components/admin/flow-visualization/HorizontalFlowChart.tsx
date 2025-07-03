@@ -66,35 +66,52 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
     const questionNotesHeight = step.questionNotes ? 
       Math.ceil(step.questionNotes.length / estimatedCharsPerLine) * 16 + 50 : 0; // Box padding + border
     
-    // Question attributes height (endOfForm, skippable, priority) - 3 lines with spacing
-    const questionAttributesHeight = 75; // 3 lines × 20px + margins
+    // Question attributes height (3 mandatory lines: endOfForm, skippableWithNotSure, priority)
+    const questionAttributesHeight = 75; // 3 lines × 20px + margins + spacing
     
     // Placeholders section header
-    const placeholderHeaderHeight = step.placeholderDetails.length > 0 ? 35 : 25;
+    const placeholderHeaderHeight = step.placeholderDetails.length > 0 ? 35 : 0;
     
     // Calculate placeholder section height dynamically
     let placeholderSectionHeight = 0;
     step.placeholderDetails.forEach(placeholder => {
-      // Each placeholder has a border box with padding
-      const placeholderBaseHeight = 25; // Border + padding
+      // Border box with padding for each placeholder
+      const placeholderBorderHeight = 30; // Border + padding for the placeholder container
       
       if (placeholder.type === 'select') {
-        // Badge line (key + type) + multiple line + label line
-        placeholderSectionHeight += placeholderBaseHeight + 60;
-        // Each option with ID line
-        placeholderSectionHeight += (placeholder.options?.length || 0) * 45; // Each option card
+        // Badge line (key + type): 25px
+        // Multiple line: 20px
+        // Label line: 20px 
+        // Options header: 20px
+        let selectHeight = placeholderBorderHeight + 25 + 20 + 20 + 20;
+        
+        // Each option needs 3 lines:
+        // - Option label: 20px
+        // - ID line with arrow and target: 20px  
+        // - +Block line (if present): 20px
+        const optionCount = placeholder.options?.length || 0;
+        optionCount && placeholder.options?.forEach(option => {
+          selectHeight += 20; // Option label
+          selectHeight += 20; // ID line
+          if (option.add_block) {
+            selectHeight += 20; // + Block line
+          }
+          selectHeight += 5; // Spacing between options
+        });
+        
+        placeholderSectionHeight += selectHeight;
       } else if (placeholder.type === 'input') {
-        // Badge line + input_type + label + validation
-        placeholderSectionHeight += placeholderBaseHeight + 75;
+        // Badge line + input_type line + label line + validation line
+        placeholderSectionHeight += placeholderBorderHeight + 25 + 20 + 20 + 20;
       } else if (placeholder.type === 'MultiBlockManager') {
-        // Badge line + label + add_block_label + blueprint
-        placeholderSectionHeight += placeholderBaseHeight + 75;
+        // Badge line + label line + add_block_label line + blueprint line
+        placeholderSectionHeight += placeholderBorderHeight + 25 + 20 + 20 + 20;
       }
       placeholderSectionHeight += 20; // Spacing between placeholders
     });
     
     const cardPadding = 60; // Card internal padding
-    const safetyMargin = 40; // Extra safety margin
+    const safetyMargin = 20; // Reduced safety margin since we're more precise now
     
     return questionIdHeight + inlineStatusHeight + questionTextHeight + questionNotesHeight + 
            questionAttributesHeight + placeholderHeaderHeight + placeholderSectionHeight + 
