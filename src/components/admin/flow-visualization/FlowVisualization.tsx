@@ -13,7 +13,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import { Block, Question } from '@/types/form';
 import { QuestionNode } from './QuestionNode';
-import { calculateNodePositions } from './layoutUtils';
+import { calculateOptimalLayout } from './layoutUtils';
 
 interface FlowVisualizationProps {
   block: Block;
@@ -31,9 +31,12 @@ export function FlowVisualization({ block }: FlowVisualizationProps) {
     const flowNodes: Node[] = [];
     const flowEdges: Edge[] = [];
 
+    // Calculate optimal positions
+    const positions = calculateOptimalLayout(block.questions);
+
     // Create nodes for each question
     block.questions.forEach((question, index) => {
-      const position = calculateNodePositions(block.questions, index);
+      const position = positions[index] || { x: 0, y: 0 };
       
       flowNodes.push({
         id: question.question_id,
@@ -63,23 +66,50 @@ export function FlowVisualization({ block }: FlowVisualizationProps) {
                   sourceHandle: `${placeholderKey}-${optionIndex}`,
                   targetHandle: 'input',
                   label: option.label,
-                  style: { stroke: '#245C4F', strokeWidth: 2 },
+                  style: { 
+                    stroke: '#245C4F', 
+                    strokeWidth: 2,
+                  },
+                  labelStyle: {
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    fill: '#245C4F',
+                  },
+                  labelBgStyle: {
+                    fill: '#ffffff',
+                    fillOpacity: 0.9,
+                  },
                 });
               }
             }
           });
         } else if (placeholder.type === 'input' || placeholder.type === 'MultiBlockManager') {
           // Handle input and MultiBlockManager
-          if (placeholder.leads_to && placeholder.leads_to !== 'stop_flow' && placeholder.leads_to !== 'next_block') {
-            const targetQuestion = block.questions.find(q => q.question_id === placeholder.leads_to);
+          const leadsTo = placeholder.type === 'input' ? placeholder.leads_to : 
+                         placeholder.type === 'MultiBlockManager' ? placeholder.leads_to : '';
+          if (leadsTo && leadsTo !== 'stop_flow' && leadsTo !== 'next_block') {
+            const targetQuestion = block.questions.find(q => q.question_id === leadsTo);
             if (targetQuestion) {
               flowEdges.push({
                 id: `${question.question_id}-${placeholderKey}`,
                 source: question.question_id,
-                target: placeholder.leads_to,
+                target: leadsTo,
                 sourceHandle: placeholderKey,
                 targetHandle: 'input',
-                style: { stroke: '#245C4F', strokeWidth: 2 },
+                label: placeholder.placeholder_label || placeholderKey,
+                style: { 
+                  stroke: '#245C4F', 
+                  strokeWidth: 2,
+                },
+                labelStyle: {
+                  fontSize: '11px',
+                  fontWeight: 500,
+                  fill: '#245C4F',
+                },
+                labelBgStyle: {
+                  fill: '#ffffff',
+                  fillOpacity: 0.9,
+                },
               });
             }
           }
@@ -97,7 +127,7 @@ export function FlowVisualization({ block }: FlowVisualizationProps) {
   }, [block, createFlowData, setNodes, setEdges]);
 
   return (
-    <div className="h-[600px] w-full border rounded-lg bg-gray-50">
+    <div className="h-[700px] w-full border rounded-lg bg-gradient-to-br from-gray-50 to-gray-100">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -105,11 +135,25 @@ export function FlowVisualization({ block }: FlowVisualizationProps) {
         onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
         fitView
+        fitViewOptions={{
+          padding: 0.2,
+          includeHiddenNodes: false,
+        }}
         attributionPosition="bottom-left"
-        className="bg-gray-50"
+        className="bg-gradient-to-br from-gray-50 to-gray-100"
+        proOptions={{ hideAttribution: true }}
       >
-        <Background color="#e5e7eb" gap={20} />
-        <Controls />
+        <Background 
+          color="#e5e7eb" 
+          gap={20} 
+          size={1}
+        />
+        <Controls 
+          className="bg-white shadow-lg border border-gray-200 rounded-lg"
+          showZoom={true}
+          showFitView={true}
+          showInteractive={true}
+        />
       </ReactFlow>
     </div>
   );
