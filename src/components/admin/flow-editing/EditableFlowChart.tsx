@@ -312,36 +312,38 @@ export const EditableFlowChart: React.FC<EditableFlowChartProps> = ({ block }) =
                                     <div className="space-y-1">
                                       <div className="text-xs font-medium text-gray-700">Options:</div>
                                       {placeholder.options?.map((option, optIdx) => (
-                                        <div 
-                                          key={optIdx} 
-                                          className="ml-3 space-y-1 hover:bg-blue-50 p-2 rounded cursor-pointer"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleOptionClick(step.id, placeholder.key, optIdx);
-                                          }}
-                                        >
-                                          <div className="text-xs text-gray-700">
-                                            <div className="font-medium">{option.label}</div>
-                                            <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
-                                              ID: <code className="bg-gray-200 px-1 rounded">{option.id}</code> → 
-                                              <Badge className={`text-xs ${
-                                                option.leads_to === 'next_block' 
-                                                  ? 'bg-orange-100 text-orange-600'
-                                                  : option.leads_to === 'stop_flow'
-                                                  ? 'bg-red-100 text-red-600'
-                                                  : 'bg-green-100 text-green-600'
-                                              }`}>
-                                                {option.leads_to}
-                                              </Badge>
-                                              <Edit2 className="h-3 w-3 text-gray-400 ml-auto" />
-                                            </div>
-                                            {option.add_block && (
-                                              <div className="text-xs text-blue-600 mt-1">
-                                                + Block: {option.add_block}
-                                              </div>
-                                            )}
-                                          </div>
-                                        </div>
+                                         <div 
+                                           key={optIdx} 
+                                           className="ml-3 space-y-1 hover:bg-green-100 p-2 rounded-lg cursor-pointer bg-green-50 border border-green-200"
+                                           onClick={(e) => {
+                                             e.stopPropagation();
+                                             handleOptionClick(step.id, placeholder.key, optIdx);
+                                           }}
+                                         >
+                                           <div className="text-xs text-gray-700">
+                                             <div className="font-medium">{option.label}</div>
+                                             <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
+                                               ID: <code className="bg-gray-200 px-1 rounded">{option.id}</code>
+                                               <Edit2 className="h-3 w-3 text-[#245C4F] ml-auto" />
+                                             </div>
+                                             <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
+                                               → <Badge className={`text-xs ${
+                                                 option.leads_to === 'next_block' 
+                                                   ? 'bg-orange-100 text-orange-600'
+                                                   : option.leads_to === 'stop_flow'
+                                                   ? 'bg-red-100 text-red-600'
+                                                   : 'bg-green-100 text-green-600'
+                                               }`}>
+                                                 {option.leads_to}
+                                               </Badge>
+                                             </div>
+                                             {option.add_block && (
+                                               <div className="text-xs text-blue-600 mt-1">
+                                                 + Block: {option.add_block}
+                                               </div>
+                                             )}
+                                           </div>
+                                         </div>
                                       ))}
                                     </div>
                                   </div>
