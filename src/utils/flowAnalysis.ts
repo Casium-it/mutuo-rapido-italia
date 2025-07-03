@@ -129,7 +129,7 @@ export class FlowAnalyzer {
       let type: FlowStep['type'] = 'simple';
       if (connections.length > 1) type = 'branching';
       if (question.inline) type = 'inline';
-      if (connections.length === 0 || connections.some(c => c.type === 'stop')) type = 'terminal';
+      // Remove terminal type - only use endOfForm for red coloring
       
       stepMap.set(question.question_id, {
         id: question.question_id,

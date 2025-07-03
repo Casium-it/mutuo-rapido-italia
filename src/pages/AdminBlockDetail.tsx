@@ -243,15 +243,6 @@ function AdminBlockDetailContent() {
               <GitBranch className="h-4 w-4" />
               {showFlowVisualization ? 'Nascondi Mappa' : 'Visualizza Mappa Flusso'}
             </Button>
-            <Button
-              onClick={() => setEditMode(!editMode)}
-              variant={editMode ? "default" : "outline"}
-              size="sm"
-              className="flex items-center gap-2"
-            >
-              <Settings className="h-4 w-4" />
-              {editMode ? 'Modalità Lettura' : 'Modalità Editing'}
-            </Button>
             <Button 
               onClick={loadBlockFromDatabase}
               variant="outline"
@@ -279,10 +270,37 @@ function AdminBlockDetailContent() {
         {showFlowVisualization && (
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <GitBranch className="h-5 w-5" />
-                {editMode ? 'Mappa Flusso Editabile' : 'Mappa Flusso Orizzontale del Blocco'}
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <GitBranch className="h-5 w-5" />
+                  {editMode ? 'Mappa Flusso Editabile' : 'Mappa Flusso Orizzontale del Blocco'}
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => setEditMode(!editMode)}
+                    variant={editMode ? "default" : "outline"}
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    <Settings className="h-4 w-4" />
+                    {editMode ? 'Modalità Lettura' : 'Modalità Editing'}
+                  </Button>
+                  {editMode && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-2"
+                      onClick={() => {
+                        // TODO: Implement new question creation
+                        console.log('Create new question');
+                      }}
+                    >
+                      <Plus className="h-4 w-4" />
+                      Nuova Domanda
+                    </Button>
+                  )}
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               {editMode ? (
