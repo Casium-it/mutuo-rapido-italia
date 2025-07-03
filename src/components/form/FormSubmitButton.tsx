@@ -1,49 +1,32 @@
 
 import React, { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useForm } from "@/contexts/FormContext";
 
 export function FormSubmitButton() {
-  const { state } = useForm();
+  const { state, blocks } = useForm();
   const [isNavigating, setIsNavigating] = useState(false);
   const navigate = useNavigate();
-  const params = useParams();
 
   const handleSubmit = async () => {
     setIsNavigating(true);
-    
-    // Use formSlug from state (preferred) or params as fallback
-    const formSlug = state.formSlug || params.formSlug;
-    
-    if (!formSlug) {
-      console.error("FormSubmitButton: No formSlug available");
-      setIsNavigating(false);
-      return;
-    }
+    console.log("FormSubmitButton: Navigating to FormLoading...");
     
     try {
-      // Create formData object
-      const formData = {
-        responses: state.responses || {},
-        activeBlocks: state.activeBlocks || [],
-        completedBlocks: state.completedBlocks || [],
-        dynamicBlocks: state.dynamicBlocks || [],
-        answeredQuestions: Array.from(state.answeredQuestions || new Set()),
-        navigationHistory: state.navigationHistory || [],
-        blockActivations: state.blockActivations || {},
-        pendingRemovals: state.pendingRemovals || [],
-        formSlug: formSlug
-      };
-      
-      // Navigate to FormLoading with form data
+      // Navigate to FormLoading with form data (same format as CompleteFormButton)
       navigate('/form-loading', { 
         state: { 
-          formData: formData
+          formData: {
+            responses: state.responses,
+            activeBlocks: state.activeBlocks,
+            completedBlocks: state.completedBlocks,
+            dynamicBlocks: state.dynamicBlocks
+          }
         } 
       });
     } catch (error) {
-      console.error('FormSubmitButton: Error navigating to FormLoading:', error);
+      console.error('Error navigating to FormLoading:', error);
       setIsNavigating(false);
     }
   };

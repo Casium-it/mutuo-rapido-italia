@@ -36,41 +36,6 @@ export type Database = {
         }
         Relationships: []
       }
-      form_blocks: {
-        Row: {
-          block_data: Json
-          created_at: string
-          form_id: string
-          id: string
-          sort_order: number
-          updated_at: string
-        }
-        Insert: {
-          block_data: Json
-          created_at?: string
-          form_id: string
-          id?: string
-          sort_order?: number
-          updated_at?: string
-        }
-        Update: {
-          block_data?: Json
-          created_at?: string
-          form_id?: string
-          id?: string
-          sort_order?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "form_blocks_form_id_fkey"
-            columns: ["form_id"]
-            isOneToOne: false
-            referencedRelation: "forms"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       form_responses: {
         Row: {
           block_id: string
@@ -154,80 +119,6 @@ export type Database = {
           notes?: string | null
           phone_number?: string | null
           user_identifier?: string | null
-        }
-        Relationships: []
-      }
-      form_versions: {
-        Row: {
-          created_at: string
-          created_by: string | null
-          form_id: string
-          form_snapshot: Json
-          id: string
-          published_at: string | null
-          version_number: number
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string | null
-          form_id: string
-          form_snapshot: Json
-          id?: string
-          published_at?: string | null
-          version_number: number
-        }
-        Update: {
-          created_at?: string
-          created_by?: string | null
-          form_id?: string
-          form_snapshot?: Json
-          id?: string
-          published_at?: string | null
-          version_number?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "form_versions_form_id_fkey"
-            columns: ["form_id"]
-            isOneToOne: false
-            referencedRelation: "forms"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      forms: {
-        Row: {
-          created_at: string
-          description: string | null
-          form_type: string
-          id: string
-          is_active: boolean
-          slug: string
-          title: string
-          updated_at: string
-          version: number
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          form_type?: string
-          id?: string
-          is_active?: boolean
-          slug: string
-          title: string
-          updated_at?: string
-          version?: number
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          form_type?: string
-          id?: string
-          is_active?: boolean
-          slug?: string
-          title?: string
-          updated_at?: string
-          version?: number
         }
         Relationships: []
       }

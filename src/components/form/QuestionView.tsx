@@ -85,15 +85,14 @@ export function QuestionView() {
       return;
     }
 
-    // Navigate immediately to loading page with form data - NOW INCLUDING formSlug
+    // Navigate immediately to loading page with form data
     navigate("/form-loading", {
       state: { 
         formData: {
           responses: state.responses,
           activeBlocks: state.activeBlocks,
           completedBlocks: state.completedBlocks,
-          dynamicBlocks: state.dynamicBlocks,
-          formSlug: state.formSlug  // FIXED: Added missing formSlug
+          dynamicBlocks: state.dynamicBlocks
         }
       }
     });
