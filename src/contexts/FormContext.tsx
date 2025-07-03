@@ -1143,10 +1143,13 @@ export const FormProvider: React.FC<FormProviderProps> = ({ children, blocks }) 
     }
   }, [state.responses, state.dynamicBlocks, state.activeBlocks, sortedBlocks, state.completedBlocks, findBlockByQuestionId, findQuestionById, findPlaceholderLeadsTo]);
 
-  const getResponse = useCallback((question_id: string, placeholder_key: string) => {
-    if (!state.responses[question_id]) return undefined;
-    return state.responses[question_id][placeholder_key];
-  }, [state.responses]);
+  // FIXED: Use useMemo instead of useCallback to create a stable function reference
+  const getResponse = useMemo(() => {
+    return (question_id: string, placeholder_key: string) => {
+      if (!state.responses[question_id]) return undefined;
+      return state.responses[question_id][placeholder_key];
+    };
+  }, []); // No dependencies - function access state through closure
 
   const addActiveBlock = useCallback((block_id: string) => {
     dispatch({ type: "ADD_ACTIVE_BLOCK", block_id });

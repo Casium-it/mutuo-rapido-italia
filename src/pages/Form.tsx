@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { useTimeTracking } from "@/hooks/useTimeTracking";
 import { useSimulationTimer } from "@/hooks/useSimulationTimer";
 import { trackSimulationExit } from "@/utils/analytics";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export default function Form() {
   const {
@@ -215,9 +216,11 @@ export default function Form() {
             </div>
 
             {/* Question - con key per forzare il re-rendering quando cambia l'URL */}
-            <div key={location.pathname}>
-              <QuestionView />
-            </div>
+            <ErrorBoundary>
+              <div key={location.pathname}>
+                <QuestionView />
+              </div>
+            </ErrorBoundary>
           </div>
         </div>
       </div>
