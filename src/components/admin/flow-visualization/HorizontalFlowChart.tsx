@@ -198,10 +198,18 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
 
   // Calculate total dimensions
   const totalWidth = flowData.levels.length * levelWidth + containerPadding * 2;
-  const maxY = Math.max(...Object.values(levelPositions).map(positions => 
-    Math.max(...positions) + 300 // Add some extra space for the last card
-  ));
-  const totalHeight = maxY + containerPadding;
+  
+  // Calculate proper height by considering the actual card heights
+  const maxY = Math.max(...Object.values(levelPositions).map((positions, levelIndex) => {
+    if (positions.length === 0) return 0;
+    const lastPosition = Math.max(...positions);
+    const lastStepIndex = positions.indexOf(lastPosition);
+    const lastStep = flowData.levels[levelIndex]?.steps[lastStepIndex];
+    const lastStepHeight = lastStep ? calculateStepHeight(lastStep) : 300;
+    return lastPosition + lastStepHeight;
+  }));
+  
+  const totalHeight = maxY + containerPadding * 2; // Add padding at top and bottom
 
   return (
     <div className="overflow-x-auto overflow-y-auto bg-gray-50 rounded-lg border">
