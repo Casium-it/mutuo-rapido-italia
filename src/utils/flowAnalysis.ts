@@ -9,6 +9,10 @@ export interface FlowStep {
   id: string;
   questionNumber: string;
   questionText: string;
+  questionNotes?: string;
+  endOfForm?: boolean;
+  skippableWithNotSure?: boolean;
+  leadsToPlaceholderPriority: string;
   type: 'simple' | 'branching' | 'inline' | 'terminal';
   isInline?: boolean;
   connections: FlowConnection[];
@@ -16,6 +20,26 @@ export interface FlowStep {
   branchIndex: number;
   sourceConnections: SourceConnection[];
   placeholderInfo: PlaceholderInfo[];
+  placeholderDetails: PlaceholderDetail[];
+}
+
+export interface PlaceholderDetail {
+  key: string;
+  type: string;
+  multiple?: boolean;
+  placeholder_label?: string;
+  input_type?: string;
+  input_validation?: string;
+  add_block_label?: string;
+  blockBlueprint?: string;
+  options?: OptionDetail[];
+}
+
+export interface OptionDetail {
+  id: string;
+  label: string;
+  leads_to: string;
+  add_block?: string;
 }
 
 export interface FlowConnection {
@@ -68,6 +92,38 @@ export class FlowAnalyzer {
         key,
         type: placeholder.type
       }));
+
+      // Extract detailed placeholder information
+      const placeholderDetails: PlaceholderDetail[] = Object.entries(question.placeholders || {}).map(([key, placeholder]) => {
+        const detail: PlaceholderDetail = {
+          key,
+          type: placeholder.type
+        };
+
+        if (placeholder.type === 'select') {
+          const selectPlaceholder = placeholder as any;
+          detail.multiple = selectPlaceholder.multiple;
+          detail.placeholder_label = selectPlaceholder.placeholder_label;
+          detail.options = selectPlaceholder.options?.map((option: any) => ({
+            id: option.id,
+            label: option.label,
+            leads_to: option.leads_to,
+            add_block: option.add_block
+          })) || [];
+        } else if (placeholder.type === 'input') {
+          const inputPlaceholder = placeholder as any;
+          detail.input_type = inputPlaceholder.input_type;
+          detail.placeholder_label = inputPlaceholder.placeholder_label;
+          detail.input_validation = inputPlaceholder.input_validation;
+        } else if (placeholder.type === 'MultiBlockManager') {
+          const managerPlaceholder = placeholder as any;
+          detail.placeholder_label = managerPlaceholder.placeholder_label;
+          detail.add_block_label = managerPlaceholder.add_block_label;
+          detail.blockBlueprint = managerPlaceholder.blockBlueprint;
+        }
+
+        return detail;
+      });
       
       // Determine question type
       let type: FlowStep['type'] = 'simple';
@@ -79,13 +135,18 @@ export class FlowAnalyzer {
         id: question.question_id,
         questionNumber: question.question_number,
         questionText: this.truncateText(question.question_text, 80),
+        questionNotes: question.question_notes,
+        endOfForm: question.endOfForm,
+        skippableWithNotSure: question.skippableWithNotSure,
+        leadsToPlaceholderPriority: question.leads_to_placeholder_priority,
         type,
         isInline: question.inline,
         connections,
         level: 0,
         branchIndex: 0,
         sourceConnections: [],
-        placeholderInfo
+        placeholderInfo,
+        placeholderDetails
       });
     });
     

@@ -63,7 +63,26 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
     const questionTextLines = Math.max(2, Math.ceil(step.questionText.length / estimatedCharsPerLine));
     const questionTextHeight = questionTextLines * 22; // 22px per line with spacing
     
-    const placeholderTypesHeight = step.placeholderInfo.length * 20; // Line 4+: Placeholder types
+    // Question notes height (if present)
+    const questionNotesHeight = step.questionNotes ? Math.ceil(step.questionNotes.length / estimatedCharsPerLine) * 18 + 25 : 0;
+    
+    // Question attributes height (endOfForm, skippable, priority)
+    const questionAttributesHeight = 60; // 3 lines for the new attributes
+    
+    // Calculate placeholder section height dynamically
+    let placeholderSectionHeight = 0;
+    step.placeholderDetails.forEach(placeholder => {
+      if (placeholder.type === 'select') {
+        placeholderSectionHeight += 40; // Header + multiple + label
+        placeholderSectionHeight += placeholder.options.length * 35; // Each option + id
+      } else if (placeholder.type === 'input') {
+        placeholderSectionHeight += 60; // input_type + label + validation
+      } else if (placeholder.type === 'MultiBlockManager') {
+        placeholderSectionHeight += 60; // label + add_block_label + blueprint
+      }
+      placeholderSectionHeight += 15; // Spacing between placeholders
+    });
+    
     const optionsHeaderHeight = step.connections.length > 0 ? 35 : 0; // "OPZIONI:" header with padding
     
     // Dynamic option height calculation - accounts for text wrapping
@@ -88,7 +107,7 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
     const cardPadding = 50; // Increased padding for safety
     const borderSpacing = 30; // Increased spacing
     
-    return questionIdHeight + inlineStatusHeight + questionTextHeight + placeholderTypesHeight + optionsHeaderHeight + totalOptionsHeight + totalAddBlockHeight + cardPadding + borderSpacing;
+    return questionIdHeight + inlineStatusHeight + questionTextHeight + questionNotesHeight + questionAttributesHeight + placeholderSectionHeight + optionsHeaderHeight + totalOptionsHeight + totalAddBlockHeight + cardPadding + borderSpacing;
   };
 
   // Calculate cumulative positions for each level
@@ -175,17 +194,124 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
                       </div>
                       
                       {/* Line 3: Question Text */}
-                      <p className="text-sm text-gray-800 font-medium mb-4 leading-relaxed flex-shrink-0">
+                      <p className="text-sm text-gray-800 font-medium mb-3 leading-relaxed flex-shrink-0">
                         {step.questionText}
                       </p>
                       
-                      {/* Line 4+: Placeholder types */}
-                      {step.placeholderInfo.length > 0 && (
-                        <div className="mb-4 space-y-1">
-                          {step.placeholderInfo.map((placeholder, idx) => (
-                            <div key={idx} className="text-xs text-gray-600">
-                              <span className="font-medium">{placeholder.key}:</span>
-                              <span className="ml-1">{placeholder.type}</span>
+                      {/* Question Notes */}
+                      {step.questionNotes && (
+                        <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded">
+                          <div className="text-xs font-medium text-blue-800 mb-1">Note:</div>
+                          <div className="text-xs text-blue-700">{step.questionNotes}</div>
+                        </div>
+                      )}
+
+                      {/* Question Attributes */}
+                      <div className="mb-4 space-y-1">
+                        <div className="text-xs text-gray-600">
+                          <span className="font-medium">End of Form:</span>
+                          <span className="ml-1">{step.endOfForm ? 'true' : 'false'}</span>
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          <span className="font-medium">Skippable with Not Sure:</span>
+                          <span className="ml-1">{step.skippableWithNotSure ? 'true' : 'false'}</span>
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          <span className="font-medium">Priority:</span>
+                          <span className="ml-1">{step.leadsToPlaceholderPriority}</span>
+                        </div>
+                      </div>
+                      
+                      {/* Detailed Placeholders */}
+                      {step.placeholderDetails.length > 0 && (
+                        <div className="mb-4 space-y-3">
+                          <div className="text-sm font-medium text-gray-900 border-b border-gray-200 pb-1">
+                            Placeholders ({step.placeholderDetails.length})
+                          </div>
+                          {step.placeholderDetails.map((placeholder, idx) => (
+                            <div key={idx} className="border border-gray-200 rounded p-3 space-y-2">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="text-xs">
+                                  {placeholder.key}
+                                </Badge>
+                                <Badge variant="secondary" className="text-xs">
+                                  {placeholder.type}
+                                </Badge>
+                              </div>
+                              
+                              {placeholder.type === 'select' && (
+                                <div className="space-y-2">
+                                  <div className="text-xs text-gray-600">
+                                    <span className="font-medium">Multiple:</span>
+                                    <span className="ml-1">{placeholder.multiple ? 'true' : 'false'}</span>
+                                  </div>
+                                  <div className="text-xs text-gray-600">
+                                    <span className="font-medium">Label:</span>
+                                    <span className="ml-1">{placeholder.placeholder_label || 'N/A'}</span>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <div className="text-xs font-medium text-gray-700">Options:</div>
+                                    {placeholder.options?.map((option, optIdx) => (
+                                      <div key={optIdx} className="ml-3 space-y-1">
+                                        <div className="text-xs text-gray-700 p-2 bg-gray-50 rounded">
+                                          <div className="font-medium">{option.label}</div>
+                                          <div className="text-xs text-gray-500 mt-1">
+                                            ID: <code className="bg-gray-200 px-1 rounded">{option.id}</code> → 
+                                            <Badge className={`ml-1 text-xs ${
+                                              option.leads_to === 'next_block' 
+                                                ? 'bg-orange-100 text-orange-600'
+                                                : option.leads_to === 'stop_flow'
+                                                ? 'bg-red-100 text-red-600'
+                                                : 'bg-green-100 text-green-600'
+                                            }`}>
+                                              {option.leads_to}
+                                            </Badge>
+                                          </div>
+                                          {option.add_block && (
+                                            <div className="text-xs text-blue-600 mt-1">
+                                              + Block: {option.add_block}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {placeholder.type === 'input' && (
+                                <div className="space-y-1">
+                                  <div className="text-xs text-gray-600">
+                                    <span className="font-medium">Input Type:</span>
+                                    <span className="ml-1">{placeholder.input_type}</span>
+                                  </div>
+                                  <div className="text-xs text-gray-600">
+                                    <span className="font-medium">Label:</span>
+                                    <span className="ml-1">{placeholder.placeholder_label}</span>
+                                  </div>
+                                  <div className="text-xs text-gray-600">
+                                    <span className="font-medium">Validation:</span>
+                                    <span className="ml-1">{placeholder.input_validation}</span>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {placeholder.type === 'MultiBlockManager' && (
+                                <div className="space-y-1">
+                                  <div className="text-xs text-gray-600">
+                                    <span className="font-medium">Label:</span>
+                                    <span className="ml-1">{placeholder.placeholder_label}</span>
+                                  </div>
+                                  <div className="text-xs text-gray-600">
+                                    <span className="font-medium">Add Block Label:</span>
+                                    <span className="ml-1">{placeholder.add_block_label}</span>
+                                  </div>
+                                  <div className="text-xs text-gray-600">
+                                    <span className="font-medium">Blueprint:</span>
+                                    <span className="ml-1">{placeholder.blockBlueprint}</span>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
