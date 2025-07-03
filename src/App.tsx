@@ -8,7 +8,10 @@ import { FormProvider } from "@/contexts/FormContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { usePageTracking } from "@/hooks/usePageTracking";
+import { useFormCache } from "@/hooks/useFormCache";
 import { allBlocks } from "@/data/blocks";
+import { useEffect, useState } from "react";
+import { formCacheService } from "@/services/formCacheService";
 import SimulazioneAvanzata from "./pages/SimulazioneAvanzata";
 import Form from "./pages/Form";
 import FormCompleted from "./pages/FormCompleted";
@@ -30,6 +33,25 @@ const queryClient = new QueryClient();
 // Component to track page views inside Router context
 const AppWithTracking = () => {
   usePageTracking();
+  const [cacheInitialized, setCacheInitialized] = useState(false);
+
+  // Initialize form cache on app startup
+  useEffect(() => {
+    const initializeCache = async () => {
+      try {
+        console.log('🚀 Initializing form cache system...');
+        await formCacheService.loadAndCacheAllForms();
+        setCacheInitialized(true);
+        console.log('✅ Form cache system initialized successfully');
+      } catch (error) {
+        console.error('❌ Failed to initialize form cache, using fallback:', error);
+        // Set initialized to true anyway to allow app to work with static blocks
+        setCacheInitialized(true);
+      }
+    };
+
+    initializeCache();
+  }, []);
   
   return (
     <Routes>
