@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { LogOut, ArrowLeft, Blocks, Settings, Users, FileText, Hash, Database, RefreshCw, Plus, GitBranch } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Block } from '@/types/form';
-import { BlockFlowMap } from '@/components/admin/flow-visualization/BlockFlowMap';
+import { FlowVisualization } from '@/components/admin/flow-visualization/FlowVisualization';
 
 interface AdminBlockDetail extends Block {
   form_id: string;
@@ -191,13 +191,13 @@ export default function AdminBlockDetail() {
           </div>
           <div className="flex items-center gap-2">
             <Button
-              onClick={() => setShowFlowVisualization(true)}
+              onClick={() => setShowFlowVisualization(!showFlowVisualization)}
               variant="outline"
               size="sm"
               className="flex items-center gap-2"
             >
               <GitBranch className="h-4 w-4" />
-              Visualizza Mappa Flusso
+              {showFlowVisualization ? 'Nascondi Mappa' : 'Visualizza Mappa Flusso'}
             </Button>
             <Button 
               onClick={loadBlockFromDatabase}
@@ -220,15 +220,23 @@ export default function AdminBlockDetail() {
         </div>
       </header>
 
-      {/* Flow Visualization Modal */}
-      <BlockFlowMap 
-        block={block} 
-        isOpen={showFlowVisualization} 
-        onClose={() => setShowFlowVisualization(false)} 
-      />
-
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
+        {/* Flow Visualization */}
+        {showFlowVisualization && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <GitBranch className="h-5 w-5" />
+                Mappa Flusso del Blocco
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <FlowVisualization block={block} />
+            </CardContent>
+          </Card>
+        )}
+
         {/* Block Overview */}
         <Card className="mb-6">
           <CardHeader>
