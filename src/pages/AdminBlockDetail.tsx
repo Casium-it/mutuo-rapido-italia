@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { LogOut, ArrowLeft, Blocks, Settings, Users, FileText, Hash, Eye, EyeOff, ExternalLink, Plus, GitBranch, Database, RefreshCw } from 'lucide-react';
-import { BlockFlowMap } from '@/components/admin/BlockFlowMap';
+import { FlowMapDialog } from '@/components/admin/flow-map/FlowMapDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { Block } from '@/types/form';
 
@@ -513,7 +513,7 @@ export default function AdminBlockDetail() {
       </main>
 
       {/* Flow Map Dialog */}
-      <BlockFlowMap 
+      <FlowMapDialog 
         block={block}
         isOpen={showFlowMap}
         onClose={() => setShowFlowMap(false)}
