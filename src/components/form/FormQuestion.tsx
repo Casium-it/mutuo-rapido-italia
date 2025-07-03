@@ -146,16 +146,13 @@ export function FormQuestion({ question }: FormQuestionProps) {
     console.log('🎯 Question timer started for:', question.question_id);
   }, [question.question_id]); // Only depend on question ID
 
-  // Separate useEffect for loading existing responses and UI state - FIXED: Stabilized dependencies
+  // Separate useEffect for loading existing responses and UI state
   useEffect(() => {
-    console.log('🔄 FormQuestion: Loading responses for question:', question.question_id);
-    
     const existingResponses: { [key: string]: string | string[] } = {};
     const initialVisibleOptions: { [key: string]: boolean } = {};
     const initialValidationErrors: { [key: string]: boolean } = {};
     
     Object.keys(question.placeholders).forEach(key => {
-      // Access getResponse directly without making it a dependency
       const existingResponse = getResponse(question.question_id, key);
       if (existingResponse) {
         existingResponses[key] = existingResponse;
@@ -183,7 +180,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
     setShowNonLoSoButton(false);
     // Reset delle posizioni del cursore
     setCursorPositions({});
-  }, [question.question_id]); // FIXED: Only depend on question.question_id
+  }, [question.question_id, getResponse, question.placeholders]);
 
   // Nuova funzione per verificare se ci sono campi di input mancanti o non validi
   const hasMissingOrInvalidInputs = () => {
