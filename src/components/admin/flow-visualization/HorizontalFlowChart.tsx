@@ -83,31 +83,14 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
       placeholderSectionHeight += 15; // Spacing between placeholders
     });
     
-    const optionsHeaderHeight = step.connections.length > 0 ? 35 : 0; // "OPZIONI:" header with padding
+    // No more separate options section since options are shown within placeholders
+    const optionsHeaderHeight = 0;
     
-    // Dynamic option height calculation - accounts for text wrapping
-    let totalOptionsHeight = 0;
-    step.connections.forEach(connection => {
-      // Estimate lines needed for each option label (assuming ~25 chars per line in option context)
-      const optionCharsPerLine = 25;
-      const optionLines = Math.max(1, Math.ceil(connection.label.length / optionCharsPerLine));
-      const baseOptionHeight = 50; // Base height for single line
-      const extraHeightPerLine = 20; // Additional height per extra line
-      const optionHeight = baseOptionHeight + ((optionLines - 1) * extraHeightPerLine);
-      totalOptionsHeight += optionHeight;
-    });
-    
-    // ADD BLOCK elements height
-    const addBlockCount = step.connections.filter(conn => 
-      conn.type === 'add_block' && conn.addBlockName
-    ).length;
-    const addBlockHeight = 45; // Height for ADD BLOCK elements
-    const totalAddBlockHeight = addBlockCount * addBlockHeight;
     
     const cardPadding = 50; // Increased padding for safety
     const borderSpacing = 30; // Increased spacing
     
-    return questionIdHeight + inlineStatusHeight + questionTextHeight + questionNotesHeight + questionAttributesHeight + placeholderSectionHeight + optionsHeaderHeight + totalOptionsHeight + totalAddBlockHeight + cardPadding + borderSpacing;
+    return questionIdHeight + inlineStatusHeight + questionTextHeight + questionNotesHeight + questionAttributesHeight + placeholderSectionHeight + cardPadding + borderSpacing;
   };
 
   // Calculate cumulative positions for each level
@@ -313,56 +296,11 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
                                 </div>
                               )}
                             </div>
-                          ))}
-                        </div>
-                      )}
-                      
-                      {/* Connections */}
-                      {step.connections.length > 0 && (
-                        <div className="flex-1 flex flex-col">
-                          <div className="border-t pt-3 flex-1">
-                            <span className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-2 block">
-                              Opzioni:
-                            </span>
-                            <div className="space-y-2">
-                              {step.connections.map((connection, idx) => (
-                                <div key={idx} className="space-y-1">
-                                  <div className="flex items-center gap-2 p-2 bg-gray-50 rounded border">
-                                    <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
-                                    <span className="text-xs text-gray-700 font-medium flex-1">
-                                      {connection.label}
-                                    </span>
-                                    <Badge className={`text-xs font-medium ${
-                                      connection.targetId === 'next_block' 
-                                        ? getNextBlockColor(connection.targetId)
-                                        : connection.targetId === 'stop' 
-                                        ? getConnectionColor(connection.type)
-                                        : getConnectionColor('default')
-                                    }`}>
-                                      {connection.targetId === 'next_block' ? 'Next Block' : 
-                                       connection.targetId === 'stop' ? 'End' : 
-                                       connection.targetId}
-                                    </Badge>
-                                  </div>
-                                  {connection.type === 'add_block' && connection.addBlockName && (
-                                    <div className="ml-4 flex items-center gap-2 p-2 bg-blue-50 rounded border border-blue-200">
-                                      <Plus className="w-3 h-3 text-blue-600 flex-shrink-0" />
-                                      <span className="text-xs text-blue-700 font-medium">
-                                        {connection.addBlockName}
-                                      </span>
-                                      <Badge className="text-xs bg-blue-100 text-blue-600">
-                                        ADD BLOCK
-                                      </Badge>
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                           ))}
+                         </div>
+                       )}
+                     </CardContent>
+                   </Card>
                 </div>
               );
             })}
