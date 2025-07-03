@@ -8,6 +8,7 @@ import { LogOut, ArrowLeft, Blocks, Settings, Users, FileText, Hash, Database, R
 import { supabase } from '@/integrations/supabase/client';
 import { Block } from '@/types/form';
 import { FlowVisualization } from '@/components/admin/flow-visualization/FlowVisualization';
+import { HorizontalFlowChart } from '@/components/admin/flow-visualization/HorizontalFlowChart';
 
 interface AdminBlockDetail extends Block {
   form_id: string;
@@ -228,11 +229,11 @@ export default function AdminBlockDetail() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <GitBranch className="h-5 w-5" />
-                Mappa Flusso del Blocco
+                Mappa Flusso Orizzontale del Blocco
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <FlowVisualization block={block} />
+              <HorizontalFlowChart block={block} />
             </CardContent>
           </Card>
         )}
