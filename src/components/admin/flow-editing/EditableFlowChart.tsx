@@ -228,14 +228,14 @@ export const EditableFlowChart: React.FC<EditableFlowChartProps> = ({ block }) =
                       height: `${stepHeight}px`
                     }}
                   >
-                    <Card 
-                      className={`${getStepColor(step)} border-2 transition-all hover:shadow-lg h-full cursor-pointer group`}
-                      onClick={() => handleQuestionClick(step.id)}
-                    >
-                      <CardContent className="p-5 h-full flex flex-col relative">
-                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Edit2 className="h-4 w-4 text-gray-500" />
-                        </div>
+                     <Card 
+                       className={`${getStepColor(step)} border-2 transition-all hover:shadow-lg h-full cursor-pointer group`}
+                       onClick={() => handleQuestionClick(step.id)}
+                     >
+                       <CardContent className="p-5 h-full flex flex-col relative">
+                         <div className="absolute top-2 right-2 transition-opacity">
+                           <Settings className="h-4 w-4 text-[#245C4F]" />
+                         </div>
 
                         <div className="mb-2">
                           <code className="bg-gray-100 px-2 py-1 rounded text-xs font-mono">
@@ -281,23 +281,23 @@ export const EditableFlowChart: React.FC<EditableFlowChartProps> = ({ block }) =
                               Placeholders ({step.placeholderDetails.length})
                             </div>
                             {step.placeholderDetails.map((placeholder, idx) => (
-                              <div 
-                                key={idx} 
-                                className="border border-gray-200 rounded p-3 space-y-2 hover:bg-gray-50 cursor-pointer transition-colors"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handlePlaceholderClick(step.id, placeholder.key);
-                                }}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <Badge variant="outline" className="text-xs">
-                                    {placeholder.key}
-                                  </Badge>
-                                  <Badge variant="secondary" className="text-xs">
-                                    {placeholder.type}
-                                  </Badge>
-                                  <Settings className="h-3 w-3 text-gray-400 ml-auto" />
-                                </div>
+                               <div 
+                                 key={idx} 
+                                 className="border border-green-300 rounded-lg p-3 space-y-2 bg-green-800 hover:bg-green-700 cursor-pointer transition-colors"
+                                 onClick={(e) => {
+                                   e.stopPropagation();
+                                   handlePlaceholderClick(step.id, placeholder.key);
+                                 }}
+                               >
+                                 <div className="flex items-center gap-2">
+                                   <Badge variant="outline" className="text-xs border-green-100 text-green-100">
+                                     {placeholder.key}
+                                   </Badge>
+                                   <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
+                                     {placeholder.type}
+                                   </Badge>
+                                   <Settings className="h-3 w-3 text-green-100 ml-auto" />
+                                 </div>
                                 
                                 {placeholder.type === 'select' && (
                                   <div className="space-y-2">
