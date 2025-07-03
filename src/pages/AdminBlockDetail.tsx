@@ -4,11 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { LogOut, ArrowLeft, Blocks, Settings, Users, FileText, Hash, Database, RefreshCw, Plus, GitBranch } from 'lucide-react';
+import { LogOut, ArrowLeft, Blocks, Settings, Users, FileText, Hash, Database, RefreshCw, Plus, GitBranch, Save, Undo2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Block } from '@/types/form';
 import { FlowVisualization } from '@/components/admin/flow-visualization/FlowVisualization';
 import { HorizontalFlowChart } from '@/components/admin/flow-visualization/HorizontalFlowChart';
+import { EditableFlowChart } from '@/components/admin/flow-editing/EditableFlowChart';
+import { FlowEditProvider, useFlowEdit } from '@/contexts/FlowEditContext';
 
 interface AdminBlockDetail extends Block {
   form_id: string;
@@ -17,7 +19,7 @@ interface AdminBlockDetail extends Block {
   form_type: string;
 }
 
-export default function AdminBlockDetail() {
+function AdminBlockDetailContent() {
   const { blockId } = useParams<{ blockId: string }>();
   const [searchParams] = useSearchParams();
   const formSlug = searchParams.get('form');
@@ -27,6 +29,7 @@ export default function AdminBlockDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFlowVisualization, setShowFlowVisualization] = useState(false);
+  const [editMode, setEditMode] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -59,7 +62,6 @@ export default function AdminBlockDetail() {
           )
         `);
 
-      // If we have a form filter, use it
       if (formSlug) {
         query = query.eq('forms.slug', formSlug);
       }
@@ -68,7 +70,6 @@ export default function AdminBlockDetail() {
 
       if (queryError) throw queryError;
 
-      // Find the block with matching block_id in the block_data
       const blockData = data?.find((item: any) => {
         const blockContent = item.block_data as Block;
         return blockContent.block_id === blockId;
@@ -94,6 +95,48 @@ export default function AdminBlockDetail() {
       setError(err instanceof Error ? err.message : 'Errore sconosciuto');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveBlock = async (updatedBlock: Block) => {
+    if (!block) return;
+
+    try {
+      // Find the specific form_blocks record to update
+      const { data: blockRecords, error: fetchError } = await supabase
+        .from('form_blocks')
+        .select('id, block_data')
+        .eq('form_id', block.form_id);
+
+      if (fetchError) throw fetchError;
+
+      const targetRecord = blockRecords?.find((record: any) => {
+        const blockContent = record.block_data as Block;
+        return blockContent.block_id === blockId;
+      });
+
+      if (!targetRecord) {
+        throw new Error('Record del blocco non trovato');
+      }
+
+      // Update the block data
+      const { error: updateError } = await supabase
+        .from('form_blocks')
+        .update({
+          block_data: updatedBlock,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', targetRecord.id);
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      setBlock(prev => prev ? { ...prev, ...updatedBlock } : null);
+      
+      console.log('Blocco salvato con successo');
+    } catch (error) {
+      console.error('Errore nel salvataggio:', error);
+      throw error;
     }
   };
 
@@ -200,6 +243,15 @@ export default function AdminBlockDetail() {
               <GitBranch className="h-4 w-4" />
               {showFlowVisualization ? 'Nascondi Mappa' : 'Visualizza Mappa Flusso'}
             </Button>
+            <Button
+              onClick={() => setEditMode(!editMode)}
+              variant={editMode ? "default" : "outline"}
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <Settings className="h-4 w-4" />
+              {editMode ? 'Modalità Lettura' : 'Modalità Editing'}
+            </Button>
             <Button 
               onClick={loadBlockFromDatabase}
               variant="outline"
@@ -229,16 +281,19 @@ export default function AdminBlockDetail() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <GitBranch className="h-5 w-5" />
-                Mappa Flusso Orizzontale del Blocco
+                {editMode ? 'Mappa Flusso Editabile' : 'Mappa Flusso Orizzontale del Blocco'}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <HorizontalFlowChart block={block} />
+              {editMode ? (
+                <EditableFlowChart block={block} />
+              ) : (
+                <HorizontalFlowChart block={block} />
+              )}
             </CardContent>
           </Card>
         )}
 
-        {/* Block Overview */}
         <Card className="mb-6">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -262,7 +317,6 @@ export default function AdminBlockDetail() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Basic Info */}
               <div className="space-y-3">
                 <h4 className="font-medium text-gray-900">Informazioni Base</h4>
                 <div className="space-y-2 text-sm">
@@ -290,7 +344,6 @@ export default function AdminBlockDetail() {
                 </div>
               </div>
 
-              {/* Properties */}
               <div className="space-y-3">
                 <h4 className="font-medium text-gray-900">Proprietà</h4>
                 <div className="flex flex-wrap gap-2">
@@ -305,7 +358,6 @@ export default function AdminBlockDetail() {
                 </div>
               </div>
 
-              {/* Blueprint Info */}
               {block.blueprint_id && (
                 <div className="space-y-3">
                   <h4 className="font-medium text-gray-900">Blueprint</h4>
@@ -529,5 +581,175 @@ export default function AdminBlockDetail() {
         </Card>
       </main>
     </div>
+  );
+}
+
+// Edit Controls Component
+function EditControls() {
+  const { state, saveChanges, undoLastChange, canUndo } = useFlowEdit();
+
+  return (
+    <>
+      {state.hasUnsavedChanges && (
+        <div className="fixed bottom-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-50">
+          <div className="flex items-center gap-3">
+            <div className="text-sm text-gray-600">
+              Modifiche non salvate
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={undoLastChange}
+                disabled={!canUndo}
+                variant="outline"
+                size="sm"
+              >
+                <Undo2 className="h-4 w-4 mr-1" />
+                Annulla
+              </Button>
+              <Button
+                onClick={saveChanges}
+                disabled={state.isAutoSaving}
+                size="sm"
+                className="bg-[#245C4F] hover:bg-[#1e4f44]"
+              >
+                {state.isAutoSaving ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                    Salvataggio...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-1" />
+                    Salva
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+export default function AdminBlockDetail() {
+  const [block, setBlock] = useState<AdminBlockDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Load block data first
+  useEffect(() => {
+    const loadBlock = async () => {
+      if (!blockId) return;
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        let query = supabase
+          .from('form_blocks')
+          .select(`
+            id,
+            block_data,
+            sort_order,
+            form_id,
+            forms!inner(
+              id,
+              title,
+              slug,
+              form_type
+            )
+          `);
+
+        // If we have a form filter, use it
+        if (formSlug) {
+          query = query.eq('forms.slug', formSlug);
+        }
+
+        const { data, error: queryError } = await query;
+
+        if (queryError) throw queryError;
+
+        // Find the block with matching block_id in the block_data
+        const blockData = data?.find((item: any) => {
+          const blockContent = item.block_data as Block;
+          return blockContent.block_id === blockId;
+        });
+
+        if (!blockData) {
+          setError(`Blocco con ID "${blockId}" non trovato nel database.`);
+          return;
+        }
+
+        const blockContent = blockData.block_data as Block;
+        const blockWithForm: AdminBlockDetail = {
+          ...blockContent,
+          form_id: blockData.form_id,
+          form_title: blockData.forms.title,
+          form_slug: blockData.forms.slug,
+          form_type: blockData.forms.form_type,
+        };
+
+        setBlock(blockWithForm);
+      } catch (err) {
+        console.error('Error loading block from database:', err);
+        setError(err instanceof Error ? err.message : 'Errore sconosciuto');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadBlock();
+  }, []);
+
+  if (loading || !block) {
+    return <div>Loading...</div>;
+  }
+
+  const handleSaveBlock = async (updatedBlock: Block) => {
+    if (!block) return;
+
+    try {
+      // Find the specific form_blocks record to update
+      const { data: blockRecords, error: fetchError } = await supabase
+        .from('form_blocks')
+        .select('id, block_data')
+        .eq('form_id', block.form_id);
+
+      if (fetchError) throw fetchError;
+
+      const targetRecord = blockRecords?.find((record: any) => {
+        const blockContent = record.block_data as Block;
+        return blockContent.block_id === blockId;
+      });
+
+      if (!targetRecord) {
+        throw new Error('Record del blocco non trovato');
+      }
+
+      // Update the block data
+      const { error: updateError } = await supabase
+        .from('form_blocks')
+        .update({
+          block_data: updatedBlock,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', targetRecord.id);
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      setBlock(prev => prev ? { ...prev, ...updatedBlock } : null);
+      
+      console.log('Blocco salvato con successo');
+    } catch (error) {
+      console.error('Errore nel salvataggio:', error);
+      throw error;
+    }
+  };
+
+  return (
+    <FlowEditProvider initialBlock={block} onSave={handleSaveBlock}>
+      <AdminBlockDetailContent />
+      <EditControls />
+    </FlowEditProvider>
   );
 }
