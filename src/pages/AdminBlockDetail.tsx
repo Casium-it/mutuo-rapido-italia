@@ -1,11 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { LogOut, ArrowLeft, Blocks, Settings, Users, FileText, Hash, Eye, EyeOff, ExternalLink, Plus, GitBranch, Database, RefreshCw } from 'lucide-react';
-import { FlowMapDialog } from '@/components/admin/flow-map/FlowMapDialog';
+import { LogOut, ArrowLeft, Blocks, Settings, Users, FileText, Hash, Database, RefreshCw, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Block } from '@/types/form';
 
@@ -22,7 +22,6 @@ export default function AdminBlockDetail() {
   const formSlug = searchParams.get('form');
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
-  const [showFlowMap, setShowFlowMap] = useState(false);
   const [block, setBlock] = useState<AdminBlockDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -233,14 +232,6 @@ export default function AdminBlockDetail() {
                   Form: <code className="bg-gray-100 px-2 py-1 rounded text-sm">{block.form_slug}</code>
                 </p>
               </div>
-              <Button
-                onClick={() => setShowFlowMap(true)}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <GitBranch className="h-4 w-4" />
-                Visualizza Mappa Flusso
-              </Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -511,13 +502,6 @@ export default function AdminBlockDetail() {
           </CardContent>
         </Card>
       </main>
-
-      {/* Flow Map Dialog */}
-      <FlowMapDialog 
-        block={block}
-        isOpen={showFlowMap}
-        onClose={() => setShowFlowMap(false)}
-      />
     </div>
   );
 }
