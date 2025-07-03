@@ -21,7 +21,7 @@ export function BlockSidebar() {
     getProgress
   } = useFormExtended();
   const params = useParams<{
-    blockType?: string;
+    formSlug?: string;
   }>();
   const navigate = useNavigate();
   const [showExitDialog, setShowExitDialog] = useState(false);
@@ -77,7 +77,7 @@ export function BlockSidebar() {
     setIsSaving(true);
     
     try {
-      const formType = params.blockType || "unknown";
+      const formType = params.formSlug || "unknown";
       const result = await saveSimulation(state, contactData, formType);
       
       setIsSaving(false);

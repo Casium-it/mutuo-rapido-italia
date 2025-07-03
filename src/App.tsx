@@ -12,7 +12,7 @@ import { allBlocks } from "@/data/blocks";
 import { useEffect, useState } from "react";
 import { formCacheService } from "@/services/formCacheService";
 import SimulazioneAvanzata from "./pages/SimulazioneAvanzata";
-import FormWrapper from "./components/FormWrapper";
+import FormLauncher from "./components/FormLauncher";
 import Form from "./pages/Form";
 import FormCompleted from "./pages/FormCompleted";
 import FormLoading from "./pages/FormLoading";
@@ -61,8 +61,8 @@ const AppWithTracking = () => {
       <Route path="/simulazione-avanzata/:slug" element={<SimulazioneAvanzata />} />
       <Route path="/riprendi-simulazione" element={<ResumeSimulation />} />
       
-      {/* New simplified form route using FormWrapper */}
-      <Route path="/simulazione/:blockType/:blockId/:questionId" element={<FormWrapper />} />
+      {/* New simplified form route using FormLauncher */}
+      <Route path="/simulazione/:formSlug/:blockId/:questionId" element={<FormLauncher />} />
       
       <Route path="/form-loading" element={<FormLoading />} />
       <Route path="/form-completed" element={<FormCompleted />} />

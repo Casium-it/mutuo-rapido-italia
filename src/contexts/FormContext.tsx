@@ -339,7 +339,7 @@ function formReducer(state: FormState, action: Action): FormState {
 
 export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = ({ children, blocks }) => {
   const navigate = useNavigate();
-  const params = useParams<{ blockType?: string; blockId?: string; questionId?: string }>();
+  const params = useParams<{ formSlug?: string; blockId?: string; questionId?: string }>();
   const location = useLocation();
   const previousBlockIdRef = useRef<string | null>(null);
   const previousQuestionIdRef = useRef<string | null>(null);
@@ -547,14 +547,14 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   }, [blocks]);
 
   const resetForm = useCallback(() => {
-    if (params.blockType) {
-      localStorage.removeItem(`form-state-${params.blockType}`);
+    if (params.formSlug) {
+      localStorage.removeItem(`form-state-${params.formSlug}`);
     }
     
     dispatch({ type: "RESET_FORM" });
     
-    navigate("/simulazione/pensando/introduzione/soggetto_acquisto", { replace: true });
-  }, [params.blockType, navigate]);
+    navigate("/simulazione/simulazione-mutuo/introduzione/soggetto_acquisto", { replace: true });
+  }, [params.formSlug, navigate]);
 
   useEffect(() => {
     const { blockId, questionId } = params;
@@ -583,9 +583,9 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
           dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
         }
         
-        navigate(`/simulazione/${params.blockType}/${blockId}/${firstQuestionId}`, { replace: true });
+        navigate(`/simulazione/${params.formSlug}/${blockId}/${firstQuestionId}`, { replace: true });
       }
-    } else if (params.blockType) {
+    } else if (params.formSlug) {
       const entryBlock = blocks.find(b => b.block_id === "introduzione");
       if (entryBlock && entryBlock.questions.length > 0) {
         dispatch({ 
@@ -596,7 +596,18 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       }
     }
     
-    const savedState = localStorage.getItem(`form-state-${params.blockType}`);
+    // Handle migration from old blockType-based keys to formSlug-based keys
+    let savedState = localStorage.getItem(`form-state-${params.formSlug}`);
+    if (!savedState && params.formSlug === 'simulazione-mutuo') {
+      // Try to migrate from old 'mutuo' key
+      const oldSavedState = localStorage.getItem('form-state-mutuo');
+      if (oldSavedState) {
+        console.log('🔄 Migrating saved state from old format');
+        localStorage.setItem(`form-state-${params.formSlug}`, oldSavedState);
+        localStorage.removeItem('form-state-mutuo');
+        savedState = oldSavedState;
+      }
+    }
     if (savedState) {
       try {
         const parsedState = JSON.parse(savedState);
@@ -637,17 +648,17 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         console.error("Errore nel caricamento dello stato salvato:", e);
       }
     }
-  }, [params.blockId, params.questionId, params.blockType, blocks, navigate]);
+  }, [params.blockId, params.questionId, params.formSlug, blocks, navigate]);
 
   useEffect(() => {
-    if (params.blockType) {
+    if (params.formSlug) {
       const stateToSave = {
         ...state,
         answeredQuestions: Array.from(state.answeredQuestions)
       };
-      localStorage.setItem(`form-state-${params.blockType}`, JSON.stringify(stateToSave));
+      localStorage.setItem(`form-state-${params.formSlug}`, JSON.stringify(stateToSave));
     }
-  }, [state, params.blockType]);
+  }, [state, params.formSlug]);
 
   const activateRequiredBlocksBasedOnResponses = (responses: FormResponse) => {
     for (const questionId of Object.keys(responses)) {
@@ -719,8 +730,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     });
     
     // Handle URL navigation
-    const blockType = params.blockType || "funnel";
-    const newPath = `/simulazione/${blockType}/${block_id}/${question_id}`;
+    const formSlug = params.formSlug || "simulazione-mutuo";
+    const newPath = `/simulazione/${formSlug}/${block_id}/${question_id}`;
     
     if (replace) {
       navigate(newPath, { replace: true });
@@ -732,7 +743,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     setTimeout(() => {
       dispatch({ type: "SET_NAVIGATING", isNavigating: false });
     }, 300);
-  }, [params.blockType, navigate, state.activeQuestion, isQuestionPendingRemoval]);
+  }, [params.formSlug, navigate, state.activeQuestion, isQuestionPendingRemoval]);
 
   const setResponse = useCallback((question_id: string, placeholder_key: string, value: string | string[]) => {
     const previousValue = state.responses[question_id]?.[placeholder_key];

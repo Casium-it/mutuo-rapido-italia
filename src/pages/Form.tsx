@@ -86,7 +86,7 @@ export default function Form() {
     setIsSaving(true);
     
     try {
-      const formType = params.blockType || "unknown";
+      const formType = params.formSlug || "unknown";
       const result = await saveSimulation(state, contactData, formType);
       
       setIsSaving(false);

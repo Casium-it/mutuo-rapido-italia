@@ -7,8 +7,8 @@ import { Block } from '@/types/form';
 import { allBlocks } from '@/data/blocks';
 import Form from '@/pages/Form';
 
-const FormWrapper = () => {
-  const { blockType } = useParams();
+const FormLauncher = () => {
+  const { formSlug } = useParams();
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -17,9 +17,9 @@ const FormWrapper = () => {
       try {
         setLoading(true);
         
-        // Try to load from cache if blockType is 'mutuo'
-        if (blockType === 'mutuo') {
-          console.log('🔄 Loading blocks from cache for mutuo form...');
+        // Try to load from cache if formSlug is 'simulazione-mutuo'
+        if (formSlug === 'simulazione-mutuo') {
+          console.log('🔄 Loading blocks from cache for simulazione-mutuo form...');
           const cachedForm = await formCacheService.getForm('simulazione-mutuo');
           
           if (cachedForm && cachedForm.blocks.length > 0) {
@@ -31,7 +31,7 @@ const FormWrapper = () => {
           }
         } else {
           // For other form types, use static blocks
-          console.log('📦 Using static blocks for form type:', blockType);
+          console.log('📦 Using static blocks for form type:', formSlug);
           setBlocks(allBlocks);
         }
       } catch (error) {
@@ -43,7 +43,7 @@ const FormWrapper = () => {
     };
 
     loadBlocks();
-  }, [blockType]);
+  }, [formSlug]);
 
   if (loading) {
     return (
@@ -63,4 +63,4 @@ const FormWrapper = () => {
   );
 };
 
-export default FormWrapper;
+export default FormLauncher;

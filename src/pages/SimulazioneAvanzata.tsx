@@ -76,7 +76,7 @@ const SimulazioneAvanzata = () => {
       localStorage.setItem('form-state-mutuo', JSON.stringify(initialState));
       
       // Naviga al percorso del form
-      navigate('/simulazione/mutuo/introduzione/soggetto_acquisto');
+      navigate('/simulazione/simulazione-mutuo/introduzione/soggetto_acquisto');
     } catch (error) {
       console.error('Error starting simulation:', error);
       toast.error('Errore nel caricamento della simulazione');
