@@ -8,7 +8,7 @@ import { LogOut, ArrowLeft, Blocks, Settings, Users, FileText, Hash, Database, R
 import { supabase } from '@/integrations/supabase/client';
 import { Block } from '@/types/form';
 import { FlowVisualization } from '@/components/admin/flow-visualization/FlowVisualization';
-import { HorizontalFlowChart } from '@/components/admin/flow-visualization/HorizontalFlowChart';
+
 import { EditableFlowChart } from '@/components/admin/flow-editing/EditableFlowChart';
 import { FlowEditProvider, useFlowEdit } from '@/contexts/FlowEditContext';
 import { CreateQuestionDialog } from '@/components/admin/flow-editing/CreateQuestionDialog';
@@ -302,11 +302,7 @@ function AdminBlockDetailContent() {
               </div>
             </CardHeader>
             <CardContent>
-              {editMode ? (
-                <EditableFlowChart block={block} />
-              ) : (
-                <HorizontalFlowChart block={block} />
-              )}
+              <EditableFlowChart block={block} />
             </CardContent>
           </Card>
         )}

@@ -128,8 +128,12 @@ export const EditableFlowChart: React.FC<EditableFlowChartProps> = ({
         placeholderGroupHeight += 20 + 20 + 20; // Multiple, label, options header
         placeholder.options?.forEach(option => {
           placeholderGroupHeight += calculateTextHeight(option.label, 20, 5);
-          const idText = `ID: ${option.id} → ${option.leads_to}`;
+          // ID line
+          const idText = `ID: ${option.id}`;
           placeholderGroupHeight += calculateTextHeight(idText, 20, 5);
+          // Leads to line (separate line)
+          const leadsToText = `→ ${option.leads_to}`;
+          placeholderGroupHeight += calculateTextHeight(leadsToText, 20, 5);
           if (option.add_block) {
             const blockText = `+ Block: ${option.add_block}`;
             placeholderGroupHeight += calculateTextHeight(blockText, 20, 5);
