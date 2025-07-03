@@ -3,9 +3,8 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { Progress } from "@/components/ui/progress";
-import { FormResponse } from "@/types/form";
+import { FormResponse, FormState } from "@/types/form";
 import { submitFormToSupabase } from "@/services/formSubmissionService";
-import { allBlocks } from "@/data/blocks";
 import { toast } from "sonner";
 import { useSimulationTimer } from "@/hooks/useSimulationTimer";
 import { trackSimulationCompleted } from "@/utils/analytics";
@@ -31,20 +30,86 @@ export default function FormLoading() {
     activeBlocks: string[];
     completedBlocks: string[];
     dynamicBlocks: any[];
+    answeredQuestions?: string[];
+    navigationHistory?: any[];
+    blockActivations?: any;
+    pendingRemovals?: any[];
+    formSlug?: string;
     submissionId?: string;
   };
   
   useEffect(() => {
+    // STRATEGIC LOGGING: Track what FormLoading receives
+    console.log("=== FORM LOADING COMPONENT MOUNT ===");
     console.log("FormLoading: Component mounted, starting initialization");
+    console.log("FormLoading: Current location:", {
+      pathname: location.pathname,
+      search: location.search,
+      hasState: !!location.state
+    });
+    console.log("FormLoading: location.state:", location.state);
+    console.log("FormLoading: location.state type:", typeof location.state);
+    console.log("FormLoading: location.state keys:", location.state ? Object.keys(location.state) : 'null');
     
-    // Enhanced validation - if no form data, redirect to home
-    if (!formData || !formData.responses || !formData.activeBlocks) {
-      console.error("FormLoading: No valid form data found, redirecting to home");
+    if (location.state?.formData) {
+      console.log("FormLoading: formData found in location.state");
+      console.log("FormLoading: formData keys:", Object.keys(location.state.formData));
+      console.log("FormLoading: formData.formSlug:", location.state.formData.formSlug);
+      console.log("FormLoading: formData type:", typeof location.state.formData);
+      console.log("FormLoading: Full formData object:", location.state.formData);
+    } else {
+      console.error("FormLoading: NO formData found in location.state");
+    }
+    
+    console.log("FormLoading: formData variable after extraction:", formData);
+    console.log("FormLoading: formData type after extraction:", typeof formData);
+    
+    if (formData) {
+      console.log("FormLoading: formData exists, checking properties:");
+      console.log("FormLoading: formData.formSlug:", formData.formSlug);
+      console.log("FormLoading: formData.responses count:", Object.keys(formData.responses || {}).length);
+      console.log("FormLoading: formData.activeBlocks:", formData.activeBlocks);
+    }
+    console.log("=== FORM LOADING COMPONENT MOUNT END ===");
+    
+    // Enhanced validation - check for formData existence first
+    if (!formData) {
+      console.error("FormLoading: No formData found in location.state, redirecting to home");
+      navigate("/");
+      return;
+    }
+
+    // Check for formSlug - this is now the primary requirement
+    if (!formData.formSlug) {
+      console.error("FormLoading: No formSlug found in formData, redirecting to home");
+      console.error("FormLoading: Available formData keys:", Object.keys(formData));
+      navigate("/");
+      return;
+    }
+
+    // More lenient validation for database-driven forms
+    const hasValidData = formData.formSlug && (
+      // Either we have some responses
+      (formData.responses && Object.keys(formData.responses).length > 0) ||
+      // Or we have active blocks (even if empty responses)
+      (formData.activeBlocks && formData.activeBlocks.length > 0) ||
+      // Or we allow submission with just formSlug for database-driven forms like "surroga"
+      true
+    );
+
+    if (!hasValidData) {
+      console.error("FormLoading: Invalid form data structure, redirecting to home");
+      console.error("FormLoading: responses keys:", Object.keys(formData.responses || {}));
+      console.error("FormLoading: activeBlocks:", formData.activeBlocks);
+      console.error("FormLoading: formSlug:", formData.formSlug);
       navigate("/");
       return;
     }
     
     console.log("FormLoading: Valid form data found, starting progress and submission");
+    console.log("FormLoading: Form slug:", formData.formSlug);
+    console.log("FormLoading: Responses count:", Object.keys(formData.responses || {}).length);
+    console.log("FormLoading: Active blocks:", formData.activeBlocks?.length || 0);
     
     // Always start progress animation immediately for good UX
     startProgressAnimation();
@@ -103,28 +168,27 @@ export default function FormLoading() {
     
     try {
       console.log("FormLoading: Beginning form submission to Supabase");
-      console.log("FormLoading: Form responses:", Object.keys(formData.responses).length);
-      console.log("FormLoading: Active blocks:", formData.activeBlocks.length);
+      console.log("FormLoading: Form responses:", Object.keys(formData.responses || {}).length);
+      console.log("FormLoading: Active blocks:", formData.activeBlocks?.length || 0);
       console.log("FormLoading: Dynamic blocks:", formData.dynamicBlocks?.length || 0);
+      console.log("FormLoading: Using form slug for cache memory blocks:", formData.formSlug);
       
-      // Combine all blocks for submission service
-      const allAvailableBlocks = [...allBlocks, ...(formData.dynamicBlocks || [])];
-      console.log("FormLoading: Total blocks available:", allAvailableBlocks.length);
-      
-      // Create form state for submission service with proper types
-      const formStateForSubmission = {
-        activeBlocks: formData.activeBlocks,
-        responses: formData.responses,
-        completedBlocks: formData.completedBlocks,
-        dynamicBlocks: formData.dynamicBlocks,
+      // Create complete form state for submission service with fallbacks
+      const formStateForSubmission: FormState = {
+        activeBlocks: formData.activeBlocks || [],
+        responses: formData.responses || {},
+        completedBlocks: formData.completedBlocks || [],
+        dynamicBlocks: formData.dynamicBlocks || [],
         activeQuestion: { block_id: '', question_id: '' },
-        answeredQuestions: new Set<string>(),
-        navigationHistory: [],
-        blockActivations: {},
-        pendingRemovals: []
+        answeredQuestions: new Set<string>(formData.answeredQuestions || []),
+        navigationHistory: formData.navigationHistory || [],
+        blockActivations: formData.blockActivations || {},
+        pendingRemovals: formData.pendingRemovals || [],
+        formSlug: formData.formSlug
       };
       
-      const result = await submitFormToSupabase(formStateForSubmission, allAvailableBlocks);
+      // Submit using formSlug to get cache memory blocks internally
+      const result = await submitFormToSupabase(formStateForSubmission, formData.formSlug);
       
       if (result.success && result.submissionId) {
         console.log("FormLoading: Form submitted successfully, ID:", result.submissionId);
@@ -132,6 +196,16 @@ export default function FormLoading() {
         // Track successful completion with total time spent from simulation start
         const totalTimeSpent = getTotalTimeSpent();
         trackSimulationCompleted(totalTimeSpent);
+        
+        // Clear saved form state after successful submission
+        if (formData.formSlug) {
+          try {
+            localStorage.removeItem(`form-state-${formData.formSlug}`);
+            console.log(`FormLoading: Cleared saved form state for ${formData.formSlug}`);
+          } catch (error) {
+            console.warn('Failed to clear saved form state:', error);
+          }
+        }
         
         setActualSubmissionId(result.submissionId);
         setSubmissionCompleted(true);
@@ -173,7 +247,6 @@ export default function FormLoading() {
     }, intervalTime);
   };
 
-  // Determine display messages based on current state
   const getDisplayMessage = () => {
     if (submissionError) {
       return "Errore durante l'invio";

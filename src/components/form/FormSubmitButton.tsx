@@ -1,32 +1,49 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useForm } from "@/contexts/FormContext";
 
 export function FormSubmitButton() {
-  const { state, blocks } = useForm();
+  const { state } = useForm();
   const [isNavigating, setIsNavigating] = useState(false);
   const navigate = useNavigate();
+  const params = useParams();
 
   const handleSubmit = async () => {
     setIsNavigating(true);
-    console.log("FormSubmitButton: Navigating to FormLoading...");
+    
+    // Use formSlug from state (preferred) or params as fallback
+    const formSlug = state.formSlug || params.formSlug;
+    
+    if (!formSlug) {
+      console.error("FormSubmitButton: No formSlug available");
+      setIsNavigating(false);
+      return;
+    }
     
     try {
-      // Navigate to FormLoading with form data (same format as CompleteFormButton)
+      // Create formData object
+      const formData = {
+        responses: state.responses || {},
+        activeBlocks: state.activeBlocks || [],
+        completedBlocks: state.completedBlocks || [],
+        dynamicBlocks: state.dynamicBlocks || [],
+        answeredQuestions: Array.from(state.answeredQuestions || new Set()),
+        navigationHistory: state.navigationHistory || [],
+        blockActivations: state.blockActivations || {},
+        pendingRemovals: state.pendingRemovals || [],
+        formSlug: formSlug
+      };
+      
+      // Navigate to FormLoading with form data
       navigate('/form-loading', { 
         state: { 
-          formData: {
-            responses: state.responses,
-            activeBlocks: state.activeBlocks,
-            completedBlocks: state.completedBlocks,
-            dynamicBlocks: state.dynamicBlocks
-          }
+          formData: formData
         } 
       });
     } catch (error) {
-      console.error('Error navigating to FormLoading:', error);
+      console.error('FormSubmitButton: Error navigating to FormLoading:', error);
       setIsNavigating(false);
     }
   };

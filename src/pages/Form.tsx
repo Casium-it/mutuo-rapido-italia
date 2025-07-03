@@ -64,19 +64,26 @@ export default function Form() {
       e.preventDefault();
       e.stopPropagation();
     }
+    console.log("Form: Logo clicked - showing exit dialog");
     setShowExitDialog(true);
   };
 
   // Handle confirmed exit without saving - NOW WITH GLOBAL TRACKING
   const handleConfirmExit = () => {
+    console.log("Form: Confirmed exit without saving - navigating to home");
+    console.log("Form: Current location before exit:", location.pathname);
+    
     const totalTimeSpent = getTotalTimeSpent();
     trackSimulationExit('confirmed_exit', totalTimeSpent);
     setShowExitDialog(false);
+    
+    console.log("Form: About to navigate to / via handleConfirmExit");
     navigate("/");
   };
 
   // Handle exit with save option
   const handleExitWithSave = () => {
+    console.log("Form: Exit with save option selected");
     setShowExitDialog(false);
     setShowSaveDialog(true);
   };
@@ -103,26 +110,31 @@ export default function Form() {
 
   // Gestisci il salvataggio e l'uscita
   const handleSaveAndExit = () => {
+    console.log("Form: Save and exit button clicked");
     setShowSaveDialog(true);
   };
 
   // Gestisci la chiusura del dialog di salvataggio - FIXED: only navigate on successful save
   const handleCloseSaveDialog = (shouldNavigate: boolean = false) => {
+    console.log("Form: Closing save dialog", { shouldNavigate });
     setShowSaveDialog(false);
     // Only navigate to home page if shouldNavigate is true (successful save)
     if (shouldNavigate) {
+      console.log("Form: About to navigate to / via handleCloseSaveDialog (successful save)");
       navigate("/");
     }
   };
 
   // Handle successful save and exit
   const handleSaveSuccess = () => {
+    console.log("Form: Save successful - navigating to home");
     handleCloseSaveDialog(true); // Navigate to home on successful save
   };
 
   // Track tab close/page unload as simulation exit - WITH GLOBAL TRACKING
   useEffect(() => {
     const handleBeforeUnload = () => {
+      console.log("Form: Page unload detected");
       const totalTimeSpent = getTotalTimeSpent();
       trackSimulationExit('tab_close', totalTimeSpent);
     };

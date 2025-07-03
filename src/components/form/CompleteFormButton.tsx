@@ -2,33 +2,55 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "@/contexts/FormContext";
 
 export const CompleteFormButton = ({ className }: { className?: string }) => {
   const navigate = useNavigate();
+  const params = useParams();
   const { state } = useForm();
 
   const handleSubmitForm = async () => {
-    // Navigate immediately to loading page with form data
+    // Extract formSlug with fallback methods
+    const formSlug = state.formSlug || params.formSlug;
+    
+    if (!formSlug) {
+      console.error("CompleteFormButton: No formSlug available");
+      return;
+    }
+
+    // Create formData object
+    const formData = {
+      responses: state.responses || {},
+      activeBlocks: state.activeBlocks || [],
+      completedBlocks: state.completedBlocks || [],
+      dynamicBlocks: state.dynamicBlocks || [],
+      answeredQuestions: Array.from(state.answeredQuestions || new Set()),
+      navigationHistory: state.navigationHistory || [],
+      blockActivations: state.blockActivations || {},
+      pendingRemovals: state.pendingRemovals || [],
+      formSlug: formSlug
+    };
+
+    // Navigate to loading page with form data
     navigate('/form-loading', { 
       state: { 
-        formData: {
-          responses: state.responses,
-          activeBlocks: state.activeBlocks,
-          completedBlocks: state.completedBlocks,
-          dynamicBlocks: state.dynamicBlocks
-        }
+        formData: formData
       }
     });
   };
 
-  // Controlla se tutti i blocchi attivi sono completati
-  const areAllBlocksCompleted = state.activeBlocks?.every(
-    blockId => state.completedBlocks?.includes(blockId)
+  // Check if form can be submitted
+  const formSlug = state.formSlug || params.formSlug;
+  const canSubmit = formSlug && (
+    (state.activeBlocks?.length > 0 && state.activeBlocks?.every(
+      blockId => state.completedBlocks?.includes(blockId)
+    )) ||
+    (state.responses && Object.keys(state.responses).length > 0) ||
+    true
   );
 
-  if (!areAllBlocksCompleted) {
+  if (!canSubmit) {
     return null;
   }
 

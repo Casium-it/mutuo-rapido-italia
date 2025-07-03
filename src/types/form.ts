@@ -98,4 +98,5 @@ export type FormState = {
   blockActivations: Record<string, BlockActivationSource[]>; // Track which questions activated which blocks
   completedBlocks: string[]; // Track completed blocks
   pendingRemovals: PendingRemoval[]; // Track questions pending removal
+  formSlug?: string; // Add formSlug to track which form this state belongs to
 };

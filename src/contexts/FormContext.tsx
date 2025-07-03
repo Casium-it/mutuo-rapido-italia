@@ -1,4 +1,14 @@
-import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback, useRef } from "react";
+import React, {
+  createContext,
+  useState,
+  useContext,
+  useCallback,
+  useEffect,
+  useReducer,
+  useRef,
+  ReactNode,
+  useMemo,
+} from "react";
 import { Block, FormState, FormResponse, NavigationHistory, Placeholder, SelectPlaceholder, PendingRemoval } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { ensureBlockHasPriority } from "@/utils/blockUtils";
@@ -39,7 +49,7 @@ type Action =
   | { type: "REMOVE_ACTIVE_BLOCK"; block_id: string }
   | { type: "MARK_QUESTION_ANSWERED"; question_id: string }
   | { type: "SET_FORM_STATE"; state: Partial<FormState> }
-  | { type: "RESET_FORM" }
+  | { type: "RESET_FORM"; initialState: FormState }
   | { type: "SET_NAVIGATING"; isNavigating: boolean }
   | { type: "ADD_NAVIGATION_HISTORY"; history: NavigationHistory }
   | { type: "ADD_DYNAMIC_BLOCK"; block: Block }
@@ -49,28 +59,109 @@ type Action =
   | { type: "REMOVE_BLOCK_FROM_COMPLETED"; blockId: string }
   | { type: "ADD_TO_PENDING_REMOVALS"; pendingRemovals: PendingRemoval[] }
   | { type: "REMOVE_FROM_PENDING_REMOVALS"; questionIds: string[] }
-  | { type: "PROCESS_PENDING_REMOVALS"; currentBlockId: string };
+  | { type: "PROCESS_PENDING_REMOVALS"; currentBlockId: string }
+  | { type: "SET_FORM_SLUG"; formSlug: string };
 
-const initialState: FormState = {
-  activeBlocks: [],
-  activeQuestion: {
-    block_id: "introduzione",
-    question_id: "soggetto_acquisto"
-  },
-  responses: {},
-  answeredQuestions: new Set(),
-  isNavigating: false,
-  navigationHistory: [],
-  dynamicBlocks: [],
-  blockActivations: {}, // Track which questions/placeholders activated which blocks
-  completedBlocks: [], // Track completed blocks
-  pendingRemovals: [] // Track questions pending removal
+// Helper function to extract formSlug from URL path as fallback
+const extractFormSlugFromPath = (pathname: string): string | null => {
+  const match = pathname.match(/\/form\/([^/]+)/);
+  return match ? match[1] : null;
+};
+
+// Helper function to restore state from localStorage
+const restoreStateFromLocalStorage = (formType: string, blocks: Block[]): FormState | null => {
+  try {
+    const savedState = localStorage.getItem(`form-state-${formType}`);
+    if (!savedState) return null;
+
+    const parsedState = JSON.parse(savedState);
+    
+    // Reconstruct Set from Array
+    if (parsedState.answeredQuestions && Array.isArray(parsedState.answeredQuestions)) {
+      parsedState.answeredQuestions = new Set(parsedState.answeredQuestions);
+    }
+    
+    // Ensure formSlug is preserved
+    if (!parsedState.formSlug) {
+      parsedState.formSlug = formType;
+    }
+    
+    console.log(`FormContext: Restored form state for ${formType}:`, {
+      activeBlocks: parsedState.activeBlocks?.length || 0,
+      answeredQuestions: parsedState.answeredQuestions?.size || 0,
+      responses: Object.keys(parsedState.responses || {}).length,
+      formSlug: parsedState.formSlug,
+      timestamp: new Date().toISOString()
+    });
+    
+    return parsedState as FormState;
+  } catch (error) {
+    console.warn('Failed to restore form state from localStorage:', error);
+    return null;
+  }
+};
+
+// Helper function to create initial state based on available blocks
+const createInitialState = (blocks: Block[], formType?: string): FormState => {
+  // Try to restore from localStorage first
+  if (formType) {
+    const restoredState = restoreStateFromLocalStorage(formType, blocks);
+    if (restoredState) {
+      return restoredState;
+    }
+  }
+
+  if (blocks.length === 0) {
+    return {
+      activeBlocks: [],
+      activeQuestion: {
+        block_id: "introduzione",
+        question_id: "soggetto_acquisto"
+      },
+      responses: {},
+      answeredQuestions: new Set(),
+      isNavigating: false,
+      navigationHistory: [],
+      dynamicBlocks: [],
+      blockActivations: {},
+      completedBlocks: [],
+      pendingRemovals: [],
+      formSlug: formType
+    };
+  }
+
+  // Find the first active block and its first question
+  const defaultActiveBlocks = blocks.filter(b => b.default_active);
+  const firstBlock = defaultActiveBlocks.length > 0 ? defaultActiveBlocks[0] : blocks[0];
+  const firstQuestion = firstBlock?.questions?.[0];
+
+  return {
+    activeBlocks: defaultActiveBlocks.map(b => b.block_id),
+    activeQuestion: {
+      block_id: firstBlock?.block_id || "introduzione",
+      question_id: firstQuestion?.question_id || "soggetto_acquisto"
+    },
+    responses: {},
+    answeredQuestions: new Set(),
+    isNavigating: false,
+    navigationHistory: [],
+    dynamicBlocks: [],
+    blockActivations: {},
+    completedBlocks: [],
+    pendingRemovals: [],
+    formSlug: formType
+  };
 };
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
 
 function formReducer(state: FormState, action: Action): FormState {
   switch (action.type) {
+    case "SET_FORM_SLUG":
+      return {
+        ...state,
+        formSlug: action.formSlug
+      };
     case "GO_TO_QUESTION":
       return {
         ...state,
@@ -178,9 +269,9 @@ function formReducer(state: FormState, action: Action): FormState {
     }
     case "RESET_FORM": {
       return {
-        ...initialState,
+        ...action.initialState,
         activeBlocks: state.activeBlocks.filter(blockId => 
-          initialState.activeBlocks.includes(blockId)),
+          action.initialState.activeBlocks.includes(blockId)),
         dynamicBlocks: [],
         blockActivations: {},
         completedBlocks: [],
@@ -337,25 +428,65 @@ function formReducer(state: FormState, action: Action): FormState {
   }
 }
 
-export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = ({ children, blocks }) => {
+interface FormProviderProps {
+  children: ReactNode;
+  blocks?: Block[]; // Optional blocks prop for database-driven forms
+}
+
+export const FormProvider: React.FC<FormProviderProps> = ({ children, blocks }) => {
   const navigate = useNavigate();
-  const params = useParams<{ blockType?: string; blockId?: string; questionId?: string }>();
+  const params = useParams<{ blockType?: string; blockId?: string; questionId?: string, formSlug?: string }>();
   const location = useLocation();
   const previousBlockIdRef = useRef<string | null>(null);
   const previousQuestionIdRef = useRef<string | null>(null);
   const isNavigatingRef = useRef<boolean | undefined>(false);
   const usedNextBlockNavRef = useRef<boolean>(false);
   
-  const sortedBlocks = [...blocks].sort((a, b) => a.priority - b.priority);
+  // Add refs to track initialization state and prevent duplicate logs
+  const hasInitializedRef = useRef<boolean>(false);
+  const hasLoggedNavigationSetupRef = useRef<boolean>(false);
   
-  const [state, dispatch] = useReducer(formReducer, {
-    ...initialState,
-    activeBlocks: sortedBlocks.filter(b => b.default_active).map(b => b.block_id),
-    dynamicBlocks: [],
-    blockActivations: {},
-    completedBlocks: [],
-    pendingRemovals: []
-  });
+  // Use provided blocks or fall back to empty array
+  const formBlocks = blocks || [];
+  
+  // Memoize sortedBlocks to prevent infinite re-renders
+  const sortedBlocks = useMemo(() => {
+    return [...formBlocks].sort((a, b) => a.priority - b.priority);
+  }, [formBlocks]);
+  
+  // Extract formSlug from params or URL path as fallback
+  const formSlug = useMemo(() => {
+    return params.formSlug || extractFormSlugFromPath(location.pathname);
+  }, [params.formSlug, location.pathname]);
+  
+  // Create dynamic initial state based on available blocks
+  const dynamicInitialState = useMemo(() => {
+    return createInitialState(sortedBlocks, formSlug);
+  }, [sortedBlocks, formSlug]);
+  
+  const [state, dispatch] = useReducer(formReducer, dynamicInitialState);
+
+  // Update formSlug in state when it changes
+  useEffect(() => {
+    if (formSlug && state.formSlug !== formSlug) {
+      console.log(`FormContext: Setting formSlug to ${formSlug}`);
+      dispatch({ type: "SET_FORM_SLUG", formSlug });
+    }
+  }, [formSlug, state.formSlug]);
+
+  // Dedicated effect for initialization logging - only runs once when blocks are loaded
+  useEffect(() => {
+    if (formBlocks.length > 0 && !hasInitializedRef.current) {
+      console.log('FormProvider: Initializing with blocks:', {
+        blocksCount: formBlocks.length,
+        source: blocks ? 'provided' : 'empty',
+        firstBlock: formBlocks[0]?.block_id,
+        isFormSlugRoute: !!params.formSlug,
+        formSlug: formSlug
+      });
+      hasInitializedRef.current = true;
+    }
+  }, [formBlocks.length, blocks, params.formSlug, formSlug]);
 
   // Funzione per trovare a quale blocco appartiene una domanda specifica
   const findBlockByQuestionId = useCallback((questionId: string): string | null => {
@@ -475,7 +606,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
   }, [state.isNavigating, state.activeQuestion.block_id, state.activeQuestion.question_id, markBlockAsCompleted]);
 
   const createDynamicBlock = useCallback((blockBlueprintId: string): string | null => {
-    const blueprintBlock = blocks.find(b => b.block_id === blockBlueprintId && b.multiBlock === true);
+    const blueprintBlock = formBlocks.find(b => b.block_id === blockBlueprintId && b.multiBlock === true);
     
     if (!blueprintBlock) {
       console.error(`Blueprint block ${blockBlueprintId} not found or is not a multiBlock`);
@@ -532,10 +663,13 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: newBlockId });
     
     return newBlockId;
-  }, [blocks, state.dynamicBlocks]);
+  }, [formBlocks, state.dynamicBlocks]);
 
+  // Separate effect for default active blocks
   useEffect(() => {
-    const defaultActiveBlockIds = blocks
+    if (formBlocks.length === 0) return;
+    
+    const defaultActiveBlockIds = formBlocks
       .filter(b => b.default_active)
       .map(b => b.block_id);
     
@@ -544,22 +678,79 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
       }
     });
-  }, [blocks]);
+  }, [formBlocks, state.activeBlocks]);
 
   const resetForm = useCallback(() => {
-    if (params.blockType) {
-      localStorage.removeItem(`form-state-${params.blockType}`);
+    const formType = state.formSlug || params.formSlug || params.blockType;
+    if (formType) {
+      localStorage.removeItem(`form-state-${formType}`);
     }
     
-    dispatch({ type: "RESET_FORM" });
+    const resetInitialState = createInitialState(sortedBlocks, formType);
+    dispatch({ type: "RESET_FORM", initialState: resetInitialState });
     
-    navigate("/simulazione/pensando/introduzione/soggetto_acquisto", { replace: true });
-  }, [params.blockType, navigate]);
+    // For database-driven forms, navigate to the form slug route
+    if (state.formSlug || params.formSlug) {
+      navigate(`/form/${state.formSlug || params.formSlug}`, { replace: true });
+    } else {
+      navigate("/simulazione/pensando/introduzione/soggetto_acquisto", { replace: true });
+    }
+  }, [state.formSlug, params.formSlug, params.blockType, navigate, sortedBlocks]);
 
+  // Main navigation effect - optimized to reduce unnecessary logging
   useEffect(() => {
     const { blockId, questionId } = params;
     
-    if (blockId && questionId) {
+    // Guard: Don't run if blocks are not loaded yet
+    if (formBlocks.length === 0) {
+      return;
+    }
+    
+    // Handle database-driven forms (with formSlug)
+    if (formSlug) {
+      // Only log on initial navigation setup, not on every activeBlocks change
+      if (!hasLoggedNavigationSetupRef.current) {
+        console.log('FormProvider: Handling database-driven form', { 
+          formSlug, 
+          blocksCount: formBlocks.length 
+        });
+        hasLoggedNavigationSetupRef.current = true;
+      }
+      
+      if (blockId && questionId) {
+        // URL has specific block and question
+        dispatch({ 
+          type: "GO_TO_QUESTION", 
+          block_id: blockId, 
+          question_id: questionId 
+        });
+        
+        if (!state.activeBlocks.includes(blockId)) {
+          dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
+        }
+      } else {
+        // Navigate to the first question of the first active block
+        const firstActiveBlock = sortedBlocks.find(b => b.default_active) || sortedBlocks[0];
+        if (firstActiveBlock && firstActiveBlock.questions.length > 0) {
+          const firstQuestion = firstActiveBlock.questions[0];
+          
+          dispatch({ 
+            type: "GO_TO_QUESTION", 
+            block_id: firstActiveBlock.block_id, 
+            question_id: firstQuestion.question_id 
+          });
+          
+          if (!state.activeBlocks.includes(firstActiveBlock.block_id)) {
+            dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: firstActiveBlock.block_id });
+          }
+          
+          // Update URL to match the current question
+          navigate(`/form/${formSlug}/${firstActiveBlock.block_id}/${firstQuestion.question_id}`, { replace: true });
+        }
+      }
+    } 
+    // Handle legacy URL-based forms (blockType routes)
+    else if (blockId && questionId) {
       dispatch({ 
         type: "GO_TO_QUESTION", 
         block_id: blockId, 
@@ -570,7 +761,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
       }
     } else if (blockId) {
-      const block = blocks.find(b => b.block_id === blockId);
+      const block = formBlocks.find(b => b.block_id === blockId);
       if (block && block.questions.length > 0) {
         const firstQuestionId = block.questions[0].question_id;
         dispatch({ 
@@ -586,7 +777,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         navigate(`/simulazione/${params.blockType}/${blockId}/${firstQuestionId}`, { replace: true });
       }
     } else if (params.blockType) {
-      const entryBlock = blocks.find(b => b.block_id === "introduzione");
+      const entryBlock = formBlocks.find(b => b.block_id === "introduzione");
       if (entryBlock && entryBlock.questions.length > 0) {
         dispatch({ 
           type: "GO_TO_QUESTION", 
@@ -595,8 +786,19 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         });
       }
     }
+  }, [params.blockId, params.questionId, params.blockType, formSlug, formBlocks.length, navigate]);
+
+  // Reset the logging flag when formSlug changes (new form)
+  useEffect(() => {
+    hasLoggedNavigationSetupRef.current = false;
+  }, [formSlug]);
+
+  // Separate effect for saved state loading
+  useEffect(() => {
+    const formType = state.formSlug || params.formSlug || params.blockType;
+    if (!formType || formBlocks.length === 0) return;
     
-    const savedState = localStorage.getItem(`form-state-${params.blockType}`);
+    const savedState = localStorage.getItem(`form-state-${formType}`);
     if (savedState) {
       try {
         const parsedState = JSON.parse(savedState);
@@ -615,9 +817,13 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
           parsedState.dynamicBlocks = [];
         }
         
-        // Initialize pendingRemovals if not present
         if (!parsedState.pendingRemovals) {
           parsedState.pendingRemovals = [];
+        }
+        
+        // Ensure formSlug is preserved in restored state
+        if (!parsedState.formSlug) {
+          parsedState.formSlug = formType;
         }
         
         dispatch({ type: "SET_FORM_STATE", state: parsedState });
@@ -637,21 +843,11 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
         console.error("Errore nel caricamento dello stato salvato:", e);
       }
     }
-  }, [params.blockId, params.questionId, params.blockType, blocks, navigate]);
-
-  useEffect(() => {
-    if (params.blockType) {
-      const stateToSave = {
-        ...state,
-        answeredQuestions: Array.from(state.answeredQuestions)
-      };
-      localStorage.setItem(`form-state-${params.blockType}`, JSON.stringify(stateToSave));
-    }
-  }, [state, params.blockType]);
+  }, [params.blockType, params.formSlug, state.formSlug, formBlocks.length, state.activeBlocks]);
 
   const activateRequiredBlocksBasedOnResponses = (responses: FormResponse) => {
     for (const questionId of Object.keys(responses)) {
-      for (const blockObj of blocks) {
+      for (const blockObj of formBlocks) {
         const question = blockObj.questions.find(q => q.question_id === questionId);
         if (!question) continue;
 
@@ -718,9 +914,16 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       }
     });
     
-    // Handle URL navigation
-    const blockType = params.blockType || "funnel";
-    const newPath = `/simulazione/${blockType}/${block_id}/${question_id}`;
+    // Handle URL navigation - updated for database-driven forms
+    let newPath: string;
+    if (state.formSlug || params.formSlug) {
+      // Database-driven form
+      newPath = `/form/${state.formSlug || params.formSlug}/${block_id}/${question_id}`;
+    } else {
+      // Legacy URL-based form
+      const blockType = params.blockType || "funnel";
+      newPath = `/simulazione/${blockType}/${block_id}/${question_id}`;
+    }
     
     if (replace) {
       navigate(newPath, { replace: true });
@@ -732,7 +935,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
     setTimeout(() => {
       dispatch({ type: "SET_NAVIGATING", isNavigating: false });
     }, 300);
-  }, [params.blockType, navigate, state.activeQuestion, isQuestionPendingRemoval]);
+  }, [params.blockType, state.formSlug, params.formSlug, navigate, state.activeQuestion, isQuestionPendingRemoval]);
 
   const setResponse = useCallback((question_id: string, placeholder_key: string, value: string | string[]) => {
     const previousValue = state.responses[question_id]?.[placeholder_key];
@@ -1125,6 +1328,41 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
       return false;
     }
   }, [state.dynamicBlocks]);
+
+  // Auto-save form state to localStorage with debouncing - updated to use state.formSlug
+  useEffect(() => {
+    const formType = state.formSlug || params.formSlug;
+    
+    // Safety guards - only save when form is properly initialized
+    if (!formType || sortedBlocks.length === 0) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      try {
+        // Serialize state with Set conversion for answeredQuestions
+        const stateToSave = {
+          ...state,
+          answeredQuestions: Array.from(state.answeredQuestions)
+        };
+        
+        const serializedState = JSON.stringify(stateToSave);
+        localStorage.setItem(`form-state-${formType}`, serializedState);
+        
+        console.log(`Form state auto-saved for ${formType}:`, {
+          activeBlocks: state.activeBlocks.length,
+          answeredQuestions: state.answeredQuestions.size,
+          responses: Object.keys(state.responses).length,
+          formSlug: state.formSlug,
+          timestamp: new Date().toISOString()
+        });
+      } catch (error) {
+        console.warn('Failed to save form state to localStorage:', error);
+      }
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [state, params.formSlug, sortedBlocks.length]);
   
   const deleteQuestionResponses = useCallback((questionIds: string[]) => {
     if (!questionIds || questionIds.length === 0) return;
