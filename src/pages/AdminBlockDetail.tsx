@@ -1,13 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { LogOut, ArrowLeft, Blocks, Settings, Users, FileText, Hash, Database, RefreshCw, Plus } from 'lucide-react';
+import { LogOut, ArrowLeft, Blocks, Settings, Users, FileText, Hash, Database, RefreshCw, Plus, GitBranch } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Block } from '@/types/form';
+import { FlowVisualization } from '@/components/admin/flow-visualization/FlowVisualization';
 
 interface AdminBlockDetail extends Block {
   form_id: string;
@@ -25,6 +25,7 @@ export default function AdminBlockDetail() {
   const [block, setBlock] = useState<AdminBlockDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showFlowVisualization, setShowFlowVisualization] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -189,6 +190,15 @@ export default function AdminBlockDetail() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              onClick={() => setShowFlowVisualization(!showFlowVisualization)}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <GitBranch className="h-4 w-4" />
+              {showFlowVisualization ? 'Nascondi Mappa' : 'Visualizza Mappa Flusso'}
+            </Button>
             <Button 
               onClick={loadBlockFromDatabase}
               variant="outline"
@@ -212,6 +222,21 @@ export default function AdminBlockDetail() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
+        {/* Flow Visualization */}
+        {showFlowVisualization && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <GitBranch className="h-5 w-5" />
+                Mappa Flusso del Blocco
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <FlowVisualization block={block} />
+            </CardContent>
+          </Card>
+        )}
+
         {/* Block Overview */}
         <Card className="mb-6">
           <CardHeader>
