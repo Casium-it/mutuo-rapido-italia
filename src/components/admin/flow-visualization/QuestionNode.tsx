@@ -84,7 +84,9 @@ export function QuestionNode({ data }: QuestionNodeProps) {
         });
       } else {
         // Render single connector for input/MultiBlockManager
-        const flowLabel = getFlowLabel(placeholder.leads_to || '');
+        const leadsTo = placeholder.type === 'input' ? placeholder.leads_to : 
+                       placeholder.type === 'MultiBlockManager' ? placeholder.leads_to : '';
+        const flowLabel = leadsTo ? getFlowLabel(leadsTo) : null;
         
         connectors.push(
           <div key={placeholderKey} className="flex items-center gap-2 py-1">
@@ -94,9 +96,9 @@ export function QuestionNode({ data }: QuestionNodeProps) {
                   {flowLabel}
                 </Badge>
               ) : (
-                <span className="text-gray-500">→ {placeholder.leads_to}</span>
+                <span className="text-gray-500">→ {leadsTo}</span>
               )}
-              {placeholder.type === 'MultiBlockManager' && 'add_block_label' in placeholder && (
+              {placeholder.type === 'MultiBlockManager' && (
                 <Badge variant="secondary" className="text-xs px-1 flex items-center gap-1">
                   <Plus className="h-2 w-2" />
                   {placeholder.add_block_label}
