@@ -2,14 +2,13 @@
 import React, { useEffect, useState } from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, LightbulbIcon, Search, Home, Check, Badge, RotateCcw } from "lucide-react";
+import { ArrowRight, Home, RotateCcw } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Badge as UIBadge } from "@/components/ui/badge";
 import { useNavigate, useParams } from "react-router-dom";
-import { allBlocks } from "@/data/blocks";
 import { toast } from "sonner";
 import { useTimeTracking } from "@/hooks/useTimeTracking";
 import { trackSimulationStart } from "@/utils/analytics";
+import { formCacheService } from "@/services/formCacheService";
 
 const SimulazioneAvanzata = () => {
   const isMobile = useIsMobile();
@@ -22,54 +21,68 @@ const SimulazioneAvanzata = () => {
     pageName: 'simulazione_avanzata'
   });
   
-  // Effetto per controllare e gestire lo slug (removed leads table functionality)
+  // Effetto per controllare e gestire lo slug
   useEffect(() => {
     if (slug) {
       // Salva lo slug in localStorage per un uso futuro
       localStorage.setItem('user_slug', slug);
-      
-      // Note: Lead information retrieval has been removed as the leads table was deleted
-      // Users coming with a slug will still have it saved for potential future use
       console.log('Slug saved to localStorage:', slug);
     }
   }, [slug]);
   
-  // Funzione per gestire l'avvio di un nuovo form
-  const startNewForm = (path: string, additionalBlocks: string[] = [], optionTitle: string) => {
-    // Track simulation start with the selected option
-    trackSimulationStart(optionTitle);
+  // Funzione per gestire l'avvio del form con blocchi cached
+  const startSimulation = async () => {
+    setLoading(true);
     
-    // Track custom exit since user is navigating to simulation
-    trackCustomExit('simulation_start');
-    
-    // Rimuoviamo qualsiasi dato salvato in localStorage per i vari tipi di form
-    const pathSegments = path.split('/');
-    const formType = pathSegments[pathSegments.length - 3]; // Estrai il tipo (pensando, cercando, offerta, ecc.)
-    
-    // Rimuovi tutti i dati salvati dal localStorage per questo tipo di form
-    localStorage.removeItem(`form-state-${formType}`);
-    
-    // Trova tutti i blocchi che sono attivi di default
-    const defaultActiveBlocks = allBlocks
-      .filter(block => block.default_active)
-      .map(block => block.block_id);
-    
-    // Crea uno stato iniziale con i blocchi di default attivi e i blocchi aggiuntivi
-    const initialState = {
-      activeBlocks: [...defaultActiveBlocks, ...additionalBlocks],
-      activeQuestion: {
-        block_id: "introduzione", // Usiamo introduzione come blocco iniziale
-        question_id: "soggetto_acquisto" // Prima domanda del blocco introduzione
-      },
-      responses: {},
-      answeredQuestions: []
-    };
-    
-    // Salva questo stato iniziale nel localStorage
-    localStorage.setItem(`form-state-${formType}`, JSON.stringify(initialState));
-    
-    // Naviga al percorso specificato
-    navigate(path);
+    try {
+      // Track simulation start
+      trackSimulationStart("Simulazione Mutuo");
+      
+      // Track custom exit since user is navigating to simulation
+      trackCustomExit('simulation_start');
+      
+      // Load cached form to get default active blocks
+      const cachedForm = await formCacheService.getForm('simulazione-mutuo');
+      
+      // Rimuovi qualsiasi dato salvato in localStorage per il form mutuo
+      localStorage.removeItem('form-state-mutuo');
+      
+      // Trova tutti i blocchi che sono attivi di default dalla cache o fallback
+      let defaultActiveBlocks = [];
+      if (cachedForm && cachedForm.blocks.length > 0) {
+        defaultActiveBlocks = cachedForm.blocks
+          .filter(block => block.default_active)
+          .map(block => block.block_id);
+      } else {
+        // Fallback to static blocks if cache fails
+        const { allBlocks } = await import('@/data/blocks');
+        defaultActiveBlocks = allBlocks
+          .filter(block => block.default_active)
+          .map(block => block.block_id);
+      }
+      
+      // Crea uno stato iniziale con i blocchi di default attivi
+      const initialState = {
+        activeBlocks: defaultActiveBlocks,
+        activeQuestion: {
+          block_id: "introduzione",
+          question_id: "soggetto_acquisto"
+        },
+        responses: {},
+        answeredQuestions: []
+      };
+      
+      // Salva questo stato iniziale nel localStorage
+      localStorage.setItem('form-state-mutuo', JSON.stringify(initialState));
+      
+      // Naviga al percorso del form
+      navigate('/simulazione/mutuo/introduzione/soggetto_acquisto');
+    } catch (error) {
+      console.error('Error starting simulation:', error);
+      toast.error('Errore nel caricamento della simulazione');
+    } finally {
+      setLoading(false);
+    }
   };
   
   return (
@@ -84,7 +97,7 @@ const SimulazioneAvanzata = () => {
 
       {/* Main content */}
       <main className="flex-1 px-4 md:px-6 py-8 md:py-12 max-w-3xl mx-auto w-full">
-        {/* Welcome message (removed lead info since leads table was deleted) */}
+        {/* Welcome message */}
         {slug && (
           <div className="mb-6 p-4 bg-[#245C4F]/10 rounded-lg text-center">
             <h2 className="text-xl font-medium mb-1 text-[#245C4F]">Bentornato!</h2>
@@ -95,77 +108,16 @@ const SimulazioneAvanzata = () => {
         <h1 className="text-3xl md:text-4xl font-bold mb-2 text-center">
           Benvenuto in <span className="gradient-text">GoMutuo</span>
         </h1>
-        <p className="text-base text-gray-600 mb-10 text-center font-semibold">Da dove partiamo?</p>
+        <p className="text-base text-gray-600 mb-10 text-center font-semibold">Inizia la tua simulazione mutuo</p>
         
         <div className="space-y-4">
-          {/* Resume simulation option */}
-          <OptionCard
-            icon={LightbulbIcon}
-            title="Mi sto guardando intorno"
-            description="Non ho ancora iniziato le visite"
-            href="/simulazione/pensando/introduzione/soggetto_acquisto"
-            onClick={() => startNewForm(
-              "/simulazione/pensando/introduzione/soggetto_acquisto", 
-              ["la_tua_ricerca_casa"],
-              "Mi sto guardando intorno"
-            )}
-          />
-          
-          <OptionCard
-            icon={Search}
-            title="Sto cercando attivamente"
-            description="Ho già iniziato o pianificato le visite"
-            href="/simulazione/cercando/introduzione/soggetto_acquisto"
-            onClick={() => startNewForm(
-              "/simulazione/cercando/introduzione/soggetto_acquisto", 
-              ["la_tua_ricerca_casa"],
-              "Sto cercando attivamente"
-            )}
-          />
-          
+          {/* Single simulation option */}
           <OptionCard
             icon={Home}
-            title="Ho individuato una casa"
-            description="Ho trovato l'immobile ideale"
-            href="/simulazione/individuata/introduzione/soggetto_acquisto"
-            onClick={() => startNewForm(
-              "/simulazione/individuata/introduzione/soggetto_acquisto", 
-              ["la_casa_individuata"],
-              "Ho individuato una casa"
-            )}
-          />
-          
-          <OptionCard
-            icon={Check}
-            title="Ho fatto un'offerta"
-            description="Sono in attesa dell'accettazione"
-            href="/simulazione/offerta/introduzione/soggetto_acquisto"
-            onClick={() => startNewForm(
-              "/simulazione/offerta/introduzione/soggetto_acquisto", 
-              ["la_tua_offerta"],
-              "Ho fatto un'offerta"
-            )}
-          />
-          
-          <OptionCard
-            icon={Badge}
-            title="Ho un'offerta accettata"
-            description="Sono sicuro dell'immobile"
-            href="/simulazione/accettata/introduzione/soggetto_acquisto"
-            onClick={() => startNewForm(
-              "/simulazione/accettata/introduzione/soggetto_acquisto", 
-              ["la_tua_offerta"],
-              "Ho un'offerta accettata"
-            )}
-          />
-          
-          <OptionCard
-            icon={Badge}
-            title="Surroga al mio mutuo"
-            description="Voglio rinegoziare il mio mutuo"
-            href="/simulazione/surroga"
-            disabled={true}
-            badge="Presto disponibile"
+            title="Simulazione Mutuo"
+            description="Calcola il tuo mutuo personalizzato"
+            onClick={startSimulation}
+            loading={loading}
           />
         </div>
         
@@ -184,53 +136,40 @@ const SimulazioneAvanzata = () => {
   );
 };
 
-// Componente per le opzioni
+// Componente per l'opzione
 interface OptionCardProps {
   icon: React.ElementType;
   title: string;
   description?: string;
-  href: string;
-  disabled?: boolean;
-  badge?: string;
-  onClick?: () => void;
+  onClick: () => void;
+  loading?: boolean;
 }
 
-const OptionCard = ({ icon: Icon, title, description, href, disabled = false, badge, onClick }: OptionCardProps) => {
+const OptionCard = ({ icon: Icon, title, description, onClick, loading = false }: OptionCardProps) => {
   const isMobile = useIsMobile();
-  
-  const handleClick = () => {
-    if (!disabled && onClick) {
-      onClick();
-    }
-  };
 
   return (
     <div 
-      className={`flex items-center justify-between p-5 bg-white rounded-[12px] border border-[#BEB8AE] ${
-        disabled 
-          ? "opacity-80 cursor-not-allowed" 
-          : "hover:shadow-md transition-all group cursor-pointer shadow-[0_3px_0_0_#AFA89F] hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)]"
-      }`}
-      onClick={handleClick}
+      className="flex items-center justify-between p-5 bg-white rounded-[12px] border border-[#BEB8AE] hover:shadow-md transition-all group cursor-pointer shadow-[0_3px_0_0_#AFA89F] hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)]"
+      onClick={onClick}
     >
       <div className="flex items-center gap-4">
         {!isMobile && (
-          <div className={`text-gray-600 flex-shrink-0 ${disabled ? "opacity-60" : ""}`}>
+          <div className="text-gray-600 flex-shrink-0">
             <Icon className="w-6 h-6" />
           </div>
         )}
         <div className="text-left">
-          <h3 className={`text-lg font-semibold font-['Inter'] ${disabled ? "text-gray-600" : "text-gray-900"}`}>{title}</h3>
-          {description && <p className={`text-sm font-['Inter'] ${disabled ? "text-gray-500" : "text-gray-500"} mt-0.5`}>{description}</p>}
-          {badge && (
-            <UIBadge variant="outline" className="mt-2 text-xs bg-gray-100 text-gray-600 font-normal">
-              {badge}
-            </UIBadge>
-          )}
+          <h3 className="text-lg font-semibold font-['Inter'] text-gray-900">{title}</h3>
+          {description && <p className="text-sm font-['Inter'] text-gray-500 mt-0.5">{description}</p>}
         </div>
       </div>
-      <div className={`${disabled ? "bg-gray-300" : "bg-[#245C4F] hover:bg-[#1e4f44]"} p-3 rounded-[10px] transition-colors flex items-center justify-center ml-2 flex-shrink-0 shadow-[0_3px_0_0_#1a453e]`}>
-        <ArrowRight className={`w-5 h-5 ${disabled ? "text-gray-100" : "text-white"}`} />
+      <div className="bg-[#245C4F] hover:bg-[#1e4f44] p-3 rounded-[10px] transition-colors flex items-center justify-center ml-2 flex-shrink-0 shadow-[0_3px_0_0_#1a453e]">
+        {loading ? (
+          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+        ) : (
+          <ArrowRight className="w-5 h-5 text-white" />
+        )}
       </div>
     </div>
   );

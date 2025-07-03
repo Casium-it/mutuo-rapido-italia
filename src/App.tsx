@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,6 +12,7 @@ import { allBlocks } from "@/data/blocks";
 import { useEffect, useState } from "react";
 import { formCacheService } from "@/services/formCacheService";
 import SimulazioneAvanzata from "./pages/SimulazioneAvanzata";
+import FormWrapper from "./components/FormWrapper";
 import Form from "./pages/Form";
 import FormCompleted from "./pages/FormCompleted";
 import FormLoading from "./pages/FormLoading";
@@ -60,11 +60,10 @@ const AppWithTracking = () => {
       <Route path="/simulazione-avanzata" element={<SimulazioneAvanzata />} />
       <Route path="/simulazione-avanzata/:slug" element={<SimulazioneAvanzata />} />
       <Route path="/riprendi-simulazione" element={<ResumeSimulation />} />
-      <Route path="/simulazione/:blockType/:blockId/:questionId" element={
-        <FormProvider blocks={allBlocks}>
-          <Form />
-        </FormProvider>
-      } />
+      
+      {/* New simplified form route using FormWrapper */}
+      <Route path="/simulazione/:blockType/:blockId/:questionId" element={<FormWrapper />} />
+      
       <Route path="/form-loading" element={<FormLoading />} />
       <Route path="/form-completed" element={<FormCompleted />} />
       <Route path="/privacy" element={<Privacy />} />
