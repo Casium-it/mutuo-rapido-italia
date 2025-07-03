@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Question } from '@/types/form';
 import { useFlowEdit } from '@/contexts/FlowEditContext';
+import { useAdminBlocks } from '@/hooks/useAdminBlocks';
 
 interface CreateQuestionDialogProps {
   open: boolean;
@@ -18,20 +19,52 @@ export const CreateQuestionDialog: React.FC<CreateQuestionDialogProps> = ({
   onClose
 }) => {
   const { state, updateBlockData } = useFlowEdit();
+  const { blocks } = useAdminBlocks();
   const [formData, setFormData] = useState({
+    question_id: '',
     question_text: '',
     question_notes: '',
     endOfForm: false,
     skippableWithNotSure: false,
     inline: false
   });
+  const [questionIdError, setQuestionIdError] = useState('');
+
+  const validateQuestionId = (questionId: string): boolean => {
+    if (!questionId.trim()) {
+      setQuestionIdError('L\'ID della domanda è obbligatorio');
+      return false;
+    }
+    
+    // Check for duplicates across all blocks in the form
+    const allQuestionIds: string[] = [];
+    blocks.forEach(block => {
+      if (block.form_slug === state.blockData.block_id.split('_')[0]) {
+        block.questions.forEach(q => allQuestionIds.push(q.question_id));
+      }
+    });
+    
+    if (allQuestionIds.includes(questionId)) {
+      setQuestionIdError('Questo ID domanda esiste già nel form');
+      return false;
+    }
+    
+    setQuestionIdError('');
+    return true;
+  };
 
   const generateQuestionId = (): string => {
-    const existingIds = state.blockData.questions.map(q => q.question_id);
+    const allQuestionIds: string[] = [];
+    blocks.forEach(block => {
+      if (block.form_slug === state.blockData.block_id.split('_')[0]) {
+        block.questions.forEach(q => allQuestionIds.push(q.question_id));
+      }
+    });
+    
     let counter = 1;
     let newId = `${state.blockData.block_id}_q${counter}`;
     
-    while (existingIds.includes(newId)) {
+    while (allQuestionIds.includes(newId)) {
       counter++;
       newId = `${state.blockData.block_id}_q${counter}`;
     }
@@ -50,8 +83,14 @@ export const CreateQuestionDialog: React.FC<CreateQuestionDialogProps> = ({
       return; // Basic validation
     }
 
+    const questionId = formData.question_id.trim() || generateQuestionId();
+    
+    if (!validateQuestionId(questionId)) {
+      return;
+    }
+
     const newQuestion: Question = {
-      question_id: generateQuestionId(),
+      question_id: questionId,
       question_number: generateQuestionNumber(),
       question_text: formData.question_text,
       question_notes: formData.question_notes || undefined,
@@ -68,6 +107,7 @@ export const CreateQuestionDialog: React.FC<CreateQuestionDialogProps> = ({
     
     // Reset form
     setFormData({
+      question_id: '',
       question_text: '',
       question_notes: '',
       endOfForm: false,
@@ -86,6 +126,21 @@ export const CreateQuestionDialog: React.FC<CreateQuestionDialogProps> = ({
         </DialogHeader>
         
         <div className="space-y-6">
+          {/* Question ID */}
+          <div className="space-y-2">
+            <Label htmlFor="question_id">ID Domanda</Label>
+            <Input
+              id="question_id"
+              value={formData.question_id}
+              onChange={(e) => setFormData(prev => ({ ...prev, question_id: e.target.value }))}
+              placeholder="Lascia vuoto per generare automaticamente"
+              className={questionIdError ? "border-red-500" : ""}
+            />
+            {questionIdError && (
+              <p className="text-sm text-red-600">{questionIdError}</p>
+            )}
+          </div>
+
           {/* Question Text */}
           <div className="space-y-2">
             <Label htmlFor="question_text">Testo della Domanda *</Label>

@@ -88,7 +88,7 @@ export function QuestionNode({ data }: QuestionNodeProps) {
   };
 
   return (
-    <Card className="min-w-[350px] max-w-[450px] border-2 border-[#245C4F] shadow-lg bg-white">
+    <Card className="min-w-[455px] max-w-[585px] border-2 border-[#245C4F] shadow-lg bg-white">
       {/* Input handle */}
       <Handle
         type="target"

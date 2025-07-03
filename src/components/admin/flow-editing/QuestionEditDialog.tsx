@@ -10,8 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Question, Placeholder } from '@/types/form';
 import { useFlowEdit } from '@/contexts/FlowEditContext';
+import { useAdminBlocks } from '@/hooks/useAdminBlocks';
 import { Plus, Trash2 } from 'lucide-react';
 import { CreatePlaceholderDialog } from './CreatePlaceholderDialog';
+import { QuestionIdChangeConfirmDialog } from './QuestionIdChangeConfirmDialog';
 
 interface QuestionEditDialogProps {
   open: boolean;
@@ -25,8 +27,13 @@ export const QuestionEditDialog: React.FC<QuestionEditDialogProps> = ({
   onClose
 }) => {
   const { state, updateBlockData } = useFlowEdit();
+  const { blocks } = useAdminBlocks();
   const [createPlaceholderDialog, setCreatePlaceholderDialog] = useState(false);
+  const [confirmIdChange, setConfirmIdChange] = useState(false);
+  const [pendingQuestionId, setPendingQuestionId] = useState('');
+  const [questionIdError, setQuestionIdError] = useState('');
   const [formData, setFormData] = useState({
+    question_id: question.question_id,
     question_text: question.question_text,
     question_notes: question.question_notes || '',
     endOfForm: question.endOfForm || false,
@@ -37,6 +44,7 @@ export const QuestionEditDialog: React.FC<QuestionEditDialogProps> = ({
 
   useEffect(() => {
     setFormData({
+      question_id: question.question_id,
       question_text: question.question_text,
       question_notes: question.question_notes || '',
       endOfForm: question.endOfForm || false,
@@ -44,9 +52,109 @@ export const QuestionEditDialog: React.FC<QuestionEditDialogProps> = ({
       leads_to_placeholder_priority: question.leads_to_placeholder_priority,
       inline: question.inline || false
     });
+    setQuestionIdError('');
   }, [question]);
 
+  const validateQuestionId = (questionId: string): boolean => {
+    if (!questionId.trim()) {
+      setQuestionIdError('L\'ID della domanda è obbligatorio');
+      return false;
+    }
+    
+    // Check for duplicates across all blocks in the form (except current question)
+    const allQuestionIds: string[] = [];
+    blocks.forEach(block => {
+      if (block.form_slug === state.blockData.block_id.split('_')[0]) {
+        block.questions.forEach(q => {
+          if (q.question_id !== question.question_id) {
+            allQuestionIds.push(q.question_id);
+          }
+        });
+      }
+    });
+    
+    if (allQuestionIds.includes(questionId)) {
+      setQuestionIdError('Questo ID domanda esiste già nel form');
+      return false;
+    }
+    
+    setQuestionIdError('');
+    return true;
+  };
+
+  const countReferences = (questionId: string): number => {
+    let count = 0;
+    blocks.forEach(block => {
+      if (block.form_slug === state.blockData.block_id.split('_')[0]) {
+        block.questions.forEach(q => {
+          Object.values(q.placeholders).forEach(placeholder => {
+            if (placeholder.type === 'select' && placeholder.options) {
+              placeholder.options.forEach(option => {
+                if (option.leads_to === questionId) count++;
+              });
+            } else if (placeholder.type === 'input' && placeholder.leads_to === questionId) {
+              count++;
+            } else if (placeholder.type === 'MultiBlockManager' && placeholder.leads_to === questionId) {
+              count++;
+            }
+          });
+        });
+      }
+    });
+    return count;
+  };
+
+  const handleQuestionIdChange = (newQuestionId: string) => {
+    if (newQuestionId === question.question_id) return;
+    
+    if (!validateQuestionId(newQuestionId)) return;
+
+    const referenceCount = countReferences(question.question_id);
+    
+    if (referenceCount > 0) {
+      setPendingQuestionId(newQuestionId);
+      setConfirmIdChange(true);
+    } else {
+      setFormData(prev => ({ ...prev, question_id: newQuestionId }));
+    }
+  };
+
+  const handleConfirmIdChange = (updateReferences: boolean) => {
+    const updatedBlocks = [...blocks];
+    
+    if (updateReferences) {
+      // Update all references to the old question ID
+      updatedBlocks.forEach(block => {
+        if (block.form_slug === state.blockData.block_id.split('_')[0]) {
+          block.questions.forEach(q => {
+            Object.values(q.placeholders).forEach(placeholder => {
+              if (placeholder.type === 'select' && placeholder.options) {
+                placeholder.options.forEach(option => {
+                  if (option.leads_to === question.question_id) {
+                    option.leads_to = pendingQuestionId;
+                  }
+                });
+              } else if (placeholder.type === 'input' && placeholder.leads_to === question.question_id) {
+                placeholder.leads_to = pendingQuestionId;
+              } else if (placeholder.type === 'MultiBlockManager' && placeholder.leads_to === question.question_id) {
+                placeholder.leads_to = pendingQuestionId;
+              }
+            });
+          });
+        }
+      });
+    }
+    
+    setFormData(prev => ({ ...prev, question_id: pendingQuestionId }));
+    setConfirmIdChange(false);
+    setPendingQuestionId('');
+  };
+
   const handleSave = () => {
+    if (!validateQuestionId(formData.question_id)) {
+      return;
+    }
+
     const updatedQuestions = state.blockData.questions.map(q => 
       q.question_id === question.question_id 
         ? { ...q, ...formData }
@@ -79,6 +187,20 @@ export const QuestionEditDialog: React.FC<QuestionEditDialogProps> = ({
         </DialogHeader>
         
         <div className="space-y-6">
+          {/* Question ID */}
+          <div className="space-y-2">
+            <Label htmlFor="question_id">ID Domanda</Label>
+            <Input
+              id="question_id"
+              value={formData.question_id}
+              onChange={(e) => handleQuestionIdChange(e.target.value)}
+              className={questionIdError ? "border-red-500" : ""}
+            />
+            {questionIdError && (
+              <p className="text-sm text-red-600">{questionIdError}</p>
+            )}
+          </div>
+
           {/* Question Text */}
           <div className="space-y-2">
             <Label htmlFor="question_text">Testo della Domanda</Label>
@@ -219,6 +341,18 @@ export const QuestionEditDialog: React.FC<QuestionEditDialogProps> = ({
             onClose={() => setCreatePlaceholderDialog(false)}
           />
         )}
+
+        <QuestionIdChangeConfirmDialog
+          open={confirmIdChange}
+          onClose={() => {
+            setConfirmIdChange(false);
+            setPendingQuestionId('');
+          }}
+          onConfirm={handleConfirmIdChange}
+          oldQuestionId={question.question_id}
+          newQuestionId={pendingQuestionId}
+          referenceCount={countReferences(question.question_id)}
+        />
       </DialogContent>
     </Dialog>
   );
