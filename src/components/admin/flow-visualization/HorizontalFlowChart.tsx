@@ -33,10 +33,16 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
 
   const getConnectionColor = (type: string) => {
     switch (type) {
-      case 'add_block': return 'text-orange-600 bg-orange-100';
       case 'stop': return 'text-red-600 bg-red-100';
       default: return 'text-blue-600 bg-blue-100';
     }
+  };
+
+  const getNextBlockColor = (targetId: string) => {
+    if (targetId === 'next_block') {
+      return 'text-green-800 bg-green-100';
+    }
+    return 'text-blue-600 bg-blue-100';
   };
 
   if (flowData.levels.length === 0) {
@@ -49,8 +55,10 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
 
   // Calculate dynamic heights for each step
   const calculateStepHeight = (step: FlowStep): number => {
-    const headerHeight = 50; // Header with badges
-    const questionTextHeight = Math.max(60, Math.ceil(step.questionText.length / 60) * 20); // Estimate based on text length
+    const questionIdHeight = 25; // Line 1: Question ID
+    const inlineStatusHeight = 20; // Line 2: inline status
+    const questionTextHeight = Math.max(60, Math.ceil(step.questionText.length / 60) * 20); // Line 3: Question text
+    const placeholderTypesHeight = step.placeholderInfo.length * 20; // Line 4+: Placeholder types
     const optionsHeaderHeight = step.connections.length > 0 ? 30 : 0; // "OPZIONI:" header
     const optionHeight = 50; // Height per option (including padding and margins)
     const addBlockHeight = 45; // Height for ADD BLOCK elements
@@ -65,7 +73,7 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
     const totalOptionsHeight = step.connections.length * optionHeight;
     const totalAddBlockHeight = addBlockCount * addBlockHeight;
     
-    return headerHeight + questionTextHeight + optionsHeaderHeight + totalOptionsHeight + totalAddBlockHeight + cardPadding + borderSpacing;
+    return questionIdHeight + inlineStatusHeight + questionTextHeight + placeholderTypesHeight + optionsHeaderHeight + totalOptionsHeight + totalAddBlockHeight + cardPadding + borderSpacing;
   };
 
   // Calculate cumulative positions for each level
@@ -137,24 +145,36 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
                 >
                   <Card className={`${getStepColor(step.type)} border-2 transition-all hover:shadow-lg h-full`}>
                     <CardContent className="p-5 h-full flex flex-col">
-                      {/* Header */}
-                      <div className="flex items-center gap-2 mb-4">
-                        <span className="text-xl">{getStepIcon(step.type)}</span>
-                        <Badge variant="outline" className="text-xs font-mono font-bold">
-                          {step.questionNumber}
-                        </Badge>
-                        <code className="bg-gray-100 px-2 py-1 rounded text-xs">{step.id}</code>
-                        {step.isInline && (
-                          <Badge variant="secondary" className="text-xs">
-                            Inline
-                          </Badge>
-                        )}
+                      {/* Line 1: Question ID only */}
+                      <div className="mb-2">
+                        <code className="bg-gray-100 px-2 py-1 rounded text-xs font-mono">
+                          {step.id}
+                        </code>
                       </div>
                       
-                      {/* Question Text */}
-                      <p className="text-sm text-gray-800 font-medium mb-4 leading-relaxed min-h-[3rem] flex-shrink-0">
+                      {/* Line 2: Inline status */}
+                      <div className="mb-3">
+                        <span className="text-sm text-gray-600">
+                          inline: {step.isInline ? 'true' : 'false'}
+                        </span>
+                      </div>
+                      
+                      {/* Line 3: Question Text */}
+                      <p className="text-sm text-gray-800 font-medium mb-4 leading-relaxed flex-shrink-0">
                         {step.questionText}
                       </p>
+                      
+                      {/* Line 4+: Placeholder types */}
+                      {step.placeholderInfo.length > 0 && (
+                        <div className="mb-4 space-y-1">
+                          {step.placeholderInfo.map((placeholder, idx) => (
+                            <div key={idx} className="text-xs text-gray-600">
+                              <span className="font-medium">{placeholder.key}:</span>
+                              <span className="ml-1">{placeholder.type}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                       
                       {/* Connections */}
                       {step.connections.length > 0 && (
@@ -171,7 +191,13 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
                                     <span className="text-xs text-gray-700 font-medium flex-1">
                                       {connection.label}
                                     </span>
-                                    <Badge className={`text-xs font-medium ${getConnectionColor(connection.type)}`}>
+                                    <Badge className={`text-xs font-medium ${
+                                      connection.targetId === 'next_block' 
+                                        ? getNextBlockColor(connection.targetId)
+                                        : connection.targetId === 'stop' 
+                                        ? getConnectionColor(connection.type)
+                                        : getConnectionColor('default')
+                                    }`}>
                                       {connection.targetId === 'next_block' ? 'Next Block' : 
                                        connection.targetId === 'stop' ? 'End' : 
                                        connection.targetId}

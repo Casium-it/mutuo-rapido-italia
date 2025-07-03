@@ -1,5 +1,10 @@
 import { Question, Block } from "@/types/form";
 
+export interface PlaceholderInfo {
+  key: string;
+  type: string;
+}
+
 export interface FlowStep {
   id: string;
   questionNumber: string;
@@ -10,6 +15,7 @@ export interface FlowStep {
   level: number;
   branchIndex: number;
   sourceConnections: SourceConnection[];
+  placeholderInfo: PlaceholderInfo[];
 }
 
 export interface FlowConnection {
@@ -57,6 +63,12 @@ export class FlowAnalyzer {
     block.questions.forEach((question) => {
       const connections = this.getQuestionConnections(question, block.questions);
       
+      // Extract placeholder information
+      const placeholderInfo: PlaceholderInfo[] = Object.entries(question.placeholders || {}).map(([key, placeholder]) => ({
+        key,
+        type: placeholder.type
+      }));
+      
       // Determine question type
       let type: FlowStep['type'] = 'simple';
       if (connections.length > 1) type = 'branching';
@@ -72,7 +84,8 @@ export class FlowAnalyzer {
         connections,
         level: 0,
         branchIndex: 0,
-        sourceConnections: []
+        sourceConnections: [],
+        placeholderInfo
       });
     });
     
