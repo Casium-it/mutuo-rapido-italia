@@ -633,8 +633,12 @@ function EditControls() {
 }
 
 export default function AdminBlockDetail() {
+  const { blockId } = useParams<{ blockId: string }>();
+  const [searchParams] = useSearchParams();
+  const formSlug = searchParams.get('form');
   const [block, setBlock] = useState<AdminBlockDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Load block data first
   useEffect(() => {
