@@ -79,7 +79,7 @@ const SimulazioneAvanzata = () => {
         activeBlocks: defaultActiveBlocks,
         activeQuestion: {
           block_id: firstBlock.block_id,
-          question_id: firstQuestion.id
+          question_id: firstQuestion.question_id
         },
         responses: {},
         answeredQuestions: []
@@ -89,7 +89,7 @@ const SimulazioneAvanzata = () => {
       localStorage.setItem('form-state-simulazione-mutuo', JSON.stringify(initialState));
       
       // Navigate to the form with the simulazione-mutuo slug
-      navigate(`/simulazione/simulazione-mutuo/${firstBlock.block_id}/${firstQuestion.id}`);
+      navigate(`/simulazione/simulazione-mutuo/${firstBlock.block_id}/${firstQuestion.question_id}`);
       
     } catch (error) {
       console.error('❌ Error starting mortgage simulation:', error);
