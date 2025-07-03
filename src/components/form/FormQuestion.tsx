@@ -13,6 +13,7 @@ import { validateInput } from "@/utils/validationUtils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { MultiBlockManager } from "./MultiBlockManager";
 import { trackSimulationReply, trackSimulationBackNavigation, trackSimulationChangeResponse } from "@/utils/analytics";
+import { useDebounce } from "@/hooks/useDebounce";
 
 // Funzione per formattare il valore da visualizzare in base al tipo di validazione
 const formatDisplayValue = (value: string, validationType: ValidationTypes): string => {
@@ -146,8 +147,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
     console.log('🎯 Question timer started for:', question.question_id);
   }, [question.question_id]); // Only depend on question ID
 
-  // Separate useEffect for loading existing responses and UI state
-  useEffect(() => {
+  // Debounced effect for loading existing responses and UI state to prevent infinite loops
+  useDebounce(() => {
     const existingResponses: { [key: string]: string | string[] } = {};
     const initialVisibleOptions: { [key: string]: boolean } = {};
     const initialValidationErrors: { [key: string]: boolean } = {};
@@ -180,7 +181,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
     setShowNonLoSoButton(false);
     // Reset delle posizioni del cursore
     setCursorPositions({});
-  }, [question.question_id, getResponse, question.placeholders]);
+  }, 50, [question.question_id, getResponse, question.placeholders]);
 
   // Nuova funzione per verificare se ci sono campi di input mancanti o non validi
   const hasMissingOrInvalidInputs = () => {
