@@ -1,169 +1,336 @@
 
-import React, { useMemo } from 'react';
-import {
-  ReactFlow,
-  Node,
-  Edge,
-  Controls,
-  Background,
-  useNodesState,
-  useEdgesState,
-  Position,
-} from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Block } from '@/types/form';
-import { FlowAnalysis } from '@/utils/flowAnalysis';
-import { HorizontalQuestionNode } from './HorizontalQuestionNode';
-import { HorizontalTerminalNode } from './HorizontalTerminalNode';
+import { FlowAnalyzer, FlowStep } from '@/utils/flowAnalysis';
+import { Plus } from 'lucide-react';
 
 interface HorizontalFlowChartProps {
   block: Block;
 }
 
-const nodeTypes = {
-  horizontalQuestion: HorizontalQuestionNode,
-  horizontalTerminal: HorizontalTerminalNode,
-};
+export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block }) => {
+  const flowData = FlowAnalyzer.analyzeBlock(block);
+  
+  const getStepColor = (type: FlowStep['type']) => {
+    switch (type) {
+      case 'branching': return 'border-green-600 bg-green-100';
+      case 'inline': return 'border-gray-400 bg-gray-100';
+      case 'terminal': return 'border-red-500 bg-red-100';
+      default: return 'border-green-400 bg-green-50';
+    }
+  };
 
-// Layout constants
-const CARD_WIDTH = 350;
-const LEVEL_WIDTH = 500;
-const VERTICAL_SPACING = 60;
-const CONTAINER_PADDING = 50;
+  const getStepIcon = (type: FlowStep['type']) => {
+    switch (type) {
+      case 'branching': return '🔀';
+      case 'inline': return '📝';
+      case 'terminal': return '🏁';
+      default: return '❓';
+    }
+  };
 
-export function HorizontalFlowChart({ block }: HorizontalFlowChartProps) {
-  const { nodes, edges } = useMemo(() => {
-    const flowAnalysis = new FlowAnalysis(block.questions);
-    const { steps, terminals } = flowAnalysis.analyze();
+  const getConnectionColor = (type: string) => {
+    switch (type) {
+      case 'add_block': return 'text-orange-600 bg-orange-100';
+      case 'stop': return 'text-red-600 bg-red-100';
+      default: return 'text-blue-600 bg-blue-100';
+    }
+  };
 
-    const nodes: Node[] = [];
-    const edges: Edge[] = [];
+  if (flowData.levels.length === 0) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        Nessuna domanda trovata in questo blocco
+      </div>
+    );
+  }
 
-    // Create question nodes with horizontal positioning
-    let cumulativeHeights = new Map<number, number>(); // Track cumulative height per level
+  // Calculate dynamic heights for each step
+  const calculateStepHeight = (step: FlowStep): number => {
+    const headerHeight = 50; // Header with badges
+    const questionTextHeight = Math.max(60, Math.ceil(step.questionText.length / 60) * 20); // Estimate based on text length
+    const optionsHeaderHeight = step.connections.length > 0 ? 30 : 0; // "OPZIONI:" header
+    const optionHeight = 50; // Height per option (including padding and margins)
+    const addBlockHeight = 45; // Height for ADD BLOCK elements
+    const cardPadding = 40; // Card internal padding
+    const borderSpacing = 20; // Border and spacing
     
-    steps.forEach(step => {
-      const currentLevelHeight = cumulativeHeights.get(step.level) || 0;
-      
-      // Horizontal positioning based on level
-      const x = CONTAINER_PADDING + step.level * LEVEL_WIDTH;
-      
-      // Vertical positioning based on cumulative heights and branch index
-      const y = currentLevelHeight + (step.branchIndex * VERTICAL_SPACING);
-      
-      nodes.push({
-        id: step.id,
-        type: 'horizontalQuestion',
-        position: { x, y },
-        data: {
-          step,
-          questionNumber: steps.indexOf(step) + 1,
-        },
-      });
+    // Count ADD BLOCK elements
+    const addBlockCount = step.connections.filter(conn => 
+      conn.type === 'add_block' && conn.addBlockName
+    ).length;
+    
+    const totalOptionsHeight = step.connections.length * optionHeight;
+    const totalAddBlockHeight = addBlockCount * addBlockHeight;
+    
+    return headerHeight + questionTextHeight + optionsHeaderHeight + totalOptionsHeight + totalAddBlockHeight + cardPadding + borderSpacing;
+  };
 
-      // Update cumulative height for this level
-      cumulativeHeights.set(step.level, Math.max(currentLevelHeight, y + step.height + VERTICAL_SPACING));
-    });
-
-    // Create terminal nodes
-    terminals.forEach((terminal, index) => {
-      const x = CONTAINER_PADDING + terminal.level * LEVEL_WIDTH;
-      const y = index * 120; // Simple vertical spacing for terminals
-
-      nodes.push({
-        id: terminal.id,
-        type: 'horizontalTerminal',
-        position: { x, y },
-        data: terminal,
+  // Calculate cumulative positions for each level
+  const calculateLevelPositions = () => {
+    const levelPositions: { [levelIndex: number]: number[] } = {};
+    
+    flowData.levels.forEach((level, levelIndex) => {
+      levelPositions[levelIndex] = [];
+      let currentY = containerPadding;
+      
+      level.steps.forEach((step, stepIndex) => {
+        levelPositions[levelIndex][stepIndex] = currentY;
+        const stepHeight = calculateStepHeight(step);
+        currentY += stepHeight + verticalSpacing;
       });
     });
+    
+    return levelPositions;
+  };
 
-    // Create edges
-    steps.forEach(step => {
-      step.connections.forEach(conn => {
-        const edgeStyle = {
-          stroke: conn.type === 'stop' ? '#ef4444' : 
-                  conn.type === 'next' ? '#eab308' : 
-                  conn.type === 'add' ? '#22c55e' : '#6366f1',
-          strokeWidth: 2,
-        };
+  const cardWidth = 350; // Width of each card
+  const levelWidth = 500; // Width between levels (increased)
+  const verticalSpacing = 60; // Vertical spacing between cards (increased by 50%)
+  const containerPadding = 50;
+  
+  const levelPositions = calculateLevelPositions();
 
-        if (conn.type === 'normal') {
-          // Connection to another question
-          const targetStep = steps.find(s => s.id === conn.targetId);
-          if (targetStep) {
-            edges.push({
-              id: `edge-${step.id}-${conn.targetId}`,
-              source: step.id,
-              target: conn.targetId,
-              sourceHandle: conn.sourceHandle,
-              type: 'smoothstep',
-              style: edgeStyle,
-              label: conn.label,
-              labelStyle: {
-                fontSize: '11px',
-                fontWeight: 500,
-              },
-            });
-          }
-        } else {
-          // Connection to terminal
-          const terminalId = conn.type === 'add' ? `add-block-${conn.addBlockId}` : `terminal-${conn.targetId}`;
-          const terminal = terminals.find(t => t.id === terminalId);
-          if (terminal) {
-            edges.push({
-              id: `edge-${step.id}-${terminalId}`,
-              source: step.id,
-              target: terminalId,
-              sourceHandle: conn.sourceHandle,
-              type: 'smoothstep',
-              style: edgeStyle,
-              label: conn.label,
-              labelStyle: {
-                fontSize: '11px',
-                fontWeight: 500,
-              },
-            });
-          }
-        }
-      });
-    });
-
-    return { nodes, edges };
-  }, [block]);
-
-  const [flowNodes, , onNodesChange] = useNodesState(nodes);
-  const [flowEdges, , onEdgesChange] = useEdgesState(edges);
+  // Calculate total dimensions
+  const totalWidth = flowData.levels.length * levelWidth + containerPadding * 2;
+  const maxY = Math.max(...Object.values(levelPositions).map(positions => 
+    Math.max(...positions) + 300 // Add some extra space for the last card
+  ));
+  const totalHeight = maxY + containerPadding;
 
   return (
-    <div className="h-[700px] w-full border rounded-lg bg-gradient-to-br from-gray-50 to-gray-100">
-      <ReactFlow
-        nodes={flowNodes}
-        edges={flowEdges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        nodeTypes={nodeTypes}
-        fitView
-        fitViewOptions={{
-          padding: 0.1,
-          includeHiddenNodes: false,
+    <div className="overflow-x-auto overflow-y-auto bg-gray-50 rounded-lg border">
+      <div 
+        className="relative bg-white"
+        style={{ 
+          width: `${totalWidth}px`,
+          height: `${totalHeight}px`,
+          minWidth: '100%',
+          minHeight: '400px'
         }}
-        attributionPosition="bottom-left"
-        className="bg-gradient-to-br from-gray-50 to-gray-100"
-        proOptions={{ hideAttribution: true }}
       >
-        <Background 
-          color="#e5e7eb" 
-          gap={20} 
-          size={1}
-        />
-        <Controls 
-          className="bg-white shadow-lg border border-gray-200 rounded-lg"
-          showZoom={true}
-          showFitView={true}
-          showInteractive={true}
-        />
-      </ReactFlow>
+        {/* Render questions by level */}
+        {flowData.levels.map((level, levelIndex) => (
+          <div 
+            key={levelIndex} 
+            className="absolute"
+            style={{ 
+              left: `${containerPadding + levelIndex * levelWidth}px`,
+              top: containerPadding
+            }}
+          >
+            {level.steps.map((step, stepIndex) => {
+              const stepHeight = calculateStepHeight(step);
+              const yPosition = levelPositions[levelIndex][stepIndex] - containerPadding;
+              
+              return (
+                <div
+                  key={step.id}
+                  className="absolute"
+                  style={{
+                    top: `${yPosition}px`,
+                    width: `${cardWidth}px`,
+                    height: `${stepHeight}px`
+                  }}
+                >
+                  <Card className={`${getStepColor(step.type)} border-2 transition-all hover:shadow-lg h-full`}>
+                    <CardContent className="p-5 h-full flex flex-col">
+                      {/* Header */}
+                      <div className="flex items-center gap-2 mb-4">
+                        <span className="text-xl">{getStepIcon(step.type)}</span>
+                        <Badge variant="outline" className="text-xs font-mono font-bold">
+                          {step.questionNumber}
+                        </Badge>
+                        <code className="bg-gray-100 px-2 py-1 rounded text-xs">{step.id}</code>
+                        {step.isInline && (
+                          <Badge variant="secondary" className="text-xs">
+                            Inline
+                          </Badge>
+                        )}
+                      </div>
+                      
+                      {/* Question Text */}
+                      <p className="text-sm text-gray-800 font-medium mb-4 leading-relaxed min-h-[3rem] flex-shrink-0">
+                        {step.questionText}
+                      </p>
+                      
+                      {/* Connections */}
+                      {step.connections.length > 0 && (
+                        <div className="flex-1 flex flex-col">
+                          <div className="border-t pt-3 flex-1">
+                            <span className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-2 block">
+                              Opzioni:
+                            </span>
+                            <div className="space-y-2">
+                              {step.connections.map((connection, idx) => (
+                                <div key={idx} className="space-y-1">
+                                  <div className="flex items-center gap-2 p-2 bg-gray-50 rounded border">
+                                    <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
+                                    <span className="text-xs text-gray-700 font-medium flex-1">
+                                      {connection.label}
+                                    </span>
+                                    <Badge className={`text-xs font-medium ${getConnectionColor(connection.type)}`}>
+                                      {connection.targetId === 'next_block' ? 'Next Block' : 
+                                       connection.targetId === 'stop' ? 'End' : 
+                                       connection.targetId}
+                                    </Badge>
+                                  </div>
+                                  {connection.type === 'add_block' && connection.addBlockName && (
+                                    <div className="ml-4 flex items-center gap-2 p-2 bg-orange-50 rounded border border-orange-200">
+                                      <Plus className="w-3 h-3 text-orange-600 flex-shrink-0" />
+                                      <span className="text-xs text-orange-700 font-medium">
+                                        {connection.addBlockName}
+                                      </span>
+                                      <Badge className="text-xs bg-orange-100 text-orange-600">
+                                        ADD BLOCK
+                                      </Badge>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              );
+            })}
+          </div>
+        ))}
+
+        {/* Render connection arrows */}
+        <svg 
+          className="absolute inset-0 pointer-events-none"
+          width={totalWidth}
+          height={totalHeight}
+        >
+          <defs>
+            <marker
+              id="arrowhead"
+              markerWidth="12"
+              markerHeight="8"
+              refX="10"
+              refY="4"
+              orient="auto"
+            >
+              <polygon
+                points="0 0, 12 4, 0 8"
+                fill="#3b82f6"
+              />
+            </marker>
+          </defs>
+          
+          {flowData.connections.map((connection, index) => {
+            const fromX = containerPadding + (connection.fromLevel * levelWidth) + cardWidth; // End of source card
+            const fromY = levelPositions[connection.fromLevel][connection.fromIndex] + (calculateStepHeight(flowData.levels[connection.fromLevel].steps[connection.fromIndex]) / 2); // Middle of source card
+            const toX = containerPadding + connection.toLevel * levelWidth; // Start of target card
+            const toY = levelPositions[connection.toLevel][connection.toIndex] + (calculateStepHeight(flowData.levels[connection.toLevel].steps[connection.toIndex]) / 2); // Middle of target card
+            
+            // Calculate control points for curved line
+            const midX = fromX + (toX - fromX) / 2;
+            const controlX1 = fromX + 60;
+            const controlX2 = toX - 60;
+            
+            return (
+              <g key={index}>
+                {/* Connection path with curve */}
+                <path
+                  d={`M ${fromX} ${fromY} C ${controlX1} ${fromY}, ${controlX2} ${toY}, ${toX} ${toY}`}
+                  stroke="#3b82f6"
+                  strokeWidth="3"
+                  fill="none"
+                  markerEnd="url(#arrowhead)"
+                  className="drop-shadow-sm"
+                />
+                
+                {/* Connection label background */}
+                <rect
+                  x={midX - 40}
+                  y={fromY + (toY - fromY) / 2 - 12}
+                  width="80"
+                  height="16"
+                  fill="white"
+                  stroke="#e5e7eb"
+                  strokeWidth="1"
+                  rx="8"
+                  className="drop-shadow-sm"
+                />
+                
+                {/* Connection label */}
+                <text
+                  x={midX}
+                  y={fromY + (toY - fromY) / 2 - 2}
+                  fill="#374151"
+                  fontSize="10"
+                  textAnchor="middle"
+                  className="font-semibold"
+                >
+                  {connection.label.length > 12 ? connection.label.substring(0, 12) + "..." : connection.label}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+      
+      {/* Legend */}
+      <div className="mt-6 border-t pt-4">
+        <h4 className="text-sm font-semibold text-gray-700 mb-3">Legenda</h4>
+        
+        {/* Icons Legend */}
+        <div className="flex flex-wrap gap-4 mb-4">
+          <div className="flex items-center gap-2">
+            <span>🔀</span>
+            <span className="text-sm text-gray-600">Domanda con opzioni multiple</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span>❓</span>
+            <span className="text-sm text-gray-600">Domanda semplice</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span>📝</span>
+            <span className="text-sm text-gray-600">Domanda inline</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span>🏁</span>
+            <span className="text-sm text-gray-600">Fine flusso</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge className="text-xs bg-orange-100 text-orange-600">
+              <Plus className="w-3 h-3 mr-1" />
+              Block
+            </Badge>
+            <span className="text-sm text-gray-600">Aggiunge un blocco</span>
+          </div>
+        </div>
+
+        {/* Card Colors Legend */}
+        <div className="border-t pt-3">
+          <h5 className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Colori delle Card:</h5>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-green-600 bg-green-100 rounded"></div>
+              <span className="text-xs text-gray-600">Domande con opzioni multiple (branching)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-green-400 bg-green-50 rounded"></div>
+              <span className="text-xs text-gray-600">Domande semplici</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-gray-400 bg-gray-100 rounded"></div>
+              <span className="text-xs text-gray-600">Domande inline</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-red-500 bg-red-100 rounded"></div>
+              <span className="text-xs text-gray-600">Fine del flusso (terminal)</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
-}
+};
