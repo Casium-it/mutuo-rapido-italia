@@ -3,20 +3,16 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Block } from '@/types/form';
 import { FlowAnalyzer, FlowStep } from '@/utils/flowAnalysis';
-import { Plus, Settings } from 'lucide-react';
+import { Plus, Edit2, Settings } from 'lucide-react';
 import { QuestionEditDialog } from './QuestionEditDialog';
 import { PlaceholderEditDialog } from './PlaceholderEditDialog';
 import { OptionEditDialog } from './OptionEditDialog';
 import { useFlowEdit } from '@/contexts/FlowEditContext';
-
 interface EditableFlowChartProps {
   block: Block;
-  isEditing?: boolean;
 }
-
 export const EditableFlowChart: React.FC<EditableFlowChartProps> = ({
-  block,
-  isEditing = true
+  block
 }) => {
   const {
     state
@@ -59,14 +55,12 @@ export const EditableFlowChart: React.FC<EditableFlowChartProps> = ({
     return 'border-green-400 bg-green-50 hover:bg-green-100';
   };
   const handleQuestionClick = (questionId: string) => {
-    if (!isEditing) return;
     setQuestionEditDialog({
       open: true,
       questionId
     });
   };
   const handlePlaceholderClick = (questionId: string, placeholderKey: string) => {
-    if (!isEditing) return;
     setPlaceholderEditDialog({
       open: true,
       questionId,
@@ -74,7 +68,6 @@ export const EditableFlowChart: React.FC<EditableFlowChartProps> = ({
     });
   };
   const handleOptionClick = (questionId: string, placeholderKey: string, optionIndex: number) => {
-    if (!isEditing) return;
     setOptionEditDialog({
       open: true,
       questionId,
@@ -135,16 +128,13 @@ export const EditableFlowChart: React.FC<EditableFlowChartProps> = ({
         placeholderGroupHeight += 20 + 20 + 20; // Multiple, label, options header
         placeholder.options?.forEach(option => {
           placeholderGroupHeight += calculateTextHeight(option.label, 20, 5);
-          const idText = `ID: ${option.id}`;
+          const idText = `ID: ${option.id} → ${option.leads_to}`;
           placeholderGroupHeight += calculateTextHeight(idText, 20, 5);
-          // Add height for the new line with leads_to
-          const leadsToText = `→ ${option.leads_to}`;
-          placeholderGroupHeight += calculateTextHeight(leadsToText, 20, 5);
           if (option.add_block) {
             const blockText = `+ Block: ${option.add_block}`;
             placeholderGroupHeight += calculateTextHeight(blockText, 20, 5);
           }
-          placeholderGroupHeight += 15; // Extra spacing between options
+          placeholderGroupHeight += 10;
         });
       } else if (placeholder.type === 'input') {
         const inputTypeText = `Input Type: ${placeholder.input_type}`;
@@ -223,13 +213,11 @@ export const EditableFlowChart: React.FC<EditableFlowChartProps> = ({
               width: `${cardWidth}px`,
               height: `${stepHeight}px`
             }}>
-                     <Card className={`${getStepColor(step)} border-2 transition-all hover:shadow-lg h-full ${isEditing ? 'cursor-pointer' : ''} group`} onClick={() => handleQuestionClick(step.id)}>
+                     <Card className={`${getStepColor(step)} border-2 transition-all hover:shadow-lg h-full cursor-pointer group`} onClick={() => handleQuestionClick(step.id)}>
                        <CardContent className="p-5 h-full flex flex-col relative">
-                         {isEditing && (
-                           <div className="absolute top-2 right-2">
-                             <Settings className="h-4 w-4 text-[#245C4F]" />
-                           </div>
-                         )}
+                         <div className="absolute top-2 right-2 transition-opacity">
+                           <Settings className="h-4 w-4 text-[#245C4F]" />
+                         </div>
 
                         <div className="mb-2">
                           <code className="bg-gray-100 px-2 py-1 rounded text-xs font-mono">
@@ -274,7 +262,7 @@ export const EditableFlowChart: React.FC<EditableFlowChartProps> = ({
                             {step.placeholderDetails.map((placeholder, idx) => <div key={idx} onClick={e => {
                       e.stopPropagation();
                       handlePlaceholderClick(step.id, placeholder.key);
-                    }} className={`border border-green-300 rounded-lg p-3 space-y-2 transition-colors bg-green-300 ${isEditing ? 'cursor-pointer' : ''}`}>
+                    }} className="border border-green-300 rounded-lg p-3 space-y-2 cursor-pointer transition-colors bg-green-300">
                                  <div className="flex items-center gap-2">
                                    <Badge variant="outline" className="text-xs border-green-800 text-green-800">
                                      {placeholder.key}
@@ -282,9 +270,7 @@ export const EditableFlowChart: React.FC<EditableFlowChartProps> = ({
                                    <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
                                      {placeholder.type}
                                    </Badge>
-                                   {isEditing && (
-                                     <Settings className="h-3 w-3 text-green-100 ml-auto" />
-                                   )}
+                                   <Settings className="h-3 w-3 text-green-100 ml-auto" />
                                  </div>
                                 
                                 {placeholder.type === 'select' && <div className="space-y-2">
@@ -298,24 +284,22 @@ export const EditableFlowChart: React.FC<EditableFlowChartProps> = ({
                                     </div>
                                     <div className="space-y-1">
                                       <div className="text-xs font-medium text-gray-700">Options:</div>
-                                      {placeholder.options?.map((option, optIdx) => <div key={optIdx} className={`ml-3 space-y-1 bg-green-600 border border-green-800 rounded-lg p-2 transition-colors ${isEditing ? 'cursor-pointer hover:bg-green-700' : ''}`} onClick={e => {
+                                      {placeholder.options?.map((option, optIdx) => <div key={optIdx} className="ml-3 space-y-1 hover:bg-green-100 p-2 rounded-lg cursor-pointer bg-green-50 border border-green-200" onClick={e => {
                             e.stopPropagation();
                             handleOptionClick(step.id, placeholder.key, optIdx);
                           }}>
-                                           <div className="text-xs text-white">
+                                           <div className="text-xs text-gray-700">
                                              <div className="font-medium">{option.label}</div>
-                                             <div className="text-xs text-green-100 mt-1 flex items-center gap-2">
-                                               ID: <code className="bg-green-700 px-1 rounded">{option.id}</code>
-                                               {isEditing && (
-                                                 <Settings className="h-3 w-3 text-green-200 ml-auto" />
-                                               )}
+                                             <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
+                                               ID: <code className="bg-gray-200 px-1 rounded">{option.id}</code>
+                                               <Edit2 className="h-3 w-3 text-[#245C4F] ml-auto" />
                                              </div>
-                                             <div className="text-xs text-green-100 mt-1">
+                                             <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
                                                → <Badge className={`text-xs ${option.leads_to === 'next_block' ? 'bg-orange-100 text-orange-600' : option.leads_to === 'stop_flow' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
                                                  {option.leads_to}
                                                </Badge>
                                              </div>
-                                             {option.add_block && <div className="text-xs text-blue-300 mt-1">
+                                             {option.add_block && <div className="text-xs text-blue-600 mt-1">
                                                  + Block: {option.add_block}
                                                </div>}
                                            </div>
@@ -390,18 +374,18 @@ export const EditableFlowChart: React.FC<EditableFlowChartProps> = ({
         
       </div>
 
-      {isEditing && questionEditDialog.open && getSelectedQuestion() && <QuestionEditDialog open={questionEditDialog.open} question={getSelectedQuestion()!} onClose={() => setQuestionEditDialog({
+      {questionEditDialog.open && getSelectedQuestion() && <QuestionEditDialog open={questionEditDialog.open} question={getSelectedQuestion()!} onClose={() => setQuestionEditDialog({
       open: false,
       questionId: null
     })} />}
 
-      {isEditing && placeholderEditDialog.open && getSelectedPlaceholder() && <PlaceholderEditDialog open={placeholderEditDialog.open} placeholder={getSelectedPlaceholder()!} placeholderKey={placeholderEditDialog.placeholderKey!} questionId={placeholderEditDialog.questionId!} onClose={() => setPlaceholderEditDialog({
+      {placeholderEditDialog.open && getSelectedPlaceholder() && <PlaceholderEditDialog open={placeholderEditDialog.open} placeholder={getSelectedPlaceholder()!} placeholderKey={placeholderEditDialog.placeholderKey!} questionId={placeholderEditDialog.questionId!} onClose={() => setPlaceholderEditDialog({
       open: false,
       questionId: null,
       placeholderKey: null
     })} />}
 
-      {isEditing && optionEditDialog.open && getSelectedOption() && <OptionEditDialog open={optionEditDialog.open} option={getSelectedOption()!} optionIndex={optionEditDialog.optionIndex!} placeholderKey={optionEditDialog.placeholderKey!} questionId={optionEditDialog.questionId!} onClose={() => setOptionEditDialog({
+      {optionEditDialog.open && getSelectedOption() && <OptionEditDialog open={optionEditDialog.open} option={getSelectedOption()!} optionIndex={optionEditDialog.optionIndex!} placeholderKey={optionEditDialog.placeholderKey!} questionId={optionEditDialog.questionId!} onClose={() => setOptionEditDialog({
       open: false,
       questionId: null,
       placeholderKey: null,
