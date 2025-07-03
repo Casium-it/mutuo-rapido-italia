@@ -11,6 +11,7 @@ import { FlowVisualization } from '@/components/admin/flow-visualization/FlowVis
 import { HorizontalFlowChart } from '@/components/admin/flow-visualization/HorizontalFlowChart';
 import { EditableFlowChart } from '@/components/admin/flow-editing/EditableFlowChart';
 import { FlowEditProvider, useFlowEdit } from '@/contexts/FlowEditContext';
+import { CreateQuestionDialog } from '@/components/admin/flow-editing/CreateQuestionDialog';
 
 interface AdminBlockDetail extends Block {
   form_id: string;
@@ -30,6 +31,7 @@ function AdminBlockDetailContent() {
   const [error, setError] = useState<string | null>(null);
   const [showFlowVisualization, setShowFlowVisualization] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [createQuestionDialog, setCreateQuestionDialog] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -290,10 +292,7 @@ function AdminBlockDetailContent() {
                       variant="outline"
                       size="sm"
                       className="flex items-center gap-2"
-                      onClick={() => {
-                        // TODO: Implement new question creation
-                        console.log('Create new question');
-                      }}
+                      onClick={() => setCreateQuestionDialog(true)}
                     >
                       <Plus className="h-4 w-4" />
                       Nuova Domanda
@@ -598,6 +597,13 @@ function AdminBlockDetailContent() {
           </CardContent>
         </Card>
       </main>
+
+      {createQuestionDialog && (
+        <CreateQuestionDialog
+          open={createQuestionDialog}
+          onClose={() => setCreateQuestionDialog(false)}
+        />
+      )}
     </div>
   );
 }

@@ -180,10 +180,18 @@ export const EditableFlowChart: React.FC<EditableFlowChartProps> = ({ block }) =
   const levelPositions = calculateLevelPositions();
 
   const totalWidth = flowData.levels.length * levelWidth + containerPadding * 2;
-  const maxY = Math.max(...Object.values(levelPositions).map(positions => 
-    Math.max(...positions) + 300
-  ));
-  const totalHeight = maxY + containerPadding;
+  
+  // Calculate proper height by considering the actual card heights
+  const maxY = Math.max(...Object.values(levelPositions).map((positions, levelIndex) => {
+    if (positions.length === 0) return 0;
+    const lastPosition = Math.max(...positions);
+    const lastStepIndex = positions.indexOf(lastPosition);
+    const lastStep = flowData.levels[levelIndex]?.steps[lastStepIndex];
+    const lastStepHeight = lastStep ? calculateStepHeight(lastStep) : 300;
+    return lastPosition + lastStepHeight;
+  }));
+  
+  const totalHeight = maxY + containerPadding * 2; // Add padding at top and bottom
 
   return (
     <>

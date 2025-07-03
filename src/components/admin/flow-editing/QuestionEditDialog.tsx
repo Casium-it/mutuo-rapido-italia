@@ -7,8 +7,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Question } from '@/types/form';
+import { Badge } from '@/components/ui/badge';
+import { Question, Placeholder } from '@/types/form';
 import { useFlowEdit } from '@/contexts/FlowEditContext';
+import { Plus, Trash2 } from 'lucide-react';
+import { CreatePlaceholderDialog } from './CreatePlaceholderDialog';
 
 interface QuestionEditDialogProps {
   open: boolean;
@@ -22,6 +25,7 @@ export const QuestionEditDialog: React.FC<QuestionEditDialogProps> = ({
   onClose
 }) => {
   const { state, updateBlockData } = useFlowEdit();
+  const [createPlaceholderDialog, setCreatePlaceholderDialog] = useState(false);
   const [formData, setFormData] = useState({
     question_text: question.question_text,
     question_notes: question.question_notes || '',
@@ -51,6 +55,18 @@ export const QuestionEditDialog: React.FC<QuestionEditDialogProps> = ({
 
     updateBlockData({ questions: updatedQuestions });
     onClose();
+  };
+
+  const handleDeletePlaceholder = (placeholderKey: string) => {
+    const updatedQuestions = state.blockData.questions.map(q => {
+      if (q.question_id === question.question_id) {
+        const { [placeholderKey]: deleted, ...remainingPlaceholders } = q.placeholders;
+        return { ...q, placeholders: remainingPlaceholders };
+      }
+      return q;
+    });
+
+    updateBlockData({ questions: updatedQuestions });
   };
 
   const placeholderOptions = Object.keys(question.placeholders || {});
@@ -134,6 +150,57 @@ export const QuestionEditDialog: React.FC<QuestionEditDialogProps> = ({
               />
             </div>
           </div>
+
+          {/* Placeholders Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label className="text-base font-semibold">Placeholders</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setCreatePlaceholderDialog(true)}
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Aggiungi Placeholder
+              </Button>
+            </div>
+
+            {placeholderOptions.length > 0 ? (
+              <div className="space-y-2">
+                {placeholderOptions.map(key => {
+                  const placeholder = question.placeholders[key];
+                  return (
+                    <div key={key} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">{key}</Badge>
+                        <Badge variant="secondary">{placeholder.type}</Badge>
+                        {placeholder.type === 'select' && (
+                          <span className="text-sm text-gray-600">
+                            ({placeholder.options?.length || 0} opzioni)
+                          </span>
+                        )}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeletePlaceholder(key)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-gray-500 border-2 border-dashed border-gray-200 rounded-lg">
+                Nessun placeholder configurato
+              </div>
+            )}
+          </div>
         </div>
 
         <DialogFooter>
@@ -144,6 +211,14 @@ export const QuestionEditDialog: React.FC<QuestionEditDialogProps> = ({
             Salva Modifiche
           </Button>
         </DialogFooter>
+
+        {createPlaceholderDialog && (
+          <CreatePlaceholderDialog
+            open={createPlaceholderDialog}
+            questionId={question.question_id}
+            onClose={() => setCreatePlaceholderDialog(false)}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );
