@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,7 +7,7 @@ import { FormProvider } from "@/contexts/FormContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { usePageTracking } from "@/hooks/usePageTracking";
-import { useFormCache } from "@/hooks/useFormCache";
+import { FormRoute } from "@/components/FormRoute";
 import { allBlocks } from "@/data/blocks";
 import { useEffect, useState } from "react";
 import { formCacheService } from "@/services/formCacheService";
@@ -60,11 +59,17 @@ const AppWithTracking = () => {
       <Route path="/simulazione-avanzata" element={<SimulazioneAvanzata />} />
       <Route path="/simulazione-avanzata/:slug" element={<SimulazioneAvanzata />} />
       <Route path="/riprendi-simulazione" element={<ResumeSimulation />} />
+      
+      {/* New route using cached blocks with form slug */}
+      <Route path="/simulazione/:formSlug/:blockId/:questionId" element={<FormRoute />} />
+      
+      {/* Keep legacy route for backward compatibility */}
       <Route path="/simulazione/:blockType/:blockId/:questionId" element={
         <FormProvider blocks={allBlocks}>
           <Form />
         </FormProvider>
       } />
+      
       <Route path="/form-loading" element={<FormLoading />} />
       <Route path="/form-completed" element={<FormCompleted />} />
       <Route path="/privacy" element={<Privacy />} />
