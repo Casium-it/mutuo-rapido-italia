@@ -54,43 +54,51 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
 
   // Calculate dynamic heights for each step
   const calculateStepHeight = (step: FlowStep): number => {
-    const questionIdHeight = 25; // Line 1: Question ID
-    const inlineStatusHeight = 20; // Line 2: inline status
+    const questionIdHeight = 35; // Question ID badge with margin
+    const inlineStatusHeight = 25; // Inline status line with margin
     
-    // More accurate question text height calculation based on card width (350px)
-    // Assuming ~40 characters per line at card width, with minimum 2 lines
-    const estimatedCharsPerLine = 40;
-    const questionTextLines = Math.max(2, Math.ceil(step.questionText.length / estimatedCharsPerLine));
-    const questionTextHeight = questionTextLines * 22; // 22px per line with spacing
+    // Question text height calculation based on card width (350px)
+    const estimatedCharsPerLine = 45; // More accurate for the card width
+    const questionTextLines = Math.max(1, Math.ceil(step.questionText.length / estimatedCharsPerLine));
+    const questionTextHeight = questionTextLines * 20 + 30; // 20px per line + padding/margin
     
-    // Question notes height (if present)
-    const questionNotesHeight = step.questionNotes ? Math.ceil(step.questionNotes.length / estimatedCharsPerLine) * 18 + 25 : 0;
+    // Question notes height (if present) - blue box with padding
+    const questionNotesHeight = step.questionNotes ? 
+      Math.ceil(step.questionNotes.length / estimatedCharsPerLine) * 16 + 50 : 0; // Box padding + border
     
-    // Question attributes height (endOfForm, skippable, priority)
-    const questionAttributesHeight = 60; // 3 lines for the new attributes
+    // Question attributes height (endOfForm, skippable, priority) - 3 lines with spacing
+    const questionAttributesHeight = 75; // 3 lines × 20px + margins
+    
+    // Placeholders section header
+    const placeholderHeaderHeight = step.placeholderDetails.length > 0 ? 35 : 25;
     
     // Calculate placeholder section height dynamically
     let placeholderSectionHeight = 0;
     step.placeholderDetails.forEach(placeholder => {
+      // Each placeholder has a border box with padding
+      const placeholderBaseHeight = 25; // Border + padding
+      
       if (placeholder.type === 'select') {
-        placeholderSectionHeight += 40; // Header + multiple + label
-        placeholderSectionHeight += placeholder.options.length * 35; // Each option + id
+        // Badge line (key + type) + multiple line + label line
+        placeholderSectionHeight += placeholderBaseHeight + 60;
+        // Each option with ID line
+        placeholderSectionHeight += (placeholder.options?.length || 0) * 45; // Each option card
       } else if (placeholder.type === 'input') {
-        placeholderSectionHeight += 60; // input_type + label + validation
+        // Badge line + input_type + label + validation
+        placeholderSectionHeight += placeholderBaseHeight + 75;
       } else if (placeholder.type === 'MultiBlockManager') {
-        placeholderSectionHeight += 60; // label + add_block_label + blueprint
+        // Badge line + label + add_block_label + blueprint
+        placeholderSectionHeight += placeholderBaseHeight + 75;
       }
-      placeholderSectionHeight += 15; // Spacing between placeholders
+      placeholderSectionHeight += 20; // Spacing between placeholders
     });
     
-    // No more separate options section since options are shown within placeholders
-    const optionsHeaderHeight = 0;
+    const cardPadding = 60; // Card internal padding
+    const safetyMargin = 40; // Extra safety margin
     
-    
-    const cardPadding = 50; // Increased padding for safety
-    const borderSpacing = 30; // Increased spacing
-    
-    return questionIdHeight + inlineStatusHeight + questionTextHeight + questionNotesHeight + questionAttributesHeight + placeholderSectionHeight + cardPadding + borderSpacing;
+    return questionIdHeight + inlineStatusHeight + questionTextHeight + questionNotesHeight + 
+           questionAttributesHeight + placeholderHeaderHeight + placeholderSectionHeight + 
+           cardPadding + safetyMargin;
   };
 
   // Calculate cumulative positions for each level
