@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -34,15 +33,15 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
   const getConnectionColor = (type: string) => {
     switch (type) {
       case 'stop': return 'text-red-600 bg-red-100';
-      default: return 'text-blue-600 bg-blue-100';
+      default: return 'text-green-800 bg-green-100';
     }
   };
 
   const getNextBlockColor = (targetId: string) => {
     if (targetId === 'next_block') {
-      return 'text-green-800 bg-green-100';
+      return 'text-orange-800 bg-orange-100';
     }
-    return 'text-blue-600 bg-blue-100';
+    return 'text-green-800 bg-green-100';
   };
 
   if (flowData.levels.length === 0) {
@@ -58,7 +57,7 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
     const questionIdHeight = 25; // Line 1: Question ID
     const inlineStatusHeight = 20; // Line 2: inline status
     const questionTextHeight = Math.max(60, Math.ceil(step.questionText.length / 60) * 20); // Line 3: Question text
-    const placeholderTypesHeight = step.placeholderInfo.length * 20; // Line 4+: Placeholder types
+    const placeholderTypesHeight = step.placeholderInfo.length * 20; // Line 4+: Placeholder types (FIXED)
     const optionsHeaderHeight = step.connections.length > 0 ? 30 : 0; // "OPZIONI:" header
     const optionHeight = 50; // Height per option (including padding and margins)
     const addBlockHeight = 45; // Height for ADD BLOCK elements
@@ -204,12 +203,12 @@ export const HorizontalFlowChart: React.FC<HorizontalFlowChartProps> = ({ block 
                                     </Badge>
                                   </div>
                                   {connection.type === 'add_block' && connection.addBlockName && (
-                                    <div className="ml-4 flex items-center gap-2 p-2 bg-orange-50 rounded border border-orange-200">
-                                      <Plus className="w-3 h-3 text-orange-600 flex-shrink-0" />
-                                      <span className="text-xs text-orange-700 font-medium">
+                                    <div className="ml-4 flex items-center gap-2 p-2 bg-blue-50 rounded border border-blue-200">
+                                      <Plus className="w-3 h-3 text-blue-600 flex-shrink-0" />
+                                      <span className="text-xs text-blue-700 font-medium">
                                         {connection.addBlockName}
                                       </span>
-                                      <Badge className="text-xs bg-orange-100 text-orange-600">
+                                      <Badge className="text-xs bg-blue-100 text-blue-600">
                                         ADD BLOCK
                                       </Badge>
                                     </div>
