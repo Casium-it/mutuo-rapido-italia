@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { LogOut, ArrowLeft, Blocks, Settings, Users, FileText, Hash, Database, RefreshCw, Plus, GitBranch, Save, Undo2, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { LogOut, ArrowLeft, Blocks, Settings, Users, FileText, Hash, Database, RefreshCw, Plus, GitBranch, Save, Undo2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Block } from '@/types/form';
 import { FlowVisualization } from '@/components/admin/flow-visualization/FlowVisualization';
@@ -12,7 +12,6 @@ import { FlowVisualization } from '@/components/admin/flow-visualization/FlowVis
 import { EditableFlowChart } from '@/components/admin/flow-editing/EditableFlowChart';
 import { FlowEditProvider, useFlowEdit } from '@/contexts/FlowEditContext';
 import { CreateQuestionDialog } from '@/components/admin/flow-editing/CreateQuestionDialog';
-import { getBlockValidation, BlockValidation, BlockActivatorUnion } from '@/utils/blockValidation';
 
 interface AdminBlockDetail extends Block {
   form_id: string;
@@ -141,113 +140,6 @@ function AdminBlockDetailContent() {
       console.error('Errore nel salvataggio:', error);
       throw error;
     }
-  };
-
-  const renderActivationSources = (activators: BlockActivatorUnion[], hasDefault: boolean) => {
-    return (
-      <div className="space-y-1">
-        {hasDefault && (
-          <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
-            DEFAULT
-          </Badge>
-        )}
-        
-        {activators.map((activator, index) => (
-          <div key={index} className="text-xs text-gray-600">
-            {activator.type === 'option' ? (
-              <>
-                {activator.blockTitle} → {activator.questionId} → {activator.optionLabel}
-              </>
-            ) : (
-              <>
-                <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 mr-1">
-                  MULTI-BLOCK
-                </Badge>
-                {activator.blockTitle} → {activator.questionId} → {activator.blueprintPattern}
-              </>
-            )}
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  const renderValidationStatus = (validation: BlockValidation) => {
-    const hasActivationError = !validation.activationSources.isValid;
-    const hasLeadsToError = !validation.leadsToValidation.isValid;
-    const hasAnyError = hasActivationError || hasLeadsToError;
-
-    // Check if this is a multi-block with special leads_to back reference
-    const multiBlockActivator = validation.activationSources.activators.find(a => a.type === 'multiblock');
-    const hasBackReference = multiBlockActivator && validation.leadsToValidation.isValid;
-
-    return (
-      <div className="space-y-3">
-        <h4 className="text-sm font-medium text-gray-900 border-b border-gray-200 pb-1">
-          Verifiche Blocco
-        </h4>
-        
-        {/* Activation Sources */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            {hasActivationError ? (
-              <XCircle className="h-4 w-4 text-red-500" />
-            ) : (
-              <CheckCircle className="h-4 w-4 text-green-500" />
-            )}
-            <span className="text-sm font-medium">Attivazione da blocchi:</span>
-          </div>
-          
-          <div className="ml-6">
-            {validation.activationSources.activators.length > 0 || validation.activationSources.hasDefault ? (
-              renderActivationSources(validation.activationSources.activators, validation.activationSources.hasDefault)
-            ) : (
-              <div className="text-xs text-red-600 flex items-center gap-1">
-                <AlertTriangle className="h-3 w-3" />
-                Nessun blocco di attivazione trovato
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Leads To Validation */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            {hasLeadsToError ? (
-              <XCircle className="h-4 w-4 text-red-500" />
-            ) : (
-              <CheckCircle className="h-4 w-4 text-green-500" />
-            )}
-            <span className="text-sm font-medium">Riferimenti leads_to:</span>
-          </div>
-          
-          {hasLeadsToError ? (
-            <div className="ml-6 space-y-1">
-              {validation.leadsToValidation.errors.map((error, index) => (
-                <div key={index} className="text-xs text-red-600 flex items-center gap-1">
-                  <AlertTriangle className="h-3 w-3" />
-                  {error}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="ml-6 space-y-1">
-              <div className="text-xs text-green-600">
-                Tutti i riferimenti sono validi
-              </div>
-              {hasBackReference && multiBlockActivator && (
-                <div className="text-xs text-purple-600 flex items-center gap-1">
-                  <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700">
-                    MULTI-BLOCK
-                  </Badge>
-                  Leads to - back to: {multiBlockActivator.questionId}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    );
   };
 
   if (loading) {
@@ -414,84 +306,6 @@ function AdminBlockDetailContent() {
             </CardContent>
           </Card>
         )}
-
-        {/* Block Verification Card */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Database className="h-5 w-5" />
-              Verifica Integrità Blocco
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {(() => {
-              // Load all blocks for validation - we need this context
-              const [allBlocks, setAllBlocks] = useState<Array<Block & { form_id: string; form_title: string; form_slug: string; form_type: string }>>([]);
-              const [validationLoading, setValidationLoading] = useState(true);
-
-              useEffect(() => {
-                const loadAllBlocks = async () => {
-                  try {
-                    const { data: blocksData, error: blocksError } = await supabase
-                      .from('form_blocks')
-                      .select(`
-                        id,
-                        block_data,
-                        sort_order,
-                        form_id,
-                        forms!inner(
-                          id,
-                          title,
-                          slug,
-                          form_type
-                        )
-                      `)
-                      .order('sort_order');
-
-                    if (blocksError) throw blocksError;
-
-                    const transformedBlocks = (blocksData || []).map((item: any) => {
-                      const blockData = item.block_data as Block;
-                      return {
-                        ...blockData,
-                        form_id: item.form_id,
-                        form_title: item.forms.title,
-                        form_slug: item.forms.slug,
-                        form_type: item.forms.form_type,
-                      };
-                    });
-
-                    setAllBlocks(transformedBlocks);
-                  } catch (err) {
-                    console.error('Error loading blocks for validation:', err);
-                  } finally {
-                    setValidationLoading(false);
-                  }
-                };
-
-                loadAllBlocks();
-              }, []);
-
-              if (validationLoading) {
-                return (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="w-6 h-6 border-4 border-[#245C4F] border-t-transparent rounded-full animate-spin mr-3"></div>
-                    <span className="text-gray-600">Verifica in corso...</span>
-                  </div>
-                );
-              }
-
-              const validation = getBlockValidation(block, allBlocks);
-              const hasValidationErrors = !validation.activationSources.isValid || !validation.leadsToValidation.isValid;
-
-              return (
-                <div className={`p-4 rounded-lg border ${hasValidationErrors ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'}`}>
-                  {renderValidationStatus(validation)}
-                </div>
-              );
-            })()}
-          </CardContent>
-        </Card>
 
         <Card className="mb-6">
           <CardHeader>
