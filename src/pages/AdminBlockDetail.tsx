@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { LogOut, ArrowLeft, Blocks, Settings, Users, FileText, Hash, Database, RefreshCw, Plus, GitBranch, Save, Undo2 } from 'lucide-react';
+import { LogOut, ArrowLeft, Blocks, Settings, Users, FileText, Hash, Database, RefreshCw, Plus, GitBranch, Save, Undo2, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Block } from '@/types/form';
 import { FlowVisualization } from '@/components/admin/flow-visualization/FlowVisualization';
@@ -12,6 +12,7 @@ import { FlowVisualization } from '@/components/admin/flow-visualization/FlowVis
 import { EditableFlowChart } from '@/components/admin/flow-editing/EditableFlowChart';
 import { FlowEditProvider, useFlowEdit } from '@/contexts/FlowEditContext';
 import { CreateQuestionDialog } from '@/components/admin/flow-editing/CreateQuestionDialog';
+import { getBlockValidation, BlockValidation, BlockActivatorUnion } from '@/utils/blockValidation';
 
 interface AdminBlockDetail extends Block {
   form_id: string;
@@ -27,6 +28,7 @@ function AdminBlockDetailContent() {
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
   const [block, setBlock] = useState<AdminBlockDetail | null>(null);
+  const [allBlocks, setAllBlocks] = useState<AdminBlockDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFlowVisualization, setShowFlowVisualization] = useState(false);
@@ -48,6 +50,38 @@ function AdminBlockDetailContent() {
     try {
       setLoading(true);
       setError(null);
+
+      // Load all blocks for validation
+      const { data: allBlocksData, error: allBlocksError } = await supabase
+        .from('form_blocks')
+        .select(`
+          id,
+          block_data,
+          sort_order,
+          form_id,
+          forms!inner(
+            id,
+            title,
+            slug,
+            form_type
+          )
+        `);
+
+      if (allBlocksError) throw allBlocksError;
+
+      // Transform all blocks
+      const transformedAllBlocks: AdminBlockDetail[] = (allBlocksData || []).map((item: any) => {
+        const blockContent = item.block_data as Block;
+        return {
+          ...blockContent,
+          form_id: item.form_id,
+          form_title: item.forms.title,
+          form_slug: item.forms.slug,
+          form_type: item.forms.form_type,
+        };
+      });
+
+      setAllBlocks(transformedAllBlocks);
 
       let query = supabase
         .from('form_blocks')
@@ -142,6 +176,113 @@ function AdminBlockDetailContent() {
     }
   };
 
+  const renderActivationSources = (activators: BlockActivatorUnion[], hasDefault: boolean) => {
+    return (
+      <div className="space-y-1">
+        {hasDefault && (
+          <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+            DEFAULT
+          </Badge>
+        )}
+        
+        {activators.map((activator, index) => (
+          <div key={index} className="text-xs text-gray-600">
+            {activator.type === 'option' ? (
+              <>
+                {activator.blockTitle} → {activator.questionId} → {activator.optionLabel}
+              </>
+            ) : (
+              <>
+                <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 mr-1">
+                  MULTI-BLOCK
+                </Badge>
+                {activator.blockTitle} → {activator.questionId} → {activator.blueprintPattern}
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderValidationStatus = (validation: BlockValidation) => {
+    const hasActivationError = !validation.activationSources.isValid;
+    const hasLeadsToError = !validation.leadsToValidation.isValid;
+    const hasAnyError = hasActivationError || hasLeadsToError;
+
+    // Check if this is a multi-block with special leads_to back reference
+    const multiBlockActivator = validation.activationSources.activators.find(a => a.type === 'multiblock');
+    const hasBackReference = multiBlockActivator && validation.leadsToValidation.isValid;
+
+    return (
+      <div className="space-y-3">
+        <h4 className="text-sm font-medium text-gray-900 border-b border-gray-200 pb-1">
+          Verifiche Blocco
+        </h4>
+        
+        {/* Activation Sources */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            {hasActivationError ? (
+              <XCircle className="h-4 w-4 text-red-500" />
+            ) : (
+              <CheckCircle className="h-4 w-4 text-green-500" />
+            )}
+            <span className="text-sm font-medium">Attivazione da blocchi:</span>
+          </div>
+          
+          <div className="ml-6">
+            {validation.activationSources.activators.length > 0 || validation.activationSources.hasDefault ? (
+              renderActivationSources(validation.activationSources.activators, validation.activationSources.hasDefault)
+            ) : (
+              <div className="text-xs text-red-600 flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3" />
+                Nessun blocco di attivazione trovato
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Leads To Validation */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            {hasLeadsToError ? (
+              <XCircle className="h-4 w-4 text-red-500" />
+            ) : (
+              <CheckCircle className="h-4 w-4 text-green-500" />
+            )}
+            <span className="text-sm font-medium">Riferimenti leads_to:</span>
+          </div>
+          
+          {hasLeadsToError ? (
+            <div className="ml-6 space-y-1">
+              {validation.leadsToValidation.errors.map((error, index) => (
+                <div key={index} className="text-xs text-red-600 flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  {error}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="ml-6 space-y-1">
+              <div className="text-xs text-green-600">
+                Tutti i riferimenti sono validi
+              </div>
+              {hasBackReference && multiBlockActivator && (
+                <div className="text-xs text-purple-600 flex items-center gap-1">
+                  <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700">
+                    MULTI-BLOCK
+                  </Badge>
+                  Leads to - back to: {multiBlockActivator.questionId}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#f8f5f1] flex items-center justify-center">
@@ -210,6 +351,9 @@ function AdminBlockDetailContent() {
     }
   };
 
+  const validation = getBlockValidation(block, allBlocks);
+  const hasValidationErrors = !validation.activationSources.isValid || !validation.leadsToValidation.isValid;
+
   return (
     <div className="min-h-screen bg-[#f8f5f1]">
       {/* Header */}
@@ -229,6 +373,9 @@ function AdminBlockDetailContent() {
               <h1 className="text-2xl font-bold text-[#245C4F] flex items-center gap-2">
                 <Blocks className="h-6 w-6" />
                 Dettagli Blocco #{block.block_number}
+                {hasValidationErrors && (
+                  <AlertTriangle className="h-5 w-5 text-red-500" />
+                )}
               </h1>
               <p className="text-gray-600">
                 Form: {block.form_title} • Benvenuto, {user?.email}
@@ -307,85 +454,69 @@ function AdminBlockDetailContent() {
           </Card>
         )}
 
-        <Card className="mb-6">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-xl flex items-center gap-2 flex-wrap">
-                  <Badge variant="outline" className="text-sm font-mono">
-                    Priorità: {block.priority}
-                  </Badge>
-                  <Badge className="bg-[#245C4F]/10 text-[#245C4F] hover:bg-[#245C4F]/20">
-                    {block.form_title}
-                  </Badge>
-                  {block.title}
-                </CardTitle>
-                <p className="text-gray-600 mt-1">
-                  ID: <code className="bg-gray-100 px-2 py-1 rounded text-sm">{block.block_id}</code>
-                  <span className="mx-2">•</span>
-                  Form: <code className="bg-gray-100 px-2 py-1 rounded text-sm">{block.form_slug}</code>
-                </p>
+        {/* Block Overview Card */}
+        <Card className={`mb-6 ${hasValidationErrors ? 'border-red-200' : ''}`}>
+          <CardHeader className="pb-4">
+            <div className="space-y-3">
+              {/* Main Header */}
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle className="text-xl text-[#245C4F] flex items-center gap-2">
+                    #{block.block_number} {block.title}
+                  </CardTitle>
+                  <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                    <span>
+                      ID: <code className="bg-gray-100 px-1 rounded text-xs">{block.block_id}</code>
+                    </span>
+                    <span>•</span>
+                    <span>
+                      Form: <Badge className="bg-[#245C4F]/10 text-[#245C4F] hover:bg-[#245C4F]/20 text-xs">
+                        {block.form_title}
+                      </Badge>
+                    </span>
+                  </div>
+                </div>
+                {hasValidationErrors && (
+                  <AlertTriangle className="h-5 w-5 text-red-500" />
+                )}
               </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-3">
-                <h4 className="font-medium text-gray-900">Informazioni Base</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-gray-500" />
-                    <span className="text-gray-600">Domande:</span>
-                    <span className="font-medium">{block.questions.length}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Hash className="h-4 w-4 text-gray-500" />
-                    <span className="text-gray-600">Numero blocco:</span>
-                    <span className="font-medium">{block.block_number}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Database className="h-4 w-4 text-gray-500" />
-                    <span className="text-gray-600">Tipo form:</span>
-                    <span className="font-medium">{block.form_type}</span>
-                  </div>
-                  {block.copy_number && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-600">Copia numero:</span>
-                      <span className="font-medium">{block.copy_number}</span>
-                    </div>
-                  )}
+
+              {/* Stats Row */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-2 text-sm">
+                  <Settings className="h-4 w-4 text-gray-500" />
+                  <span className="text-gray-600">Priorità:</span>
+                  <Badge variant="outline" className="text-xs font-mono">
+                    {block.priority}
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Users className="h-4 w-4 text-gray-500" />
+                  <span className="text-gray-600">Domande:</span>
+                  <span className="font-medium">{block.questions.length}</span>
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <h4 className="font-medium text-gray-900">Proprietà</h4>
+              {/* Special Labels */}
+              {getBlockTypeLabel(block).length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {getBlockTypeLabel(block).map((label, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs">
+                    <Badge 
+                      key={index} 
+                      variant="secondary"
+                      className="text-xs bg-green-100 text-green-800"
+                    >
                       {label}
                     </Badge>
                   ))}
-                  {getBlockTypeLabel(block).length === 0 && (
-                    <span className="text-sm text-gray-500">Nessuna proprietà speciale</span>
-                  )}
-                </div>
-              </div>
-
-              {block.blueprint_id && (
-                <div className="space-y-3">
-                  <h4 className="font-medium text-gray-900">Blueprint</h4>
-                  <div className="text-sm">
-                    <div className="flex items-center gap-2">
-                      <Settings className="h-4 w-4 text-gray-500" />
-                      <span className="text-gray-600">ID Blueprint:</span>
-                    </div>
-                    <code className="bg-gray-100 px-2 py-1 rounded text-sm mt-1 block">
-                      {block.blueprint_id}
-                    </code>
-                  </div>
                 </div>
               )}
             </div>
+          </CardHeader>
+
+          <CardContent className="space-y-4">
+            {/* Block Validations */}
+            {renderValidationStatus(validation)}
           </CardContent>
         </Card>
 
