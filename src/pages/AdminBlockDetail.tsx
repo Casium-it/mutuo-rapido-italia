@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { LogOut, ArrowLeft, Blocks, Settings, Users, FileText, Hash, Database, RefreshCw, Plus, GitBranch, Save, Undo2, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { Block } from '@/types/form';
+import { Block, Placeholder } from '@/types/form';
 import { FlowVisualization } from '@/components/admin/flow-visualization/FlowVisualization';
 
 import { EditableFlowChart } from '@/components/admin/flow-editing/EditableFlowChart';
@@ -235,16 +236,17 @@ function AdminBlockDetailContent() {
   const hasQuestionLeadsToErrors = (question: any) => {
     // Check input placeholder leads_to
     for (const [key, placeholder] of Object.entries(question.placeholders)) {
-      if (placeholder.type === 'input' || placeholder.type === 'MultiBlockManager') {
-        if (placeholder.leads_to) {
-          const validation = validateSpecificLeadsTo(placeholder.leads_to, block, allBlocks);
+      const typedPlaceholder = placeholder as Placeholder;
+      if (typedPlaceholder.type === 'input' || typedPlaceholder.type === 'MultiBlockManager') {
+        if (typedPlaceholder.leads_to) {
+          const validation = validateSpecificLeadsTo(typedPlaceholder.leads_to, block, allBlocks);
           if (!validation.isValid) return true;
         }
       }
       
       // Check select placeholder options leads_to
-      if (placeholder.type === 'select' && placeholder.options) {
-        for (const option of placeholder.options) {
+      if (typedPlaceholder.type === 'select' && typedPlaceholder.options) {
+        for (const option of typedPlaceholder.options) {
           const validation = validateSpecificLeadsTo(option.leads_to, block, allBlocks);
           if (!validation.isValid) return true;
         }
