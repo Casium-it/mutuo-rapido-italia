@@ -35,7 +35,6 @@ function AdminBlockDetailContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFlowVisualization, setShowFlowVisualization] = useState(false);
-  const [editMode, setEditMode] = useState(false);
   const [createQuestionDialog, setCreateQuestionDialog] = useState(false);
   
   // Edit dialog states
@@ -476,30 +475,17 @@ function AdminBlockDetailContent() {
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <GitBranch className="h-5 w-5" />
-                  {editMode ? 'Mappa Flusso Editabile' : 'Mappa Flusso Orizzontale del Blocco'}
+                  Mappa Flusso del Blocco
                 </CardTitle>
-                <div className="flex items-center gap-2">
-                  <Button
-                    onClick={() => setEditMode(!editMode)}
-                    variant={editMode ? "default" : "outline"}
-                    size="sm"
-                    className="flex items-center gap-2"
-                  >
-                    <Settings className="h-4 w-4" />
-                    {editMode ? 'Modalità Lettura' : 'Modalità Editing'}
-                  </Button>
-                  {editMode && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center gap-2"
-                      onClick={() => setCreateQuestionDialog(true)}
-                    >
-                      <Plus className="h-4 w-4" />
-                      Nuova Domanda
-                    </Button>
-                  )}
-                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                  onClick={() => setCreateQuestionDialog(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                  Nuova Domanda
+                </Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -582,17 +568,15 @@ function AdminBlockDetailContent() {
                 <FileText className="h-5 w-5" />
                 Domande del Blocco ({block.questions.length})
               </CardTitle>
-              {editMode && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2"
-                  onClick={() => setCreateQuestionDialog(true)}
-                >
-                  <Plus className="h-4 w-4" />
-                  Nuova Domanda
-                </Button>
-              )}
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+                onClick={() => setCreateQuestionDialog(true)}
+              >
+                <Plus className="h-4 w-4" />
+                Nuova Domanda
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
