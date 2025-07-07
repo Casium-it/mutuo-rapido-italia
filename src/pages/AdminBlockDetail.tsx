@@ -577,10 +577,23 @@ function AdminBlockDetailContent() {
         {/* Questions Details */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Domande del Blocco ({block.questions.length})
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Domande del Blocco ({block.questions.length})
+              </CardTitle>
+              {editMode && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                  onClick={() => setCreateQuestionDialog(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                  Nuova Domanda
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {block.questions.length === 0 ? (
@@ -591,27 +604,25 @@ function AdminBlockDetailContent() {
             ) : (
               <div className="space-y-6">
                 {block.questions.map((question, index) => (
-                  <Card key={question.question_id} className="border-l-4 border-l-[#245C4F]">
+                  <Card key={question.question_id} className="border-l-4 border-l-[#245C4F] relative">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="absolute top-4 right-4 h-6 w-6 p-0 hover:bg-gray-100"
+                      onClick={() => handleEditQuestion(question.question_id)}
+                      title="Modifica domanda"
+                    >
+                      <Settings className="h-3 w-3 text-gray-500 hover:text-[#245C4F]" />
+                    </Button>
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
-                        <div className="space-y-3">
+                        <div className="space-y-3 pr-10">
                           <div>
-                            <CardTitle className="text-base flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="text-xs">
-                                  #{question.question_number}
-                                </Badge>
-                                Domanda {index + 1}
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0 hover:bg-gray-100"
-                                onClick={() => handleEditQuestion(question.question_id)}
-                                title="Modifica domanda"
-                              >
-                                <Settings className="h-3 w-3 text-gray-500 hover:text-[#245C4F]" />
-                              </Button>
+                            <CardTitle className="text-base flex items-center gap-2">
+                              <Badge variant="outline" className="text-xs">
+                                #{question.question_number}
+                              </Badge>
+                              Domanda {index + 1}
                             </CardTitle>
                             <div className="mt-1 space-y-1">
                               <div className="text-xs text-gray-500 flex items-center gap-2">
