@@ -1,4 +1,3 @@
-
 import { Block } from "@/types/form";
 
 interface AdminBlock extends Block {
@@ -95,6 +94,45 @@ export function findBlockActivators(targetBlockId: string, allBlocks: AdminBlock
   });
 
   return activators;
+}
+
+/**
+ * Validate a specific leads_to reference
+ */
+export function validateSpecificLeadsTo(
+  leadsTo: string, 
+  block: AdminBlock, 
+  allBlocks: AdminBlock[]
+): { isValid: boolean; error?: string } {
+  // Get all question IDs in this block for validation
+  const blockQuestionIds = new Set(block.questions.map(q => q.question_id));
+  
+  // Special valid leads_to values
+  const specialValues = new Set(['next_block', 'stop_flow', 'end_form']);
+  
+  // For multi-blocks, find the activating question ID
+  let activatingQuestionId: string | null = null;
+  if (block.multiBlock) {
+    const activators = findBlockActivators(block.block_id, allBlocks);
+    const multiBlockActivator = activators.find(a => a.type === 'multiblock') as MultiBlockActivator;
+    if (multiBlockActivator) {
+      activatingQuestionId = multiBlockActivator.questionId;
+    }
+  }
+  
+  // Check if it's a valid reference
+  const isValidReference = blockQuestionIds.has(leadsTo) || 
+                         specialValues.has(leadsTo) ||
+                         (activatingQuestionId && leadsTo === activatingQuestionId);
+  
+  if (!isValidReference) {
+    return {
+      isValid: false,
+      error: `Reference "${leadsTo}" not found`
+    };
+  }
+  
+  return { isValid: true };
 }
 
 /**

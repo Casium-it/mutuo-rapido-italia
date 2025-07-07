@@ -12,7 +12,7 @@ import { FlowVisualization } from '@/components/admin/flow-visualization/FlowVis
 import { EditableFlowChart } from '@/components/admin/flow-editing/EditableFlowChart';
 import { FlowEditProvider, useFlowEdit } from '@/contexts/FlowEditContext';
 import { CreateQuestionDialog } from '@/components/admin/flow-editing/CreateQuestionDialog';
-import { getBlockValidation, BlockValidation, BlockActivatorUnion } from '@/utils/blockValidation';
+import { getBlockValidation, BlockValidation, BlockActivatorUnion, validateSpecificLeadsTo } from '@/utils/blockValidation';
 
 interface AdminBlockDetail extends Block {
   form_id: string;
@@ -662,9 +662,24 @@ function AdminBlockDetailContent() {
                                                 <span className="font-medium text-gray-700">Label:</span>
                                                 <span className="ml-2 text-gray-600">{option.label}</span>
                                               </div>
-                                              <div>
-                                                <span className="font-medium text-gray-700">Leads to:</span>
-                                                <code className={getLeadsToStyles(option.leads_to)}>{option.leads_to}</code>
+                                              <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                  <span className="font-medium text-gray-700">Leads to:</span>
+                                                  <code className={getLeadsToStyles(option.leads_to)}>{option.leads_to}</code>
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                  {(() => {
+                                                    const validation = validateSpecificLeadsTo(option.leads_to, block, allBlocks);
+                                                    return validation.isValid ? (
+                                                      <CheckCircle className="h-4 w-4 text-green-500" />
+                                                    ) : (
+                                                      <div className="flex items-center gap-1">
+                                                        <XCircle className="h-4 w-4 text-red-500" />
+                                                        <span className="text-xs text-red-600">{validation.error}</span>
+                                                      </div>
+                                                    );
+                                                  })()}
+                                                </div>
                                               </div>
                                               {option.add_block && (
                                                 <div>
@@ -709,9 +724,24 @@ function AdminBlockDetailContent() {
                                         </div>
                                       )}
                                       {placeholder.leads_to && (
-                                        <div>
-                                          <span className="font-medium text-gray-700">Leads to:</span>
-                                          <code className={getLeadsToStyles(placeholder.leads_to)}>{placeholder.leads_to}</code>
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex items-center gap-2">
+                                            <span className="font-medium text-gray-700">Leads to:</span>
+                                            <code className={getLeadsToStyles(placeholder.leads_to)}>{placeholder.leads_to}</code>
+                                          </div>
+                                          <div className="flex items-center gap-1">
+                                            {(() => {
+                                              const validation = validateSpecificLeadsTo(placeholder.leads_to, block, allBlocks);
+                                              return validation.isValid ? (
+                                                <CheckCircle className="h-4 w-4 text-green-500" />
+                                              ) : (
+                                                <div className="flex items-center gap-1">
+                                                  <XCircle className="h-4 w-4 text-red-500" />
+                                                  <span className="text-xs text-red-600">{validation.error}</span>
+                                                </div>
+                                              );
+                                            })()}
+                                          </div>
                                         </div>
                                       )}
                                     </div>
@@ -739,9 +769,24 @@ function AdminBlockDetailContent() {
                                           <span className="ml-2 text-gray-600">{placeholder.placeholder_label}</span>
                                         </div>
                                       )}
-                                      <div>
-                                        <span className="font-medium text-gray-700">Leads to:</span>
-                                        <code className={getLeadsToStyles(placeholder.leads_to)}>{placeholder.leads_to}</code>
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-medium text-gray-700">Leads to:</span>
+                                          <code className={getLeadsToStyles(placeholder.leads_to)}>{placeholder.leads_to}</code>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                          {(() => {
+                                            const validation = validateSpecificLeadsTo(placeholder.leads_to, block, allBlocks);
+                                            return validation.isValid ? (
+                                              <CheckCircle className="h-4 w-4 text-green-500" />
+                                            ) : (
+                                              <div className="flex items-center gap-1">
+                                                <XCircle className="h-4 w-4 text-red-500" />
+                                                <span className="text-xs text-red-600">{validation.error}</span>
+                                              </div>
+                                            );
+                                          })()}
+                                        </div>
                                       </div>
                                     </div>
                                   </div>
