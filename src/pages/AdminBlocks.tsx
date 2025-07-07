@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { LogOut, ArrowLeft, Blocks, Eye, Settings, Users, Search, Database, RefreshCw } from 'lucide-react';
+import { LogOut, ArrowLeft, Blocks, Eye, Settings, Users, Search, Database, RefreshCw, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAdminBlocks } from '@/hooks/useAdminBlocks';
+import { getBlockValidation, BlockValidation } from '@/utils/blockValidation';
 
 export default function AdminBlocks() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -31,13 +32,88 @@ export default function AdminBlocks() {
     )
     .sort((a, b) => a.priority - b.priority);
 
-  const getBlockTypeLabel = (block: any) => {
+  const getSpecialLabels = (block: any) => {
     const labels = [];
     if (block.default_active) labels.push('Attivo di default');
     if (block.multiBlock) labels.push('Multi-blocco');
     if (block.invisible) labels.push('Invisibile');
-    if (block.blueprint_id) labels.push('Blueprint');
     return labels;
+  };
+
+  const renderValidationStatus = (validation: BlockValidation) => {
+    const hasActivationError = !validation.activationSources.isValid;
+    const hasLeadsToError = !validation.leadsToValidation.isValid;
+    const hasAnyError = hasActivationError || hasLeadsToError;
+
+    return (
+      <div className="space-y-3">
+        <h4 className="text-sm font-medium text-gray-900 border-b border-gray-200 pb-1">
+          Verifiche Blocco
+        </h4>
+        
+        {/* Activation Sources */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            {hasActivationError ? (
+              <XCircle className="h-4 w-4 text-red-500" />
+            ) : (
+              <CheckCircle className="h-4 w-4 text-green-500" />
+            )}
+            <span className="text-sm font-medium">Attivazione da blocchi:</span>
+          </div>
+          
+          <div className="ml-6 space-y-1">
+            {validation.activationSources.hasDefault && (
+              <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+                DEFAULT
+              </Badge>
+            )}
+            
+            {validation.activationSources.activators.map((activator, index) => (
+              <div key={index} className="text-xs text-gray-600">
+                {activator.blockTitle} → {activator.questionId} → {activator.optionLabel}
+              </div>
+            ))}
+            
+            {!validation.activationSources.isValid && (
+              <div className="text-xs text-red-600 flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3" />
+                Nessun blocco di attivazione trovato
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Leads To Validation */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            {hasLeadsToError ? (
+              <XCircle className="h-4 w-4 text-red-500" />
+            ) : (
+              <CheckCircle className="h-4 w-4 text-green-500" />
+            )}
+            <span className="text-sm font-medium">Riferimenti leads_to:</span>
+          </div>
+          
+          {hasLeadsToError && (
+            <div className="ml-6 space-y-1">
+              {validation.leadsToValidation.errors.map((error, index) => (
+                <div key={index} className="text-xs text-red-600 flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  {error}
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {!hasLeadsToError && (
+            <div className="ml-6 text-xs text-green-600">
+              Tutti i riferimenti sono validi
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   if (loading) {
@@ -210,81 +286,90 @@ export default function AdminBlocks() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4">
-            {filteredBlocks.map((block) => (
-              <Card key={`${block.form_id}-${block.block_id}`} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg flex items-center gap-2 flex-wrap">
-                        <Badge variant="outline" className="text-xs font-mono">
-                          Priorità: {block.priority}
-                        </Badge>
-                        <Badge className="text-xs bg-[#245C4F]/10 text-[#245C4F] hover:bg-[#245C4F]/20">
-                          {block.form_title}
-                        </Badge>
-                        <span className="text-[#245C4F]">#{block.block_number}</span>
-                        {block.title}
-                      </CardTitle>
-                      <p className="text-sm text-gray-500 mt-1">
-                        ID: <code className="bg-gray-100 px-1 rounded text-xs">{block.block_id}</code>
-                        <span className="mx-2">•</span>
-                        Form: <code className="bg-gray-100 px-1 rounded text-xs">{block.form_slug}</code>
-                      </p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {/* Block Properties */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Users className="h-4 w-4 text-gray-500" />
-                        <span className="text-gray-600">Domande:</span>
-                        <span className="font-medium">{block.questions.length}</span>
+          <div className="grid gap-6">
+            {filteredBlocks.map((block) => {
+              const validation = getBlockValidation(block, blocks);
+              const specialLabels = getSpecialLabels(block);
+              const hasValidationErrors = !validation.activationSources.isValid || !validation.leadsToValidation.isValid;
+
+              return (
+                <Card key={`${block.form_id}-${block.block_id}`} className={`hover:shadow-md transition-shadow ${hasValidationErrors ? 'border-red-200' : ''}`}>
+                  <CardHeader className="pb-4">
+                    <div className="space-y-3">
+                      {/* Main Header */}
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <CardTitle className="text-xl text-[#245C4F] flex items-center gap-2">
+                            #{block.block_number} {block.title}
+                          </CardTitle>
+                          <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                            <span>
+                              ID: <code className="bg-gray-100 px-1 rounded text-xs">{block.block_id}</code>
+                            </span>
+                            <span>•</span>
+                            <span>
+                              Form: <Badge className="bg-[#245C4F]/10 text-[#245C4F] hover:bg-[#245C4F]/20 text-xs">
+                                {block.form_title}
+                              </Badge>
+                            </span>
+                          </div>
+                        </div>
+                        {hasValidationErrors && (
+                          <AlertTriangle className="h-5 w-5 text-red-500" />
+                        )}
                       </div>
-                      {block.blueprint_id && (
+
+                      {/* Stats Row */}
+                      <div className="grid grid-cols-2 gap-4">
                         <div className="flex items-center gap-2 text-sm">
                           <Settings className="h-4 w-4 text-gray-500" />
-                          <span className="text-gray-600">Blueprint:</span>
-                          <code className="bg-gray-100 px-1 rounded text-xs">{block.blueprint_id}</code>
+                          <span className="text-gray-600">Priorità:</span>
+                          <Badge variant="outline" className="text-xs font-mono">
+                            {block.priority}
+                          </Badge>
                         </div>
-                      )}
-                      {block.copy_number && (
                         <div className="flex items-center gap-2 text-sm">
-                          <span className="text-gray-600">Copia numero:</span>
-                          <span className="font-medium">{block.copy_number}</span>
+                          <Users className="h-4 w-4 text-gray-500" />
+                          <span className="text-gray-600">Domande:</span>
+                          <span className="font-medium">{block.questions.length}</span>
+                        </div>
+                      </div>
+
+                      {/* Special Labels */}
+                      {specialLabels.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {specialLabels.map((label, index) => (
+                            <Badge 
+                              key={index} 
+                              variant="secondary"
+                              className="text-xs bg-green-100 text-green-800"
+                            >
+                              {label}
+                            </Badge>
+                          ))}
                         </div>
                       )}
                     </div>
-                    
-                    {/* Block Type Badges */}
-                    <div className="flex flex-wrap gap-1">
-                      {getBlockTypeLabel(block).map((label, index) => (
-                        <Badge 
-                          key={index} 
-                          variant="secondary"
-                          className="text-xs"
-                        >
-                          {label}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
+                  </CardHeader>
 
-                  {/* Action Button */}
-                  <div className="flex justify-end">
-                    <Button
-                      onClick={() => navigate(`/admin/blocks/${block.block_id}?form=${block.form_slug}`)}
-                      className="bg-[#245C4F] hover:bg-[#1e4f44] flex items-center gap-2"
-                    >
-                      <Eye className="h-4 w-4" />
-                      Visualizza Dettagli
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  <CardContent className="space-y-4">
+                    {/* Block Validations */}
+                    {renderValidationStatus(validation)}
+
+                    {/* Action Button */}
+                    <div className="flex justify-end pt-4 border-t border-gray-100">
+                      <Button
+                        onClick={() => navigate(`/admin/blocks/${block.block_id}?form=${block.form_slug}`)}
+                        className="bg-[#245C4F] hover:bg-[#1e4f44] flex items-center gap-2"
+                      >
+                        <Eye className="h-4 w-4" />
+                        Visualizza Dettagli
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </main>
