@@ -12,7 +12,7 @@ import { FlowVisualization } from '@/components/admin/flow-visualization/FlowVis
 import { EditableFlowChart } from '@/components/admin/flow-editing/EditableFlowChart';
 import { FlowEditProvider, useFlowEdit } from '@/contexts/FlowEditContext';
 import { CreateQuestionDialog } from '@/components/admin/flow-editing/CreateQuestionDialog';
-import { getBlockValidation, BlockValidation, BlockActivatorUnion } from '@/utils/blockValidation';
+import { getBlockValidation, BlockValidation, BlockActivatorUnion, validateSpecificLeadsTo } from '@/utils/blockValidation';
 
 interface AdminBlockDetail extends Block {
   form_id: string;
@@ -352,6 +352,27 @@ function AdminBlockDetailContent() {
   const validation = getBlockValidation(block, allBlocks);
   const hasValidationErrors = !validation.activationSources.isValid || !validation.leadsToValidation.isValid;
 
+  const getLeadsToError = (leadsTo: string, validation: BlockValidation): string | null => {
+    if (!block) return null;
+    
+    // Get all question IDs in this block for validation
+    const blockQuestionIds = new Set(block.questions.map(q => q.question_id));
+    
+    // Special valid leads_to values
+    const specialValues = new Set(['next_block', 'stop_flow', 'end_form']);
+
+    // For multi-blocks, find the activating question ID
+    let activatingQuestionId: string | null = null;
+    if (block.multiBlock) {
+      const multiBlockActivator = validation.activationSources.activators.find(a => a.type === 'multiblock');
+      if (multiBlockActivator && multiBlockActivator.type === 'multiblock') {
+        activatingQuestionId = multiBlockActivator.questionId;
+      }
+    }
+
+    return validateSpecificLeadsTo(leadsTo, blockQuestionIds, specialValues, activatingQuestionId);
+  };
+
   return (
     <div className="min-h-screen bg-[#f8f5f1]">
       {/* Header */}
@@ -551,7 +572,7 @@ function AdminBlockDetailContent() {
                                 ID: <code className="bg-gray-100 px-1 rounded">{question.question_id}</code>
                               </div>
                               <div className="text-xs text-gray-500">
-                                Block ID: <code className="bg-gray-100 px-1 rounded">{block.block_id}</code>
+                                Block ID: <code className="bg-gray-100 px-1 rounded">{question.block_id || 'N/A'}</code>
                               </div>
                               {question.leads_to_placeholder_priority && (
                                 <div className="text-xs">
@@ -662,9 +683,20 @@ function AdminBlockDetailContent() {
                                                 <span className="font-medium text-gray-700">Label:</span>
                                                 <span className="ml-2 text-gray-600">{option.label}</span>
                                               </div>
-                                              <div>
+                                              <div className="flex items-center justify-between">
                                                 <span className="font-medium text-gray-700">Leads to:</span>
-                                                <code className={getLeadsToStyles(option.leads_to)}>{option.leads_to}</code>
+                                                <div className="flex items-center gap-2">
+                                                  <code className={getLeadsToStyles(option.leads_to)}>{option.leads_to}</code>
+                                                  {(() => {
+                                                    const error = getLeadsToError(option.leads_to, validation);
+                                                    return error && (
+                                                      <span className="text-xs text-red-600 flex items-center gap-1">
+                                                        <AlertTriangle className="h-3 w-3" />
+                                                        {error}
+                                                      </span>
+                                                    );
+                                                  })()}
+                                                </div>
                                               </div>
                                               {option.add_block && (
                                                 <div>
@@ -709,9 +741,20 @@ function AdminBlockDetailContent() {
                                         </div>
                                       )}
                                       {placeholder.leads_to && (
-                                        <div>
+                                        <div className="flex items-center justify-between">
                                           <span className="font-medium text-gray-700">Leads to:</span>
-                                          <code className={getLeadsToStyles(placeholder.leads_to)}>{placeholder.leads_to}</code>
+                                          <div className="flex items-center gap-2">
+                                            <code className={getLeadsToStyles(placeholder.leads_to)}>{placeholder.leads_to}</code>
+                                            {(() => {
+                                              const error = getLeadsToError(placeholder.leads_to, validation);
+                                              return error && (
+                                                <span className="text-xs text-red-600 flex items-center gap-1">
+                                                  <AlertTriangle className="h-3 w-3" />
+                                                  {error}
+                                                </span>
+                                              );
+                                            })()}
+                                          </div>
                                         </div>
                                       )}
                                     </div>
@@ -739,9 +782,20 @@ function AdminBlockDetailContent() {
                                           <span className="ml-2 text-gray-600">{placeholder.placeholder_label}</span>
                                         </div>
                                       )}
-                                      <div>
+                                      <div className="flex items-center justify-between">
                                         <span className="font-medium text-gray-700">Leads to:</span>
-                                        <code className={getLeadsToStyles(placeholder.leads_to)}>{placeholder.leads_to}</code>
+                                        <div className="flex items-center gap-2">
+                                          <code className={getLeadsToStyles(placeholder.leads_to)}>{placeholder.leads_to}</code>
+                                          {(() => {
+                                            const error = getLeadsToError(placeholder.leads_to, validation);
+                                            return error && (
+                                              <span className="text-xs text-red-600 flex items-center gap-1">
+                                                <AlertTriangle className="h-3 w-3" />
+                                                {error}
+                                              </span>
+                                            );
+                                          })()}
+                                        </div>
                                       </div>
                                     </div>
                                   </div>

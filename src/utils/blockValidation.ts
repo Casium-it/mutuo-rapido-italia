@@ -1,4 +1,3 @@
-
 import { Block } from "@/types/form";
 
 interface AdminBlock extends Block {
@@ -41,6 +40,26 @@ export interface BlockValidation {
     isValid: boolean;
   };
   leadsToValidation: ValidationResult;
+}
+
+/**
+ * Validate a specific leads_to reference
+ */
+export function validateSpecificLeadsTo(
+  leadsTo: string,
+  blockQuestionIds: Set<string>,
+  specialValues: Set<string>,
+  activatingQuestionId: string | null
+): string | null {
+  const isValidReference = blockQuestionIds.has(leadsTo) || 
+                         specialValues.has(leadsTo) ||
+                         (activatingQuestionId && leadsTo === activatingQuestionId);
+  
+  if (!isValidReference) {
+    return `"${leadsTo}" non trovato`;
+  }
+  
+  return null;
 }
 
 /**
