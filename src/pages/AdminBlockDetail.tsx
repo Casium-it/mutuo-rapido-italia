@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -77,8 +78,8 @@ function AdminBlockDetailContent() {
       setLoading(true);
       setError(null);
 
-      // Load all blocks for validation
-      const { data: allBlocksData, error: allBlocksError } = await supabase
+      // Load all blocks for validation - filter by form slug if provided
+      let allBlocksQuery = supabase
         .from('form_blocks')
         .select(`
           id,
@@ -92,66 +93,44 @@ function AdminBlockDetailContent() {
             form_type
           )
         `);
+
+      // Filter by form slug if provided to avoid cross-form confusion
+      if (formSlug) {
+        allBlocksQuery = allBlocksQuery.eq('forms.slug', formSlug);
+      }
+
+      const { data: allBlocksData, error: allBlocksError } = await allBlocksQuery;
 
       if (allBlocksError) throw allBlocksError;
 
-      // Transform all blocks
+      // Transform all blocks with proper error handling
       const transformedAllBlocks: AdminBlockDetail[] = (allBlocksData || []).map((item: any) => {
-        const blockContent = item.block_data as Block;
-        return {
-          ...blockContent,
-          form_id: item.form_id,
-          form_title: item.forms.title,
-          form_slug: item.forms.slug,
-          form_type: item.forms.form_type,
-        };
-      });
+        try {
+          const blockContent = item.block_data as Block;
+          return {
+            ...blockContent,
+            form_id: item.form_id,
+            form_title: item.forms?.title || 'Unknown Form',
+            form_slug: item.forms?.slug || '',
+            form_type: item.forms?.form_type || 'general',
+          };
+        } catch (err) {
+          console.error('Error transforming block:', err, item);
+          return null;
+        }
+      }).filter(Boolean) as AdminBlockDetail[];
 
       setAllBlocks(transformedAllBlocks);
 
-      let query = supabase
-        .from('form_blocks')
-        .select(`
-          id,
-          block_data,
-          sort_order,
-          form_id,
-          forms!inner(
-            id,
-            title,
-            slug,
-            form_type
-          )
-        `);
-
-      if (formSlug) {
-        query = query.eq('forms.slug', formSlug);
-      }
-
-      const { data, error: queryError } = await query;
-
-      if (queryError) throw queryError;
-
-      const blockData = data?.find((item: any) => {
-        const blockContent = item.block_data as Block;
-        return blockContent.block_id === blockId;
-      });
+      // Find the specific block
+      const blockData = transformedAllBlocks.find((block) => block.block_id === blockId);
 
       if (!blockData) {
-        setError(`Blocco con ID "${blockId}" non trovato nel database.`);
+        setError(`Blocco con ID "${blockId}" non trovato ${formSlug ? `nel form "${formSlug}"` : 'nel database'}.`);
         return;
       }
 
-      const blockContent = blockData.block_data as Block;
-      const blockWithForm: AdminBlockDetail = {
-        ...blockContent,
-        form_id: blockData.form_id,
-        form_title: blockData.forms.title,
-        form_slug: blockData.forms.slug,
-        form_type: blockData.forms.form_type,
-      };
-
-      setBlock(blockWithForm);
+      setBlock(blockData);
     } catch (err) {
       console.error('Error loading block from database:', err);
       setError(err instanceof Error ? err.message : 'Errore sconosciuto');
@@ -165,16 +144,23 @@ function AdminBlockDetailContent() {
 
     try {
       // Find the specific form_blocks record to update
-      const { data: blockRecords, error: fetchError } = await supabase
+      let query = supabase
         .from('form_blocks')
-        .select('id, block_data')
+        .select('id, block_data, form_id')
         .eq('form_id', block.form_id);
+
+      const { data: blockRecords, error: fetchError } = await query;
 
       if (fetchError) throw fetchError;
 
       const targetRecord = blockRecords?.find((record: any) => {
-        const blockContent = record.block_data as Block;
-        return blockContent.block_id === blockId;
+        try {
+          const blockContent = record.block_data as Block;
+          return blockContent.block_id === blockId;
+        } catch (err) {
+          console.error('Error checking block record:', err, record);
+          return false;
+        }
       });
 
       if (!targetRecord) {
@@ -215,48 +201,59 @@ function AdminBlockDetailContent() {
     setOptionEditDialog({ open: true, questionId, placeholderKey, optionIndex });
   };
 
-  // Get current question, placeholder, and option for dialogs
+  // Get current question, placeholder, and option for dialogs with proper null checks
   const getCurrentQuestion = () => {
-    if (!block) return null;
-    return block.questions.find(q => q.question_id === questionEditDialog.questionId);
+    if (!block || !questionEditDialog.questionId) return null;
+    return block.questions?.find(q => q.question_id === questionEditDialog.questionId) || null;
   };
 
   const getCurrentPlaceholder = () => {
-    if (!block) return null;
-    const question = block.questions.find(q => q.question_id === placeholderEditDialog.questionId);
-    return question ? question.placeholders[placeholderEditDialog.placeholderKey] : null;
+    if (!block || !placeholderEditDialog.questionId || !placeholderEditDialog.placeholderKey) return null;
+    const question = block.questions?.find(q => q.question_id === placeholderEditDialog.questionId);
+    return question?.placeholders?.[placeholderEditDialog.placeholderKey] || null;
   };
 
   const getCurrentOption = () => {
-    if (!block) return null;
-    const question = block.questions.find(q => q.question_id === optionEditDialog.questionId);
+    if (!block || !optionEditDialog.questionId || !optionEditDialog.placeholderKey || optionEditDialog.optionIndex < 0) return null;
+    const question = block.questions?.find(q => q.question_id === optionEditDialog.questionId);
     if (!question) return null;
-    const placeholder = question.placeholders[optionEditDialog.placeholderKey];
+    const placeholder = question.placeholders?.[optionEditDialog.placeholderKey];
     if (!placeholder || placeholder.type !== 'select') return null;
     return placeholder.options?.[optionEditDialog.optionIndex] || null;
   };
 
-  // Check if a question has leads_to validation errors
+  // Check if a question has leads_to validation errors with proper error handling
   const hasQuestionLeadsToErrors = (question: any) => {
-    // Check input placeholder leads_to
-    for (const [key, placeholder] of Object.entries(question.placeholders)) {
-      const typedPlaceholder = placeholder as Placeholder;
-      if (typedPlaceholder.type === 'input' || typedPlaceholder.type === 'MultiBlockManager') {
-        if (typedPlaceholder.leads_to) {
-          const validation = validateSpecificLeadsTo(typedPlaceholder.leads_to, block, allBlocks);
-          if (!validation.isValid) return true;
+    if (!question || !block || !allBlocks.length) return false;
+    
+    try {
+      // Check input placeholder leads_to
+      if (question.placeholders) {
+        for (const [key, placeholder] of Object.entries(question.placeholders)) {
+          const typedPlaceholder = placeholder as Placeholder;
+          if (typedPlaceholder.type === 'input' || typedPlaceholder.type === 'MultiBlockManager') {
+            if (typedPlaceholder.leads_to) {
+              const validation = validateSpecificLeadsTo(typedPlaceholder.leads_to, block, allBlocks);
+              if (!validation.isValid) return true;
+            }
+          }
+          
+          // Check select placeholder options leads_to
+          if (typedPlaceholder.type === 'select' && typedPlaceholder.options) {
+            for (const option of typedPlaceholder.options) {
+              if (option.leads_to) {
+                const validation = validateSpecificLeadsTo(option.leads_to, block, allBlocks);
+                if (!validation.isValid) return true;
+              }
+            }
+          }
         }
       }
-      
-      // Check select placeholder options leads_to
-      if (typedPlaceholder.type === 'select' && typedPlaceholder.options) {
-        for (const option of typedPlaceholder.options) {
-          const validation = validateSpecificLeadsTo(option.leads_to, block, allBlocks);
-          if (!validation.isValid) return true;
-        }
-      }
+      return false;
+    } catch (err) {
+      console.error('Error checking question leads_to errors:', err, question);
+      return false;
     }
-    return false;
   };
 
   const renderActivationSources = (activators: BlockActivatorUnion[], hasDefault: boolean) => {
@@ -402,6 +399,18 @@ function AdminBlockDetailContent() {
     );
   }
 
+  // Don't render validation or other complex components until all data is loaded
+  if (!allBlocks.length) {
+    return (
+      <div className="min-h-screen bg-[#f8f5f1] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-[#245C4F] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Caricamento dati di validazione...</p>
+        </div>
+      </div>
+    );
+  }
+
   const getBlockTypeLabel = (block: any) => {
     const labels = [];
     if (block.default_active) labels.push('Attivo di default');
@@ -432,8 +441,16 @@ function AdminBlockDetailContent() {
     }
   };
 
-  const validation = getBlockValidation(block, allBlocks);
-  const hasValidationErrors = !validation.activationSources.isValid || !validation.leadsToValidation.isValid;
+  let validation: BlockValidation | null = null;
+  let hasValidationErrors = false;
+
+  try {
+    validation = getBlockValidation(block, allBlocks);
+    hasValidationErrors = !validation.activationSources.isValid || !validation.leadsToValidation.isValid;
+  } catch (err) {
+    console.error('Error getting block validation:', err);
+    hasValidationErrors = false;
+  }
 
   return (
     <div className="min-h-screen bg-[#f8f5f1]">
@@ -561,7 +578,7 @@ function AdminBlockDetailContent() {
                 <div className="flex items-center gap-2 text-sm">
                   <Users className="h-4 w-4 text-gray-500" />
                   <span className="text-gray-600">Domande:</span>
-                  <span className="font-medium">{block.questions.length}</span>
+                  <span className="font-medium">{block.questions?.length || 0}</span>
                 </div>
               </div>
 
@@ -583,8 +600,8 @@ function AdminBlockDetailContent() {
           </CardHeader>
 
           <CardContent className="space-y-4">
-            {/* Block Validations */}
-            {renderValidationStatus(validation)}
+            {/* Block Validations - only render if validation is available */}
+            {validation && renderValidationStatus(validation)}
           </CardContent>
         </Card>
 
@@ -594,7 +611,7 @@ function AdminBlockDetailContent() {
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
-                Domande del Blocco ({block.questions.length})
+                Domande del Blocco ({block.questions?.length || 0})
               </CardTitle>
               <Button
                 variant="outline"
@@ -608,7 +625,7 @@ function AdminBlockDetailContent() {
             </div>
           </CardHeader>
           <CardContent>
-            {block.questions.length === 0 ? (
+            {!block.questions || block.questions.length === 0 ? (
               <div className="text-center py-8">
                 <FileText className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                 <p className="text-gray-500">Nessuna domanda in questo blocco</p>
@@ -708,9 +725,9 @@ function AdminBlockDetailContent() {
                         {/* Placeholders */}
                         <div>
                           <h5 className="font-medium text-gray-900 mb-3">
-                            Placeholder ({Object.keys(question.placeholders).length})
+                            Placeholder ({Object.keys(question.placeholders || {}).length})
                           </h5>
-                          {Object.keys(question.placeholders).length === 0 ? (
+                          {!question.placeholders || Object.keys(question.placeholders).length === 0 ? (
                             <p className="text-gray-500 text-sm">Nessun placeholder configurato</p>
                           ) : (
                             <div className="grid gap-4">
@@ -755,8 +772,15 @@ function AdminBlockDetailContent() {
                                         </span>
                                         <div className="mt-2 space-y-2">
                                           {placeholder.options?.map((option, optIndex) => {
-                                            const optionValidation = validateSpecificLeadsTo(option.leads_to, block, allBlocks);
-                                            const hasOptionError = !optionValidation.isValid;
+                                            let hasOptionError = false;
+                                            try {
+                                              const optionValidation = validateSpecificLeadsTo(option.leads_to, block, allBlocks);
+                                              hasOptionError = !optionValidation.isValid;
+                                            } catch (err) {
+                                              console.error('Error validating option leads_to:', err);
+                                              hasOptionError = false;
+                                            }
+                                            
                                             return (
                                               <div key={optIndex} className={`bg-gray-50 rounded p-3 ${hasOptionError ? 'border-l-2 border-red-500' : 'border-l-2 border-blue-200'}`}>
                                                 <div className="space-y-2 text-sm">
@@ -785,13 +809,13 @@ function AdminBlockDetailContent() {
                                                       <code className={getLeadsToStyles(option.leads_to)}>{option.leads_to}</code>
                                                     </div>
                                                     <div className="flex items-center gap-1">
-                                                      {optionValidation.isValid ? (
-                                                        <CheckCircle className="h-4 w-4 text-green-500" />
-                                                      ) : (
+                                                      {hasOptionError ? (
                                                         <div className="flex items-center gap-1">
                                                           <XCircle className="h-4 w-4 text-red-500" />
-                                                          <span className="text-xs text-red-600">{optionValidation.error}</span>
+                                                          <span className="text-xs text-red-600">Errore validazione</span>
                                                         </div>
+                                                      ) : (
+                                                        <CheckCircle className="h-4 w-4 text-green-500" />
                                                       )}
                                                     </div>
                                                   </div>
@@ -846,15 +870,20 @@ function AdminBlockDetailContent() {
                                             </div>
                                             <div className="flex items-center gap-1">
                                               {(() => {
-                                                const validation = validateSpecificLeadsTo(placeholder.leads_to, block, allBlocks);
-                                                return validation.isValid ? (
-                                                  <CheckCircle className="h-4 w-4 text-green-500" />
-                                                ) : (
-                                                  <div className="flex items-center gap-1">
-                                                    <XCircle className="h-4 w-4 text-red-500" />
-                                                    <span className="text-xs text-red-600">{validation.error}</span>
-                                                  </div>
-                                                );
+                                                try {
+                                                  const validation = validateSpecificLeadsTo(placeholder.leads_to, block, allBlocks);
+                                                  return validation.isValid ? (
+                                                    <CheckCircle className="h-4 w-4 text-green-500" />
+                                                  ) : (
+                                                    <div className="flex items-center gap-1">
+                                                      <XCircle className="h-4 w-4 text-red-500" />
+                                                      <span className="text-xs text-red-600">{validation.error}</span>
+                                                    </div>
+                                                  );
+                                                } catch (err) {
+                                                  console.error('Error validating input leads_to:', err);
+                                                  return <XCircle className="h-4 w-4 text-red-500" />;
+                                                }
                                               })()}
                                             </div>
                                           </div>
@@ -891,15 +920,20 @@ function AdminBlockDetailContent() {
                                           </div>
                                           <div className="flex items-center gap-1">
                                             {(() => {
-                                              const validation = validateSpecificLeadsTo(placeholder.leads_to, block, allBlocks);
-                                              return validation.isValid ? (
-                                                <CheckCircle className="h-4 w-4 text-green-500" />
-                                              ) : (
-                                                <div className="flex items-center gap-1">
-                                                  <XCircle className="h-4 w-4 text-red-500" />
-                                                  <span className="text-xs text-red-600">{validation.error}</span>
-                                                </div>
-                                              );
+                                              try {
+                                                const validation = validateSpecificLeadsTo(placeholder.leads_to, block, allBlocks);
+                                                return validation.isValid ? (
+                                                  <CheckCircle className="h-4 w-4 text-green-500" />
+                                                ) : (
+                                                  <div className="flex items-center gap-1">
+                                                    <XCircle className="h-4 w-4 text-red-500" />
+                                                    <span className="text-xs text-red-600">{validation.error}</span>
+                                                  </div>
+                                                );
+                                              } catch (err) {
+                                                console.error('Error validating MultiBlockManager leads_to:', err);
+                                                return <XCircle className="h-4 w-4 text-red-500" />;
+                                              }
                                             })()}
                                           </div>
                                         </div>
@@ -973,7 +1007,7 @@ function AdminBlockDetailContent() {
   );
 }
 
-// Edit Controls Component
+// Edit Controls Component with improved error handling
 function EditControls() {
   const { state, saveChanges, saveWithoutValidation, undoLastChange, canUndo, validateBeforeSave } = useFlowEdit();
   const { blockId } = useParams<{ blockId: string }>();
@@ -985,11 +1019,11 @@ function EditControls() {
     validationErrors: any;
   }>({ open: false, validationErrors: null });
   
-  // Load all blocks for validation
+  // Load all blocks for validation with improved error handling
   useEffect(() => {
     const loadAllBlocks = async () => {
       try {
-        const { data: allBlocksData, error: allBlocksError } = await supabase
+        let query = supabase
           .from('form_blocks')
           .select(`
             id,
@@ -1004,27 +1038,40 @@ function EditControls() {
             )
           `);
 
+        // Filter by form slug if provided to avoid cross-form confusion
+        if (formSlug) {
+          query = query.eq('forms.slug', formSlug);
+        }
+
+        const { data: allBlocksData, error: allBlocksError } = await query;
+
         if (allBlocksError) throw allBlocksError;
 
         const transformedAllBlocks = (allBlocksData || []).map((item: any) => {
-          const blockContent = item.block_data as Block;
-          return {
-            ...blockContent,
-            form_id: item.form_id,
-            form_title: item.forms.title,
-            form_slug: item.forms.slug,
-            form_type: item.forms.form_type,
-          };
-        });
+          try {
+            const blockContent = item.block_data as Block;
+            return {
+              ...blockContent,
+              form_id: item.form_id,
+              form_title: item.forms?.title || 'Unknown Form',
+              form_slug: item.forms?.slug || '',
+              form_type: item.forms?.form_type || 'general',
+            };
+          } catch (err) {
+            console.error('Error transforming block in EditControls:', err, item);
+            return null;
+          }
+        }).filter(Boolean);
 
         setAllBlocks(transformedAllBlocks);
       } catch (error) {
         console.error('Error loading all blocks for validation:', error);
+        setAllBlocks([]); // Set empty array on error to prevent crashes
       }
     };
 
     loadAllBlocks();
-  }, []);
+  }, [formSlug]);
 
   const handleSaveClick = async () => {
     if (allBlocks.length === 0) {
@@ -1033,24 +1080,35 @@ function EditControls() {
       return;
     }
 
-    // Run validation before save
-    const validationResult = validateBeforeSave(allBlocks);
-    
-    if (!validationResult.isValid) {
-      // Show validation dialog
-      setPreSaveValidationDialog({
-        open: true,
-        validationErrors: validationResult
-      });
-    } else {
-      // No validation errors, proceed with save
+    try {
+      // Run validation before save
+      const validationResult = validateBeforeSave(allBlocks);
+      
+      if (!validationResult.isValid) {
+        // Show validation dialog
+        setPreSaveValidationDialog({
+          open: true,
+          validationErrors: validationResult
+        });
+      } else {
+        // No validation errors, proceed with save
+        await saveWithoutValidation();
+      }
+    } catch (error) {
+      console.error('Error during validation:', error);
+      // If validation fails, proceed with save anyway
       await saveWithoutValidation();
     }
   };
 
   const handleSaveAnyway = async () => {
-    await saveWithoutValidation();
-    setPreSaveValidationDialog({ open: false, validationErrors: null });
+    try {
+      await saveWithoutValidation();
+      setPreSaveValidationDialog({ open: false, validationErrors: null });
+    } catch (error) {
+      console.error('Error saving anyway:', error);
+      setPreSaveValidationDialog({ open: false, validationErrors: null });
+    }
   };
 
   return (
@@ -1115,7 +1173,7 @@ export default function AdminBlockDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load block data first
+  // Load block data first with improved error handling
   useEffect(() => {
     const loadBlock = async () => {
       if (!blockId) return;
@@ -1139,7 +1197,7 @@ export default function AdminBlockDetail() {
             )
           `);
 
-        // If we have a form filter, use it
+        // Filter by form slug if provided to avoid cross-form confusion
         if (formSlug) {
           query = query.eq('forms.slug', formSlug);
         }
@@ -1150,25 +1208,35 @@ export default function AdminBlockDetail() {
 
         // Find the block with matching block_id in the block_data
         const blockData = data?.find((item: any) => {
-          const blockContent = item.block_data as Block;
-          return blockContent.block_id === blockId;
+          try {
+            const blockContent = item.block_data as Block;
+            return blockContent.block_id === blockId;
+          } catch (err) {
+            console.error('Error checking block content:', err, item);
+            return false;
+          }
         });
 
         if (!blockData) {
-          setError(`Blocco con ID "${blockId}" non trovato nel database.`);
+          setError(`Blocco con ID "${blockId}" non trovato ${formSlug ? `nel form "${formSlug}"` : 'nel database'}.`);
           return;
         }
 
-        const blockContent = blockData.block_data as Block;
-        const blockWithForm: AdminBlockDetail = {
-          ...blockContent,
-          form_id: blockData.form_id,
-          form_title: blockData.forms.title,
-          form_slug: blockData.forms.slug,
-          form_type: blockData.forms.form_type,
-        };
+        try {
+          const blockContent = blockData.block_data as Block;
+          const blockWithForm: AdminBlockDetail = {
+            ...blockContent,
+            form_id: blockData.form_id,
+            form_title: blockData.forms?.title || 'Unknown Form',
+            form_slug: blockData.forms?.slug || '',
+            form_type: blockData.forms?.form_type || 'general',
+          };
 
-        setBlock(blockWithForm);
+          setBlock(blockWithForm);
+        } catch (err) {
+          console.error('Error transforming block data:', err, blockData);
+          setError('Errore nella trasformazione dei dati del blocco');
+        }
       } catch (err) {
         console.error('Error loading block from database:', err);
         setError(err instanceof Error ? err.message : 'Errore sconosciuto');
@@ -1177,7 +1245,7 @@ export default function AdminBlockDetail() {
       }
     };
     loadBlock();
-  }, []);
+  }, [blockId, formSlug]);
 
   const loadBlockFromDatabase = async () => {
     if (!blockId) return;
@@ -1210,25 +1278,35 @@ export default function AdminBlockDetail() {
       if (queryError) throw queryError;
 
       const blockData = data?.find((item: any) => {
-        const blockContent = item.block_data as Block;
-        return blockContent.block_id === blockId;
+        try {
+          const blockContent = item.block_data as Block;
+          return blockContent.block_id === blockId;
+        } catch (err) {
+          console.error('Error checking block content in refresh:', err, item);
+          return false;
+        }
       });
 
       if (!blockData) {
-        setError(`Blocco con ID "${blockId}" non trovato nel database.`);
+        setError(`Blocco con ID "${blockId}" non trovato ${formSlug ? `nel form "${formSlug}"` : 'nel database'}.`);
         return;
       }
 
-      const blockContent = blockData.block_data as Block;
-      const blockWithForm: AdminBlockDetail = {
-        ...blockContent,
-        form_id: blockData.form_id,
-        form_title: blockData.forms.title,
-        form_slug: blockData.forms.slug,
-        form_type: blockData.forms.form_type,
-      };
+      try {
+        const blockContent = blockData.block_data as Block;
+        const blockWithForm: AdminBlockDetail = {
+          ...blockContent,
+          form_id: blockData.form_id,
+          form_title: blockData.forms?.title || 'Unknown Form',
+          form_slug: blockData.forms?.slug || '',
+          form_type: blockData.forms?.form_type || 'general',
+        };
 
-      setBlock(blockWithForm);
+        setBlock(blockWithForm);
+      } catch (err) {
+        console.error('Error transforming block data in refresh:', err, blockData);
+        setError('Errore nella trasformazione dei dati del blocco');
+      }
     } catch (err) {
       console.error('Error loading block from database:', err);
       setError(err instanceof Error ? err.message : 'Errore sconosciuto');
@@ -1238,7 +1316,14 @@ export default function AdminBlockDetail() {
   };
 
   if (loading || !block) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen bg-[#f8f5f1] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-[#245C4F] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Caricamento blocco...</p>
+        </div>
+      </div>
+    );
   }
 
   const handleSaveBlock = async (updatedBlock: Block) => {
@@ -1254,8 +1339,13 @@ export default function AdminBlockDetail() {
       if (fetchError) throw fetchError;
 
       const targetRecord = blockRecords?.find((record: any) => {
-        const blockContent = record.block_data as Block;
-        return blockContent.block_id === blockId;
+        try {
+          const blockContent = record.block_data as Block;
+          return blockContent.block_id === blockId;
+        } catch (err) {
+          console.error('Error checking target record:', err, record);
+          return false;
+        }
       });
 
       if (!targetRecord) {

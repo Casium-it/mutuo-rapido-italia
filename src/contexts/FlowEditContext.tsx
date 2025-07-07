@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { Block, Question, Placeholder, PlaceholderOption } from '@/types/form';
 import { validateLeadsTo, ValidationResult } from '@/utils/blockValidation';
@@ -120,19 +121,40 @@ export const FlowEditProvider: React.FC<FlowEditProviderProps> = ({
   }, []);
 
   const validateBeforeSave = useCallback((allBlocks: any[]): ValidationResult => {
-    // Cast the block to the expected interface type for validation
-    const blockForValidation = {
-      ...state.blockData,
-      form_id: '',
-      form_title: '',
-      form_slug: '',
-      form_type: ''
-    };
-    
-    return validateLeadsTo(blockForValidation, allBlocks);
+    try {
+      // Ensure we have valid data before validation
+      if (!state.blockData || !allBlocks || allBlocks.length === 0) {
+        console.warn('Missing data for validation:', { blockData: !!state.blockData, allBlocksLength: allBlocks?.length || 0 });
+        return { isValid: true, errors: [], warnings: [] };
+      }
+
+      // Cast the block to the expected interface type for validation
+      const blockForValidation = {
+        ...state.blockData,
+        form_id: '',
+        form_title: '',
+        form_slug: '',
+        form_type: ''
+      };
+      
+      return validateLeadsTo(blockForValidation, allBlocks);
+    } catch (error) {
+      console.error('Error during validation:', error);
+      // Return a safe default if validation fails
+      return { 
+        isValid: false, 
+        errors: ['Errore durante la validazione'], 
+        warnings: [] 
+      };
+    }
   }, [state.blockData]);
 
   const saveWithoutValidation = useCallback(async () => {
+    if (!state.blockData) {
+      console.error('No block data to save');
+      return;
+    }
+
     setState(prev => ({ ...prev, isAutoSaving: true }));
     
     try {
@@ -155,6 +177,7 @@ export const FlowEditProvider: React.FC<FlowEditProviderProps> = ({
         isAutoSaving: false,
         validationErrors: [{ field: 'general', message: 'Errore nel salvataggio' }]
       }));
+      throw error; // Re-throw to let caller handle
     }
   }, [state.blockData, onSave, onRefresh]);
 
@@ -168,9 +191,17 @@ export const FlowEditProvider: React.FC<FlowEditProviderProps> = ({
       if (prev.changes.length === 0) return prev;
       
       const lastChange = prev.changes[prev.changes.length - 1];
+      const restoredBlockData = lastChange.oldValue;
+      
+      // Ensure restored data is valid
+      if (!restoredBlockData || typeof restoredBlockData !== 'object') {
+        console.error('Invalid data to restore:', restoredBlockData);
+        return prev;
+      }
+
       return {
         ...prev,
-        blockData: lastChange.oldValue,
+        blockData: restoredBlockData,
         changes: prev.changes.slice(0, -1),
         hasUnsavedChanges: prev.changes.length > 1
       };

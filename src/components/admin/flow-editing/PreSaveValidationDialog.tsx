@@ -18,7 +18,7 @@ interface PreSaveValidationDialogProps {
   onClose: () => void;
   onCancel: () => void;
   onSaveAnyway: () => void;
-  validationErrors: ValidationResult;
+  validationErrors: ValidationResult | null;
   isLoading?: boolean;
 }
 
@@ -40,6 +40,17 @@ export const PreSaveValidationDialog: React.FC<PreSaveValidationDialogProps> = (
     onClose();
   };
 
+  // Handle case where validationErrors is null or undefined
+  const errors = validationErrors?.errors || [];
+  const warnings = validationErrors?.warnings || [];
+  const hasErrors = errors.length > 0;
+  const hasWarnings = warnings.length > 0;
+
+  // Don't render if no validation errors provided
+  if (!validationErrors || (!hasErrors && !hasWarnings)) {
+    return null;
+  }
+
   return (
     <AlertDialog open={open} onOpenChange={onClose}>
       <AlertDialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -55,28 +66,30 @@ export const PreSaveValidationDialog: React.FC<PreSaveValidationDialogProps> = (
         </AlertDialogHeader>
 
         <div className="space-y-4">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <h4 className="font-medium text-red-800 mb-3 flex items-center gap-2">
-              <XCircle className="h-4 w-4" />
-              Errori nei Riferimenti leads_to ({validationErrors.errors.length})
-            </h4>
-            <div className="space-y-2">
-              {validationErrors.errors.map((error, index) => (
-                <div key={index} className="text-sm text-red-700 bg-white rounded p-2 border border-red-100">
-                  {error}
-                </div>
-              ))}
+          {hasErrors && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <h4 className="font-medium text-red-800 mb-3 flex items-center gap-2">
+                <XCircle className="h-4 w-4" />
+                Errori nei Riferimenti leads_to ({errors.length})
+              </h4>
+              <div className="space-y-2">
+                {errors.map((error, index) => (
+                  <div key={index} className="text-sm text-red-700 bg-white rounded p-2 border border-red-100">
+                    {error}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
-          {validationErrors.warnings.length > 0 && (
+          {hasWarnings && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
               <h4 className="font-medium text-yellow-800 mb-3 flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4" />
-                Avvisi ({validationErrors.warnings.length})
+                Avvisi ({warnings.length})
               </h4>
               <div className="space-y-2">
-                {validationErrors.warnings.map((warning, index) => (
+                {warnings.map((warning, index) => (
                   <div key={index} className="text-sm text-yellow-700 bg-white rounded p-2 border border-yellow-100">
                     {warning}
                   </div>
