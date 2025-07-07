@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { LogOut, ArrowLeft, Blocks, Settings, Users, FileText, Hash, Database, RefreshCw, Plus, GitBranch, Save, Undo2, AlertTriangle, CheckCircle, XCircle, Edit2 } from 'lucide-react';
+import { LogOut, ArrowLeft, Blocks, Settings, Users, FileText, Hash, Database, RefreshCw, Plus, GitBranch, Save, Undo2, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Block } from '@/types/form';
 import { FlowVisualization } from '@/components/admin/flow-visualization/FlowVisualization';
@@ -596,11 +596,13 @@ function AdminBlockDetailContent() {
                       <div className="flex items-start justify-between">
                         <div className="space-y-3">
                           <div>
-                            <CardTitle className="text-base flex items-center gap-2">
-                              <Badge variant="outline" className="text-xs">
-                                #{question.question_number}
-                              </Badge>
-                              Domanda {index + 1}
+                            <CardTitle className="text-base flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="text-xs">
+                                  #{question.question_number}
+                                </Badge>
+                                Domanda {index + 1}
+                              </div>
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -608,21 +610,12 @@ function AdminBlockDetailContent() {
                                 onClick={() => handleEditQuestion(question.question_id)}
                                 title="Modifica domanda"
                               >
-                                <Edit2 className="h-3 w-3 text-gray-500 hover:text-[#245C4F]" />
+                                <Settings className="h-3 w-3 text-gray-500 hover:text-[#245C4F]" />
                               </Button>
                             </CardTitle>
                             <div className="mt-1 space-y-1">
                               <div className="text-xs text-gray-500 flex items-center gap-2">
                                 ID: <code className="bg-gray-100 px-1 rounded">{question.question_id}</code>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-4 w-4 p-0 hover:bg-gray-100"
-                                  onClick={() => handleEditQuestion(question.question_id)}
-                                  title="Modifica ID domanda"
-                                >
-                                  <Edit2 className="h-2 w-2 text-gray-400 hover:text-[#245C4F]" />
-                                </Button>
                               </div>
                               <div className="text-xs text-gray-500">
                                 Block ID: <code className="bg-gray-100 px-1 rounded">{block.block_id}</code>
@@ -698,26 +691,28 @@ function AdminBlockDetailContent() {
                           <div className="grid gap-4">
                             {Object.entries(question.placeholders).map(([key, placeholder]) => (
                               <div key={key} className="border rounded-lg p-4 bg-white shadow-sm">
-                                <div className="flex items-center gap-2 mb-3">
-                                  {getPlaceholderTypeIcon(placeholder.type)}
-                                  <span className="font-semibold text-base">{key}</span>
-                                  <Badge variant="outline" className="text-xs flex items-center gap-1">
-                                    {placeholder.type}
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-4 w-4 p-0 hover:bg-gray-100"
-                                      onClick={() => handleEditPlaceholder(question.question_id, key)}
-                                      title="Modifica placeholder"
-                                    >
-                                      <Edit2 className="h-2 w-2 text-gray-400 hover:text-[#245C4F]" />
-                                    </Button>
-                                  </Badge>
-                                  {question.leads_to_placeholder_priority === key && (
-                                    <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-                                      PRIORITÀ
+                                <div className="flex items-center justify-between mb-3">
+                                  <div className="flex items-center gap-2">
+                                    {getPlaceholderTypeIcon(placeholder.type)}
+                                    <span className="font-semibold text-base">{key}</span>
+                                    <Badge variant="outline" className="text-xs flex items-center gap-1">
+                                      {placeholder.type}
                                     </Badge>
-                                  )}
+                                    {question.leads_to_placeholder_priority === key && (
+                                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                                        PRIORITÀ
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0 hover:bg-gray-100"
+                                    onClick={() => handleEditPlaceholder(question.question_id, key)}
+                                    title="Modifica placeholder"
+                                  >
+                                    <Settings className="h-3 w-3 text-gray-500 hover:text-[#245C4F]" />
+                                  </Button>
                                 </div>
                                 
                                 {/* Select Placeholder Details */}
@@ -749,7 +744,7 @@ function AdminBlockDetailContent() {
                                                   onClick={() => handleEditOption(question.question_id, key, optIndex)}
                                                   title="Modifica opzione"
                                                 >
-                                                  <Edit2 className="h-3 w-3 text-gray-400 hover:text-[#245C4F]" />
+                                                  <Settings className="h-3 w-3 text-gray-500 hover:text-[#245C4F]" />
                                                 </Button>
                                               </div>
                                               <div>
