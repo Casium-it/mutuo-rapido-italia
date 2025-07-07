@@ -1049,6 +1049,64 @@ export default function AdminBlockDetail() {
     loadBlock();
   }, []);
 
+  const loadBlockFromDatabase = async () => {
+    if (!blockId) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      let query = supabase
+        .from('form_blocks')
+        .select(`
+          id,
+          block_data,
+          sort_order,
+          form_id,
+          forms!inner(
+            id,
+            title,
+            slug,
+            form_type
+          )
+        `);
+
+      if (formSlug) {
+        query = query.eq('forms.slug', formSlug);
+      }
+
+      const { data, error: queryError } = await query;
+
+      if (queryError) throw queryError;
+
+      const blockData = data?.find((item: any) => {
+        const blockContent = item.block_data as Block;
+        return blockContent.block_id === blockId;
+      });
+
+      if (!blockData) {
+        setError(`Blocco con ID "${blockId}" non trovato nel database.`);
+        return;
+      }
+
+      const blockContent = blockData.block_data as Block;
+      const blockWithForm: AdminBlockDetail = {
+        ...blockContent,
+        form_id: blockData.form_id,
+        form_title: blockData.forms.title,
+        form_slug: blockData.forms.slug,
+        form_type: blockData.forms.form_type,
+      };
+
+      setBlock(blockWithForm);
+    } catch (err) {
+      console.error('Error loading block from database:', err);
+      setError(err instanceof Error ? err.message : 'Errore sconosciuto');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading || !block) {
     return <div>Loading...</div>;
   }
@@ -1096,7 +1154,11 @@ export default function AdminBlockDetail() {
   };
 
   return (
-    <FlowEditProvider initialBlock={block} onSave={handleSaveBlock}>
+    <FlowEditProvider 
+      initialBlock={block} 
+      onSave={handleSaveBlock}
+      onRefresh={loadBlockFromDatabase}
+    >
       <AdminBlockDetailContent />
       <EditControls />
     </FlowEditProvider>

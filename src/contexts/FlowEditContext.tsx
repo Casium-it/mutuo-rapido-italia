@@ -58,12 +58,14 @@ interface FlowEditProviderProps {
   children: React.ReactNode;
   initialBlock: Block;
   onSave: (block: Block) => Promise<void>;
+  onRefresh?: () => Promise<void>;
 }
 
 export const FlowEditProvider: React.FC<FlowEditProviderProps> = ({
   children,
   initialBlock,
-  onSave
+  onSave,
+  onRefresh
 }) => {
   const [state, setState] = useState<FlowEditState>({
     editingElement: null,
@@ -123,6 +125,11 @@ export const FlowEditProvider: React.FC<FlowEditProviderProps> = ({
         hasUnsavedChanges: false,
         isAutoSaving: false
       }));
+      
+      // Refresh data after successful save
+      if (onRefresh) {
+        await onRefresh();
+      }
     } catch (error) {
       console.error('Failed to save changes:', error);
       setState(prev => ({
@@ -131,7 +138,7 @@ export const FlowEditProvider: React.FC<FlowEditProviderProps> = ({
         validationErrors: [{ field: 'general', message: 'Errore nel salvataggio' }]
       }));
     }
-  }, [state.blockData, onSave]);
+  }, [state.blockData, onSave, onRefresh]);
 
   const undoLastChange = useCallback(() => {
     setState(prev => {
