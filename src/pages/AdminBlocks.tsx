@@ -9,7 +9,7 @@ import { LogOut, ArrowLeft, Blocks, Eye, Settings, Users, Search, Database, Refr
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAdminBlocks } from '@/hooks/useAdminBlocks';
-import { getBlockValidation, BlockValidation } from '@/utils/blockValidation';
+import { getBlockValidation, BlockValidation, BlockActivatorUnion } from '@/utils/blockValidation';
 
 export default function AdminBlocks() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -40,10 +40,43 @@ export default function AdminBlocks() {
     return labels;
   };
 
+  const renderActivationSources = (activators: BlockActivatorUnion[], hasDefault: boolean) => {
+    return (
+      <div className="space-y-1">
+        {hasDefault && (
+          <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+            DEFAULT
+          </Badge>
+        )}
+        
+        {activators.map((activator, index) => (
+          <div key={index} className="text-xs text-gray-600">
+            {activator.type === 'option' ? (
+              <>
+                {activator.blockTitle} → {activator.questionId} → {activator.optionLabel}
+              </>
+            ) : (
+              <>
+                <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 mr-1">
+                  MULTI-BLOCK
+                </Badge>
+                {activator.blockTitle} → {activator.questionId} → {activator.blueprintPattern}
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   const renderValidationStatus = (validation: BlockValidation) => {
     const hasActivationError = !validation.activationSources.isValid;
     const hasLeadsToError = !validation.leadsToValidation.isValid;
     const hasAnyError = hasActivationError || hasLeadsToError;
+
+    // Check if this is a multi-block with special leads_to back reference
+    const multiBlockActivator = validation.activationSources.activators.find(a => a.type === 'multiblock');
+    const hasBackReference = multiBlockActivator && validation.leadsToValidation.isValid;
 
     return (
       <div className="space-y-3">
@@ -62,20 +95,10 @@ export default function AdminBlocks() {
             <span className="text-sm font-medium">Attivazione da blocchi:</span>
           </div>
           
-          <div className="ml-6 space-y-1">
-            {validation.activationSources.hasDefault && (
-              <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
-                DEFAULT
-              </Badge>
-            )}
-            
-            {validation.activationSources.activators.map((activator, index) => (
-              <div key={index} className="text-xs text-gray-600">
-                {activator.blockTitle} → {activator.questionId} → {activator.optionLabel}
-              </div>
-            ))}
-            
-            {!validation.activationSources.isValid && (
+          <div className="ml-6">
+            {validation.activationSources.activators.length > 0 || validation.activationSources.hasDefault ? (
+              renderActivationSources(validation.activationSources.activators, validation.activationSources.hasDefault)
+            ) : (
               <div className="text-xs text-red-600 flex items-center gap-1">
                 <AlertTriangle className="h-3 w-3" />
                 Nessun blocco di attivazione trovato
@@ -95,7 +118,7 @@ export default function AdminBlocks() {
             <span className="text-sm font-medium">Riferimenti leads_to:</span>
           </div>
           
-          {hasLeadsToError && (
+          {hasLeadsToError ? (
             <div className="ml-6 space-y-1">
               {validation.leadsToValidation.errors.map((error, index) => (
                 <div key={index} className="text-xs text-red-600 flex items-center gap-1">
@@ -104,11 +127,19 @@ export default function AdminBlocks() {
                 </div>
               ))}
             </div>
-          )}
-          
-          {!hasLeadsToError && (
-            <div className="ml-6 text-xs text-green-600">
-              Tutti i riferimenti sono validi
+          ) : (
+            <div className="ml-6 space-y-1">
+              <div className="text-xs text-green-600">
+                Tutti i riferimenti sono validi
+              </div>
+              {hasBackReference && multiBlockActivator && (
+                <div className="text-xs text-purple-600 flex items-center gap-1">
+                  <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700">
+                    MULTI-BLOCK
+                  </Badge>
+                  Leads to - back to: {multiBlockActivator.questionId}
+                </div>
+              )}
             </div>
           )}
         </div>
