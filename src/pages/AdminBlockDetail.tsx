@@ -231,6 +231,28 @@ function AdminBlockDetailContent() {
     return placeholder.options?.[optionEditDialog.optionIndex] || null;
   };
 
+  // Check if a question has leads_to validation errors
+  const hasQuestionLeadsToErrors = (question: any) => {
+    // Check input placeholder leads_to
+    for (const [key, placeholder] of Object.entries(question.placeholders)) {
+      if (placeholder.type === 'input' || placeholder.type === 'MultiBlockManager') {
+        if (placeholder.leads_to) {
+          const validation = validateSpecificLeadsTo(placeholder.leads_to, block, allBlocks);
+          if (!validation.isValid) return true;
+        }
+      }
+      
+      // Check select placeholder options leads_to
+      if (placeholder.type === 'select' && placeholder.options) {
+        for (const option of placeholder.options) {
+          const validation = validateSpecificLeadsTo(option.leads_to, block, allBlocks);
+          if (!validation.isValid) return true;
+        }
+      }
+    }
+    return false;
+  };
+
   const renderActivationSources = (activators: BlockActivatorUnion[], hasDefault: boolean) => {
     return (
       <div className="space-y-1">
@@ -587,227 +609,275 @@ function AdminBlockDetailContent() {
               </div>
             ) : (
               <div className="space-y-6">
-                {block.questions.map((question, index) => (
-                  <Card key={question.question_id} className="border-l-4 border-l-[#245C4F] relative">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="absolute top-4 right-4 h-6 w-6 p-0 hover:bg-gray-100"
-                      onClick={() => handleEditQuestion(question.question_id)}
-                      title="Modifica domanda"
-                    >
-                      <Settings className="h-3 w-3 text-gray-500 hover:text-[#245C4F]" />
-                    </Button>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-3 pr-10">
-                          <div>
-                            <CardTitle className="text-base flex items-center gap-2">
-                              <Badge variant="outline" className="text-xs">
-                                #{question.question_number}
-                              </Badge>
-                              Domanda {index + 1}
-                            </CardTitle>
-                            <div className="mt-1 space-y-1">
-                              <div className="text-xs text-gray-500 flex items-center gap-2">
-                                ID: <code className="bg-gray-100 px-1 rounded">{question.question_id}</code>
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                Block ID: <code className="bg-gray-100 px-1 rounded">{block.block_id}</code>
-                              </div>
-                              {question.leads_to_placeholder_priority && (
-                                <div className="text-xs">
-                                  <span className="text-gray-500">Placeholder Priorità: </span>
-                                  <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-                                    {question.leads_to_placeholder_priority}
-                                  </Badge>
+                {block.questions.map((question, index) => {
+                  const questionHasErrors = hasQuestionLeadsToErrors(question);
+                  return (
+                    <Card key={question.question_id} className={`${questionHasErrors ? 'border-l-4 border-l-red-500' : 'border-l-4 border-l-[#245C4F]'} relative`}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute top-4 right-4 h-6 w-6 p-0 hover:bg-gray-100"
+                        onClick={() => handleEditQuestion(question.question_id)}
+                        title="Modifica domanda"
+                      >
+                        <Settings className="h-3 w-3 text-gray-500 hover:text-[#245C4F]" />
+                      </Button>
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-3 pr-10">
+                            <div>
+                              <CardTitle className="text-base flex items-center gap-2">
+                                <Badge variant="outline" className="text-xs">
+                                  #{question.question_number}
+                                </Badge>
+                                Domanda {index + 1}
+                              </CardTitle>
+                              <div className="mt-1 space-y-1">
+                                <div className="text-xs text-gray-500 flex items-center gap-2">
+                                  ID: <code className="bg-gray-100 px-1 rounded">{question.question_id}</code>
                                 </div>
-                              )}
-                            </div>
-                          </div>
-                          
-                          {/* Question Properties */}
-                          <div className="flex flex-wrap gap-2">
-                            <Badge 
-                              variant="secondary" 
-                              className={`text-xs ${question.inline ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'}`}
-                            >
-                              Inline
-                            </Badge>
-                            <Badge 
-                              variant="secondary" 
-                              className={`text-xs ${question.endOfForm ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'}`}
-                            >
-                              Fine Form
-                            </Badge>
-                            <Badge 
-                              variant="secondary" 
-                              className={`text-xs ${question.skippableWithNotSure ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'}`}
-                            >
-                              Saltabile
-                            </Badge>
-                            <Badge 
-                              variant="secondary" 
-                              className={`text-xs ${question.question_notes ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'}`}
-                            >
-                              Note
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      {/* Question Text */}
-                      <div className="mb-4">
-                        <h5 className="font-medium text-gray-900 mb-2">Testo della domanda:</h5>
-                        <p className="text-gray-700 bg-gray-50 p-3 rounded">
-                          {question.question_text}
-                        </p>
-                      </div>
-
-                      {/* Question Notes */}
-                      {question.question_notes && (
-                        <div className="mb-4">
-                          <h5 className="font-medium text-gray-900 mb-2">Note:</h5>
-                          <p className="text-gray-600 text-sm bg-blue-50 p-3 rounded">
-                            {question.question_notes}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Placeholders */}
-                      <div>
-                        <h5 className="font-medium text-gray-900 mb-3">
-                          Placeholder ({Object.keys(question.placeholders).length})
-                        </h5>
-                        {Object.keys(question.placeholders).length === 0 ? (
-                          <p className="text-gray-500 text-sm">Nessun placeholder configurato</p>
-                        ) : (
-                          <div className="grid gap-4">
-                            {Object.entries(question.placeholders).map(([key, placeholder]) => (
-                              <div key={key} className="border rounded-lg p-4 bg-white shadow-sm">
-                                <div className="flex items-center justify-between mb-3">
-                                  <div className="flex items-center gap-2">
-                                    {getPlaceholderTypeIcon(placeholder.type)}
-                                    <span className="font-semibold text-base">{key}</span>
-                                    <Badge variant="outline" className="text-xs flex items-center gap-1">
-                                      {placeholder.type}
+                                <div className="text-xs text-gray-500">
+                                  Block ID: <code className="bg-gray-100 px-1 rounded">{block.block_id}</code>
+                                </div>
+                                {question.leads_to_placeholder_priority && (
+                                  <div className="text-xs">
+                                    <span className="text-gray-500">Placeholder Priorità: </span>
+                                    <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                                      {question.leads_to_placeholder_priority}
                                     </Badge>
-                                    {question.leads_to_placeholder_priority === key && (
-                                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-                                        PRIORITÀ
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-6 w-6 p-0 hover:bg-gray-100"
-                                    onClick={() => handleEditPlaceholder(question.question_id, key)}
-                                    title="Modifica placeholder"
-                                  >
-                                    <Settings className="h-3 w-3 text-gray-500 hover:text-[#245C4F]" />
-                                  </Button>
-                                </div>
-                                
-                                {/* Select Placeholder Details */}
-                                {placeholder.type === 'select' && (
-                                  <div className="space-y-3">
-                                    {placeholder.placeholder_label && (
-                                      <div className="text-sm">
-                                        <span className="font-medium text-gray-700">Label:</span>
-                                        <span className="ml-2 text-gray-600">{placeholder.placeholder_label}</span>
-                                      </div>
-                                    )}
-                                    <div>
-                                      <span className="font-medium text-gray-700 text-sm">
-                                        Opzioni ({placeholder.options?.length || 0}):
-                                      </span>
-                                      <div className="mt-2 space-y-2">
-                                        {placeholder.options?.map((option, optIndex) => (
-                                          <div key={optIndex} className="bg-gray-50 rounded p-3 border-l-2 border-blue-200">
-                                            <div className="space-y-2 text-sm">
-                                              <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                  <span className="font-medium text-gray-700">ID:</span>
-                                                  <code className="bg-white px-2 py-1 rounded text-xs">{option.id}</code>
-                                                </div>
-                                                <Button
-                                                  variant="ghost"
-                                                  size="sm"
-                                                  className="h-6 w-6 p-0 hover:bg-gray-100"
-                                                  onClick={() => handleEditOption(question.question_id, key, optIndex)}
-                                                  title="Modifica opzione"
-                                                >
-                                                  <Settings className="h-3 w-3 text-gray-500 hover:text-[#245C4F]" />
-                                                </Button>
-                                              </div>
-                                              <div>
-                                                <span className="font-medium text-gray-700">Label:</span>
-                                                <span className="ml-2 text-gray-600">{option.label}</span>
-                                              </div>
-                                              <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                  <span className="font-medium text-gray-700">Leads to:</span>
-                                                  <code className={getLeadsToStyles(option.leads_to)}>{option.leads_to}</code>
-                                                </div>
-                                                <div className="flex items-center gap-1">
-                                                  {(() => {
-                                                    const validation = validateSpecificLeadsTo(option.leads_to, block, allBlocks);
-                                                    return validation.isValid ? (
-                                                      <CheckCircle className="h-4 w-4 text-green-500" />
-                                                    ) : (
-                                                      <div className="flex items-center gap-1">
-                                                        <XCircle className="h-4 w-4 text-red-500" />
-                                                        <span className="text-xs text-red-600">{validation.error}</span>
-                                                      </div>
-                                                    );
-                                                  })()}
-                                                </div>
-                                              </div>
-                                              {option.add_block && (
-                                                <div>
-                                                  <span className="font-medium text-gray-700">Add block:</span>
-                                                  <div className="flex items-center gap-1 mt-1">
-                                                    <Plus className="h-3 w-3 text-green-600" />
-                                                    <code className="bg-green-50 px-2 py-1 rounded text-xs text-green-800">{option.add_block}</code>
-                                                  </div>
-                                                </div>
-                                              )}
-                                            </div>
-                                          </div>
-                                        )) || (
-                                          <p className="text-gray-500 text-sm italic">Nessuna opzione configurata</p>
-                                        )}
-                                      </div>
-                                    </div>
-                                    {placeholder.multiple && (
-                                      <div className="text-sm">
-                                        <Badge variant="secondary" className="text-xs">Selezione multipla</Badge>
-                                      </div>
-                                    )}
                                   </div>
                                 )}
-                                
-                                {/* Input Placeholder Details */}
-                                {placeholder.type === 'input' && (
-                                  <div className="space-y-2">
-                                    <div className="space-y-2 text-sm">
-                                      <div>
-                                        <span className="font-medium text-gray-700">Tipo input:</span>
-                                        <Badge variant="outline" className="ml-2 text-xs">{placeholder.input_type}</Badge>
-                                      </div>
-                                      <div>
-                                        <span className="font-medium text-gray-700">Validazione:</span>
-                                        <Badge variant="outline" className="ml-2 text-xs">{placeholder.input_validation}</Badge>
-                                      </div>
+                              </div>
+                            </div>
+                            
+                            {/* Question Properties */}
+                            <div className="flex flex-wrap gap-2">
+                              <Badge 
+                                variant="secondary" 
+                                className={`text-xs ${question.inline ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'}`}
+                              >
+                                Inline
+                              </Badge>
+                              <Badge 
+                                variant="secondary" 
+                                className={`text-xs ${question.endOfForm ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'}`}
+                              >
+                                Fine Form
+                              </Badge>
+                              <Badge 
+                                variant="secondary" 
+                                className={`text-xs ${question.skippableWithNotSure ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'}`}
+                              >
+                                Saltabile
+                              </Badge>
+                              <Badge 
+                                variant="secondary" 
+                                className={`text-xs ${question.question_notes ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'}`}
+                              >
+                                Note
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        {/* Question Text */}
+                        <div className="mb-4">
+                          <h5 className="font-medium text-gray-900 mb-2">Testo della domanda:</h5>
+                          <p className="text-gray-700 bg-gray-50 p-3 rounded">
+                            {question.question_text}
+                          </p>
+                        </div>
+
+                        {/* Question Notes */}
+                        {question.question_notes && (
+                          <div className="mb-4">
+                            <h5 className="font-medium text-gray-900 mb-2">Note:</h5>
+                            <p className="text-gray-600 text-sm bg-blue-50 p-3 rounded">
+                              {question.question_notes}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Placeholders */}
+                        <div>
+                          <h5 className="font-medium text-gray-900 mb-3">
+                            Placeholder ({Object.keys(question.placeholders).length})
+                          </h5>
+                          {Object.keys(question.placeholders).length === 0 ? (
+                            <p className="text-gray-500 text-sm">Nessun placeholder configurato</p>
+                          ) : (
+                            <div className="grid gap-4">
+                              {Object.entries(question.placeholders).map(([key, placeholder]) => (
+                                <div key={key} className="border rounded-lg p-4 bg-white shadow-sm">
+                                  <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2">
+                                      {getPlaceholderTypeIcon(placeholder.type)}
+                                      <span className="font-semibold text-base">{key}</span>
+                                      <Badge variant="outline" className="text-xs flex items-center gap-1">
+                                        {placeholder.type}
+                                      </Badge>
+                                      {question.leads_to_placeholder_priority === key && (
+                                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                                          PRIORITÀ
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-6 w-6 p-0 hover:bg-gray-100"
+                                      onClick={() => handleEditPlaceholder(question.question_id, key)}
+                                      title="Modifica placeholder"
+                                    >
+                                      <Settings className="h-3 w-3 text-gray-500 hover:text-[#245C4F]" />
+                                    </Button>
+                                  </div>
+                                  
+                                  {/* Select Placeholder Details */}
+                                  {placeholder.type === 'select' && (
+                                    <div className="space-y-3">
                                       {placeholder.placeholder_label && (
-                                        <div>
+                                        <div className="text-sm">
                                           <span className="font-medium text-gray-700">Label:</span>
                                           <span className="ml-2 text-gray-600">{placeholder.placeholder_label}</span>
                                         </div>
                                       )}
-                                      {placeholder.leads_to && (
+                                      <div>
+                                        <span className="font-medium text-gray-700 text-sm">
+                                          Opzioni ({placeholder.options?.length || 0}):
+                                        </span>
+                                        <div className="mt-2 space-y-2">
+                                          {placeholder.options?.map((option, optIndex) => {
+                                            const optionValidation = validateSpecificLeadsTo(option.leads_to, block, allBlocks);
+                                            const hasOptionError = !optionValidation.isValid;
+                                            return (
+                                              <div key={optIndex} className={`bg-gray-50 rounded p-3 ${hasOptionError ? 'border-l-2 border-red-500' : 'border-l-2 border-blue-200'}`}>
+                                                <div className="space-y-2 text-sm">
+                                                  <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                      <span className="font-medium text-gray-700">ID:</span>
+                                                      <code className="bg-white px-2 py-1 rounded text-xs">{option.id}</code>
+                                                    </div>
+                                                    <Button
+                                                      variant="ghost"
+                                                      size="sm"
+                                                      className="h-6 w-6 p-0 hover:bg-gray-100"
+                                                      onClick={() => handleEditOption(question.question_id, key, optIndex)}
+                                                      title="Modifica opzione"
+                                                    >
+                                                      <Settings className="h-3 w-3 text-gray-500 hover:text-[#245C4F]" />
+                                                    </Button>
+                                                  </div>
+                                                  <div>
+                                                    <span className="font-medium text-gray-700">Label:</span>
+                                                    <span className="ml-2 text-gray-600">{option.label}</span>
+                                                  </div>
+                                                  <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                      <span className="font-medium text-gray-700">Leads to:</span>
+                                                      <code className={getLeadsToStyles(option.leads_to)}>{option.leads_to}</code>
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                      {optionValidation.isValid ? (
+                                                        <CheckCircle className="h-4 w-4 text-green-500" />
+                                                      ) : (
+                                                        <div className="flex items-center gap-1">
+                                                          <XCircle className="h-4 w-4 text-red-500" />
+                                                          <span className="text-xs text-red-600">{optionValidation.error}</span>
+                                                        </div>
+                                                      )}
+                                                    </div>
+                                                  </div>
+                                                  {option.add_block && (
+                                                    <div>
+                                                      <span className="font-medium text-gray-700">Add block:</span>
+                                                      <div className="flex items-center gap-1 mt-1">
+                                                        <Plus className="h-3 w-3 text-green-600" />
+                                                        <code className="bg-green-50 px-2 py-1 rounded text-xs text-green-800">{option.add_block}</code>
+                                                      </div>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            );
+                                          }) || (
+                                            <p className="text-gray-500 text-sm italic">Nessuna opzione configurata</p>
+                                          )}
+                                        </div>
+                                      </div>
+                                      {placeholder.multiple && (
+                                        <div className="text-sm">
+                                          <Badge variant="secondary" className="text-xs">Selezione multipla</Badge>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                  
+                                  {/* Input Placeholder Details */}
+                                  {placeholder.type === 'input' && (
+                                    <div className="space-y-2">
+                                      <div className="space-y-2 text-sm">
+                                        <div>
+                                          <span className="font-medium text-gray-700">Tipo input:</span>
+                                          <Badge variant="outline" className="ml-2 text-xs">{placeholder.input_type}</Badge>
+                                        </div>
+                                        <div>
+                                          <span className="font-medium text-gray-700">Validazione:</span>
+                                          <Badge variant="outline" className="ml-2 text-xs">{placeholder.input_validation}</Badge>
+                                        </div>
+                                        {placeholder.placeholder_label && (
+                                          <div>
+                                            <span className="font-medium text-gray-700">Label:</span>
+                                            <span className="ml-2 text-gray-600">{placeholder.placeholder_label}</span>
+                                          </div>
+                                        )}
+                                        {placeholder.leads_to && (
+                                          <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                              <span className="font-medium text-gray-700">Leads to:</span>
+                                              <code className={getLeadsToStyles(placeholder.leads_to)}>{placeholder.leads_to}</code>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                              {(() => {
+                                                const validation = validateSpecificLeadsTo(placeholder.leads_to, block, allBlocks);
+                                                return validation.isValid ? (
+                                                  <CheckCircle className="h-4 w-4 text-green-500" />
+                                                ) : (
+                                                  <div className="flex items-center gap-1">
+                                                    <XCircle className="h-4 w-4 text-red-500" />
+                                                    <span className="text-xs text-red-600">{validation.error}</span>
+                                                  </div>
+                                                );
+                                              })()}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+                                
+                                  {/* MultiBlockManager Placeholder Details */}
+                                  {placeholder.type === 'MultiBlockManager' && (
+                                    <div className="space-y-3">
+                                      <div className="space-y-2 text-sm">
+                                        <div>
+                                          <span className="font-medium text-gray-700">Blueprint:</span>
+                                          <div className="flex items-center gap-1 mt-1">
+                                            <Blocks className="h-3 w-3 text-blue-600" />
+                                            <code className="bg-blue-50 px-2 py-1 rounded text-xs text-blue-800">{placeholder.blockBlueprint}</code>
+                                          </div>
+                                        </div>
+                                        <div>
+                                          <span className="font-medium text-gray-700">Add Block Label:</span>
+                                          <span className="ml-2 text-gray-600">{placeholder.add_block_label}</span>
+                                        </div>
+                                        {placeholder.placeholder_label && (
+                                          <div>
+                                            <span className="font-medium text-gray-700">Label:</span>
+                                            <span className="ml-2 text-gray-600">{placeholder.placeholder_label}</span>
+                                          </div>
+                                        )}
                                         <div className="flex items-center justify-between">
                                           <div className="flex items-center gap-2">
                                             <span className="font-medium text-gray-700">Leads to:</span>
@@ -827,62 +897,18 @@ function AdminBlockDetailContent() {
                                             })()}
                                           </div>
                                         </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                                
-                                {/* MultiBlockManager Placeholder Details */}
-                                {placeholder.type === 'MultiBlockManager' && (
-                                  <div className="space-y-3">
-                                    <div className="space-y-2 text-sm">
-                                      <div>
-                                        <span className="font-medium text-gray-700">Blueprint:</span>
-                                        <div className="flex items-center gap-1 mt-1">
-                                          <Blocks className="h-3 w-3 text-blue-600" />
-                                          <code className="bg-blue-50 px-2 py-1 rounded text-xs text-blue-800">{placeholder.blockBlueprint}</code>
-                                        </div>
-                                      </div>
-                                      <div>
-                                        <span className="font-medium text-gray-700">Add Block Label:</span>
-                                        <span className="ml-2 text-gray-600">{placeholder.add_block_label}</span>
-                                      </div>
-                                      {placeholder.placeholder_label && (
-                                        <div>
-                                          <span className="font-medium text-gray-700">Label:</span>
-                                          <span className="ml-2 text-gray-600">{placeholder.placeholder_label}</span>
-                                        </div>
-                                      )}
-                                      <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                          <span className="font-medium text-gray-700">Leads to:</span>
-                                          <code className={getLeadsToStyles(placeholder.leads_to)}>{placeholder.leads_to}</code>
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                          {(() => {
-                                            const validation = validateSpecificLeadsTo(placeholder.leads_to, block, allBlocks);
-                                            return validation.isValid ? (
-                                              <CheckCircle className="h-4 w-4 text-green-500" />
-                                            ) : (
-                                              <div className="flex items-center gap-1">
-                                                <XCircle className="h-4 w-4 text-red-500" />
-                                                <span className="text-xs text-red-600">{validation.error}</span>
-                                              </div>
-                                            );
-                                          })()}
-                                        </div>
                                       </div>
                                     </div>
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </CardContent>
