@@ -342,9 +342,7 @@ function AdminBlockDetailContent() {
   };
 
   const getLeadsToStyles = (leadsTo: string) => {
-    if (leadsTo === 'next_block') {
-      return 'bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-xs';
-    } else if (leadsTo === 'stop_flow') {
+    if (leadsTo === 'stop_flow') {
       return 'bg-red-200 text-red-800 px-2 py-1 rounded text-xs';
     } else {
       return 'bg-white px-2 py-1 rounded text-xs';
@@ -540,27 +538,59 @@ function AdminBlockDetailContent() {
                   <Card key={question.question_id} className="border-l-4 border-l-[#245C4F]">
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
-                        <div>
-                          <CardTitle className="text-base flex items-center gap-2">
-                            <Badge variant="outline" className="text-xs">
-                              #{question.question_number}
+                        <div className="space-y-3">
+                          <div>
+                            <CardTitle className="text-base flex items-center gap-2">
+                              <Badge variant="outline" className="text-xs">
+                                #{question.question_number}
+                              </Badge>
+                              Domanda {index + 1}
+                            </CardTitle>
+                            <div className="mt-1 space-y-1">
+                              <div className="text-xs text-gray-500">
+                                ID: <code className="bg-gray-100 px-1 rounded">{question.question_id}</code>
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                Block ID: <code className="bg-gray-100 px-1 rounded">{block.block_id}</code>
+                              </div>
+                              {question.leads_to_placeholder_priority && (
+                                <div className="text-xs">
+                                  <span className="text-gray-500">Placeholder Priorità: </span>
+                                  <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                                    {question.leads_to_placeholder_priority}
+                                  </Badge>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* Question Properties */}
+                          <div className="flex flex-wrap gap-2">
+                            <Badge 
+                              variant="secondary" 
+                              className={`text-xs ${question.inline ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'}`}
+                            >
+                              Inline
                             </Badge>
-                            Domanda {index + 1}
-                          </CardTitle>
-                          <code className="text-xs text-gray-500 mt-1">
-                            ID: {question.question_id}
-                          </code>
-                        </div>
-                        <div className="flex gap-1">
-                          {question.inline && (
-                            <Badge variant="secondary" className="text-xs">Inline</Badge>
-                          )}
-                          {question.endOfForm && (
-                            <Badge variant="secondary" className="text-xs">Fine Form</Badge>
-                          )}
-                          {question.skippableWithNotSure && (
-                            <Badge variant="secondary" className="text-xs">Saltabile</Badge>
-                          )}
+                            <Badge 
+                              variant="secondary" 
+                              className={`text-xs ${question.endOfForm ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'}`}
+                            >
+                              Fine Form
+                            </Badge>
+                            <Badge 
+                              variant="secondary" 
+                              className={`text-xs ${question.skippableWithNotSure ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'}`}
+                            >
+                              Saltabile
+                            </Badge>
+                            <Badge 
+                              variant="secondary" 
+                              className={`text-xs ${question.question_notes ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'}`}
+                            >
+                              Note
+                            </Badge>
+                          </div>
                         </div>
                       </div>
                     </CardHeader>
@@ -600,6 +630,11 @@ function AdminBlockDetailContent() {
                                   <Badge variant="outline" className="text-xs">
                                     {placeholder.type}
                                   </Badge>
+                                  {question.leads_to_placeholder_priority === key && (
+                                    <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                                      PRIORITÀ
+                                    </Badge>
+                                  )}
                                 </div>
                                 
                                 {/* Select Placeholder Details */}
