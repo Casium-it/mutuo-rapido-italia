@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import { LogOut, ArrowLeft, Blocks, Settings, Users, FileText, Hash, Database, R
 import { supabase } from '@/integrations/supabase/client';
 import { Block, Placeholder } from '@/types/form';
 import { FlowVisualization } from '@/components/admin/flow-visualization/FlowVisualization';
+import { PreSaveValidationDialog } from '@/components/admin/flow-editing/PreSaveValidationDialog';
 
 import { EditableFlowChart } from '@/components/admin/flow-editing/EditableFlowChart';
 import { FlowEditProvider, useFlowEdit } from '@/contexts/FlowEditContext';
@@ -37,7 +37,11 @@ function AdminBlockDetailContent() {
   const [error, setError] = useState<string | null>(null);
   const [showFlowVisualization, setShowFlowVisualization] = useState(false);
   const [createQuestionDialog, setCreateQuestionDialog] = useState(false);
-  
+  const [preSaveValidationDialog, setPreSaveValidationDialog] = useState<{
+    open: boolean;
+    validationErrors: any;
+  }>({ open: false, validationErrors: null });
+
   // Edit dialog states
   const [questionEditDialog, setQuestionEditDialog] = useState<{
     open: boolean;
@@ -953,13 +957,101 @@ function AdminBlockDetailContent() {
           onClose={() => setOptionEditDialog({ open: false, questionId: '', placeholderKey: '', optionIndex: -1 })}
         />
       )}
+
+      {/* Pre-Save Validation Dialog */}
+      <PreSaveValidationDialog
+        open={preSaveValidationDialog.open}
+        onClose={() => setPreSaveValidationDialog({ open: false, validationErrors: null })}
+        onCancel={() => setPreSaveValidationDialog({ open: false, validationErrors: null })}
+        onSaveAnyway={async () => {
+          const { saveWithoutValidation } = useFlowEdit();
+          await saveWithoutValidation();
+        }}
+        validationErrors={preSaveValidationDialog.validationErrors}
+      />
     </div>
   );
 }
 
 // Edit Controls Component
 function EditControls() {
-  const { state, saveChanges, undoLastChange, canUndo } = useFlowEdit();
+  const { state, saveChanges, saveWithoutValidation, undoLastChange, canUndo, validateBeforeSave } = useFlowEdit();
+  const { blockId } = useParams<{ blockId: string }>();
+  const [searchParams] = useSearchParams();
+  const formSlug = searchParams.get('form');
+  const [allBlocks, setAllBlocks] = useState<any[]>([]);
+  const [preSaveValidationDialog, setPreSaveValidationDialog] = useState<{
+    open: boolean;
+    validationErrors: any;
+  }>({ open: false, validationErrors: null });
+  
+  // Load all blocks for validation
+  useEffect(() => {
+    const loadAllBlocks = async () => {
+      try {
+        const { data: allBlocksData, error: allBlocksError } = await supabase
+          .from('form_blocks')
+          .select(`
+            id,
+            block_data,
+            sort_order,
+            form_id,
+            forms!inner(
+              id,
+              title,
+              slug,
+              form_type
+            )
+          `);
+
+        if (allBlocksError) throw allBlocksError;
+
+        const transformedAllBlocks = (allBlocksData || []).map((item: any) => {
+          const blockContent = item.block_data as Block;
+          return {
+            ...blockContent,
+            form_id: item.form_id,
+            form_title: item.forms.title,
+            form_slug: item.forms.slug,
+            form_type: item.forms.form_type,
+          };
+        });
+
+        setAllBlocks(transformedAllBlocks);
+      } catch (error) {
+        console.error('Error loading all blocks for validation:', error);
+      }
+    };
+
+    loadAllBlocks();
+  }, []);
+
+  const handleSaveClick = async () => {
+    if (allBlocks.length === 0) {
+      // If blocks not loaded yet, proceed with normal save
+      await saveWithoutValidation();
+      return;
+    }
+
+    // Run validation before save
+    const validationResult = validateBeforeSave(allBlocks);
+    
+    if (!validationResult.isValid) {
+      // Show validation dialog
+      setPreSaveValidationDialog({
+        open: true,
+        validationErrors: validationResult
+      });
+    } else {
+      // No validation errors, proceed with save
+      await saveWithoutValidation();
+    }
+  };
+
+  const handleSaveAnyway = async () => {
+    await saveWithoutValidation();
+    setPreSaveValidationDialog({ open: false, validationErrors: null });
+  };
 
   return (
     <>
@@ -980,7 +1072,7 @@ function EditControls() {
                 Annulla
               </Button>
               <Button
-                onClick={saveChanges}
+                onClick={handleSaveClick}
                 disabled={state.isAutoSaving}
                 size="sm"
                 className="bg-[#245C4F] hover:bg-[#1e4f44]"
@@ -1001,6 +1093,16 @@ function EditControls() {
           </div>
         </div>
       )}
+
+      {/* Pre-Save Validation Dialog */}
+      <PreSaveValidationDialog
+        open={preSaveValidationDialog.open}
+        onClose={() => setPreSaveValidationDialog({ open: false, validationErrors: null })}
+        onCancel={() => setPreSaveValidationDialog({ open: false, validationErrors: null })}
+        onSaveAnyway={handleSaveAnyway}
+        validationErrors={preSaveValidationDialog.validationErrors || { isValid: true, errors: [], warnings: [] }}
+        isLoading={state.isAutoSaving}
+      />
     </>
   );
 }

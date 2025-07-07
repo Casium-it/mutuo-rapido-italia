@@ -1,6 +1,6 @@
-
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { Block, Question, Placeholder, PlaceholderOption } from '@/types/form';
+import { validateLeadsTo, ValidationResult } from '@/utils/blockValidation';
 
 export type EditableElementType = 'question' | 'placeholder' | 'option';
 
@@ -32,6 +32,7 @@ interface FlowEditState {
   validationErrors: ValidationError[];
   isAutoSaving: boolean;
   hasUnsavedChanges: boolean;
+  preSaveValidation: ValidationResult | null;
 }
 
 interface FlowEditContextType {
@@ -39,7 +40,9 @@ interface FlowEditContextType {
   startEditing: (element: EditableElement) => void;
   stopEditing: () => void;
   updateBlockData: (updates: Partial<Block>) => void;
+  validateBeforeSave: (allBlocks: any[]) => ValidationResult;
   saveChanges: () => Promise<void>;
+  saveWithoutValidation: () => Promise<void>;
   undoLastChange: () => void;
   canUndo: boolean;
 }
@@ -73,7 +76,8 @@ export const FlowEditProvider: React.FC<FlowEditProviderProps> = ({
     changes: [],
     validationErrors: [],
     isAutoSaving: false,
-    hasUnsavedChanges: false
+    hasUnsavedChanges: false,
+    preSaveValidation: null
   });
 
   const startEditing = useCallback((element: EditableElement) => {
@@ -115,7 +119,20 @@ export const FlowEditProvider: React.FC<FlowEditProviderProps> = ({
     });
   }, []);
 
-  const saveChanges = useCallback(async () => {
+  const validateBeforeSave = useCallback((allBlocks: any[]): ValidationResult => {
+    // Cast the block to the expected interface type for validation
+    const blockForValidation = {
+      ...state.blockData,
+      form_id: '',
+      form_title: '',
+      form_slug: '',
+      form_type: ''
+    };
+    
+    return validateLeadsTo(blockForValidation, allBlocks);
+  }, [state.blockData]);
+
+  const saveWithoutValidation = useCallback(async () => {
     setState(prev => ({ ...prev, isAutoSaving: true }));
     
     try {
@@ -123,7 +140,8 @@ export const FlowEditProvider: React.FC<FlowEditProviderProps> = ({
       setState(prev => ({
         ...prev,
         hasUnsavedChanges: false,
-        isAutoSaving: false
+        isAutoSaving: false,
+        preSaveValidation: null
       }));
       
       // Refresh data after successful save
@@ -139,6 +157,11 @@ export const FlowEditProvider: React.FC<FlowEditProviderProps> = ({
       }));
     }
   }, [state.blockData, onSave, onRefresh]);
+
+  const saveChanges = useCallback(async () => {
+    // This will now just trigger validation check, actual save will be handled by parent
+    setState(prev => ({ ...prev, isAutoSaving: false }));
+  }, []);
 
   const undoLastChange = useCallback(() => {
     setState(prev => {
@@ -161,7 +184,9 @@ export const FlowEditProvider: React.FC<FlowEditProviderProps> = ({
     startEditing,
     stopEditing,
     updateBlockData,
+    validateBeforeSave,
     saveChanges,
+    saveWithoutValidation,
     undoLastChange,
     canUndo
   };
