@@ -57,7 +57,7 @@ const FormLauncher = () => {
   }
 
   return (
-    <FormProvider blocks={blocks} formSlug={formSlug}>
+    <FormProvider blocks={blocks}>
       <Form />
     </FormProvider>
   );

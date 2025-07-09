@@ -202,7 +202,6 @@ export type Database = {
       }
       forms: {
         Row: {
-          completion_behavior: Database["public"]["Enums"]["completion_behavior_type"]
           created_at: string
           description: string | null
           form_type: string
@@ -214,7 +213,6 @@ export type Database = {
           version: number
         }
         Insert: {
-          completion_behavior?: Database["public"]["Enums"]["completion_behavior_type"]
           created_at?: string
           description?: string | null
           form_type?: string
@@ -226,7 +224,6 @@ export type Database = {
           version?: number
         }
         Update: {
-          completion_behavior?: Database["public"]["Enums"]["completion_behavior_type"]
           created_at?: string
           description?: string | null
           form_type?: string
@@ -358,7 +355,6 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "customer" | "broker"
-      completion_behavior_type: "form-completed" | "form-completed-redirect"
       lead_status:
         | "not_contacted"
         | "first_contact"
@@ -493,7 +489,6 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "customer", "broker"],
-      completion_behavior_type: ["form-completed", "form-completed-redirect"],
       lead_status: [
         "not_contacted",
         "first_contact",
