@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
@@ -9,6 +8,7 @@ import { allBlocks } from "@/data/blocks";
 import { toast } from "sonner";
 import { useSimulationTimer } from "@/hooks/useSimulationTimer";
 import { trackSimulationCompleted } from "@/utils/analytics";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function FormLoading() {
   const navigate = useNavigate();
@@ -18,6 +18,7 @@ export default function FormLoading() {
   const [submissionCompleted, setSubmissionCompleted] = useState(false);
   const [actualSubmissionId, setActualSubmissionId] = useState<string | null>(null);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [completionBehavior, setCompletionBehavior] = useState<string>('form-completed');
   
   const submissionStartedRef = useRef(false);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -32,7 +33,41 @@ export default function FormLoading() {
     completedBlocks: string[];
     dynamicBlocks: any[];
     submissionId?: string;
+    formSlug?: string;
   };
+  
+  // Load completion behavior from database
+  useEffect(() => {
+    const loadCompletionBehavior = async () => {
+      if (!formData?.formSlug) {
+        console.log("FormLoading: No form slug found, using default completion behavior");
+        return;
+      }
+
+      try {
+        console.log("FormLoading: Loading completion behavior for form:", formData.formSlug);
+        const { data: formConfig, error } = await supabase
+          .from('forms')
+          .select('completion_behavior')
+          .eq('slug', formData.formSlug)
+          .single();
+
+        if (error) {
+          console.error("FormLoading: Error loading form config:", error);
+          return;
+        }
+
+        if (formConfig?.completion_behavior) {
+          console.log("FormLoading: Setting completion behavior to:", formConfig.completion_behavior);
+          setCompletionBehavior(formConfig.completion_behavior);
+        }
+      } catch (error) {
+        console.error("FormLoading: Failed to load completion behavior:", error);
+      }
+    };
+
+    loadCompletionBehavior();
+  }, [formData?.formSlug]);
   
   useEffect(() => {
     console.log("FormLoading: Component mounted, starting initialization");
@@ -63,21 +98,33 @@ export default function FormLoading() {
 
   // Handle navigation when both progress and submission are complete
   useEffect(() => {
-    console.log("FormLoading: Checking navigation conditions - Progress:", loadingProgress, "Submission completed:", submissionCompleted, "Submission ID:", actualSubmissionId, "Error:", submissionError);
+    console.log("FormLoading: Checking navigation conditions - Progress:", loadingProgress, "Submission completed:", submissionCompleted, "Submission ID:", actualSubmissionId, "Error:", submissionError, "Completion behavior:", completionBehavior);
     
     if (loadingProgress >= 100 && submissionCompleted && actualSubmissionId) {
-      console.log("FormLoading: All conditions met, navigating to completion page");
+      console.log("FormLoading: All conditions met, navigating to completion page with behavior:", completionBehavior);
+      
+      const submissionData = {
+        id: actualSubmissionId,
+        submissionId: actualSubmissionId,
+        ...formData,
+        submissionTime: new Date().toISOString()
+      };
+
       setTimeout(() => {
-        navigate("/form-completed", { 
-          state: { 
-            submissionData: {
-              id: actualSubmissionId,
-              submissionId: actualSubmissionId,
-              ...formData,
-              submissionTime: new Date().toISOString()
-            }
-          }
-        });
+        // Navigate based on completion behavior
+        switch (completionBehavior) {
+          case 'form-completed-redirect':
+            navigate("/form-completed-redirect", { 
+              state: { submissionData }
+            });
+            break;
+          case 'form-completed':
+          default:
+            navigate("/form-completed", { 
+              state: { submissionData }
+            });
+            break;
+        }
       }, 500); // Small delay for smooth UX
     } else if (loadingProgress >= 100 && submissionError) {
       console.error("FormLoading: Submission failed, showing error and going back");
@@ -88,7 +135,7 @@ export default function FormLoading() {
         navigate(-1);
       }, 2000);
     }
-  }, [loadingProgress, submissionCompleted, actualSubmissionId, submissionError, navigate, formData]);
+  }, [loadingProgress, submissionCompleted, actualSubmissionId, submissionError, navigate, formData, completionBehavior]);
 
   const handleFormSubmission = async () => {
     // Prevent duplicate submissions

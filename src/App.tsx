@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,6 +16,7 @@ import SimulazioneAvanzata from "./pages/SimulazioneAvanzata";
 import FormLauncher from "./components/FormLauncher";
 import Form from "./pages/Form";
 import FormCompleted from "./pages/FormCompleted";
+import FormCompletedRedirect from "./pages/FormCompletedRedirect";
 import FormLoading from "./pages/FormLoading";
 import ResumeSimulation from "./pages/ResumeSimulation";
 import NotFound from "./pages/NotFound";
@@ -66,6 +68,7 @@ const AppWithTracking = () => {
       
       <Route path="/form-loading" element={<FormLoading />} />
       <Route path="/form-completed" element={<FormCompleted />} />
+      <Route path="/form-completed-redirect" element={<FormCompletedRedirect />} />
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/simulazioni" element={<Simulazioni />} />
       <Route path="/admin" element={
