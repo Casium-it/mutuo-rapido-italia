@@ -1,3 +1,4 @@
+
 import { Block } from "@/types/form";
 
 interface AdminBlock extends Block {
@@ -40,6 +41,7 @@ export interface BlockValidation {
     isValid: boolean;
   };
   leadsToValidation: ValidationResult;
+  addBlockValidation: ValidationResult;
 }
 
 /**
@@ -94,6 +96,36 @@ export function findBlockActivators(targetBlockId: string, allBlocks: AdminBlock
   });
 
   return activators;
+}
+
+/**
+ * Validate that all add_block references within a block point to existing blocks
+ */
+export function validateAddBlockReferences(block: AdminBlock, allBlocks: AdminBlock[]): ValidationResult {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  
+  // Get all existing block IDs for validation
+  const existingBlockIds = new Set(allBlocks.map(b => b.block_id));
+
+  block.questions.forEach(question => {
+    Object.entries(question.placeholders).forEach(([placeholderKey, placeholder]) => {
+      // Check select option add_block references
+      if (placeholder.type === 'select' && placeholder.options) {
+        placeholder.options.forEach(option => {
+          if (option.add_block && !existingBlockIds.has(option.add_block)) {
+            errors.push(`Question ${question.question_id}, option "${option.label}": add_block "${option.add_block}" non esiste`);
+          }
+        });
+      }
+    });
+  });
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    warnings
+  };
 }
 
 /**
@@ -224,6 +256,7 @@ export function getBlockValidation(block: AdminBlock, allBlocks: AdminBlock[]): 
       hasDefault,
       isValid: activators.length > 0 || hasDefault
     },
-    leadsToValidation: validateLeadsTo(block, allBlocks)
+    leadsToValidation: validateLeadsTo(block, allBlocks),
+    addBlockValidation: validateAddBlockReferences(block, allBlocks)
   };
 }
