@@ -292,7 +292,8 @@ function AdminBlockDetailContent() {
   const renderValidationStatus = (validation: BlockValidation) => {
     const hasActivationError = !validation.activationSources.isValid;
     const hasLeadsToError = !validation.leadsToValidation.isValid;
-    const hasAnyError = hasActivationError || hasLeadsToError;
+    const hasAddBlockError = !validation.addBlockValidation.isValid;
+    const hasAnyError = hasActivationError || hasLeadsToError || hasAddBlockError;
 
     // Check if this is a multi-block with special leads_to back reference
     const multiBlockActivator = validation.activationSources.activators.find(a => a.type === 'multiblock');
@@ -325,6 +326,35 @@ function AdminBlockDetailContent() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Add Block Validation */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            {hasAddBlockError ? (
+              <XCircle className="h-4 w-4 text-red-500" />
+            ) : (
+              <CheckCircle className="h-4 w-4 text-green-500" />
+            )}
+            <span className="text-sm font-medium">Riferimenti add_block:</span>
+          </div>
+          
+          {hasAddBlockError ? (
+            <div className="ml-6 space-y-1">
+              {validation.addBlockValidation.errors.map((error, index) => (
+                <div key={index} className="text-xs text-red-600 flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  {error}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="ml-6 space-y-1">
+              <div className="text-xs text-green-600">
+                Tutti i riferimenti add_block sono validi
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Leads To Validation */}
@@ -450,7 +480,7 @@ function AdminBlockDetailContent() {
 
   try {
     validation = getBlockValidation(currentBlock, allBlocks);
-    hasValidationErrors = !validation.activationSources.isValid || !validation.leadsToValidation.isValid;
+    hasValidationErrors = !validation.activationSources.isValid || !validation.leadsToValidation.isValid || !validation.addBlockValidation.isValid;
   } catch (err) {
     console.error('Error getting block validation:', err);
     hasValidationErrors = false;
