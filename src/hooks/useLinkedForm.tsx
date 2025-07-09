@@ -31,18 +31,18 @@ export const useLinkedForm = (): UseLinkedFormResult => {
 
   useEffect(() => {
     if (!token) {
-      setTokenValidation({ loading: false, valid: false });
+      setTokenValidation({ loading: false, valid: false, error: undefined });
       return;
     }
 
     const validateToken = async () => {
-      setTokenValidation({ loading: true, valid: false });
+      setTokenValidation({ loading: true, valid: false, error: undefined });
 
       const result = await LinkedFormService.validateToken(token);
       
       if (result.valid && result.linkedForm) {
         setLinkedFormData(result.linkedForm);
-        setTokenValidation({ loading: false, valid: true });
+        setTokenValidation({ loading: false, valid: true, error: undefined });
       } else {
         setTokenValidation({ 
           loading: false, 

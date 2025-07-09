@@ -2,23 +2,21 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Loader2 } from 'lucide-react';
-import { useFormContext } from '@/contexts/FormContext';
+import { useForm } from '@/contexts/FormContext';
 import { handleFormCompletion } from '@/services/formBehaviorService';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useLinkedForm } from '@/hooks/useLinkedForm';
 
 interface CompleteFormButtonProps {
-  blocks: any[];
-  completionBehavior?: 'form-completed' | 'form-completed-redirect';
+  className?: string;
 }
 
 const CompleteFormButton: React.FC<CompleteFormButtonProps> = ({ 
-  blocks, 
-  completionBehavior = 'form-completed' 
+  className = "" 
 }) => {
-  const { state } = useFormContext();
-  const { isLinkedForm, linkedFormData } = useLinkedForm();
+  const { state, blocks } = useForm();
+  const { isLinkedForm } = useLinkedForm();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -33,10 +31,10 @@ const CompleteFormButton: React.FC<CompleteFormButtonProps> = ({
       
       // Determina il comportamento di completamento
       // Per i form linkati, usa sempre form-completed-redirect
-      const finalCompletionBehavior = linkedToken ? 'form-completed-redirect' : completionBehavior;
+      const completionBehavior = linkedToken ? 'form-completed-redirect' : 'form-completed';
       
       console.log('Completing form with:', {
-        completionBehavior: finalCompletionBehavior,
+        completionBehavior,
         linkedToken: linkedToken || 'none',
         isLinkedForm
       });
@@ -44,7 +42,7 @@ const CompleteFormButton: React.FC<CompleteFormButtonProps> = ({
       const result = await handleFormCompletion(
         state,
         blocks,
-        finalCompletionBehavior,
+        completionBehavior,
         linkedToken || undefined
       );
 
@@ -74,7 +72,7 @@ const CompleteFormButton: React.FC<CompleteFormButtonProps> = ({
     <Button
       onClick={handleComplete}
       disabled={isSubmitting}
-      className="w-full bg-[#245C4F] hover:bg-[#1e4f44] text-white font-medium py-3 px-6 rounded-lg shadow-[0_3px_0_0_#1a453e] hover:shadow-[0_3px_4px_rgba(26,69,62,0.25)] transition-all duration-300 disabled:opacity-50 disabled:shadow-none"
+      className={`w-full bg-[#245C4F] hover:bg-[#1e4f44] text-white font-medium py-3 px-6 rounded-lg shadow-[0_3px_0_0_#1a453e] hover:shadow-[0_3px_4px_rgba(26,69,62,0.25)] transition-all duration-300 disabled:opacity-50 disabled:shadow-none ${className}`}
     >
       {isSubmitting ? (
         <>

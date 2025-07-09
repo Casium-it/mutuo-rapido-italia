@@ -10,6 +10,7 @@ interface WebhookPayload {
   completion_percentage?: number;
   last_question?: string;
   form_responses?: any;
+  [key: string]: any; // Add index signature for Json compatibility
 }
 
 interface WebhookDeliveryResult {
@@ -157,7 +158,7 @@ export class WebhookService {
         .insert({
           linked_token: token,
           event_type: eventType,
-          payload: payload,
+          payload: payload as any, // Cast to any for Json compatibility
           http_status: result.httpStatus || null,
           response_body: result.responseBody || result.error || null,
           attempt_count: 3, // Max attempts used
@@ -180,7 +181,7 @@ export class WebhookService {
           .insert({
             linked_token: token,
             event_type: eventType,
-            payload: { event: eventType, timestamp: new Date().toISOString(), token, error: 'Service error' },
+            payload: { event: eventType, timestamp: new Date().toISOString(), token, error: 'Service error' } as any,
             http_status: null,
             response_body: error instanceof Error ? error.message : 'Unknown error',
             attempt_count: 1,

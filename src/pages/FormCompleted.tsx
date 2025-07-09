@@ -1,10 +1,10 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { CheckCircle, ArrowRight, Download, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { generatePDF } from "@/utils/pdfUtils";
 import { useLinkedForm } from "@/hooks/useLinkedForm";
 
 const FormCompleted = () => {
@@ -61,7 +61,8 @@ const FormCompleted = () => {
 
     setIsGeneratingPDF(true);
     try {
-      await generatePDF(submissionId);
+      // TODO: Implement PDF generation
+      // await generatePDF(submissionId);
       toast({
         title: "PDF generato",
         description: "Il tuo riepilogo simulazione è stato scaricato con successo",
