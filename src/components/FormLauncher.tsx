@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 import { FormProvider } from '@/contexts/FormContext';
 import { useLinkedForm } from '@/hooks/useLinkedForm';
 import Form from '@/pages/Form';
+import { formCacheService } from '@/services/formCacheService';
+import { allBlocks } from '@/data/blocks';
+import { Block } from '@/types/form';
 
 /**
  * Component per gestire il lancio di form normali e linkati dal CRM
@@ -13,6 +16,38 @@ const FormLauncher = () => {
   const navigate = useNavigate();
   const { isLinkedForm, tokenValidation, markAsUsed } = useLinkedForm();
   const [hasMarkedAsUsed, setHasMarkedAsUsed] = useState(false);
+  const [blocks, setBlocks] = useState<Block[]>([]);
+  const [blocksLoading, setBlocksLoading] = useState(true);
+
+  // Load blocks for the form
+  useEffect(() => {
+    const loadBlocks = async () => {
+      if (!formSlug) {
+        setBlocks(allBlocks);
+        setBlocksLoading(false);
+        return;
+      }
+
+      try {
+        // Try to get blocks from cache first
+        const cachedForm = await formCacheService.getForm(formSlug);
+        if (cachedForm?.blocks) {
+          setBlocks(cachedForm.blocks);
+        } else {
+          // Fallback to static blocks
+          setBlocks(allBlocks);
+        }
+      } catch (error) {
+        console.error('Error loading blocks:', error);
+        // Fallback to static blocks
+        setBlocks(allBlocks);
+      } finally {
+        setBlocksLoading(false);
+      }
+    };
+
+    loadBlocks();
+  }, [formSlug]);
 
   // Se è un form linkato, gestisci la validazione del token
   useEffect(() => {
@@ -38,8 +73,8 @@ const FormLauncher = () => {
     }
   }, [isLinkedForm, tokenValidation, hasMarkedAsUsed, markAsUsed, navigate]);
 
-  // Mostra loading durante la validazione del token
-  if (isLinkedForm && tokenValidation.loading) {
+  // Mostra loading durante il caricamento dei blocchi o la validazione del token
+  if (blocksLoading || (isLinkedForm && tokenValidation.loading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f8f5f1]">
         <div className="text-center">
@@ -57,7 +92,7 @@ const FormLauncher = () => {
 
   // Rendering del form normale
   return (
-    <FormProvider formSlug={formSlug}>
+    <FormProvider blocks={blocks} formSlug={formSlug}>
       <Form />
     </FormProvider>
   );
