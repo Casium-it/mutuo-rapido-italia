@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { Link } from "react-router-dom";
-import { ArrowRight, User, Phone } from "lucide-react";
+import { ArrowRight, User, Phone, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { updateSubmissionWithContact } from "@/services/contactSubmissionService";
 import { sendFormCompletionMessage } from "@/services/aisensyService";
 import { trackSimulationContactDetails, trackSimulationLostDetails } from "@/utils/analytics";
+
 export default function FormCompleted() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -33,25 +34,32 @@ export default function FormCompleted() {
   // New state for confirmation dialog
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
-  // Controlla se l'utente è arrivato a questa pagina dopo aver completato il form
+  // New state for retry progress
+  const [retryProgress, setRetryProgress] = useState<{
+    isRetrying: boolean;
+    attempt: number;
+    maxAttempts: number;
+    error?: string;
+  }>({
+    isRetrying: false,
+    attempt: 0,
+    maxAttempts: 0
+  });
+
   const submissionData = location.state?.submissionData;
   useEffect(() => {
-    // Debug: log what submissionData contains
     console.log("FormCompleted submissionData:", submissionData);
     console.log("Location state:", location.state);
 
-    // Se l'utente accede direttamente senza aver completato un form, reindirizza alla home
     if (!submissionData) {
       console.log("No submission data found, redirecting to home");
       navigate("/");
       return;
     }
 
-    // Debug: log the submission ID specifically
     console.log("Submission ID from submissionData.submissionId:", submissionData.submissionId);
     console.log("Submission ID from submissionData.id:", submissionData.id);
 
-    // Track lost details on page exit
     const handleBeforeUnload = () => {
       if (!hasSubmittedRef.current) {
         const timeOnPage = Math.floor((Date.now() - pageStartTimeRef.current) / 1000);
@@ -80,32 +88,27 @@ export default function FormCompleted() {
     };
   }, [submissionData, navigate, location.state]);
 
-  // Phone number formatting function
   const formatPhoneNumber = (value: string): string => {
-    // Remove all non-digits
     const cleaned = value.replace(/\D/g, "");
 
-    // Apply formatting: first 3 digits, space, then groups of 3
     if (cleaned.length <= 3) {
       return cleaned;
     } else if (cleaned.length <= 6) {
       return `${cleaned.slice(0, 3)} ${cleaned.slice(3)}`;
     } else {
-      // Limit to 10 digits total and format as xxx xxx xxx
       return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6, 10)}`;
     }
   };
 
-  // First name validation and handling
   const handleFirstNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setFirstName(value);
 
-    // Clear error when user starts typing
     if (firstNameError) {
       setFirstNameError("");
     }
   };
+
   const handleFirstNameBlur = () => {
     if (firstName.trim().length === 0) {
       setFirstNameError("Il nome è obbligatorio");
@@ -114,38 +117,31 @@ export default function FormCompleted() {
     }
   };
 
-  // Phone number validation and formatting
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
 
-    // Clear error when user starts typing again
     if (phoneError) {
       setPhoneError("");
     }
 
-    // Ensure +39 prefix is always there
     if (!value.startsWith("+39 ")) {
       if (value === "" || value === "+39") {
         setPhoneNumber("+39 ");
         return;
       }
-      // If user tries to type without +39, add it
       const cleanValue = value.replace(/\D/g, "");
       const formatted = formatPhoneNumber(cleanValue);
       setPhoneNumber(`+39 ${formatted}`);
       return;
     }
 
-    // Handle the +39 prefix
-    const phoneDigits = value.slice(4); // Remove "+39 "
+    const phoneDigits = value.slice(4);
     const formatted = formatPhoneNumber(phoneDigits);
     setPhoneNumber(`+39 ${formatted}`);
   };
 
-  // Handle blur event for validation
   const handlePhoneBlur = () => {
     if (phoneNumber && phoneNumber !== "+39 ") {
-      // Extract just the phone number without +39 prefix
       const phoneDigits = phoneNumber.replace("+39 ", "").replace(/\s/g, "");
       if (!validatePhoneNumber(phoneDigits)) {
         setPhoneError("Inserisci un numero valido");
@@ -153,17 +149,14 @@ export default function FormCompleted() {
     }
   };
 
-  // Form submission with privacy validation
   const handleWhatsAppSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Clear previous errors
     setFirstNameError("");
     setPhoneError("");
     setPrivacyError("");
     let hasErrors = false;
 
-    // Validate name
     if (firstName.trim().length === 0) {
       setFirstNameError("Il nome è obbligatorio");
       hasErrors = true;
@@ -172,81 +165,98 @@ export default function FormCompleted() {
       hasErrors = true;
     }
 
-    // Extract just the phone number without +39 prefix
     const phoneDigits = phoneNumber.replace("+39 ", "").replace(/\s/g, "");
     if (!validatePhoneNumber(phoneDigits)) {
       setPhoneError("Inserisci un numero valido");
       hasErrors = true;
     }
 
-    // Check privacy policy
     if (!privacyConsent) {
       setPrivacyError("Devi accettare la privacy policy per continuare");
       toast.error("Devi accettare la privacy policy per continuare");
       hasErrors = true;
     }
+    
     if (hasErrors) {
       return;
     }
 
-    // Show confirmation dialog if all validation passes
     setShowConfirmDialog(true);
   };
 
-  // New function to handle confirmed submission
   const handleConfirmedSubmission = async () => {
     setShowConfirmDialog(false);
 
-    // Get the correct submission ID - try submissionId first, then id
     const submissionId = submissionData.submissionId || submissionData.id;
     console.log("Using submission ID:", submissionId);
     console.log("First name to submit:", firstName);
     console.log("Phone number to submit:", phoneNumber);
     console.log("Consultation request:", consultationRequest);
+    
     if (!submissionId) {
       console.error("No submission ID found in submissionData:", submissionData);
       toast.error("Errore: ID della submission non trovato");
       return;
     }
+    
     setIsSubmitting(true);
+    setRetryProgress({
+      isRetrying: false,
+      attempt: 0,
+      maxAttempts: 0
+    });
+
     try {
-      const result = await updateSubmissionWithContact(submissionId, firstName.trim(), phoneNumber, consultationRequest);
+      const result = await updateSubmissionWithContact(
+        submissionId, 
+        firstName.trim(), 
+        phoneNumber, 
+        consultationRequest,
+        (attempt: number, maxAttempts: number, error: any) => {
+          console.log(`Retry progress: ${attempt}/${maxAttempts}`, error?.message);
+          setRetryProgress({
+            isRetrying: true,
+            attempt,
+            maxAttempts,
+            error: error?.message
+          });
+        }
+      );
+      
       if (result.success) {
-        // Mark as submitted to prevent lost details tracking
         hasSubmittedRef.current = true;
 
-        // Calculate time spent on this page and track the contact details submission
         const timeSpentOnPage = Math.floor((Date.now() - pageStartTimeRef.current) / 1000);
         trackSimulationContactDetails(timeSpentOnPage, consultationRequest);
 
-        // Send WhatsApp message via AiSensy using the new form completion method
         console.log("Sending WhatsApp message via AiSensy...");
         sendFormCompletionMessage(firstName.trim(), phoneNumber, consultationRequest).then(aisensyResult => {
           if (aisensyResult.success) {
             console.log("WhatsApp message sent successfully via AiSensy");
           } else {
             console.error("Failed to send WhatsApp message via AiSensy:", aisensyResult.error);
-            // We don't show this error to the user as it shouldn't block their flow
           }
         }).catch(error => {
           console.error("Error sending WhatsApp message via AiSensy:", error);
-          // We don't show this error to the user as it shouldn't block their flow
-        });
-        toast.success("Perfetto!", {
-          description: "Riceverai presto i risultati su WhatsApp"
         });
 
-        // Naviga alla home page dopo il successo
+        let successMessage = "Riceverai presto i risultati su WhatsApp";
+        if (result.attempts && result.attempts > 1) {
+          successMessage += ` (risolto al ${result.attempts}° tentativo)`;
+        }
+        
+        toast.success("Perfetto!", {
+          description: successMessage
+        });
+
         setTimeout(() => {
           navigate("/");
         }, 1500);
       } else if (result.expired) {
-        // Handle expired submission
         toast.error("Sessione scaduta", {
           description: result.error || "La tua sessione è scaduta. Ricompila il form."
         });
 
-        // Redirect to home after showing error
         setTimeout(() => {
           navigate("/");
         }, 3000);
@@ -260,17 +270,24 @@ export default function FormCompleted() {
       });
     } finally {
       setIsSubmitting(false);
+      setRetryProgress({
+        isRetrying: false,
+        attempt: 0,
+        maxAttempts: 0
+      });
     }
   };
 
-  // Validation functions
   const isNameValid = firstName.trim().length >= 2;
   const phoneDigits = phoneNumber.replace("+39 ", "").replace(/\s/g, "");
   const isPhoneValid = phoneDigits.length > 0 && validatePhoneNumber(phoneDigits);
+  
   if (!submissionData) {
-    return null; // Non mostrare nulla durante il reindirizzamento
+    return null;
   }
-  return <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
+
+  return (
+    <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
       {/* Header */}
       <header className="py-6 px-4 md:px-6 flex justify-between items-center">
         <Link to="/">
@@ -287,7 +304,7 @@ export default function FormCompleted() {
               Simulazione pronta, ricevila ora su WhatsApp 
               <img src="/lovable-uploads/f2895a7f-b3f5-43ac-aed7-c5fe560df948.png" alt="WhatsApp" className="inline-block w-6 h-6 ml-2" />
             </h1>
-            <p className="text-sm text-gray-600 mb-4">Abbiamo confrontato più di 109 banche ed offerte di mutui. </p>
+            <p className="text-sm text-gray-600 mb-4">Abbiamo confrontato più di 109 banche ed offerte di mutui. </p>
           </div>
 
           <form onSubmit={handleWhatsAppSubmit} className="space-y-6">
@@ -296,7 +313,14 @@ export default function FormCompleted() {
               <Label htmlFor="firstName" className="text-sm font-medium text-gray-700">
                 Il tuo nome
               </Label>
-              <Input id="firstName" type="text" placeholder="Inserisci il tuo nome" value={firstName} onChange={handleFirstNameChange} onBlur={handleFirstNameBlur} className={`
+              <Input 
+                id="firstName" 
+                type="text" 
+                placeholder="Inserisci il tuo nome" 
+                value={firstName} 
+                onChange={handleFirstNameChange} 
+                onBlur={handleFirstNameBlur} 
+                className={`
                   text-left px-[18px] py-[12px] border-[1.5px] rounded-[10px] 
                   font-['Inter'] text-[16px] md:text-[16px] font-medium transition-all
                   shadow-[0_3px_0_0_#AFA89F] mb-[10px] w-full h-auto
@@ -304,7 +328,8 @@ export default function FormCompleted() {
                   focus-visible:outline-none focus-visible:ring-0 focus-visible:border-[#245C4F]
                   ${firstNameError ? 'border-red-500' : 'border-[#BEB8AE]'}
                   ${firstName ? 'border-[#245C4F] bg-gray-50' : 'border-[#BEB8AE]'}
-                `} />
+                `} 
+              />
               {firstNameError && <p className="text-red-500 text-sm">{firstNameError}</p>}
             </div>
 
@@ -313,7 +338,14 @@ export default function FormCompleted() {
               <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
                 Numero di telefono
               </Label>
-              <Input id="phone" type="tel" placeholder="xxx xxx xxx" value={phoneNumber} onChange={handlePhoneChange} onBlur={handlePhoneBlur} className={`
+              <Input 
+                id="phone" 
+                type="tel" 
+                placeholder="xxx xxx xxx" 
+                value={phoneNumber} 
+                onChange={handlePhoneChange} 
+                onBlur={handlePhoneBlur} 
+                className={`
                   text-left px-[18px] py-[12px] border-[1.5px] rounded-[10px] 
                   font-['Inter'] text-[16px] md:text-[16px] font-medium transition-all
                   shadow-[0_3px_0_0_#AFA89F] mb-[10px] w-full h-auto
@@ -321,13 +353,20 @@ export default function FormCompleted() {
                   focus-visible:outline-none focus-visible:ring-0 focus-visible:border-[#245C4F]
                   ${phoneError ? 'border-red-500' : 'border-[#BEB8AE]'}
                   ${phoneNumber && phoneNumber !== '+39 ' ? 'border-[#245C4F] bg-gray-50' : 'border-[#BEB8AE]'}
-                `} inputMode="numeric" />
+                `} 
+                inputMode="numeric" 
+              />
               {phoneError && <p className="text-red-500 text-sm">{phoneError}</p>}
             </div>
 
-            {/* Consultation Checkbox - removed background styling */}
+            {/* Consultation Checkbox */}
             <div className="flex items-start space-x-3">
-              <Checkbox id="consultation" checked={consultationRequest} onCheckedChange={checked => setConsultationRequest(checked as boolean)} className="h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b] flex-shrink-0 mt-0.5" />
+              <Checkbox 
+                id="consultation" 
+                checked={consultationRequest} 
+                onCheckedChange={checked => setConsultationRequest(checked as boolean)} 
+                className="h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b] flex-shrink-0 mt-0.5" 
+              />
               <div>
                 <Label htmlFor="consultation" className="text-sm font-medium text-gray-700 cursor-pointer leading-relaxed">
                   Aggiungi prima consulenza gratuita
@@ -340,20 +379,45 @@ export default function FormCompleted() {
 
             {/* Privacy Policy Checkbox */}
             <div className="flex items-start space-x-3">
-              <Checkbox id="privacy" checked={privacyConsent} onCheckedChange={checked => {
-              setPrivacyConsent(checked as boolean);
-              if (privacyError && checked) {
-                setPrivacyError("");
-              }
-            }} className="h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b] flex-shrink-0 mt-0.5" />
+              <Checkbox 
+                id="privacy" 
+                checked={privacyConsent} 
+                onCheckedChange={checked => {
+                  setPrivacyConsent(checked as boolean);
+                  if (privacyError && checked) {
+                    setPrivacyError("");
+                  }
+                }} 
+                className="h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b] flex-shrink-0 mt-0.5" 
+              />
               <Label htmlFor="privacy" className="text-sm text-gray-600 leading-relaxed cursor-pointer">
                 Ho preso visione e accetto la <Link to="/privacy" className="text-[#245C4F] underline hover:text-[#1a453b] font-medium">privacy policy</Link>.
               </Label>
             </div>
             {privacyError && <p className="text-red-500 text-sm">{privacyError}</p>}
 
+            {/* Retry Progress Indicator */}
+            {retryProgress.isRetrying && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <div className="flex items-center space-x-2">
+                  <RefreshCw className="h-4 w-4 text-blue-600 animate-spin" />
+                  <span className="text-sm font-medium text-blue-800">
+                    Tentativo {retryProgress.attempt} di {retryProgress.maxAttempts}
+                  </span>
+                </div>
+                {retryProgress.error && (
+                  <p className="text-xs text-blue-600 mt-1">
+                    Problema temporaneo rilevato, riprovando automaticamente...
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* Submit Button */}
-            <button type="submit" disabled={isSubmitting} className={`
+            <button 
+              type="submit" 
+              disabled={isSubmitting} 
+              className={`
                 w-full px-[32px] py-[14px] border-[1.5px] rounded-[10px] 
                 font-['Inter'] text-[17px] font-medium transition-all
                 shadow-[0_3px_0_0_#1a453e] mb-[10px]
@@ -363,11 +427,25 @@ export default function FormCompleted() {
                 bg-[#245C4F] text-white border-[#245C4F]
                 cursor-pointer hover:bg-[#1e4f44]
                 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}
-              `}>
-              {isSubmitting ? "Invio in corso..." : <>
+              `}
+            >
+              {isSubmitting ? (
+                <>
+                  {retryProgress.isRetrying ? (
+                    <>
+                      <RefreshCw className="h-5 w-5 animate-spin" />
+                      Tentativo {retryProgress.attempt}/{retryProgress.maxAttempts}...
+                    </>
+                  ) : (
+                    "Invio in corso..."
+                  )}
+                </>
+              ) : (
+                <>
                   Ricevi su WhatsApp
                   <ArrowRight className="h-5 w-5" />
-                </>}
+                </>
+              )}
             </button>
           </form>
         </div>
@@ -404,7 +482,10 @@ export default function FormCompleted() {
             <AlertDialogCancel className="w-full max-w-[200px] sm:w-auto order-2 sm:order-1 border-[#245C4F] text-[#245C4F] hover:bg-[#245C4F] hover:text-white">
               Modifica dati
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmedSubmission} className="w-full max-w-[200px] sm:w-auto bg-[#245C4F] hover:bg-[#1e4f44] text-white order-1 sm:order-2">
+            <AlertDialogAction 
+              onClick={handleConfirmedSubmission} 
+              className="w-full max-w-[200px] sm:w-auto bg-[#245C4F] hover:bg-[#1e4f44] text-white order-1 sm:order-2"
+            >
               Conferma e invia
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -417,5 +498,6 @@ export default function FormCompleted() {
           <p>&copy; {new Date().getFullYear()} GoMutuo. Tutti i diritti riservati.</p>
         </div>
       </footer>
-    </div>;
+    </div>
+  );
 }
