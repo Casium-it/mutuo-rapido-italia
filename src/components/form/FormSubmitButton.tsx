@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useForm } from "@/contexts/FormContext";
 
 export function FormSubmitButton() {
-  const { state, blocks } = useForm();
+  const { state, blocks, formSlug } = useForm();
   const [isNavigating, setIsNavigating] = useState(false);
   const navigate = useNavigate();
 
@@ -21,7 +21,8 @@ export function FormSubmitButton() {
             responses: state.responses,
             activeBlocks: state.activeBlocks,
             completedBlocks: state.completedBlocks,
-            dynamicBlocks: state.dynamicBlocks
+            dynamicBlocks: state.dynamicBlocks,
+            formSlug: formSlug
           }
         } 
       });

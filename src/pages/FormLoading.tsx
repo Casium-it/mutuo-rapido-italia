@@ -5,6 +5,7 @@ import { Logo } from "@/components/Logo";
 import { Progress } from "@/components/ui/progress";
 import { FormResponse } from "@/types/form";
 import { submitFormToSupabase } from "@/services/formSubmissionService";
+import { formBehaviorService } from "@/services/formBehaviorService";
 import { allBlocks } from "@/data/blocks";
 import { toast } from "sonner";
 import { useSimulationTimer } from "@/hooks/useSimulationTimer";
@@ -18,6 +19,7 @@ export default function FormLoading() {
   const [submissionCompleted, setSubmissionCompleted] = useState(false);
   const [actualSubmissionId, setActualSubmissionId] = useState<string | null>(null);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [completionRoute, setCompletionRoute] = useState<string>('/form-completed');
   
   const submissionStartedRef = useRef(false);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -32,6 +34,7 @@ export default function FormLoading() {
     completedBlocks: string[];
     dynamicBlocks: any[];
     submissionId?: string;
+    formSlug?: string;
   };
   
   useEffect(() => {
@@ -49,8 +52,11 @@ export default function FormLoading() {
     // Always start progress animation immediately for good UX
     startProgressAnimation();
     
-    // Start form submission (with duplicate prevention)
+    // Start form submission and get completion behavior
     handleFormSubmission();
+    
+    // Determine completion route based on form behavior
+    determineCompletionRoute();
     
     // Cleanup function
     return () => {
@@ -68,7 +74,7 @@ export default function FormLoading() {
     if (loadingProgress >= 100 && submissionCompleted && actualSubmissionId) {
       console.log("FormLoading: All conditions met, navigating to completion page");
       setTimeout(() => {
-        navigate("/form-completed", { 
+        navigate(completionRoute, { 
           state: { 
             submissionData: {
               id: actualSubmissionId,
@@ -88,7 +94,7 @@ export default function FormLoading() {
         navigate(-1);
       }, 2000);
     }
-  }, [loadingProgress, submissionCompleted, actualSubmissionId, submissionError, navigate, formData]);
+  }, [loadingProgress, submissionCompleted, actualSubmissionId, submissionError, navigate, formData, completionRoute]);
 
   const handleFormSubmission = async () => {
     // Prevent duplicate submissions
@@ -145,6 +151,26 @@ export default function FormLoading() {
       setSubmissionError("Si è verificato un errore imprevisto. Riprova più tardi.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const determineCompletionRoute = async () => {
+    try {
+      const formSlug = formData?.formSlug || 'simulazione-mutuo'; // fallback to default
+      console.log('FormLoading: Determining completion route for form:', formSlug);
+      
+      const behavior = await formBehaviorService.getFormBehavior(formSlug);
+      if (behavior?.completion_behavior) {
+        const route = formBehaviorService.getCompletionRoute(behavior.completion_behavior);
+        console.log('FormLoading: Setting completion route to:', route);
+        setCompletionRoute(route);
+      } else {
+        console.log('FormLoading: Using default completion route');
+        setCompletionRoute('/form-completed');
+      }
+    } catch (error) {
+      console.error('FormLoading: Error determining completion route:', error);
+      setCompletionRoute('/form-completed'); // fallback
     }
   };
 

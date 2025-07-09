@@ -13,6 +13,7 @@ import {
 type FormContextType = {
   state: FormState;
   blocks: Block[];
+  formSlug?: string;
   goToQuestion: (block_id: string, question_id: string, replace?: boolean) => void;
   setResponse: (question_id: string, placeholder_key: string, value: string | string[]) => void;
   getResponse: (question_id: string, placeholder_key: string) => string | string[] | undefined;
@@ -337,7 +338,7 @@ function formReducer(state: FormState, action: Action): FormState {
   }
 }
 
-export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = ({ children, blocks }) => {
+export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; formSlug?: string }> = ({ children, blocks, formSlug }) => {
   const navigate = useNavigate();
   const params = useParams<{ formSlug?: string; blockId?: string; questionId?: string }>();
   const location = useLocation();
@@ -1150,6 +1151,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[] }> = 
           ...sortedBlocks,
           ...state.dynamicBlocks
         ].sort((a, b) => a.priority - b.priority), 
+        formSlug,
         goToQuestion,
         setResponse,
         getResponse,
