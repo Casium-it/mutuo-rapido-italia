@@ -1,6 +1,8 @@
+
 import { FormState } from "@/types/form";
 import { submitFormToSupabase } from "./formSubmissionService";
 import { updateSubmissionWithContact } from "./contactSubmissionService";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface CompletionResult {
   success: boolean;
@@ -87,3 +89,37 @@ export async function handleContactSubmission(
     onProgress
   );
 }
+
+// Service for form behavior management
+export const formBehaviorService = {
+  async getFormBehavior(formSlug: string) {
+    try {
+      const { data, error } = await supabase
+        .from('forms')
+        .select('completion_behavior')
+        .eq('slug', formSlug)
+        .eq('is_active', true)
+        .single();
+
+      if (error) {
+        console.error('Error fetching form behavior:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in getFormBehavior:', error);
+      return null;
+    }
+  },
+
+  getCompletionRoute(behavior: 'form-completed' | 'form-completed-redirect') {
+    switch (behavior) {
+      case 'form-completed-redirect':
+        return '/form-completed-redirect';
+      case 'form-completed':
+      default:
+        return '/form-completed';
+    }
+  }
+};
