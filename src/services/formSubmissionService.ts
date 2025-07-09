@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { FormResponse, FormState } from "@/types/form";
 
@@ -15,8 +16,7 @@ type SubmissionResult = {
  */
 export async function submitFormToSupabase(
   state: FormState,
-  blocks: any[],
-  linkedFormData?: any
+  blocks: any[]
 ): Promise<SubmissionResult> {
   try {
     console.log("Inizio invio form a Supabase...");
@@ -33,27 +33,18 @@ export async function submitFormToSupabase(
     expiresAt.setHours(expiresAt.getHours() + 48);
     
     // 1. Crea la submission principale
-    const submissionData: any = {
-      user_identifier: referralId || null,
-      form_type: formType,
-      expires_at: expiresAt.toISOString(),
-      metadata: { 
-        blocks: state.activeBlocks,
-        completedBlocks: state.completedBlocks,
-        dynamicBlocks: state.dynamicBlocks?.length || 0
-      }
-    };
-
-    // Add linked form data if present
-    if (linkedFormData) {
-      submissionData.linked_form_id = linkedFormData.id;
-      submissionData.completion_behavior = linkedFormData.completion_behavior;
-      submissionData.redirect_url = linkedFormData.redirect_url;
-    }
-
     const { data: submission, error: submissionError } = await supabase
       .from('form_submissions')
-      .insert(submissionData)
+      .insert({
+        user_identifier: referralId || null,
+        form_type: formType,
+        expires_at: expiresAt.toISOString(),
+        metadata: { 
+          blocks: state.activeBlocks,
+          completedBlocks: state.completedBlocks,
+          dynamicBlocks: state.dynamicBlocks?.length || 0
+        }
+      })
       .select('id')
       .single();
 
@@ -118,25 +109,6 @@ export async function submitFormToSupabase(
       }
       
       console.log(`Salvate ${responsesData.length} risposte`);
-    }
-
-    // Send progress webhook for linked forms
-    if (linkedFormData) {
-      try {
-        await supabase.functions.invoke('webhook-sender', {
-          body: {
-            link_token: linkedFormData.link_token,
-            event_type: 'form_progress_saved',
-            data: {
-              submission_id: submission.id,
-              responses_count: responsesData.length,
-              progress_percentage: 100
-            }
-          }
-        });
-      } catch (webhookError) {
-        console.warn('⚠️ Progress webhook failed:', webhookError);
-      }
     }
 
     console.log("Returning submission result with ID:", submission.id);

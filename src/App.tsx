@@ -27,8 +27,6 @@ import AdminBlocks from "./pages/AdminBlocks";
 import AdminBlockDetail from "./pages/AdminBlockDetail";
 import AdminFormDetail from "./pages/AdminFormDetail";
 import AdminNotifications from "./pages/AdminNotifications";
-import LinkedFormLauncher from "./components/LinkedFormLauncher";
-import LinkedFormCompleted from "./pages/LinkedFormCompleted";
 
 const queryClient = new QueryClient();
 
@@ -65,10 +63,6 @@ const AppWithTracking = () => {
       
       {/* New simplified form route using FormLauncher */}
       <Route path="/simulazione/:formSlug/:blockId/:questionId" element={<FormLauncher />} />
-      
-      {/* New linked form routes */}
-      <Route path="/linked-form/:token" element={<LinkedFormLauncher />} />
-      <Route path="/linked-form-completed" element={<LinkedFormCompleted />} />
       
       <Route path="/form-loading" element={<FormLoading />} />
       <Route path="/form-completed" element={<FormCompleted />} />
