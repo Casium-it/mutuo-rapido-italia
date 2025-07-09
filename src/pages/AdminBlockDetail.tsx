@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -32,7 +31,12 @@ function AdminBlockDetailContent() {
   const formSlug = searchParams.get('form');
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
-  const [block, setBlock] = useState<AdminBlockDetail | null>(null);
+  
+  // Get current edited state from FlowEditContext
+  const { state } = useFlowEdit();
+  const currentBlock = state.blockData as AdminBlockDetail;
+  
+  const [originalBlock, setOriginalBlock] = useState<AdminBlockDetail | null>(null);
   const [allBlocks, setAllBlocks] = useState<AdminBlockDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -130,7 +134,7 @@ function AdminBlockDetailContent() {
         return;
       }
 
-      setBlock(blockData);
+      setOriginalBlock(blockData);
     } catch (err) {
       console.error('Error loading block from database:', err);
       setError(err instanceof Error ? err.message : 'Errore sconosciuto');
@@ -140,14 +144,14 @@ function AdminBlockDetailContent() {
   };
 
   const handleSaveBlock = async (updatedBlock: Block) => {
-    if (!block) return;
+    if (!originalBlock) return;
 
     try {
       // Find the specific form_blocks record to update
       let query = supabase
         .from('form_blocks')
         .select('id, block_data, form_id')
-        .eq('form_id', block.form_id);
+        .eq('form_id', originalBlock.form_id);
 
       const { data: blockRecords, error: fetchError } = await query;
 
@@ -179,7 +183,7 @@ function AdminBlockDetailContent() {
       if (updateError) throw updateError;
 
       // Update local state
-      setBlock(prev => prev ? { ...prev, ...updatedBlock } : null);
+      setOriginalBlock(prev => prev ? { ...prev, ...updatedBlock } : null);
       
       console.log('Blocco salvato con successo');
     } catch (error) {
@@ -201,21 +205,21 @@ function AdminBlockDetailContent() {
     setOptionEditDialog({ open: true, questionId, placeholderKey, optionIndex });
   };
 
-  // Get current question, placeholder, and option for dialogs with proper null checks
+  // Get current question, placeholder, and option for dialogs with proper null checks - use current edited state
   const getCurrentQuestion = () => {
-    if (!block || !questionEditDialog.questionId) return null;
-    return block.questions?.find(q => q.question_id === questionEditDialog.questionId) || null;
+    if (!currentBlock || !questionEditDialog.questionId) return null;
+    return currentBlock.questions?.find(q => q.question_id === questionEditDialog.questionId) || null;
   };
 
   const getCurrentPlaceholder = () => {
-    if (!block || !placeholderEditDialog.questionId || !placeholderEditDialog.placeholderKey) return null;
-    const question = block.questions?.find(q => q.question_id === placeholderEditDialog.questionId);
+    if (!currentBlock || !placeholderEditDialog.questionId || !placeholderEditDialog.placeholderKey) return null;
+    const question = currentBlock.questions?.find(q => q.question_id === placeholderEditDialog.questionId);
     return question?.placeholders?.[placeholderEditDialog.placeholderKey] || null;
   };
 
   const getCurrentOption = () => {
-    if (!block || !optionEditDialog.questionId || !optionEditDialog.placeholderKey || optionEditDialog.optionIndex < 0) return null;
-    const question = block.questions?.find(q => q.question_id === optionEditDialog.questionId);
+    if (!currentBlock || !optionEditDialog.questionId || !optionEditDialog.placeholderKey || optionEditDialog.optionIndex < 0) return null;
+    const question = currentBlock.questions?.find(q => q.question_id === optionEditDialog.questionId);
     if (!question) return null;
     const placeholder = question.placeholders?.[optionEditDialog.placeholderKey];
     if (!placeholder || placeholder.type !== 'select') return null;
@@ -224,7 +228,7 @@ function AdminBlockDetailContent() {
 
   // Check if a question has leads_to validation errors with proper error handling
   const hasQuestionLeadsToErrors = (question: any) => {
-    if (!question || !block || !allBlocks.length) return false;
+    if (!question || !currentBlock || !allBlocks.length) return false;
     
     try {
       // Check input placeholder leads_to
@@ -233,7 +237,7 @@ function AdminBlockDetailContent() {
           const typedPlaceholder = placeholder as Placeholder;
           if (typedPlaceholder.type === 'input' || typedPlaceholder.type === 'MultiBlockManager') {
             if (typedPlaceholder.leads_to) {
-              const validation = validateSpecificLeadsTo(typedPlaceholder.leads_to, block, allBlocks);
+              const validation = validateSpecificLeadsTo(typedPlaceholder.leads_to, currentBlock, allBlocks);
               if (!validation.isValid) return true;
             }
           }
@@ -242,7 +246,7 @@ function AdminBlockDetailContent() {
           if (typedPlaceholder.type === 'select' && typedPlaceholder.options) {
             for (const option of typedPlaceholder.options) {
               if (option.leads_to) {
-                const validation = validateSpecificLeadsTo(option.leads_to, block, allBlocks);
+                const validation = validateSpecificLeadsTo(option.leads_to, currentBlock, allBlocks);
                 if (!validation.isValid) return true;
               }
             }
@@ -374,7 +378,7 @@ function AdminBlockDetailContent() {
     );
   }
 
-  if (error || !block) {
+  if (error || !currentBlock) {
     return (
       <div className="min-h-screen bg-[#f8f5f1] flex items-center justify-center">
         <Card className="max-w-md">
@@ -445,7 +449,7 @@ function AdminBlockDetailContent() {
   let hasValidationErrors = false;
 
   try {
-    validation = getBlockValidation(block, allBlocks);
+    validation = getBlockValidation(currentBlock, allBlocks);
     hasValidationErrors = !validation.activationSources.isValid || !validation.leadsToValidation.isValid;
   } catch (err) {
     console.error('Error getting block validation:', err);
@@ -470,13 +474,18 @@ function AdminBlockDetailContent() {
             <div>
               <h1 className="text-2xl font-bold text-[#245C4F] flex items-center gap-2">
                 <Blocks className="h-6 w-6" />
-                Dettagli Blocco #{block.block_number}
+                Dettagli Blocco #{currentBlock.block_number}
+                {state.hasUnsavedChanges && (
+                  <Badge variant="outline" className="text-xs bg-yellow-100 text-yellow-800">
+                    MODIFICATO
+                  </Badge>
+                )}
                 {hasValidationErrors && (
                   <AlertTriangle className="h-5 w-5 text-red-500" />
                 )}
               </h1>
               <p className="text-gray-600">
-                Form: {block.form_title} • Benvenuto, {user?.email}
+                Form: {currentBlock.form_title} • Benvenuto, {user?.email}
               </p>
             </div>
           </div>
@@ -534,12 +543,12 @@ function AdminBlockDetailContent() {
               </div>
             </CardHeader>
             <CardContent>
-              <EditableFlowChart block={block} />
+              <EditableFlowChart block={currentBlock} />
             </CardContent>
           </Card>
         )}
 
-        {/* Block Overview Card */}
+        {/* Block Overview Card - Now showing edited state */}
         <Card className={`mb-6 ${hasValidationErrors ? 'border-red-200' : ''}`}>
           <CardHeader className="pb-4">
             <div className="space-y-3">
@@ -547,16 +556,16 @@ function AdminBlockDetailContent() {
               <div className="flex items-start justify-between">
                 <div>
                   <CardTitle className="text-xl text-[#245C4F] flex items-center gap-2">
-                    #{block.block_number} {block.title}
+                    #{currentBlock.block_number} {currentBlock.title}
                   </CardTitle>
                   <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
                     <span>
-                      ID: <code className="bg-gray-100 px-1 rounded text-xs">{block.block_id}</code>
+                      ID: <code className="bg-gray-100 px-1 rounded text-xs">{currentBlock.block_id}</code>
                     </span>
                     <span>•</span>
                     <span>
                       Form: <Badge className="bg-[#245C4F]/10 text-[#245C4F] hover:bg-[#245C4F]/20 text-xs">
-                        {block.form_title}
+                        {currentBlock.form_title}
                       </Badge>
                     </span>
                   </div>
@@ -572,20 +581,20 @@ function AdminBlockDetailContent() {
                   <Settings className="h-4 w-4 text-gray-500" />
                   <span className="text-gray-600">Priorità:</span>
                   <Badge variant="outline" className="text-xs font-mono">
-                    {block.priority}
+                    {currentBlock.priority}
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <Users className="h-4 w-4 text-gray-500" />
                   <span className="text-gray-600">Domande:</span>
-                  <span className="font-medium">{block.questions?.length || 0}</span>
+                  <span className="font-medium">{currentBlock.questions?.length || 0}</span>
                 </div>
               </div>
 
               {/* Special Labels */}
-              {getBlockTypeLabel(block).length > 0 && (
+              {getBlockTypeLabel(currentBlock).length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  {getBlockTypeLabel(block).map((label, index) => (
+                  {getBlockTypeLabel(currentBlock).map((label, index) => (
                     <Badge 
                       key={index} 
                       variant="secondary"
@@ -605,13 +614,13 @@ function AdminBlockDetailContent() {
           </CardContent>
         </Card>
 
-        {/* Questions Details */}
+        {/* Questions Details - Now showing edited state */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
-                Domande del Blocco ({block.questions?.length || 0})
+                Domande del Blocco ({currentBlock.questions?.length || 0})
               </CardTitle>
               <Button
                 variant="outline"
@@ -625,14 +634,14 @@ function AdminBlockDetailContent() {
             </div>
           </CardHeader>
           <CardContent>
-            {!block.questions || block.questions.length === 0 ? (
+            {!currentBlock.questions || currentBlock.questions.length === 0 ? (
               <div className="text-center py-8">
                 <FileText className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                 <p className="text-gray-500">Nessuna domanda in questo blocco</p>
               </div>
             ) : (
               <div className="space-y-6">
-                {block.questions.map((question, index) => {
+                {currentBlock.questions.map((question, index) => {
                   const questionHasErrors = hasQuestionLeadsToErrors(question);
                   return (
                     <Card key={question.question_id} className={`${questionHasErrors ? 'border-l-4 border-l-red-500' : 'border-l-4 border-l-[#245C4F]'} relative`}>
@@ -660,7 +669,7 @@ function AdminBlockDetailContent() {
                                   ID: <code className="bg-gray-100 px-1 rounded">{question.question_id}</code>
                                 </div>
                                 <div className="text-xs text-gray-500">
-                                  Block ID: <code className="bg-gray-100 px-1 rounded">{block.block_id}</code>
+                                  Block ID: <code className="bg-gray-100 px-1 rounded">{currentBlock.block_id}</code>
                                 </div>
                                 {question.leads_to_placeholder_priority && (
                                   <div className="text-xs">
@@ -704,7 +713,7 @@ function AdminBlockDetailContent() {
                         </div>
                       </CardHeader>
                       <CardContent>
-                        {/* Question Text */}
+                        {/* Question Text - Now showing edited state */}
                         <div className="mb-4">
                           <h5 className="font-medium text-gray-900 mb-2">Testo della domanda:</h5>
                           <p className="text-gray-700 bg-gray-50 p-3 rounded">
@@ -712,7 +721,7 @@ function AdminBlockDetailContent() {
                           </p>
                         </div>
 
-                        {/* Question Notes */}
+                        {/* Question Notes - Now showing edited state */}
                         {question.question_notes && (
                           <div className="mb-4">
                             <h5 className="font-medium text-gray-900 mb-2">Note:</h5>
@@ -722,7 +731,7 @@ function AdminBlockDetailContent() {
                           </div>
                         )}
 
-                        {/* Placeholders */}
+                        {/* Placeholders - Now showing edited state */}
                         <div>
                           <h5 className="font-medium text-gray-900 mb-3">
                             Placeholder ({Object.keys(question.placeholders || {}).length})
@@ -757,7 +766,7 @@ function AdminBlockDetailContent() {
                                     </Button>
                                   </div>
                                   
-                                  {/* Select Placeholder Details */}
+                                  {/* Select Placeholder Details - Now showing edited state */}
                                   {placeholder.type === 'select' && (
                                     <div className="space-y-3">
                                       {placeholder.placeholder_label && (
@@ -774,7 +783,7 @@ function AdminBlockDetailContent() {
                                           {placeholder.options?.map((option, optIndex) => {
                                             let hasOptionError = false;
                                             try {
-                                              const optionValidation = validateSpecificLeadsTo(option.leads_to, block, allBlocks);
+                                              const optionValidation = validateSpecificLeadsTo(option.leads_to, currentBlock, allBlocks);
                                               hasOptionError = !optionValidation.isValid;
                                             } catch (err) {
                                               console.error('Error validating option leads_to:', err);
@@ -844,7 +853,7 @@ function AdminBlockDetailContent() {
                                     </div>
                                   )}
                                   
-                                  {/* Input Placeholder Details */}
+                                  {/* Input Placeholder Details - Now showing edited state */}
                                   {placeholder.type === 'input' && (
                                     <div className="space-y-2">
                                       <div className="space-y-2 text-sm">
@@ -871,7 +880,7 @@ function AdminBlockDetailContent() {
                                             <div className="flex items-center gap-1">
                                               {(() => {
                                                 try {
-                                                  const validation = validateSpecificLeadsTo(placeholder.leads_to, block, allBlocks);
+                                                  const validation = validateSpecificLeadsTo(placeholder.leads_to, currentBlock, allBlocks);
                                                   return validation.isValid ? (
                                                     <CheckCircle className="h-4 w-4 text-green-500" />
                                                   ) : (
@@ -892,7 +901,7 @@ function AdminBlockDetailContent() {
                                     </div>
                                   )}
                                 
-                                  {/* MultiBlockManager Placeholder Details */}
+                                  {/* MultiBlockManager Placeholder Details - Now showing edited state */}
                                   {placeholder.type === 'MultiBlockManager' && (
                                     <div className="space-y-3">
                                       <div className="space-y-2 text-sm">
@@ -921,7 +930,7 @@ function AdminBlockDetailContent() {
                                           <div className="flex items-center gap-1">
                                             {(() => {
                                               try {
-                                                const validation = validateSpecificLeadsTo(placeholder.leads_to, block, allBlocks);
+                                                const validation = validateSpecificLeadsTo(placeholder.leads_to, currentBlock, allBlocks);
                                                 return validation.isValid ? (
                                                   <CheckCircle className="h-4 w-4 text-green-500" />
                                                 ) : (
