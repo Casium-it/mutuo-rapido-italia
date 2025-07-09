@@ -1,503 +1,176 @@
-import React, { useEffect, useState, useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { Logo } from "@/components/Logo";
-import { Link } from "react-router-dom";
-import { ArrowRight, User, Phone, RefreshCw } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { CheckCircle, ArrowRight, Download, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { validatePhoneNumber } from "@/utils/validationUtils";
-import { toast } from "sonner";
-import { updateSubmissionWithContact } from "@/services/contactSubmissionService";
-import { sendFormCompletionMessage } from "@/services/aisensyService";
-import { trackSimulationContactDetails, trackSimulationLostDetails } from "@/utils/analytics";
+import { Card, CardContent } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { generatePDF } from "@/utils/pdfUtils";
+import { useLinkedForm } from "@/hooks/useLinkedForm";
 
-export default function FormCompleted() {
+const FormCompleted = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [keySummary, setKeySummary] = useState<Record<string, any>>({});
-  const pageStartTimeRef = useRef<number>(Date.now());
-  const hasSubmittedRef = useRef<boolean>(false);
-
-  // Form state for WhatsApp contact
-  const [firstName, setFirstName] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("+39 ");
-  const [privacyConsent, setPrivacyConsent] = useState(false);
-  const [consultationRequest, setConsultationRequest] = useState(false);
-  const [firstNameError, setFirstNameError] = useState("");
-  const [phoneError, setPhoneError] = useState("");
-  const [privacyError, setPrivacyError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // New state for confirmation dialog
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-
-  // New state for retry progress
-  const [retryProgress, setRetryProgress] = useState<{
-    isRetrying: boolean;
-    attempt: number;
-    maxAttempts: number;
-    error?: string;
-  }>({
-    isRetrying: false,
-    attempt: 0,
-    maxAttempts: 0
-  });
-
-  const submissionData = location.state?.submissionData;
-  useEffect(() => {
-    console.log("FormCompleted submissionData:", submissionData);
-    console.log("Location state:", location.state);
-
-    if (!submissionData) {
-      console.log("No submission data found, redirecting to home");
-      navigate("/");
-      return;
-    }
-
-    console.log("Submission ID from submissionData.submissionId:", submissionData.submissionId);
-    console.log("Submission ID from submissionData.id:", submissionData.id);
-
-    const handleBeforeUnload = () => {
-      if (!hasSubmittedRef.current) {
-        const timeOnPage = Math.floor((Date.now() - pageStartTimeRef.current) / 1000);
-        trackSimulationLostDetails('page_close', timeOnPage);
-      }
-    };
-    const handleVisibilityChange = () => {
-      if (document.hidden && !hasSubmittedRef.current) {
-        const timeOnPage = Math.floor((Date.now() - pageStartTimeRef.current) / 1000);
-        trackSimulationLostDetails('tab_close', timeOnPage);
-      }
-    };
-    const handlePopState = () => {
-      if (!hasSubmittedRef.current) {
-        const timeOnPage = Math.floor((Date.now() - pageStartTimeRef.current) / 1000);
-        trackSimulationLostDetails('navigate', timeOnPage);
-      }
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('popstate', handlePopState);
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('popstate', handlePopState);
-    };
-  }, [submissionData, navigate, location.state]);
-
-  const formatPhoneNumber = (value: string): string => {
-    const cleaned = value.replace(/\D/g, "");
-
-    if (cleaned.length <= 3) {
-      return cleaned;
-    } else if (cleaned.length <= 6) {
-      return `${cleaned.slice(0, 3)} ${cleaned.slice(3)}`;
-    } else {
-      return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6, 10)}`;
-    }
-  };
-
-  const handleFirstNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setFirstName(value);
-
-    if (firstNameError) {
-      setFirstNameError("");
-    }
-  };
-
-  const handleFirstNameBlur = () => {
-    if (firstName.trim().length === 0) {
-      setFirstNameError("Il nome è obbligatorio");
-    } else if (firstName.trim().length < 2) {
-      setFirstNameError("Il nome deve essere di almeno 2 caratteri");
-    }
-  };
-
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-
-    if (phoneError) {
-      setPhoneError("");
-    }
-
-    if (!value.startsWith("+39 ")) {
-      if (value === "" || value === "+39") {
-        setPhoneNumber("+39 ");
-        return;
-      }
-      const cleanValue = value.replace(/\D/g, "");
-      const formatted = formatPhoneNumber(cleanValue);
-      setPhoneNumber(`+39 ${formatted}`);
-      return;
-    }
-
-    const phoneDigits = value.slice(4);
-    const formatted = formatPhoneNumber(phoneDigits);
-    setPhoneNumber(`+39 ${formatted}`);
-  };
-
-  const handlePhoneBlur = () => {
-    if (phoneNumber && phoneNumber !== "+39 ") {
-      const phoneDigits = phoneNumber.replace("+39 ", "").replace(/\s/g, "");
-      if (!validatePhoneNumber(phoneDigits)) {
-        setPhoneError("Inserisci un numero valido");
-      }
-    }
-  };
-
-  const handleWhatsAppSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    setFirstNameError("");
-    setPhoneError("");
-    setPrivacyError("");
-    let hasErrors = false;
-
-    if (firstName.trim().length === 0) {
-      setFirstNameError("Il nome è obbligatorio");
-      hasErrors = true;
-    } else if (firstName.trim().length < 2) {
-      setFirstNameError("Il nome deve essere di almeno 2 caratteri");
-      hasErrors = true;
-    }
-
-    const phoneDigits = phoneNumber.replace("+39 ", "").replace(/\s/g, "");
-    if (!validatePhoneNumber(phoneDigits)) {
-      setPhoneError("Inserisci un numero valido");
-      hasErrors = true;
-    }
-
-    if (!privacyConsent) {
-      setPrivacyError("Devi accettare la privacy policy per continuare");
-      toast.error("Devi accettare la privacy policy per continuare");
-      hasErrors = true;
-    }
-    
-    if (hasErrors) {
-      return;
-    }
-
-    setShowConfirmDialog(true);
-  };
-
-  const handleConfirmedSubmission = async () => {
-    setShowConfirmDialog(false);
-
-    const submissionId = submissionData.submissionId || submissionData.id;
-    console.log("Using submission ID:", submissionId);
-    console.log("First name to submit:", firstName);
-    console.log("Phone number to submit:", phoneNumber);
-    console.log("Consultation request:", consultationRequest);
-    
-    if (!submissionId) {
-      console.error("No submission ID found in submissionData:", submissionData);
-      toast.error("Errore: ID della submission non trovato");
-      return;
-    }
-    
-    setIsSubmitting(true);
-    setRetryProgress({
-      isRetrying: false,
-      attempt: 0,
-      maxAttempts: 0
-    });
-
-    try {
-      const result = await updateSubmissionWithContact(
-        submissionId, 
-        firstName.trim(), 
-        phoneNumber, 
-        consultationRequest,
-        (attempt: number, maxAttempts: number, error: any) => {
-          console.log(`Retry progress: ${attempt}/${maxAttempts}`, error?.message);
-          setRetryProgress({
-            isRetrying: true,
-            attempt,
-            maxAttempts,
-            error: error?.message
-          });
-        }
-      );
-      
-      if (result.success) {
-        hasSubmittedRef.current = true;
-
-        const timeSpentOnPage = Math.floor((Date.now() - pageStartTimeRef.current) / 1000);
-        trackSimulationContactDetails(timeSpentOnPage, consultationRequest);
-
-        console.log("Sending WhatsApp message via AiSensy...");
-        sendFormCompletionMessage(firstName.trim(), phoneNumber, consultationRequest).then(aisensyResult => {
-          if (aisensyResult.success) {
-            console.log("WhatsApp message sent successfully via AiSensy");
-          } else {
-            console.error("Failed to send WhatsApp message via AiSensy:", aisensyResult.error);
-          }
-        }).catch(error => {
-          console.error("Error sending WhatsApp message via AiSensy:", error);
-        });
-
-        let successMessage = "Riceverai presto i risultati su WhatsApp";
-        if (result.attempts && result.attempts > 1) {
-          successMessage += ` (risolto al ${result.attempts}° tentativo)`;
-        }
-        
-        toast.success("Perfetto!", {
-          description: successMessage
-        });
-
-        setTimeout(() => {
-          navigate("/");
-        }, 1500);
-      } else if (result.expired) {
-        toast.error("Sessione scaduta", {
-          description: result.error || "La tua sessione è scaduta. Ricompila il form."
-        });
-
-        setTimeout(() => {
-          navigate("/");
-        }, 3000);
-      } else {
-        throw new Error(result.error || "Errore sconosciuto");
-      }
-    } catch (error) {
-      console.error("Error submitting WhatsApp form:", error);
-      toast.error("Errore durante l'invio", {
-        description: "Riprova più tardi"
-      });
-    } finally {
-      setIsSubmitting(false);
-      setRetryProgress({
-        isRetrying: false,
-        attempt: 0,
-        maxAttempts: 0
-      });
-    }
-  };
-
-  const isNameValid = firstName.trim().length >= 2;
-  const phoneDigits = phoneNumber.replace("+39 ", "").replace(/\s/g, "");
-  const isPhoneValid = phoneDigits.length > 0 && validatePhoneNumber(phoneDigits);
+  const [searchParams] = useSearchParams();
+  const { toast } = useToast();
+  const { isLinkedForm } = useLinkedForm();
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   
-  if (!submissionData) {
-    return null;
-  }
+  const submissionId = searchParams.get('id');
 
-  return (
-    <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
-      {/* Header */}
-      <header className="py-6 px-4 md:px-6 flex justify-between items-center">
-        <Link to="/">
-          <Logo />
-        </Link>
-      </header>
-
-      {/* Main content */}
-      <main className="flex-1 px-4 md:px-6 py-8 md:py-12 max-w-3xl mx-auto w-full">
-        {/* WhatsApp Contact Card */}
-        <div className="bg-white rounded-[12px] border border-[#BEB8AE] shadow-[0_3px_0_0_#AFA89F] hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)] transition-all p-8 mb-8 py-[20px] px-[21px]">
-          <div className="text-center mb-4">
-            <h1 className="text-xl md:text-2xl font-bold mb-4 text-gray-900">
-              Simulazione pronta, ricevila ora su WhatsApp 
-              <img src="/lovable-uploads/f2895a7f-b3f5-43ac-aed7-c5fe560df948.png" alt="WhatsApp" className="inline-block w-6 h-6 ml-2" />
-            </h1>
-            <p className="text-sm text-gray-600 mb-4">Abbiamo confrontato più di 109 banche ed offerte di mutui. </p>
-          </div>
-
-          <form onSubmit={handleWhatsAppSubmit} className="space-y-6">
-            {/* First Name Input */}
-            <div className="space-y-2">
-              <Label htmlFor="firstName" className="text-sm font-medium text-gray-700">
-                Il tuo nome
-              </Label>
-              <Input 
-                id="firstName" 
-                type="text" 
-                placeholder="Inserisci il tuo nome" 
-                value={firstName} 
-                onChange={handleFirstNameChange} 
-                onBlur={handleFirstNameBlur} 
-                className={`
-                  text-left px-[18px] py-[12px] border-[1.5px] rounded-[10px] 
-                  font-['Inter'] text-[16px] md:text-[16px] font-medium transition-all
-                  shadow-[0_3px_0_0_#AFA89F] mb-[10px] w-full h-auto
-                  hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)]
-                  focus-visible:outline-none focus-visible:ring-0 focus-visible:border-[#245C4F]
-                  ${firstNameError ? 'border-red-500' : 'border-[#BEB8AE]'}
-                  ${firstName ? 'border-[#245C4F] bg-gray-50' : 'border-[#BEB8AE]'}
-                `} 
-              />
-              {firstNameError && <p className="text-red-500 text-sm">{firstNameError}</p>}
-            </div>
-
-            {/* Phone Number Input */}
-            <div className="space-y-2">
-              <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
-                Numero di telefono
-              </Label>
-              <Input 
-                id="phone" 
-                type="tel" 
-                placeholder="xxx xxx xxx" 
-                value={phoneNumber} 
-                onChange={handlePhoneChange} 
-                onBlur={handlePhoneBlur} 
-                className={`
-                  text-left px-[18px] py-[12px] border-[1.5px] rounded-[10px] 
-                  font-['Inter'] text-[16px] md:text-[16px] font-medium transition-all
-                  shadow-[0_3px_0_0_#AFA89F] mb-[10px] w-full h-auto
-                  hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)]
-                  focus-visible:outline-none focus-visible:ring-0 focus-visible:border-[#245C4F]
-                  ${phoneError ? 'border-red-500' : 'border-[#BEB8AE]'}
-                  ${phoneNumber && phoneNumber !== '+39 ' ? 'border-[#245C4F] bg-gray-50' : 'border-[#BEB8AE]'}
-                `} 
-                inputMode="numeric" 
-              />
-              {phoneError && <p className="text-red-500 text-sm">{phoneError}</p>}
-            </div>
-
-            {/* Consultation Checkbox */}
-            <div className="flex items-start space-x-3">
-              <Checkbox 
-                id="consultation" 
-                checked={consultationRequest} 
-                onCheckedChange={checked => setConsultationRequest(checked as boolean)} 
-                className="h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b] flex-shrink-0 mt-0.5" 
-              />
-              <div>
-                <Label htmlFor="consultation" className="text-sm font-medium text-gray-700 cursor-pointer leading-relaxed">
-                  Aggiungi prima consulenza gratuita
-                </Label>
-                <p className="text-xs text-gray-500 mt-1">
-                  Consulenza telefonica senza impegno con uno dei nostri esperti di mutui
+  // Se è un form linkato, mostra messaggio specifico per CRM
+  if (isLinkedForm) {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
+        <div className="flex-1 flex items-center justify-center px-4 py-8">
+          <Card className="w-full max-w-md bg-white border border-[#BEB8AE] shadow-sm">
+            <CardContent className="p-8 text-center">
+              <div className="w-16 h-16 bg-[#245C4F]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <CheckCircle className="w-8 h-8 text-[#245C4F]" />
+              </div>
+              
+              <h1 className="text-xl font-medium text-[#245C4F] mb-3 font-['Inter']">
+                Simulazione Completata
+              </h1>
+              
+              <p className="text-sm text-gray-600 mb-6 font-['Inter']">
+                La tua simulazione è stata inviata con successo. 
+                Sarai ricontattato dal nostro team per proseguire con la tua richiesta di mutuo.
+              </p>
+              
+              <div className="bg-[#245C4F]/5 p-4 rounded-lg border border-[#245C4F]/10">
+                <p className="text-xs text-gray-500 font-['Inter']">
+                  I tuoi dati sono stati trasmessi in sicurezza al nostro sistema CRM.
+                  Riceverai aggiornamenti tramite i contatti forniti.
                 </p>
               </div>
-            </div>
-
-            {/* Privacy Policy Checkbox */}
-            <div className="flex items-start space-x-3">
-              <Checkbox 
-                id="privacy" 
-                checked={privacyConsent} 
-                onCheckedChange={checked => {
-                  setPrivacyConsent(checked as boolean);
-                  if (privacyError && checked) {
-                    setPrivacyError("");
-                  }
-                }} 
-                className="h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b] flex-shrink-0 mt-0.5" 
-              />
-              <Label htmlFor="privacy" className="text-sm text-gray-600 leading-relaxed cursor-pointer">
-                Ho preso visione e accetto la <Link to="/privacy" className="text-[#245C4F] underline hover:text-[#1a453b] font-medium">privacy policy</Link>.
-              </Label>
-            </div>
-            {privacyError && <p className="text-red-500 text-sm">{privacyError}</p>}
-
-            {/* Retry Progress Indicator */}
-            {retryProgress.isRetrying && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                <div className="flex items-center space-x-2">
-                  <RefreshCw className="h-4 w-4 text-blue-600 animate-spin" />
-                  <span className="text-sm font-medium text-blue-800">
-                    Tentativo {retryProgress.attempt} di {retryProgress.maxAttempts}
-                  </span>
-                </div>
-                {retryProgress.error && (
-                  <p className="text-xs text-blue-600 mt-1">
-                    Problema temporaneo rilevato, riprovando automaticamente...
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Submit Button */}
-            <button 
-              type="submit" 
-              disabled={isSubmitting} 
-              className={`
-                w-full px-[32px] py-[14px] border-[1.5px] rounded-[10px] 
-                font-['Inter'] text-[17px] font-medium transition-all
-                shadow-[0_3px_0_0_#1a453e] mb-[10px]
-                hover:shadow-[0_3px_4px_rgba(36,92,79,0.25)]
-                active:shadow-[0_1px_0_0_#1a453e] active:translate-y-[2px]
-                inline-flex items-center justify-center gap-[12px]
-                bg-[#245C4F] text-white border-[#245C4F]
-                cursor-pointer hover:bg-[#1e4f44]
-                ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}
-              `}
-            >
-              {isSubmitting ? (
-                <>
-                  {retryProgress.isRetrying ? (
-                    <>
-                      <RefreshCw className="h-5 w-5 animate-spin" />
-                      Tentativo {retryProgress.attempt}/{retryProgress.maxAttempts}...
-                    </>
-                  ) : (
-                    "Invio in corso..."
-                  )}
-                </>
-              ) : (
-                <>
-                  Ricevi su WhatsApp
-                  <ArrowRight className="h-5 w-5" />
-                </>
-              )}
-            </button>
-          </form>
+            </CardContent>
+          </Card>
         </div>
-      </main>
+      </div>
+    );
+  }
 
-      {/* Confirmation Dialog */}
-      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <AlertDialogContent className="w-[calc(100vw-3rem)] max-w-sm mx-auto sm:max-w-md sm:w-full">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-center text-xl font-bold text-gray-900">
-              Conferma i tuoi dati
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-center text-gray-600 mt-4">
-              Stai per inviare la simulazione a:
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          
-          <div className="my-6 space-y-3">
-            <div className="flex items-center justify-center bg-[#F8F4EF] px-4 py-3 rounded-lg border-2 border-[#245C4F]">
-              <User className="h-5 w-5 text-[#245C4F] mr-2" />
-              <span className="text-lg font-bold text-[#245C4F]">
-                {firstName}
-              </span>
-            </div>
-            <div className="flex items-center justify-center bg-[#F8F4EF] px-4 py-3 rounded-lg border-2 border-[#245C4F]">
-              <Phone className="h-5 w-5 text-[#245C4F] mr-2" />
-              <span className="text-lg font-bold text-[#245C4F]">
-                {phoneNumber}
-              </span>
-            </div>
+  const handleDownloadPDF = async () => {
+    if (!submissionId) {
+      toast({
+        title: "Errore",
+        description: "ID simulazione non trovato",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeneratingPDF(true);
+    try {
+      await generatePDF(submissionId);
+      toast({
+        title: "PDF generato",
+        description: "Il tuo riepilogo simulazione è stato scaricato con successo",
+      });
+    } catch (error) {
+      console.error("Errore nella generazione PDF:", error);
+      toast({
+        title: "Errore",
+        description: "Non è stato possibile generare il PDF",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
+  // Form normale (non linkato)
+  return (
+    <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
+      <div className="flex-1 flex items-center justify-center px-4 py-8 md:py-12">
+        <div className="w-full max-w-3xl mx-auto">
+          {/* Success notification */}
+          <div className="bg-[#245C4F]/10 p-4 rounded-lg mb-6 text-center">
+            <h2 className="text-xl font-medium text-[#245C4F] mb-2">
+              🎉 Simulazione Completata con Successo!
+            </h2>
+            <p className="text-sm text-gray-600">
+              I tuoi dati sono stati salvati. Puoi scaricare il riepilogo o continuare con una nuova simulazione.
+            </p>
           </div>
-          
-          <AlertDialogFooter className="!flex !flex-col !items-center !justify-center gap-3 sm:!flex-row sm:!justify-center sm:gap-4">
-            <AlertDialogCancel className="w-full max-w-[200px] sm:w-auto order-2 sm:order-1 border-[#245C4F] text-[#245C4F] hover:bg-[#245C4F] hover:text-white">
-              Modifica dati
-            </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleConfirmedSubmission} 
-              className="w-full max-w-[200px] sm:w-auto bg-[#245C4F] hover:bg-[#1e4f44] text-white order-1 sm:order-2"
-            >
-              Conferma e invia
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
-      {/* Footer */}
-      <footer className="py-6 px-4 bg-gray-50 border-t border-gray-200 mt-auto">
-        <div className="max-w-7xl mx-auto text-center text-gray-500 text-sm">
-          <p>&copy; {new Date().getFullYear()} GoMutuo. Tutti i diritti riservati.</p>
+          <div className="grid gap-4 md:gap-6">
+            {/* Download PDF Card */}
+            <Card className="bg-white border border-[#BEB8AE] shadow-sm">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1 font-['Inter']">
+                      Scarica il tuo riepilogo
+                    </h3>
+                    <p className="text-sm text-gray-500 font-['Inter']">
+                      Ottieni un PDF dettagliato della tua simulazione
+                    </p>
+                  </div>
+                  <Button
+                    onClick={handleDownloadPDF}
+                    disabled={isGeneratingPDF}
+                    className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-4 py-2 rounded-lg shadow-[0_3px_0_0_#1a453e] hover:shadow-[0_3px_4px_rgba(26,69,62,0.25)] transition-all duration-300 disabled:opacity-50 disabled:shadow-none"
+                  >
+                    {isGeneratingPDF ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Start New Simulation Card */}
+            <Card className="bg-white border border-[#BEB8AE] shadow-sm">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1 font-['Inter']">
+                      Nuova simulazione
+                    </h3>
+                    <p className="text-sm text-gray-500 font-['Inter']">
+                      Confronta scenari diversi con una nuova simulazione
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => navigate('/simulazione-avanzata')}
+                    variant="outline"
+                    className="border-[#245C4F] text-[#245C4F] hover:bg-[#245C4F] hover:text-white px-4 py-2 rounded-lg transition-all duration-300"
+                  >
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Home Card */}
+            <Card className="bg-white border border-[#BEB8AE] shadow-sm">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1 font-['Inter']">
+                      Torna alla home
+                    </h3>
+                    <p className="text-sm text-gray-500 font-['Inter']">
+                      Scopri tutti i servizi disponibili
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => navigate('/')}
+                    variant="ghost"
+                    className="text-gray-700 hover:bg-transparent hover:text-[#00853E] px-4 py-2 rounded-lg transition-all duration-300"
+                  >
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </footer>
+      </div>
     </div>
   );
-}
+};
+
+export default FormCompleted;
