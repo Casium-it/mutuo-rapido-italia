@@ -12,15 +12,15 @@ interface PlaceholderCardProps {
 }
 
 export function PlaceholderCard({ placeholder, placeholderKey, index }: PlaceholderCardProps) {
-  const getFlowLabel = (leadsTo: string) => {
+  const getFlowLabel = (leadsTo: string | undefined) => {
+    if (!leadsTo || leadsTo === 'next_block') return 'NEXT BLOCK';
     if (leadsTo === 'stop_flow') return 'STOP FLOW';
-    if (leadsTo === 'next_block') return 'NEXT BLOCK';
     return null;
   };
 
   const leadsTo = placeholder.type === 'input' ? placeholder.leads_to : 
                  placeholder.type === 'MultiBlockManager' ? placeholder.leads_to : '';
-  const flowLabel = leadsTo ? getFlowLabel(leadsTo) : null;
+  const flowLabel = getFlowLabel(leadsTo);
   const isFlowControl = flowLabel !== null;
 
   const getFlowBadgeVariant = (flowLabel: string | null) => {
@@ -62,9 +62,13 @@ export function PlaceholderCard({ placeholder, placeholderKey, index }: Placehol
               <Badge variant={getFlowBadgeVariant(flowLabel)} className="text-xs">
                 {flowLabel}
               </Badge>
-            ) : (
+            ) : leadsTo ? (
               <span className="text-gray-500 bg-white px-2 py-1 rounded border">
                 → {leadsTo}
+              </span>
+            ) : (
+              <span className="text-gray-400 bg-gray-100 px-2 py-1 rounded border text-xs">
+                → Non configurato
               </span>
             )}
             {placeholder.type === 'MultiBlockManager' && (
@@ -76,8 +80,8 @@ export function PlaceholderCard({ placeholder, placeholderKey, index }: Placehol
           </div>
         </div>
         
-        {/* Handle positioned at the right edge of the card */}
-        {!isFlowControl && (
+        {/* Handle positioned at the right edge of the card - only show if we have a valid leads_to */}
+        {!isFlowControl && leadsTo && (
           <Handle
             type="source"
             position={Position.Right}

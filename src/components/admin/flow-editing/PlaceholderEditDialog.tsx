@@ -50,7 +50,8 @@ export const PlaceholderEditDialog: React.FC<PlaceholderEditDialogProps> = ({
         type: 'input',
         input_type: inputPlaceholder.input_type,
         placeholder_label: inputPlaceholder.placeholder_label,
-        input_validation: inputPlaceholder.input_validation
+        input_validation: inputPlaceholder.input_validation,
+        leads_to: inputPlaceholder.leads_to || 'next_block'
       });
     } else if (placeholder.type === 'MultiBlockManager') {
       const managerPlaceholder = placeholder as MultiBlockManagerPlaceholder;
@@ -58,7 +59,8 @@ export const PlaceholderEditDialog: React.FC<PlaceholderEditDialogProps> = ({
         type: 'MultiBlockManager',
         placeholder_label: managerPlaceholder.placeholder_label,
         add_block_label: managerPlaceholder.add_block_label,
-        blockBlueprint: managerPlaceholder.blockBlueprint
+        blockBlueprint: managerPlaceholder.blockBlueprint,
+        leads_to: managerPlaceholder.leads_to || 'next_block'
       });
     }
   }, [placeholder]);
@@ -79,14 +81,16 @@ export const PlaceholderEditDialog: React.FC<PlaceholderEditDialogProps> = ({
             ...placeholder,
             input_type: formData.input_type,
             placeholder_label: formData.placeholder_label,
-            input_validation: formData.input_validation
+            input_validation: formData.input_validation,
+            leads_to: formData.leads_to
           } as InputPlaceholder;
         } else if (placeholder.type === 'MultiBlockManager') {
           updatedPlaceholders[placeholderKey] = {
             ...placeholder,
             placeholder_label: formData.placeholder_label,
             add_block_label: formData.add_block_label,
-            blockBlueprint: formData.blockBlueprint
+            blockBlueprint: formData.blockBlueprint,
+            leads_to: formData.leads_to
           } as MultiBlockManagerPlaceholder;
         }
         
@@ -382,6 +386,27 @@ export const PlaceholderEditDialog: React.FC<PlaceholderEditDialogProps> = ({
           </SelectContent>
         </Select>
       </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="leads_to">Porta a</Label>
+        <Select
+          value={formData.leads_to || 'next_block'}
+          onValueChange={(value) => setFormData(prev => ({ ...prev, leads_to: value }))}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="next_block">Blocco Successivo</SelectItem>
+            <SelectItem value="stop_flow">Ferma Flusso</SelectItem>
+            {availableQuestions.map(q => (
+              <SelectItem key={q.id} value={q.id}>
+                {q.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
     </>
   );
 
@@ -412,6 +437,27 @@ export const PlaceholderEditDialog: React.FC<PlaceholderEditDialogProps> = ({
           value={formData.blockBlueprint || ''}
           onChange={(e) => setFormData(prev => ({ ...prev, blockBlueprint: e.target.value }))}
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="leads_to">Porta a</Label>
+        <Select
+          value={formData.leads_to || 'next_block'}
+          onValueChange={(value) => setFormData(prev => ({ ...prev, leads_to: value }))}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="next_block">Blocco Successivo</SelectItem>
+            <SelectItem value="stop_flow">Ferma Flusso</SelectItem>
+            {availableQuestions.map(q => (
+              <SelectItem key={q.id} value={q.id}>
+                {q.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     </>
   );

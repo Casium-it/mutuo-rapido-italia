@@ -83,10 +83,9 @@ export function FlowVisualization({ block }: FlowVisualizationProps) {
               }
             }
           });
-        } else if (placeholder.type === 'input' || placeholder.type === 'MultiBlockManager') {
-          // Handle input and MultiBlockManager
-          const leadsTo = placeholder.type === 'input' ? placeholder.leads_to : 
-                         placeholder.type === 'MultiBlockManager' ? placeholder.leads_to : '';
+        } else if (placeholder.type === 'input') {
+          // Handle input placeholders
+          const leadsTo = placeholder.leads_to;
           if (leadsTo && leadsTo !== 'stop_flow' && leadsTo !== 'next_block') {
             const targetQuestion = block.questions.find(q => q.question_id === leadsTo);
             if (targetQuestion) {
@@ -98,13 +97,42 @@ export function FlowVisualization({ block }: FlowVisualizationProps) {
                 targetHandle: 'input',
                 label: placeholder.placeholder_label || placeholderKey,
                 style: { 
-                  stroke: '#245C4F', 
+                  stroke: '#2563eb', // Blue for input connections
                   strokeWidth: 2,
                 },
                 labelStyle: {
                   fontSize: '11px',
                   fontWeight: 500,
-                  fill: '#245C4F',
+                  fill: '#2563eb',
+                },
+                labelBgStyle: {
+                  fill: '#ffffff',
+                  fillOpacity: 0.9,
+                },
+              });
+            }
+          }
+        } else if (placeholder.type === 'MultiBlockManager') {
+          // Handle MultiBlockManager
+          const leadsTo = placeholder.leads_to;
+          if (leadsTo && leadsTo !== 'stop_flow' && leadsTo !== 'next_block') {
+            const targetQuestion = block.questions.find(q => q.question_id === leadsTo);
+            if (targetQuestion) {
+              flowEdges.push({
+                id: `${question.question_id}-${placeholderKey}`,
+                source: question.question_id,
+                target: leadsTo,
+                sourceHandle: placeholderKey,
+                targetHandle: 'input',
+                label: placeholder.placeholder_label || placeholderKey,
+                style: { 
+                  stroke: '#9333ea', // Purple for MultiBlockManager connections
+                  strokeWidth: 2,
+                },
+                labelStyle: {
+                  fontSize: '11px',
+                  fontWeight: 500,
+                  fill: '#9333ea',
                 },
                 labelBgStyle: {
                   fill: '#ffffff',
