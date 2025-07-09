@@ -116,6 +116,7 @@ export type Database = {
       }
       form_submissions: {
         Row: {
+          completion_behavior: string | null
           consulting: boolean | null
           created_at: string
           email: string | null
@@ -125,12 +126,15 @@ export type Database = {
           id: string
           last_name: string | null
           lead_status: Database["public"]["Enums"]["lead_status"] | null
+          linked_form_id: string | null
           metadata: Json | null
           notes: string | null
           phone_number: string | null
+          redirect_url: string | null
           user_identifier: string | null
         }
         Insert: {
+          completion_behavior?: string | null
           consulting?: boolean | null
           created_at?: string
           email?: string | null
@@ -140,12 +144,15 @@ export type Database = {
           id?: string
           last_name?: string | null
           lead_status?: Database["public"]["Enums"]["lead_status"] | null
+          linked_form_id?: string | null
           metadata?: Json | null
           notes?: string | null
           phone_number?: string | null
+          redirect_url?: string | null
           user_identifier?: string | null
         }
         Update: {
+          completion_behavior?: string | null
           consulting?: boolean | null
           created_at?: string
           email?: string | null
@@ -155,12 +162,22 @@ export type Database = {
           id?: string
           last_name?: string | null
           lead_status?: Database["public"]["Enums"]["lead_status"] | null
+          linked_form_id?: string | null
           metadata?: Json | null
           notes?: string | null
           phone_number?: string | null
+          redirect_url?: string | null
           user_identifier?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "form_submissions_linked_form_id_fkey"
+            columns: ["linked_form_id"]
+            isOneToOne: false
+            referencedRelation: "linked_forms"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       form_versions: {
         Row: {
@@ -235,6 +252,62 @@ export type Database = {
           version?: number
         }
         Relationships: []
+      }
+      linked_forms: {
+        Row: {
+          completion_behavior: string
+          created_at: string
+          expires_at: string
+          external_service_id: string
+          form_id: string
+          id: string
+          last_accessed_at: string | null
+          link_token: string
+          metadata: Json | null
+          progress_percentage: number
+          redirect_url: string | null
+          status: string
+          webhook_url: string | null
+        }
+        Insert: {
+          completion_behavior?: string
+          created_at?: string
+          expires_at: string
+          external_service_id: string
+          form_id: string
+          id?: string
+          last_accessed_at?: string | null
+          link_token?: string
+          metadata?: Json | null
+          progress_percentage?: number
+          redirect_url?: string | null
+          status?: string
+          webhook_url?: string | null
+        }
+        Update: {
+          completion_behavior?: string
+          created_at?: string
+          expires_at?: string
+          external_service_id?: string
+          form_id?: string
+          id?: string
+          last_accessed_at?: string | null
+          link_token?: string
+          metadata?: Json | null
+          progress_percentage?: number
+          redirect_url?: string | null
+          status?: string
+          webhook_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "linked_forms_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -328,6 +401,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_link_token: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       generate_resume_code: {
         Args: Record<PropertyKey, never>
         Returns: string

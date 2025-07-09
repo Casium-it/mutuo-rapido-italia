@@ -1,230 +1,158 @@
-import React, { useEffect, useState } from "react";
-import { useForm } from "@/contexts/FormContext";
-import { BlockSidebar } from "@/components/form/BlockSidebar";
-import { QuestionView } from "@/components/form/QuestionView";
-import { Logo } from "@/components/Logo";
-import { Button } from "@/components/ui/button";
-import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
-import { Progress } from "@/components/ui/progress";
-import { Menu } from "lucide-react";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { CompleteFormButton } from "@/components/form/CompleteFormButton";
-import { SaveSimulationDialog } from "@/components/form/SaveSimulationDialog";
-import { ExitConfirmationDialog } from "@/components/form/ExitConfirmationDialog";
-import { saveSimulation, SaveSimulationData } from "@/services/saveSimulationService";
-import { toast } from "sonner";
-import { useTimeTracking } from "@/hooks/useTimeTracking";
-import { useSimulationTimer } from "@/hooks/useSimulationTimer";
-import { trackSimulationExit } from "@/utils/analytics";
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useForm, useFormState } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from "@/components/ui/use-toast"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  useFormField
+} from "@/components/ui/form"
+import { cn } from "@/lib/utils"
+import { useFormContext } from '@/contexts/FormContext';
+import { submitFormToSupabase } from '@/services/formSubmissionService';
+import { allBlocks } from '@/data/blocks';
+import { Block } from '@/types/form';
+import { QuestionComponent } from '@/components/QuestionComponent';
 
-export default function Form() {
-  const {
-    state,
+const Form = () => {
+  const { 
     blocks,
-    getProgress,
-    resetForm,
-    goToQuestion
-  } = useForm();
-  const params = useParams();
+    state,
+    dispatch,
+    canGoBack,
+    canGoForward,
+    goBack,
+    goToNextQuestion,
+    updateResponse,
+    isCurrentQuestionAnswered,
+    canCompleteForm,
+    linkedFormData
+  } = useFormContext();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
-  const isMobile = useIsMobile();
-  const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [showExitDialog, setShowExitDialog] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
 
-  // Initialize time tracking for the simulation
-  const { getTimeSpent, trackCustomExit } = useTimeTracking({
-    pageName: 'simulation_form'
-  });
+  const currentBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
+  const currentQuestion = currentBlock?.questions.find(question => question.question_id === state.activeQuestion.question_id);
 
-  // Initialize global simulation timer
-  const { initializeTimer, getTotalTimeSpent } = useSimulationTimer();
+  const handleFormSubmit = async () => {
+    if (!canCompleteForm()) return;
 
-  // Initialize global timer when form component mounts
-  useEffect(() => {
-    initializeTimer();
-  }, [initializeTimer]);
-
-  // Trova il blocco attivo corrente
-  const activeBlock = blocks.find(block => block.block_id === state.activeQuestion.block_id);
-
-  // Calcola il progresso del form
-  const progress = getProgress();
-
-  // Check if all active blocks are completed
-  const areAllBlocksCompleted = state.activeBlocks?.every(
-    blockId => state.completedBlocks?.includes(blockId)
-  );
-
-  // Handle logo click with confirmation - prevent default navigation
-  const handleLogoClick = (e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    setShowExitDialog(true);
-  };
-
-  // Handle confirmed exit without saving - NOW WITH GLOBAL TRACKING
-  const handleConfirmExit = () => {
-    const totalTimeSpent = getTotalTimeSpent();
-    trackSimulationExit('confirmed_exit', totalTimeSpent);
-    setShowExitDialog(false);
-    navigate("/");
-  };
-
-  // Handle exit with save option
-  const handleExitWithSave = () => {
-    setShowExitDialog(false);
-    setShowSaveDialog(true);
-  };
-
-  // Gestisci il salvataggio della simulazione
-  const handleSaveSimulation = async (contactData: SaveSimulationData) => {
-    setIsSaving(true);
+    setIsSubmitting(true);
     
     try {
-      const formType = params.formSlug || "unknown";
-      const result = await saveSimulation(state, contactData, formType);
+      console.log('🚀 Sottomissione form iniziata');
       
-      setIsSaving(false);
-      return result;
+      // Submit form with linked form data
+      const result = await submitFormToSupabase(state, blocks, linkedFormData);
+      
+      if (result.success && result.submissionId) {
+        console.log('✅ Form inviato con successo');
+        
+        // Navigate based on completion behavior
+        if (linkedFormData) {
+          navigate('/linked-form-completed', { 
+            state: { 
+              submissionData: { submissionId: result.submissionId },
+              linkedFormData 
+            } 
+          });
+        } else {
+          navigate('/form-loading', { 
+            state: { 
+              submissionId: result.submissionId,
+              formType: state.responses['la_tua_ricerca_casa_tipo_proprieta']?.la_tua_ricerca_casa_tipo_proprieta || 'simulazione'
+            } 
+          });
+        }
+      } else {
+        console.error('❌ Errore nell\'invio del form:', result.error);
+        toast({
+          title: "Errore nell'invio",
+          description: result.error || "Si è verificato un errore imprevisto. Riprova.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
-      setIsSaving(false);
-      console.error('Errore nel salvataggio:', error);
-      return { 
-        success: false, 
-        error: "Errore imprevisto durante il salvataggio" 
-      };
+      console.error('❌ Errore durante l\'invio:', error);
+      toast({
+        title: "Errore nell'invio",
+        description: "Si è verificato un errore imprevisto. Riprova.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // Gestisci il salvataggio e l'uscita
-  const handleSaveAndExit = () => {
-    setShowSaveDialog(true);
-  };
-
-  // Gestisci la chiusura del dialog di salvataggio - FIXED: only navigate on successful save
-  const handleCloseSaveDialog = (shouldNavigate: boolean = false) => {
-    setShowSaveDialog(false);
-    // Only navigate to home page if shouldNavigate is true (successful save)
-    if (shouldNavigate) {
-      navigate("/");
-    }
-  };
-
-  // Handle successful save and exit
-  const handleSaveSuccess = () => {
-    handleCloseSaveDialog(true); // Navigate to home on successful save
-  };
-
-  // Track tab close/page unload as simulation exit - WITH GLOBAL TRACKING
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      const totalTimeSpent = getTotalTimeSpent();
-      trackSimulationExit('tab_close', totalTimeSpent);
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, [getTotalTimeSpent]);
-
-  // Assicuriamoci che il componente si ri-renderizzi quando cambia l'URL
-  useEffect(() => {
-    // Questo effetto verrà eseguito ogni volta che cambia l'URL (location.pathname)
-    // Poiché dipende da location.pathname, forza un ri-rendering del componente
-  }, [location.pathname]);
-  
-  return <div className="min-h-screen flex flex-col bg-white">
-      {/* Header */}
-      <header className="py-3 px-4 md:px-6 flex justify-between items-center bg-white border-b border-gray-200">
-        <div className="flex items-center">
-          <Logo onClick={handleLogoClick} />
+  if (!currentBlock || !currentQuestion) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f8f5f1]">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-800 mb-4">
+            Nessuna domanda disponibile
+          </h1>
+          <p className="text-gray-600">
+            Sembra che tu abbia completato tutte le domande disponibili.
+          </p>
         </div>
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="sm" className="text-gray-700 border-gray-300 hover:bg-gray-100 text-sm" onClick={handleSaveAndExit}>
-            Salva ed esci
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col min-h-screen bg-[#f8f5f1]">
+      <div className="container max-w-3xl mx-auto flex-1 flex flex-col p-4 md:p-8">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">
+            {currentBlock.title}
+          </h1>
+          <p className="text-gray-600">
+            {currentQuestion.question_text}
+          </p>
+        </div>
+
+        <QuestionComponent 
+          question={currentQuestion}
+          blockId={currentBlock.block_id}
+        />
+
+        <div className="mt-8 flex justify-between">
+          <Button 
+            variant="outline"
+            onClick={goBack}
+            disabled={!canGoBack}
+          >
+            Indietro
           </Button>
-        </div>
-      </header>
-
-      {/* Progress bar - With increased top padding (py-3 on desktop) and mobile sidebar on the right */}
-      <div className="bg-white px-4 py-2 md:py-3">
-        <div className="max-w-4xl mx-auto flex items-center gap-3">
-          <Progress value={progress} className="h-1 bg-gray-100 rounded-full" indicatorClassName="bg-black" />
-          <span className="text-xs font-medium text-gray-500">{progress}%</span>
-          
-          {/* Mobile sidebar trigger - moved to the right */}
-          {isMobile && <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="ml-auto hover:bg-[#F0EAE0]">
-                  <Menu size={20} className="text-gray-700" />
-                  <span className="sr-only">Apri navigazione</span>
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-[280px] p-0">
-                <div className="h-full bg-[#FAF9F6] p-4 py-0 px-0">
-                  <BlockSidebar />
-                </div>
-              </SheetContent>
-            </Sheet>}
+          {currentQuestion.endOfForm ? (
+            <Button
+              onClick={handleFormSubmit}
+              disabled={!canCompleteForm() || isSubmitting}
+              isLoading={isSubmitting}
+            >
+              Completa
+            </Button>
+          ) : (
+            <Button
+              onClick={goToNextQuestion}
+              disabled={!isCurrentQuestionAnswered(currentQuestion.question_id)}
+            >
+              Avanti
+            </Button>
+          )}
         </div>
       </div>
+    </div>
+  );
+};
 
-      {/* Mobile Complete Form button (shown below progress bar) */}
-      {isMobile && areAllBlocksCompleted && (
-        <div className="bg-white px-4 pb-2">
-          <div className="max-w-4xl mx-auto">
-            <CompleteFormButton className="mt-2" />
-          </div>
-        </div>
-      )}
-
-      {/* Main content */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar - increased width from 240px to 280px */}
-        <div className="hidden md:block w-[280px] bg-white border-r border-gray-200 overflow-y-auto">
-          <div className="p-4 h-full py-0 px-0">
-            <BlockSidebar />
-          </div>
-        </div>
-
-        {/* Content area - con key basata sul pathname per forzare il re-rendering */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12">
-          <div className="max-w-2xl mx-auto">
-            {/* Block title */}
-            <div className="mb-6">
-              <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">{activeBlock?.title}</h1>
-            </div>
-
-            {/* Question - con key per forzare il re-rendering quando cambia l'URL */}
-            <div key={location.pathname}>
-              <QuestionView />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Exit Confirmation Dialog */}
-      <ExitConfirmationDialog
-        open={showExitDialog}
-        onClose={() => setShowExitDialog(false)}
-        onConfirmExit={handleConfirmExit}
-        onSaveAndExit={handleExitWithSave}
-        progress={progress}
-      />
-
-      {/* Save Simulation Dialog */}
-      <SaveSimulationDialog 
-        open={showSaveDialog}
-        onClose={() => handleCloseSaveDialog(false)} // Don't navigate on cancel/close
-        onSave={handleSaveSimulation}
-        isLoading={isSaving}
-      />
-    </div>;
-}
+export default Form;

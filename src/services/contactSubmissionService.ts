@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { sendAdminNotifications } from "./adminNotificationService";
 import { retryWithBackoff, RetryOptions } from "@/utils/retryUtils";
@@ -50,10 +49,18 @@ export async function updateSubmissionWithContact(
     try {
       console.log("[ContactSubmission] Checking if submission exists and is valid...");
       
-      // First, check if the submission exists and hasn't expired
+      // First, check if the submission exists and get linked form data
       const { data: existingSubmission, error: checkError } = await supabase
         .from('form_submissions')
-        .select('id, expires_at')
+        .select(`
+          id, 
+          expires_at,
+          linked_form_id,
+          linked_forms!linked_form_id (
+            link_token,
+            webhook_url
+          )
+        `)
         .eq('id', submissionId)
         .single();
 
@@ -116,6 +123,28 @@ export async function updateSubmissionWithContact(
       }
 
       console.log("[ContactSubmission] Submission updated successfully");
+
+      // Send webhook for linked forms
+      if (existingSubmission.linked_forms) {
+        try {
+          console.log("[ContactSubmission] Sending linked form completion webhook...");
+          await supabase.functions.invoke('webhook-sender', {
+            body: {
+              link_token: existingSubmission.linked_forms.link_token,
+              event_type: 'form_completed',
+              data: {
+                submission_id: submissionId,
+                first_name: firstName,
+                phone_number: formattedPhone,
+                consulting: consulting,
+                completion_time: new Date().toISOString()
+              }
+            }
+          });
+        } catch (webhookError) {
+          console.warn("[ContactSubmission] Linked form webhook failed:", webhookError);
+        }
+      }
 
       // Send admin notifications (non-blocking)
       console.log("[ContactSubmission] Triggering admin notifications...");
