@@ -47,6 +47,10 @@ Deno.serve(async (req) => {
     const apiKey = req.headers.get('x-api-key');
     const expectedApiKey = Deno.env.get('SHARE_SUBMISSION_API_KEY');
     
+    // Debug logging for API keys
+    console.log('Received API key:', apiKey);
+    console.log('Expected API key:', expectedApiKey);
+    
     if (!expectedApiKey) {
       console.error('SHARE_SUBMISSION_API_KEY environment variable not set');
       return new Response(
@@ -71,7 +75,7 @@ Deno.serve(async (req) => {
           code: 'UNAUTHORIZED' 
         }),
         { 
-          status: 401,
+          status: 403,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
@@ -80,6 +84,9 @@ Deno.serve(async (req) => {
     // Get submission ID from query parameters
     const url = new URL(req.url);
     const submissionId = url.searchParams.get('submissionId');
+
+    // Debug logging for submission ID
+    console.log('Received submissionId:', submissionId);
 
     if (!submissionId) {
       console.log('Missing submissionId parameter');
@@ -128,12 +135,15 @@ Deno.serve(async (req) => {
       .eq('id', submissionId)
       .single();
 
+    // Debug logging for query result
+    console.log('Submission query result:', { submission, submissionError });
+
     if (submissionError) {
       console.error('Submission lookup error:', submissionError);
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Submission not found',
+          error: 'submissionID not found',
           code: 'SUBMISSION_NOT_FOUND' 
         }),
         { 
@@ -148,7 +158,7 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Submission not found',
+          error: 'submissionID not found',
           code: 'SUBMISSION_NOT_FOUND' 
         }),
         { 
