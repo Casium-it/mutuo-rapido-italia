@@ -12,7 +12,7 @@ interface LeadManagementCardProps {
     last_name: string | null;
     email: string | null;
     notes: string | null;
-    lead_status: 'not_contacted' | 'first_contact' | 'advanced_conversations' | 'converted' | 'rejected';
+    lead_status: 'not_contacted' | 'non_risponde_x1' | 'non_risponde_x2' | 'non_risponde_x3' | 'non_interessato' | 'da_risentire' | 'prenotata_consulenza' | 'pratica_bocciata' | 'converted';
   };
   onUpdate: (field: string, value: string) => Promise<void>;
 }

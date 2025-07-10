@@ -365,6 +365,13 @@ export type Database = {
         | "advanced_conversations"
         | "converted"
         | "rejected"
+        | "non_risponde_x1"
+        | "non_risponde_x2"
+        | "non_risponde_x3"
+        | "non_interessato"
+        | "da_risentire"
+        | "prenotata_consulenza"
+        | "pratica_bocciata"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -500,6 +507,13 @@ export const Constants = {
         "advanced_conversations",
         "converted",
         "rejected",
+        "non_risponde_x1",
+        "non_risponde_x2",
+        "non_risponde_x3",
+        "non_interessato",
+        "da_risentire",
+        "prenotata_consulenza",
+        "pratica_bocciata",
       ],
     },
   },

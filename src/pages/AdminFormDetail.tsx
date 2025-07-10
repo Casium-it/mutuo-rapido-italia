@@ -22,7 +22,7 @@ interface FormSubmission {
   last_name: string | null;
   email: string | null;
   notes: string | null;
-  lead_status: 'not_contacted' | 'first_contact' | 'advanced_conversations' | 'converted' | 'rejected';
+  lead_status: 'not_contacted' | 'non_risponde_x1' | 'non_risponde_x2' | 'non_risponde_x3' | 'non_interessato' | 'da_risentire' | 'prenotata_consulenza' | 'pratica_bocciata' | 'converted';
 }
 
 interface FormResponse {
@@ -202,7 +202,6 @@ export default function AdminFormDetail() {
     }
   };
 
-  // New component to render styled question text
   const StyledQuestionText = ({ questionText, questionId, responseValue }: {
     questionText: string;
     questionId: string;
@@ -227,7 +226,6 @@ export default function AdminFormDetail() {
     );
   };
 
-  // Group responses by block
   const responsesByBlock = responses.reduce((acc, response) => {
     if (!acc[response.block_id]) {
       acc[response.block_id] = [];
@@ -260,7 +258,6 @@ export default function AdminFormDetail() {
 
   return (
     <div className="min-h-screen bg-[#f8f5f1]">
-      {/* Header */}
       <header className="bg-white border-b border-[#BEB8AE] px-4 py-4">
         <div className="max-w-7xl mx-auto flex items-center gap-4">
           <Button 
@@ -279,9 +276,7 @@ export default function AdminFormDetail() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Submission Info */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
@@ -366,7 +361,6 @@ export default function AdminFormDetail() {
           </CardContent>
         </Card>
 
-        {/* Lead Management Card */}
         <div className="mb-6">
           <LeadManagementCard
             submission={submission}
@@ -374,7 +368,6 @@ export default function AdminFormDetail() {
           />
         </div>
 
-        {/* Responses by Block */}
         <div className="space-y-6">
           <h2 className="text-xl font-semibold text-gray-900">
             Risposte ({responses.length} totali)
