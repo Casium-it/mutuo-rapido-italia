@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { FormState } from "@/types/form";
+import { getFormInfoBySlug, getFormSlugByType } from "./formMappingService";
 
 export interface SaveSimulationData {
   name: string;
@@ -18,18 +19,31 @@ export interface SaveSimulationResult {
  * Salva lo stato del form nel database con le informazioni di contatto dell'utente
  * @param formState - Lo stato completo del form da salvare
  * @param contactData - Dati di contatto dell'utente
- * @param formType - Tipo di form (es. "pensando", "cercando", etc.)
+ * @param formSlug - Slug del form per identificare il tipo corretto
  * @returns Risultato dell'operazione con il codice di ripresa
  */
 export async function saveSimulation(
   formState: FormState,
   contactData: SaveSimulationData,
-  formType: string
+  formSlug: string
 ): Promise<SaveSimulationResult> {
   try {
     console.log("Inizio salvataggio simulazione...");
-    console.log("Form type:", formType);
+    console.log("Form slug:", formSlug);
     console.log("Contact data:", contactData);
+    
+    // Ottieni le informazioni del form dal database usando il formSlug
+    const formInfo = await getFormInfoBySlug(formSlug);
+    if (!formInfo) {
+      console.error("Form non trovato per slug:", formSlug);
+      return { 
+        success: false, 
+        error: `Form non trovato per slug: ${formSlug}` 
+      };
+    }
+    
+    const formType = formInfo.form_type;
+    console.log("Form type from DB:", formType);
     
     // Prepara lo stato del form per il salvataggio
     const formStateToSave = {
@@ -104,6 +118,7 @@ export async function loadSimulation(resumeCode: string): Promise<{
   data?: {
     formState: FormState;
     formType: string;
+    formSlug: string;
     contactInfo: SaveSimulationData;
   };
   error?: string;
@@ -177,12 +192,23 @@ export async function loadSimulation(resumeCode: string): Promise<{
       answeredQuestions: new Set(savedFormState.answeredQuestions || [])
     };
 
+    // Get form slug from form_type
+    const formSlug = await getFormSlugByType(data.form_type);
+    if (!formSlug) {
+      console.error("Form slug non trovato per form_type:", data.form_type);
+      return {
+        success: false,
+        error: "Configurazione form non valida"
+      };
+    }
+
     console.log("Simulazione caricata con successo");
     return {
       success: true,
       data: {
         formState,
         formType: data.form_type,
+        formSlug: formSlug,
         contactInfo: {
           name: data.name,
           phone: data.phone,

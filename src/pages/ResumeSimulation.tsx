@@ -28,20 +28,20 @@ export default function ResumeSimulation() {
       const result = await loadSimulation(resumeCode.trim());
       
       if (result.success && result.data) {
-        // Salva lo stato nel localStorage con il tipo di form corretto
-        const formType = result.data.formType;
+        // Salva lo stato nel localStorage con il formSlug corretto
+        const formSlug = result.data.formSlug;
         const stateToSave = {
           ...result.data.formState,
           answeredQuestions: Array.from(result.data.formState.answeredQuestions)
         };
         
-        localStorage.setItem(`form-state-${formType}`, JSON.stringify(stateToSave));
+        localStorage.setItem(`form-state-${formSlug}`, JSON.stringify(stateToSave));
         
         toast.success(`Bentornato ${result.data.contactInfo.name}! Simulazione ripristinata.`);
         
         // Naviga alla pagina del form nel punto giusto
         const { activeQuestion } = result.data.formState;
-        navigate(`/simulazione/${formType}/${activeQuestion.block_id}/${activeQuestion.question_id}`);
+        navigate(`/simulazione/${formSlug}/${activeQuestion.block_id}/${activeQuestion.question_id}`);
       } else {
         toast.error(result.error || "Simulazione non trovata o scaduta");
       }

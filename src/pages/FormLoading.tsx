@@ -130,7 +130,7 @@ export default function FormLoading() {
         pendingRemovals: []
       };
       
-      const result = await submitFormToSupabase(formStateForSubmission, allAvailableBlocks);
+      const result = await submitFormToSupabase(formStateForSubmission, allAvailableBlocks, formData.formSlug || 'unknown');
       
       if (result.success && result.submissionId) {
         console.log("FormLoading: Form submitted successfully, ID:", result.submissionId);
@@ -156,7 +156,7 @@ export default function FormLoading() {
 
   const determineCompletionRoute = async () => {
     try {
-      const formSlug = formData?.formSlug || 'simulazione-mutuo'; // fallback to default
+      const formSlug = formData?.formSlug || 'unknown';
       console.log('FormLoading: Determining completion route for form:', formSlug);
       
       const behavior = await formBehaviorService.getFormBehavior(formSlug);

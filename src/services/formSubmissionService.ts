@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { FormResponse, FormState } from "@/types/form";
 import { submittedFormStateService } from "./submittedFormStateService";
+import { getFormInfoBySlug } from "./formMappingService";
 
 type SubmissionResult = {
   success: boolean;
@@ -13,11 +14,13 @@ type SubmissionResult = {
  * Invia i dati del form completato a Supabase utilizzando lo stato del form
  * @param state - Lo stato attuale del form
  * @param blocks - I blocchi del form per ottenere i testi delle domande
+ * @param formSlug - Slug del form per identificare il tipo corretto
  * @returns Risultato dell'operazione con l'ID della submission
  */
 export async function submitFormToSupabase(
   state: FormState,
-  blocks: any[]
+  blocks: any[],
+  formSlug: string
 ): Promise<SubmissionResult> {
   try {
     console.log("Inizio invio form a Supabase...");
@@ -26,8 +29,14 @@ export async function submitFormToSupabase(
     const searchParams = new URLSearchParams(window.location.search);
     const referralId = searchParams.get('ref');
     
-    // Determina il tipo di form dall'URL
-    const formType = window.location.pathname.includes("mutuo") ? "mutuo" : "simulazione";
+    // Ottieni le informazioni del form dal database usando il formSlug
+    const formInfo = await getFormInfoBySlug(formSlug);
+    if (!formInfo) {
+      console.error("Form non trovato per slug:", formSlug);
+      throw new Error(`Form non trovato per slug: ${formSlug}`);
+    }
+    
+    const formType = formInfo.form_type;
     
     // Calculate expiry time (48 hours from now)
     const expiresAt = new Date();
@@ -113,7 +122,6 @@ export async function submitFormToSupabase(
     }
 
     // 4. Save submitted form state connected to submission ID
-    const formSlug = formType === "mutuo" ? "simulazione-mutuo" : "simulazione";
     submittedFormStateService.saveSubmittedFormState(
       submission.id,
       state,
