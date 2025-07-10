@@ -12,6 +12,13 @@ export function FormSubmitButton() {
   const handleSubmit = async () => {
     setIsNavigating(true);
     console.log("FormSubmitButton: Navigating to FormLoading...");
+    console.log("FormSubmitButton: FormSlug from context:", formSlug);
+    console.log("FormSubmitButton: Form state data:", {
+      responses: Object.keys(state.responses).length,
+      activeBlocks: state.activeBlocks,
+      completedBlocks: state.completedBlocks,
+      dynamicBlocks: state.dynamicBlocks?.length || 0
+    });
     
     try {
       // Navigate to FormLoading with form data (same format as CompleteFormButton)

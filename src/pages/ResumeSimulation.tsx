@@ -28,8 +28,20 @@ export default function ResumeSimulation() {
       const result = await loadSimulation(resumeCode.trim());
       
       if (result.success && result.data) {
-        // Salva lo stato nel localStorage con il formSlug corretto
-        const formSlug = result.data.formSlug;
+        // Map form_type back to formSlug for navigation and localStorage
+        let formSlug = result.data.formSlug;
+        
+        // If formSlug is not available, map from form_type
+        if (!formSlug && result.data.formType) {
+          // Create mapping from form_type to formSlug
+          const formTypeToSlugMap = {
+            'mortgage_simulation': 'simulazione-mutuo',
+            'general': 'simulazione-mutuo' // fallback
+          };
+          formSlug = formTypeToSlugMap[result.data.formType] || 'simulazione-mutuo';
+          console.log(`ResumeSimulation: Mapped form_type ${result.data.formType} to formSlug ${formSlug}`);
+        }
+        
         const stateToSave = {
           ...result.data.formState,
           answeredQuestions: Array.from(result.data.formState.answeredQuestions)

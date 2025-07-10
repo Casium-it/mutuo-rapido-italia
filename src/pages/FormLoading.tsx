@@ -39,6 +39,9 @@ export default function FormLoading() {
   
   useEffect(() => {
     console.log("FormLoading: Component mounted, starting initialization");
+    console.log("FormLoading: Location state:", location.state);
+    console.log("FormLoading: FormData received:", formData);
+    console.log("FormLoading: FormSlug in data:", formData?.formSlug);
     
     // Enhanced validation - if no form data, redirect to home
     if (!formData || !formData.responses || !formData.activeBlocks) {
@@ -130,7 +133,21 @@ export default function FormLoading() {
         pendingRemovals: []
       };
       
-      const result = await submitFormToSupabase(formStateForSubmission, allAvailableBlocks, formData.formSlug || 'unknown');
+      // Try to get formSlug from multiple sources with better fallback
+      let formSlug = formData.formSlug;
+      if (!formSlug) {
+        const pathParts = window.location.pathname.split('/');
+        const simulazioneIndex = pathParts.indexOf('simulazione');
+        if (simulazioneIndex !== -1 && pathParts[simulazioneIndex + 1]) {
+          formSlug = pathParts[simulazioneIndex + 1];
+        }
+      }
+      if (!formSlug) {
+        formSlug = 'simulazione-mutuo'; // Default to main form instead of 'unknown'
+      }
+      
+      console.log("FormLoading: Using formSlug for submission:", formSlug);
+      const result = await submitFormToSupabase(formStateForSubmission, allAvailableBlocks, formSlug);
       
       if (result.success && result.submissionId) {
         console.log("FormLoading: Form submitted successfully, ID:", result.submissionId);
@@ -156,7 +173,25 @@ export default function FormLoading() {
 
   const determineCompletionRoute = async () => {
     try {
-      const formSlug = formData?.formSlug || 'unknown';
+      // Try to get formSlug from multiple sources
+      let formSlug = formData?.formSlug;
+      
+      // If formSlug is not in formData, try to extract from URL
+      if (!formSlug) {
+        const pathParts = window.location.pathname.split('/');
+        const simulazioneIndex = pathParts.indexOf('simulazione');
+        if (simulazioneIndex !== -1 && pathParts[simulazioneIndex + 1]) {
+          formSlug = pathParts[simulazioneIndex + 1];
+          console.log('FormLoading: Extracted formSlug from URL:', formSlug);
+        }
+      }
+      
+      // Final fallback
+      if (!formSlug) {
+        formSlug = 'simulazione-mutuo'; // Default to main form
+        console.warn('FormLoading: Using default formSlug fallback:', formSlug);
+      }
+      
       console.log('FormLoading: Determining completion route for form:', formSlug);
       
       const behavior = await formBehaviorService.getFormBehavior(formSlug);

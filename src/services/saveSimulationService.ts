@@ -35,15 +35,16 @@ export async function saveSimulation(
     // Ottieni le informazioni del form dal database usando il formSlug
     const formInfo = await getFormInfoBySlug(formSlug);
     if (!formInfo) {
-      console.error("Form non trovato per slug:", formSlug);
+      console.error(`SaveSimulation: Form configuration not found for slug: ${formSlug}`);
       return { 
         success: false, 
-        error: `Form non trovato per slug: ${formSlug}` 
+        error: `Form configuration not found for slug: ${formSlug}` 
       };
     }
     
+    console.log(`SaveSimulation: Found form info for ${formSlug}:`, formInfo);
     const formType = formInfo.form_type;
-    console.log("Form type from DB:", formType);
+    console.log("SaveSimulation: Form type from DB:", formType);
     
     // Prepara lo stato del form per il salvataggio
     const formStateToSave = {
@@ -93,7 +94,7 @@ export async function saveSimulation(
       };
     }
 
-    console.log("Simulazione salvata con successo, codice:", data.resume_code);
+    console.log(`SaveSimulation: Successfully saved with resume code: ${data.resume_code}`);
     return { 
       success: true, 
       resumeCode: data.resume_code 
