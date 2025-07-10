@@ -9,6 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import { getQuestionTextWithStyledResponses } from '@/utils/formUtils';
 import { generateSubmissionPDF, PDFSubmissionData } from '@/utils/pdfUtils';
 import { LeadManagementCard } from '@/components/admin/LeadManagementCard';
+import { LeadStatus } from '@/types/leadStatus';
 
 interface FormSubmission {
   id: string;
@@ -22,7 +23,7 @@ interface FormSubmission {
   last_name: string | null;
   email: string | null;
   notes: string | null;
-  lead_status: 'not_contacted' | 'non_risponde_x1' | 'non_risponde_x2' | 'non_risponde_x3' | 'non_interessato' | 'da_risentire' | 'prenotata_consulenza' | 'pratica_bocciata' | 'converted';
+  lead_status: LeadStatus;
 }
 
 interface FormResponse {

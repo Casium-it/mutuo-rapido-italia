@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { Eye, LogOut, Phone, Calendar, FileText, Mail, User, StickyNote, Trash2, Blocks, Bell } from 'lucide-react';
 import { LeadStatusBadge } from '@/components/admin/LeadStatusBadge';
+import { LeadStatus } from '@/types/leadStatus';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,7 +34,7 @@ interface FormSubmission {
   last_name: string | null;
   email: string | null;
   notes: string | null;
-  lead_status: 'not_contacted' | 'first_contact' | 'advanced_conversations' | 'converted' | 'rejected';
+  lead_status: LeadStatus;
 }
 
 export default function Admin() {

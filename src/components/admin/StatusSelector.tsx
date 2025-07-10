@@ -2,22 +2,23 @@
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LeadStatusBadge } from './LeadStatusBadge';
+import { LeadStatus } from '@/types/leadStatus';
 
 interface StatusSelectorProps {
-  value: 'not_contacted' | 'non_risponde_x1' | 'non_risponde_x2' | 'non_risponde_x3' | 'non_interessato' | 'da_risentire' | 'prenotata_consulenza' | 'pratica_bocciata' | 'converted';
-  onValueChange: (value: 'not_contacted' | 'non_risponde_x1' | 'non_risponde_x2' | 'non_risponde_x3' | 'non_interessato' | 'da_risentire' | 'prenotata_consulenza' | 'pratica_bocciata' | 'converted') => Promise<void>;
+  value: LeadStatus;
+  onValueChange: (value: LeadStatus) => Promise<void>;
 }
 
-const statusOptions = [
-  { value: 'not_contacted' as const, label: 'Non Contattato' },
-  { value: 'non_risponde_x1' as const, label: 'Non Risponde x1' },
-  { value: 'non_risponde_x2' as const, label: 'Non Risponde x2' },
-  { value: 'non_risponde_x3' as const, label: 'Non Risponde x3' },
-  { value: 'non_interessato' as const, label: 'Non Interessato' },
-  { value: 'da_risentire' as const, label: 'Da Risentire' },
-  { value: 'prenotata_consulenza' as const, label: 'Prenotata Consulenza' },
-  { value: 'pratica_bocciata' as const, label: 'Pratica Bocciata' },
-  { value: 'converted' as const, label: 'Convertito' }
+const statusOptions: { value: LeadStatus; label: string }[] = [
+  { value: 'not_contacted', label: 'Non Contattato' },
+  { value: 'non_risponde_x1', label: 'Non Risponde x1' },
+  { value: 'non_risponde_x2', label: 'Non Risponde x2' },
+  { value: 'non_risponde_x3', label: 'Non Risponde x3' },
+  { value: 'non_interessato', label: 'Non Interessato' },
+  { value: 'da_risentire', label: 'Da Risentire' },
+  { value: 'prenotata_consulenza', label: 'Prenotata Consulenza' },
+  { value: 'pratica_bocciata', label: 'Pratica Bocciata' },
+  { value: 'converted', label: 'Convertito' }
 ];
 
 export function StatusSelector({ value, onValueChange }: StatusSelectorProps) {

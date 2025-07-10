@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EditableField } from './EditableField';
 import { StatusSelector } from './StatusSelector';
 import { User } from 'lucide-react';
+import { LeadStatus } from '@/types/leadStatus';
 
 interface LeadManagementCardProps {
   submission: {
@@ -12,7 +13,7 @@ interface LeadManagementCardProps {
     last_name: string | null;
     email: string | null;
     notes: string | null;
-    lead_status: 'not_contacted' | 'non_risponde_x1' | 'non_risponde_x2' | 'non_risponde_x3' | 'non_interessato' | 'da_risentire' | 'prenotata_consulenza' | 'pratica_bocciata' | 'converted';
+    lead_status: LeadStatus;
   };
   onUpdate: (field: string, value: string) => Promise<void>;
 }

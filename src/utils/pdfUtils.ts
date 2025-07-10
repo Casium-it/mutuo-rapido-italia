@@ -1,6 +1,7 @@
 
 import jsPDF from 'jspdf';
 import { getQuestionTextWithStyledResponses } from './formUtils';
+import { LeadStatus } from '@/types/leadStatus';
 
 export interface PDFSubmissionData {
   id: string;
@@ -14,7 +15,7 @@ export interface PDFSubmissionData {
   last_name: string | null;
   email: string | null;
   notes: string | null;
-  lead_status: 'not_contacted' | 'first_contact' | 'advanced_conversations' | 'converted' | 'rejected';
+  lead_status: LeadStatus;
   responses: Array<{
     id: string;
     question_id: string;
@@ -50,9 +51,17 @@ const LINE_HEIGHT_SECTION = 7;
 const getLeadStatusLabel = (status: string): string => {
   const statusMap: Record<string, string> = {
     'not_contacted': 'Non Contattato',
+    'non_risponde_x1': 'Non Risponde x1',
+    'non_risponde_x2': 'Non Risponde x2',
+    'non_risponde_x3': 'Non Risponde x3',
+    'non_interessato': 'Non Interessato',
+    'da_risentire': 'Da Risentire',
+    'prenotata_consulenza': 'Prenotata Consulenza',
+    'pratica_bocciata': 'Pratica Bocciata',
+    'converted': 'Convertito',
+    // Legacy mappings
     'first_contact': 'Primo Contatto',
     'advanced_conversations': 'Conversazioni Avanzate',
-    'converted': 'Convertito',
     'rejected': 'Rifiutato'
   };
   return statusMap[status] || status;
