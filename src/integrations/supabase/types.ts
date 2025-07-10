@@ -125,7 +125,6 @@ export type Database = {
           id: string
           last_name: string | null
           lead_status: Database["public"]["Enums"]["lead_status"] | null
-          linked_token: string | null
           metadata: Json | null
           notes: string | null
           phone_number: string | null
@@ -141,7 +140,6 @@ export type Database = {
           id?: string
           last_name?: string | null
           lead_status?: Database["public"]["Enums"]["lead_status"] | null
-          linked_token?: string | null
           metadata?: Json | null
           notes?: string | null
           phone_number?: string | null
@@ -157,21 +155,12 @@ export type Database = {
           id?: string
           last_name?: string | null
           lead_status?: Database["public"]["Enums"]["lead_status"] | null
-          linked_token?: string | null
           metadata?: Json | null
           notes?: string | null
           phone_number?: string | null
           user_identifier?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "form_submissions_linked_token_fkey"
-            columns: ["linked_token"]
-            isOneToOne: false
-            referencedRelation: "linked_forms"
-            referencedColumns: ["token"]
-          },
-        ]
+        Relationships: []
       }
       form_versions: {
         Row: {
@@ -247,36 +236,6 @@ export type Database = {
           title?: string
           updated_at?: string
           version?: number
-        }
-        Relationships: []
-      }
-      linked_forms: {
-        Row: {
-          created_at: string
-          expires_at: string
-          form_slug: string
-          id: string
-          is_used: boolean
-          token: string
-          webhook_url: string
-        }
-        Insert: {
-          created_at?: string
-          expires_at: string
-          form_slug: string
-          id?: string
-          is_used?: boolean
-          token: string
-          webhook_url: string
-        }
-        Update: {
-          created_at?: string
-          expires_at?: string
-          form_slug?: string
-          id?: string
-          is_used?: boolean
-          token?: string
-          webhook_url?: string
         }
         Relationships: []
       }
@@ -367,59 +326,11 @@ export type Database = {
         }
         Relationships: []
       }
-      webhook_logs: {
-        Row: {
-          attempt_count: number
-          created_at: string
-          delivered_at: string | null
-          event_type: string
-          http_status: number | null
-          id: string
-          linked_token: string
-          payload: Json
-          response_body: string | null
-        }
-        Insert: {
-          attempt_count?: number
-          created_at?: string
-          delivered_at?: string | null
-          event_type: string
-          http_status?: number | null
-          id?: string
-          linked_token: string
-          payload: Json
-          response_body?: string | null
-        }
-        Update: {
-          attempt_count?: number
-          created_at?: string
-          delivered_at?: string | null
-          event_type?: string
-          http_status?: number | null
-          id?: string
-          linked_token?: string
-          payload?: Json
-          response_body?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "webhook_logs_linked_token_fkey"
-            columns: ["linked_token"]
-            isOneToOne: false
-            referencedRelation: "linked_forms"
-            referencedColumns: ["token"]
-          },
-        ]
-      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      generate_linked_form_token: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
       generate_resume_code: {
         Args: Record<PropertyKey, never>
         Returns: string

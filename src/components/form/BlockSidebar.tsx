@@ -2,7 +2,7 @@ import { useFormExtended } from "@/hooks/useFormExtended";
 import { cn } from "@/lib/utils";
 import { useParams, Link } from "react-router-dom";
 import { CircleCheck, ChevronRight, Lock, ArrowLeft } from "lucide-react";
-import CompleteFormButton from "./CompleteFormButton"; 
+import { CompleteFormButton } from "./CompleteFormButton"; 
 import { useState } from "react";
 import { ExitConfirmationDialog } from "./ExitConfirmationDialog";
 import { SaveSimulationDialog } from "./SaveSimulationDialog";

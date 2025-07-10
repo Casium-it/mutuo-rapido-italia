@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { BlockSidebar } from "@/components/form/BlockSidebar";
@@ -10,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Menu } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import CompleteFormButton from "@/components/form/CompleteFormButton";
+import { CompleteFormButton } from "@/components/form/CompleteFormButton";
 import { SaveSimulationDialog } from "@/components/form/SaveSimulationDialog";
 import { ExitConfirmationDialog } from "@/components/form/ExitConfirmationDialog";
 import { saveSimulation, SaveSimulationData } from "@/services/saveSimulationService";

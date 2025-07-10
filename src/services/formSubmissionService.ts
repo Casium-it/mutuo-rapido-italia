@@ -1,7 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { FormResponse, FormState } from "@/types/form";
-import { LinkedFormService } from "./linkedFormService";
 
 type SubmissionResult = {
   success: boolean;
@@ -13,17 +12,14 @@ type SubmissionResult = {
  * Invia i dati del form completato a Supabase utilizzando lo stato del form
  * @param state - Lo stato attuale del form
  * @param blocks - I blocchi del form per ottenere i testi delle domande
- * @param linkedToken - Token del form linkato dal CRM (opzionale)
  * @returns Risultato dell'operazione con l'ID della submission
  */
 export async function submitFormToSupabase(
   state: FormState,
-  blocks: any[],
-  linkedToken?: string
+  blocks: any[]
 ): Promise<SubmissionResult> {
   try {
     console.log("Inizio invio form a Supabase...");
-    console.log("Linked token:", linkedToken || "none");
     
     // Ottieni il parametro referral dall'URL se presente
     const searchParams = new URLSearchParams(window.location.search);
@@ -43,7 +39,6 @@ export async function submitFormToSupabase(
         user_identifier: referralId || null,
         form_type: formType,
         expires_at: expiresAt.toISOString(),
-        linked_token: linkedToken || null, // Aggiungi il linked token
         metadata: { 
           blocks: state.activeBlocks,
           completedBlocks: state.completedBlocks,
@@ -59,6 +54,7 @@ export async function submitFormToSupabase(
     }
 
     console.log("Submission creata con ID:", submission.id);
+    console.log("Submission object returned:", submission);
 
     // 2. Prepara i dati delle risposte
     const responsesData = [];
@@ -113,38 +109,6 @@ export async function submitFormToSupabase(
       }
       
       console.log(`Salvate ${responsesData.length} risposte`);
-    }
-
-    // 4. Se è un form linkato, invia il webhook form_completed
-    if (linkedToken) {
-      console.log("Invio webhook form_completed per linked form...");
-      
-      // Prepara i dati delle risposte per il webhook
-      const formattedResponses = Object.keys(state.responses).reduce((acc, questionId) => {
-        const question = blocks
-          .flatMap(block => block.questions)
-          .find(q => q.question_id === questionId) ||
-          state.dynamicBlocks?.flatMap(block => block.questions)
-            .find(q => q.question_id === questionId);
-        
-        if (question) {
-          acc[questionId] = {
-            question_text: question.question_text,
-            response_value: state.responses[questionId]
-          };
-        }
-        
-        return acc;
-      }, {} as any);
-
-      const webhookSent = await LinkedFormService.sendFormCompletedWebhook(
-        linkedToken, 
-        formattedResponses
-      );
-      
-      if (!webhookSent) {
-        console.warn("Fallito invio webhook form_completed, ma submission salvata");
-      }
     }
 
     console.log("Returning submission result with ID:", submission.id);
