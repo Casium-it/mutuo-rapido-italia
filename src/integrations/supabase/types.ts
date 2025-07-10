@@ -274,8 +274,8 @@ export type Database = {
           created_at: string
           email: string
           expires_at: string
+          form_slug: string
           form_state: Json
-          form_type: string
           id: string
           name: string
           phone: string
@@ -286,8 +286,8 @@ export type Database = {
           created_at?: string
           email: string
           expires_at?: string
+          form_slug?: string
           form_state: Json
-          form_type: string
           id?: string
           name: string
           phone: string
@@ -298,8 +298,8 @@ export type Database = {
           created_at?: string
           email?: string
           expires_at?: string
+          form_slug?: string
           form_state?: Json
-          form_type?: string
           id?: string
           name?: string
           phone?: string

@@ -28,19 +28,8 @@ export default function ResumeSimulation() {
       const result = await loadSimulation(resumeCode.trim());
       
       if (result.success && result.data) {
-        // Map form_type back to formSlug for navigation and localStorage
-        let formSlug = result.data.formSlug;
-        
-        // If formSlug is not available, map from form_type
-        if (!formSlug && result.data.formType) {
-          // Create mapping from form_type to formSlug
-          const formTypeToSlugMap = {
-            'mortgage_simulation': 'simulazione-mutuo',
-            'general': 'simulazione-mutuo' // fallback
-          };
-          formSlug = formTypeToSlugMap[result.data.formType] || 'simulazione-mutuo';
-          console.log(`ResumeSimulation: Mapped form_type ${result.data.formType} to formSlug ${formSlug}`);
-        }
+        // Usa direttamente formSlug dal database
+        const formSlug = result.data.formSlug;
         
         const stateToSave = {
           ...result.data.formState,

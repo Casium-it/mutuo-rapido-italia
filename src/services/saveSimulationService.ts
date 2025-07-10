@@ -1,7 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { FormState } from "@/types/form";
-import { getFormInfoBySlug, getFormSlugByType } from "./formMappingService";
 
 export interface SaveSimulationData {
   name: string;
@@ -32,20 +31,6 @@ export async function saveSimulation(
     console.log("Form slug:", formSlug);
     console.log("Contact data:", contactData);
     
-    // Ottieni le informazioni del form dal database usando il formSlug
-    const formInfo = await getFormInfoBySlug(formSlug);
-    if (!formInfo) {
-      console.error(`SaveSimulation: Form configuration not found for slug: ${formSlug}`);
-      return { 
-        success: false, 
-        error: `Form configuration not found for slug: ${formSlug}` 
-      };
-    }
-    
-    console.log(`SaveSimulation: Found form info for ${formSlug}:`, formInfo);
-    const formType = formInfo.form_type;
-    console.log("SaveSimulation: Form type from DB:", formType);
-    
     // Prepara lo stato del form per il salvataggio
     const formStateToSave = {
       ...formState,
@@ -61,7 +46,7 @@ export async function saveSimulation(
     
     console.log("Expires at:", expiresAt.toISOString());
     
-    // Inserisci i dati nella tabella saved_simulations
+    // Inserisci i dati nella tabella saved_simulations usando direttamente form_slug
     const { data, error } = await supabase
       .from('saved_simulations')
       .insert({
@@ -69,7 +54,7 @@ export async function saveSimulation(
         phone: contactData.phone,
         email: contactData.email,
         form_state: formStateToSave,
-        form_type: formType,
+        form_slug: formSlug, // Usa direttamente il form_slug
         expires_at: expiresAt.toISOString()
       })
       .select('resume_code')
@@ -118,7 +103,6 @@ export async function loadSimulation(resumeCode: string): Promise<{
   success: boolean;
   data?: {
     formState: FormState;
-    formType: string;
     formSlug: string;
     contactInfo: SaveSimulationData;
   };
@@ -193,23 +177,12 @@ export async function loadSimulation(resumeCode: string): Promise<{
       answeredQuestions: new Set(savedFormState.answeredQuestions || [])
     };
 
-    // Get form slug from form_type
-    const formSlug = await getFormSlugByType(data.form_type);
-    if (!formSlug) {
-      console.error("Form slug non trovato per form_type:", data.form_type);
-      return {
-        success: false,
-        error: "Configurazione form non valida"
-      };
-    }
-
     console.log("Simulazione caricata con successo");
     return {
       success: true,
       data: {
         formState,
-        formType: data.form_type,
-        formSlug: formSlug,
+        formSlug: data.form_slug, // Usa direttamente form_slug dal database
         contactInfo: {
           name: data.name,
           phone: data.phone,

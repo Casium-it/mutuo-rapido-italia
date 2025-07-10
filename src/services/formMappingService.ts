@@ -1,84 +1,44 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
-/**
- * Service to handle mapping between formSlug and form_type
- * Centralizes form metadata retrieval and ensures consistency
- */
-
 export interface FormInfo {
+  id: string;
   slug: string;
-  form_type: string;
   title: string;
+  form_type: string;
   completion_behavior: string;
 }
 
 /**
- * Get form information by slug
+ * Ottiene le informazioni del form dal database usando lo slug
+ * @param formSlug - Lo slug del form da cercare
+ * @returns Le informazioni del form o null se non trovato
  */
 export async function getFormInfoBySlug(formSlug: string): Promise<FormInfo | null> {
   try {
+    console.log(`FormMapping: Getting form info for slug: ${formSlug}`);
+    
     const { data, error } = await supabase
       .from('forms')
-      .select('slug, form_type, title, completion_behavior')
+      .select('id, slug, title, form_type, completion_behavior')
       .eq('slug', formSlug)
       .eq('is_active', true)
       .single();
 
     if (error) {
-      console.error('Error fetching form info by slug:', error);
+      console.error(`FormMapping: Error fetching form info for ${formSlug}:`, error);
       return null;
     }
 
+    if (!data) {
+      console.error(`FormMapping: No form found for slug: ${formSlug}`);
+      return null;
+    }
+
+    console.log(`FormMapping: Found form info for ${formSlug}:`, data);
     return data;
   } catch (error) {
-    console.error('Unexpected error fetching form info by slug:', error);
+    console.error(`FormMapping: Exception getting form info for ${formSlug}:`, error);
     return null;
-  }
-}
-
-/**
- * Get form slug by form_type (for backward compatibility and resume scenarios)
- */
-export async function getFormSlugByType(formType: string): Promise<string | null> {
-  try {
-    const { data, error } = await supabase
-      .from('forms')
-      .select('slug')
-      .eq('form_type', formType)
-      .eq('is_active', true)
-      .single();
-
-    if (error) {
-      console.error('Error fetching form slug by type:', error);
-      return null;
-    }
-
-    return data?.slug || null;
-  } catch (error) {
-    console.error('Unexpected error fetching form slug by type:', error);
-    return null;
-  }
-}
-
-/**
- * Get all active forms mapping
- */
-export async function getAllActiveForms(): Promise<FormInfo[]> {
-  try {
-    const { data, error } = await supabase
-      .from('forms')
-      .select('slug, form_type, title, completion_behavior')
-      .eq('is_active', true)
-      .order('created_at', { ascending: true });
-
-    if (error) {
-      console.error('Error fetching all active forms:', error);
-      return [];
-    }
-
-    return data || [];
-  } catch (error) {
-    console.error('Unexpected error fetching all active forms:', error);
-    return [];
   }
 }
