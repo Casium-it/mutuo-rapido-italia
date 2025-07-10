@@ -14,6 +14,7 @@ interface LeadManagementCardProps {
     email: string | null;
     notes: string | null;
     lead_status: LeadStatus;
+    mediatore: string | null;
   };
   onUpdate: (field: string, value: string) => Promise<void>;
 }
@@ -49,6 +50,13 @@ export function LeadManagementCard({ submission, onUpdate }: LeadManagementCardP
               value={submission.email || ''}
               onSave={(value) => onUpdate('email', value)}
               placeholder="Inserisci l'email"
+            />
+
+            <EditableField
+              label="Mediatore"
+              value={submission.mediatore || ''}
+              onSave={(value) => onUpdate('mediatore', value)}
+              placeholder="Inserisci il nome del mediatore"
             />
           </div>
           
