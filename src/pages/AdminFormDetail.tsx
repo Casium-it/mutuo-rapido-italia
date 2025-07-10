@@ -24,6 +24,7 @@ interface FormSubmission {
   email: string | null;
   notes: string | null;
   lead_status: LeadStatus;
+  mediatore: string | null;
 }
 
 interface FormResponse {
