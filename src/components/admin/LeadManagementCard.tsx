@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EditableField } from './EditableField';
 import { StatusSelector } from './StatusSelector';
-import { User, Mail, FileText } from 'lucide-react';
+import { User } from 'lucide-react';
 
 interface LeadManagementCardProps {
   submission: {
@@ -43,15 +43,12 @@ export function LeadManagementCard({ submission, onUpdate }: LeadManagementCardP
               placeholder="Inserisci il cognome"
             />
             
-            <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4 text-gray-500" />
-              <EditableField
-                label="Email"
-                value={submission.email || ''}
-                onSave={(value) => onUpdate('email', value)}
-                placeholder="Inserisci l'email"
-              />
-            </div>
+            <EditableField
+              label="Email"
+              value={submission.email || ''}
+              onSave={(value) => onUpdate('email', value)}
+              placeholder="Inserisci l'email"
+            />
           </div>
           
           <div className="space-y-4">
@@ -60,16 +57,13 @@ export function LeadManagementCard({ submission, onUpdate }: LeadManagementCardP
               onValueChange={(value) => onUpdate('lead_status', value)}
             />
             
-            <div className="flex items-start gap-2">
-              <FileText className="h-4 w-4 text-gray-500 mt-2" />
-              <EditableField
-                label="Note"
-                value={submission.notes || ''}
-                onSave={(value) => onUpdate('notes', value)}
-                placeholder="Aggiungi note sul lead..."
-                multiline
-              />
-            </div>
+            <EditableField
+              label="Note"
+              value={submission.notes || ''}
+              onSave={(value) => onUpdate('notes', value)}
+              placeholder="Aggiungi note sul lead..."
+              multiline
+            />
           </div>
         </div>
       </CardContent>
