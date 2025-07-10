@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { FormResponse, FormState } from "@/types/form";
+import { submittedFormStateService } from "./submittedFormStateService";
 
 type SubmissionResult = {
   success: boolean;
@@ -110,6 +111,17 @@ export async function submitFormToSupabase(
       
       console.log(`Salvate ${responsesData.length} risposte`);
     }
+
+    // 4. Save submitted form state connected to submission ID
+    const formSlug = formType === "mutuo" ? "simulazione-mutuo" : "simulazione";
+    submittedFormStateService.saveSubmittedFormState(
+      submission.id,
+      state,
+      formSlug
+    );
+
+    // 5. Reset current form state after successful submission
+    submittedFormStateService.resetCurrentFormState(formSlug);
 
     console.log("Returning submission result with ID:", submission.id);
     return { 

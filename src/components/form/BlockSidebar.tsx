@@ -1,8 +1,8 @@
+
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { cn } from "@/lib/utils";
 import { useParams, Link } from "react-router-dom";
 import { CircleCheck, ChevronRight, Lock, ArrowLeft } from "lucide-react";
-import { CompleteFormButton } from "./CompleteFormButton"; 
 import { useState } from "react";
 import { ExitConfirmationDialog } from "./ExitConfirmationDialog";
 import { SaveSimulationDialog } from "./SaveSimulationDialog";
@@ -169,13 +169,6 @@ export function BlockSidebar() {
           })}
           </div>
         </div>
-
-        {/* Complete Form button - displayed at bottom when all blocks are completed */}
-        {areAllBlocksCompleted && (
-          <div className="px-4 mt-6 mb-2">
-            <CompleteFormButton />
-          </div>
-        )}
       </div>
 
       {/* Exit Confirmation Dialog */}
