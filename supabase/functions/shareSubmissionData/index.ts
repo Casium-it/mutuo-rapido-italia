@@ -3,7 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.3'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key',
 }
 
 interface FormResponse {
@@ -43,6 +43,40 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Validate API key
+    const apiKey = req.headers.get('x-api-key');
+    const expectedApiKey = Deno.env.get('SHARE_SUBMISSION_API_KEY');
+    
+    if (!expectedApiKey) {
+      console.error('SHARE_SUBMISSION_API_KEY environment variable not set');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Server configuration error',
+          code: 'SERVER_CONFIG_ERROR' 
+        }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    if (!apiKey || apiKey !== expectedApiKey) {
+      console.log('Invalid or missing API key');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Invalid or missing API key',
+          code: 'UNAUTHORIZED' 
+        }),
+        { 
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
     // Get submission ID from query parameters
     const url = new URL(req.url);
     const submissionId = url.searchParams.get('submissionId');
