@@ -161,7 +161,7 @@ export function SaveSimulationDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl font-medium text-[#245C4F] text-center">
-            {resumeCode ? "Simulazione Salvata!" : isFromResume ? "Aggiorna la tua simulazione" : "Salva la tua simulazione"}
+            {resumeCode ? "Simulazione Salvata!" : isFromResume ? "Salva la tua simulazione" : "Salva la tua simulazione"}
           </DialogTitle>
         </DialogHeader>
 
@@ -233,7 +233,7 @@ export function SaveSimulationDialog({
           // Update mode - just show update button with contact info display
           <div className="space-y-4">
             <div className="text-gray-600 text-sm text-center">
-              Aggiorna la tua simulazione salvata:
+              Aggiorna il tuo salvataggio con le ultime modifiche:
             </div>
             
             <div className="bg-gray-50 rounded-lg p-4 space-y-2">
@@ -265,10 +265,10 @@ export function SaveSimulationDialog({
                 {isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Aggiornamento...
+                    Salvataggio...
                   </>
                 ) : (
-                  "Aggiorna simulazione"
+                  "Salva"
                 )}
               </Button>
             </div>
