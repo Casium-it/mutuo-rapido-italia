@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -121,6 +120,35 @@ export default function AdminNotifications() {
         title: "Successo",
         description: `Notifiche ${enabled ? 'attivate' : 'disattivate'} con successo`,
       });
+
+      // Send webhook notification after successful update
+      try {
+        const adminSetting = settings.find(s => s.id === id);
+        console.log('📤 Sending webhook for notification change');
+        
+        const { data: webhookResponse, error: webhookError } = await supabase.functions.invoke('sendLinkedFormWebhook', {
+          body: {
+            event_type: 'admin_notification_settings_changed',
+            data: {
+              admin_id: id,
+              admin_name: adminSetting?.admin_name,
+              phone_number: adminSetting?.phone_number,
+              notifications_enabled: enabled,
+              changed_at: new Date().toISOString()
+            }
+          }
+        });
+
+        if (webhookError) {
+          console.error('❌ Webhook error:', webhookError);
+        } else {
+          console.log('✅ Webhook sent successfully:', webhookResponse);
+        }
+      } catch (webhookError) {
+        console.error('❌ Failed to send webhook:', webhookError);
+        // Don't show error to user as this is background functionality
+      }
+
     } catch (error) {
       console.error('Error:', error);
       toast({

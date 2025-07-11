@@ -1,1 +1,8 @@
+
 project_id = "jegdbtznkwzpqntzzlvf"
+
+[functions.generateLinkAPI]
+verify_jwt = false
+
+[functions.sendLinkedFormWebhook]
+verify_jwt = false
