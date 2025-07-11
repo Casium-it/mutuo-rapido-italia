@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   Dialog,
@@ -18,15 +19,22 @@ export function PrivacyPolicyDialog({ open, onOpenChange }: PrivacyPolicyDialogP
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
         className="w-[calc(100vw-2rem)] max-w-4xl max-h-[80vh] overflow-hidden p-0 gap-0 flex flex-col"
-        hideCloseButton={false}
+        hideCloseButton={true}
       >
-        <DialogHeader className="px-6 py-4 border-b bg-[#f8f5f1] sticky top-0 z-10">
+        <DialogHeader className="px-6 py-4 border-b bg-[#f8f5f1] sticky top-0 z-10 relative">
           <DialogTitle className="text-xl font-bold text-[#245C4F]">
             Privacy Policy - GoMutuo
           </DialogTitle>
           <DialogDescription className="text-sm text-gray-600">
             Informativa sul trattamento dei dati personali
           </DialogDescription>
+          <button
+            onClick={() => onOpenChange(false)}
+            className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </button>
         </DialogHeader>
         
         <div className="px-6 py-4 space-y-6 text-sm leading-relaxed overflow-y-auto flex-1">
