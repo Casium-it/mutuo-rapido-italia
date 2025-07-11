@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { Link } from "react-router-dom";
-import { ArrowRight, User, Phone, RefreshCw } from "lucide-react";
+import { ArrowRight, User, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -11,13 +11,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { validatePhoneNumber } from "@/utils/validationUtils";
 import { toast } from "sonner";
 import { updateSubmissionWithContact } from "@/services/contactSubmissionService";
-import { sendFormCompletionMessage } from "@/services/aisensyService";
 import { trackSimulationContactDetails, trackSimulationLostDetails } from "@/utils/analytics";
 
 export default function FormCompleted() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [keySummary, setKeySummary] = useState<Record<string, any>>({});
   const pageStartTimeRef = useRef<number>(Date.now());
   const hasSubmittedRef = useRef<boolean>(false);
 
@@ -34,19 +32,8 @@ export default function FormCompleted() {
   // New state for confirmation dialog
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
-  // New state for retry progress
-  const [retryProgress, setRetryProgress] = useState<{
-    isRetrying: boolean;
-    attempt: number;
-    maxAttempts: number;
-    error?: string;
-  }>({
-    isRetrying: false,
-    attempt: 0,
-    maxAttempts: 0
-  });
-
   const submissionData = location.state?.submissionData;
+
   useEffect(() => {
     console.log("FormCompleted submissionData:", submissionData);
     console.log("Location state:", location.state);
@@ -200,27 +187,13 @@ export default function FormCompleted() {
     }
     
     setIsSubmitting(true);
-    setRetryProgress({
-      isRetrying: false,
-      attempt: 0,
-      maxAttempts: 0
-    });
 
     try {
       const result = await updateSubmissionWithContact(
         submissionId, 
         firstName.trim(), 
         phoneNumber, 
-        consultationRequest,
-        (attempt: number, maxAttempts: number, error: any) => {
-          console.log(`Retry progress: ${attempt}/${maxAttempts}`, error?.message);
-          setRetryProgress({
-            isRetrying: true,
-            attempt,
-            maxAttempts,
-            error: error?.message
-          });
-        }
+        consultationRequest
       );
       
       if (result.success) {
@@ -229,20 +202,9 @@ export default function FormCompleted() {
         const timeSpentOnPage = Math.floor((Date.now() - pageStartTimeRef.current) / 1000);
         trackSimulationContactDetails(timeSpentOnPage, consultationRequest);
 
-        console.log("Sending WhatsApp message via AiSensy...");
-        sendFormCompletionMessage(firstName.trim(), phoneNumber, consultationRequest).then(aisensyResult => {
-          if (aisensyResult.success) {
-            console.log("WhatsApp message sent successfully via AiSensy");
-          } else {
-            console.error("Failed to send WhatsApp message via AiSensy:", aisensyResult.error);
-          }
-        }).catch(error => {
-          console.error("Error sending WhatsApp message via AiSensy:", error);
-        });
-
         let successMessage = "Riceverai presto i risultati su WhatsApp";
-        if (result.attempts && result.attempts > 1) {
-          successMessage += ` (risolto al ${result.attempts}° tentativo)`;
+        if (result.timing) {
+          successMessage += ` (completato in ${result.timing.total}ms)`;
         }
         
         toast.success("Perfetto!", {
@@ -270,11 +232,6 @@ export default function FormCompleted() {
       });
     } finally {
       setIsSubmitting(false);
-      setRetryProgress({
-        isRetrying: false,
-        attempt: 0,
-        maxAttempts: 0
-      });
     }
   };
 
@@ -396,23 +353,6 @@ export default function FormCompleted() {
             </div>
             {privacyError && <p className="text-red-500 text-sm">{privacyError}</p>}
 
-            {/* Retry Progress Indicator */}
-            {retryProgress.isRetrying && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                <div className="flex items-center space-x-2">
-                  <RefreshCw className="h-4 w-4 text-blue-600 animate-spin" />
-                  <span className="text-sm font-medium text-blue-800">
-                    Tentativo {retryProgress.attempt} di {retryProgress.maxAttempts}
-                  </span>
-                </div>
-                {retryProgress.error && (
-                  <p className="text-xs text-blue-600 mt-1">
-                    Problema temporaneo rilevato, riprovando automaticamente...
-                  </p>
-                )}
-              </div>
-            )}
-
             {/* Submit Button */}
             <button 
               type="submit" 
@@ -430,16 +370,7 @@ export default function FormCompleted() {
               `}
             >
               {isSubmitting ? (
-                <>
-                  {retryProgress.isRetrying ? (
-                    <>
-                      <RefreshCw className="h-5 w-5 animate-spin" />
-                      Tentativo {retryProgress.attempt}/{retryProgress.maxAttempts}...
-                    </>
-                  ) : (
-                    "Invio in corso..."
-                  )}
-                </>
+                "Invio in corso..."
               ) : (
                 <>
                   Ricevi su WhatsApp
