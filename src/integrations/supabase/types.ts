@@ -277,6 +277,7 @@ export type Database = {
           form_slug: string
           form_state: Json
           id: string
+          linked_form: string | null
           name: string
           phone: string
           resume_code: string
@@ -289,6 +290,7 @@ export type Database = {
           form_slug?: string
           form_state: Json
           id?: string
+          linked_form?: string | null
           name: string
           phone: string
           resume_code?: string
@@ -301,6 +303,7 @@ export type Database = {
           form_slug?: string
           form_state?: Json
           id?: string
+          linked_form?: string | null
           name?: string
           phone?: string
           resume_code?: string

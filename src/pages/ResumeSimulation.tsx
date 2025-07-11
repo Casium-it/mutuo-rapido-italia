@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
-import { loadSimulation } from "@/services/saveSimulationService";
+import { resumeSimulation } from "@/services/resumeSimulationService";
 import { toast } from "sonner";
 import { Search, ArrowLeft } from "lucide-react";
 
@@ -25,24 +25,22 @@ export default function ResumeSimulation() {
     setIsLoading(true);
     
     try {
-      const result = await loadSimulation(resumeCode.trim());
+      const result = await resumeSimulation(resumeCode.trim());
       
       if (result.success && result.data) {
-        // Usa direttamente formSlug dal database
-        const formSlug = result.data.formSlug;
-        
+        // Save form state to localStorage
         const stateToSave = {
           ...result.data.formState,
           answeredQuestions: Array.from(result.data.formState.answeredQuestions)
         };
         
-        localStorage.setItem(`form-state-${formSlug}`, JSON.stringify(stateToSave));
+        localStorage.setItem(`form-state-${result.data.formSlug}`, JSON.stringify(stateToSave));
         
         toast.success(`Bentornato ${result.data.contactInfo.name}! Simulazione ripristinata.`);
         
-        // Naviga alla pagina del form nel punto giusto
+        // Navigate to the form at the correct question
         const { activeQuestion } = result.data.formState;
-        navigate(`/simulazione/${formSlug}/${activeQuestion.block_id}/${activeQuestion.question_id}`);
+        navigate(`/simulazione/${result.data.formSlug}/${activeQuestion.block_id}/${activeQuestion.question_id}`);
       } else {
         toast.error(result.error || "Simulazione non trovata o scaduta");
       }
