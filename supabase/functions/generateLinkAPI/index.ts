@@ -1,4 +1,5 @@
 
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.3'
 import { corsHeaders } from '../_shared/cors.ts'
 
@@ -10,6 +11,8 @@ interface GenerateLinkRequest {
 }
 
 Deno.serve(async (req) => {
+  console.log('🚀 Edge function triggered - generateLinkAPI invoked');
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -226,3 +229,4 @@ Deno.serve(async (req) => {
     );
   }
 });
+
