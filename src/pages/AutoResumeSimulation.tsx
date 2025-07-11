@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { resumeSimulation } from "@/services/resumeSimulationService";
@@ -33,6 +32,19 @@ export default function AutoResumeSimulation() {
           };
           
           localStorage.setItem(`form-state-${result.data.formSlug}`, JSON.stringify(stateToSave));
+          
+          // Save resume metadata for the save dialog to detect this is a resumed simulation
+          const resumeMetadata = {
+            resumeCode: code.toUpperCase(),
+            contactInfo: {
+              name: result.data.contactInfo.name,
+              phone: result.data.contactInfo.phone,
+              email: result.data.contactInfo.email
+            },
+            isFromResume: true
+          };
+          
+          localStorage.setItem('resumeMetadata', JSON.stringify(resumeMetadata));
           
           toast.success(`Bentornato ${result.data.contactInfo.name}! Simulazione ripristinata.`);
           
