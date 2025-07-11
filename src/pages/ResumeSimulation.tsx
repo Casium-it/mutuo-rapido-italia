@@ -40,7 +40,7 @@ export default function ResumeSimulation() {
       if (result.success && result.data) {
         console.log("✅ Simulation resumed successfully");
         
-        // Store resume data in sessionStorage for FormLauncher to pick up
+        // Store resume data in sessionStorage for FormProvider to pick up
         sessionStorage.setItem('resumeData', JSON.stringify({
           code: resumeCode.trim().toUpperCase(),
           formState: result.data.formState,
@@ -52,8 +52,14 @@ export default function ResumeSimulation() {
         
         toast.success("Simulazione caricata con successo!");
         
-        // Navigate to the form - FormLauncher will handle setting the state
-        navigate(`/simulazione/${result.data.formSlug}`);
+        // Extract the active question from the resumed form state
+        const { activeQuestion } = result.data.formState;
+        const targetUrl = `/simulazione/${result.data.formSlug}/${activeQuestion.block_id}/${activeQuestion.question_id}`;
+        
+        console.log("🎯 Navigating to specific question:", targetUrl);
+        
+        // Navigate to the specific block and question where user left off
+        navigate(targetUrl);
       } else {
         console.error("❌ Resume failed:", result.error);
         setCodeError(result.error || "Codice non valido o scaduto");

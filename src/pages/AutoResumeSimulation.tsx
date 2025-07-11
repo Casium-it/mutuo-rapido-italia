@@ -28,7 +28,7 @@ export default function AutoResumeSimulation() {
         if (result.success && result.data) {
           console.log("✅ Simulation resumed successfully, storing data and redirecting");
           
-          // Store resume data in sessionStorage for FormLauncher to pick up
+          // Store resume data in sessionStorage for FormProvider to pick up
           sessionStorage.setItem('resumeData', JSON.stringify({
             code: code,
             formState: result.data.formState,
@@ -38,8 +38,14 @@ export default function AutoResumeSimulation() {
           // Store resume context for pre-population in save dialog
           setResumeContext(code, result.data.contactInfo);
           
-          // Navigate to the form - FormLauncher will handle setting the state
-          navigate(`/simulazione/${result.data.formSlug}`);
+          // Extract the active question from the resumed form state
+          const { activeQuestion } = result.data.formState;
+          const targetUrl = `/simulazione/${result.data.formSlug}/${activeQuestion.block_id}/${activeQuestion.question_id}`;
+          
+          console.log("🎯 Navigating to specific question:", targetUrl);
+          
+          // Navigate to the specific block and question where user left off
+          navigate(targetUrl);
         } else {
           console.error("❌ Resume failed:", result.error);
           setError(result.error || "Errore durante il caricamento della simulazione");
