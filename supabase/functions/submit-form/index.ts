@@ -9,6 +9,58 @@ const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 // Create admin client with service role
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+// Load form blocks from database
+async function loadFormBlocks(formSlug: string) {
+  try {
+    console.log(`🔍 Loading blocks for form: ${formSlug}`);
+    
+    const { data: formData, error } = await supabase
+      .from('forms')
+      .select(`
+        *,
+        form_blocks (
+          id,
+          sort_order,
+          block_data
+        )
+      `)
+      .eq('slug', formSlug)
+      .eq('is_active', true)
+      .single();
+
+    if (error || !formData) {
+      console.error(`❌ Form not found: ${formSlug}`, error);
+      return null;
+    }
+
+    // Transform database blocks to the expected format
+    const blocks = (formData.form_blocks || [])
+      .sort((a: any, b: any) => a.sort_order - b.sort_order)
+      .map((dbBlock: any) => {
+        const blockData = dbBlock.block_data;
+        return {
+          block_number: blockData.block_number || "1",
+          block_id: blockData.block_id,
+          title: blockData.title || "Untitled Block",
+          priority: blockData.priority || 100,
+          default_active: blockData.default_active || false,
+          invisible: blockData.invisible || false,
+          multiBlock: blockData.multiBlock || false,
+          blueprint_id: blockData.blueprint_id,
+          copy_number: blockData.copy_number,
+          questions: Array.isArray(blockData.questions) ? blockData.questions : [],
+        };
+      });
+
+    console.log(`✅ Loaded ${blocks.length} blocks from database for form: ${formSlug}`);
+    return { formData, blocks };
+    
+  } catch (error) {
+    console.error(`💥 Error loading form blocks for ${formSlug}:`, error);
+    return null;
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -28,23 +80,15 @@ serve(async (req) => {
     
     // Parse request body
     const requestBody = await req.json();
-    const { formState, blocks, formSlug } = requestBody;
+    const { formState, formSlug } = requestBody;
     
-    console.log('📋 Form submission details:', {
-      formSlug,
-      responseCount: Object.keys(formState.responses || {}).length,
-      activeBlocks: formState.activeBlocks?.length || 0,
-      completedBlocks: formState.completedBlocks?.length || 0,
-      dynamicBlocks: formState.dynamicBlocks?.length || 0
-    });
-
-    // Validation
-    if (!formState || !blocks || !formSlug) {
+    // Validation - we no longer need blocks from client
+    if (!formState || !formSlug) {
       console.error('❌ Missing required fields in request');
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Missing required fields: formState, blocks, or formSlug' 
+          error: 'Missing required fields: formState or formSlug' 
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -61,31 +105,33 @@ serve(async (req) => {
       );
     }
 
-    // Get referral parameter from the request if provided
-    const referralId = requestBody.referralId || null;
-    
-    // Get form info from database
-    console.log('🔍 Looking up form info for slug:', formSlug);
-    const { data: formInfo, error: formInfoError } = await supabase
-      .from('forms')
-      .select('form_type')
-      .eq('slug', formSlug)
-      .eq('is_active', true)
-      .single();
-
-    if (formInfoError || !formInfo) {
-      console.error('❌ Form not found for slug:', formSlug, formInfoError);
+    // Load form and blocks from database
+    const formResult = await loadFormBlocks(formSlug);
+    if (!formResult) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: `Form not found for slug: ${formSlug}` 
+          error: `Form not found or inactive: ${formSlug}` 
         }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const formType = formInfo.form_type;
-    console.log('✅ Form found, type:', formType);
+    const { formData, blocks } = formResult;
+    const formType = formData.form_type;
+
+    console.log('📋 Form submission details:', {
+      formSlug,
+      formType,
+      responseCount: Object.keys(formState.responses || {}).length,
+      activeBlocks: formState.activeBlocks?.length || 0,
+      completedBlocks: formState.completedBlocks?.length || 0,
+      dynamicBlocks: formState.dynamicBlocks?.length || 0,
+      availableBlocks: blocks.length
+    });
+
+    // Get referral parameter from the request if provided
+    const referralId = requestBody.referralId || null;
 
     // Calculate expiry time (48 hours from now)
     const expiresAt = new Date();
@@ -103,7 +149,8 @@ serve(async (req) => {
           blocks: formState.activeBlocks,
           completedBlocks: formState.completedBlocks,
           dynamicBlocks: formState.dynamicBlocks?.length || 0,
-          submissionSource: 'edge_function'
+          submissionSource: 'edge_function_v2',
+          formVersion: formData.version
         }
       })
       .select('id')
@@ -123,35 +170,57 @@ serve(async (req) => {
 
     console.log('✅ Submission created with ID:', submission.id);
 
-    // Prepare responses data
+    // Prepare responses data with enhanced validation
     const responsesData = [];
     const allAvailableBlocks = [...blocks, ...(formState.dynamicBlocks || [])];
+    const submittedQuestionIds = Object.keys(formState.responses);
+    const foundQuestionIds: string[] = [];
+    const missingQuestionIds: string[] = [];
     
     console.log('🔄 Processing form responses...');
-    for (const questionId in formState.responses) {
+    console.log('📊 Available blocks:', allAvailableBlocks.map(b => `${b.block_id} (${b.questions.length} questions)`));
+    console.log('📋 Submitted question IDs:', submittedQuestionIds);
+
+    for (const questionId of submittedQuestionIds) {
       // Find the question in static and dynamic blocks
-      let question = allAvailableBlocks
-        .flatMap(block => block.questions)
-        .find(q => q.question_id === questionId);
+      let question = null;
+      let blockId = 'unknown';
+      
+      for (const block of allAvailableBlocks) {
+        const foundQuestion = block.questions.find((q: any) => q.question_id === questionId);
+        if (foundQuestion) {
+          question = foundQuestion;
+          blockId = block.block_id;
+          foundQuestionIds.push(questionId);
+          break;
+        }
+      }
       
       if (question) {
-        // Find the correct block_id
-        let blockId = allAvailableBlocks.find(
-          block => block.questions.some(q => q.question_id === questionId)
-        )?.block_id;
-        
         const responseData = formState.responses[questionId];
         
         responsesData.push({
           submission_id: submission.id,
           question_id: questionId,
-          question_text: question.question_text,
-          block_id: blockId || 'unknown',
+          question_text: question.question_text || 'Unknown Question',
+          block_id: blockId,
           response_value: responseData
         });
       } else {
-        console.warn('⚠️ Question not found for ID:', questionId);
+        missingQuestionIds.push(questionId);
+        console.warn(`⚠️ Question not found for ID: ${questionId}`);
       }
+    }
+
+    // Log detailed validation results
+    console.log('✅ Found questions:', foundQuestionIds.length);
+    console.log('❌ Missing questions:', missingQuestionIds.length);
+    if (missingQuestionIds.length > 0) {
+      console.warn('❌ Missing question IDs:', missingQuestionIds);
+      console.log('🔍 This might indicate:');
+      console.log('  - Outdated cached form data on client');
+      console.log('  - Client using old hardcoded blocks');
+      console.log('  - Form structure mismatch between client and database');
     }
     
     // Insert all responses
@@ -177,6 +246,8 @@ serve(async (req) => {
       }
       
       console.log('✅ Successfully inserted', responsesData.length, 'responses');
+    } else {
+      console.warn('⚠️ No valid responses to insert');
     }
 
     const processingTime = Date.now() - startTime;
@@ -184,7 +255,10 @@ serve(async (req) => {
     console.log('📊 Final stats:', {
       submissionId: submission.id,
       formType,
+      formVersion: formData.version,
       responseCount: responsesData.length,
+      foundQuestions: foundQuestionIds.length,
+      missingQuestions: missingQuestionIds.length,
       processingTimeMs: processingTime
     });
 
@@ -192,7 +266,12 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         submissionId: submission.id,
-        processingTime: processingTime
+        processingTime: processingTime,
+        stats: {
+          responsesProcessed: responsesData.length,
+          questionsFound: foundQuestionIds.length,
+          questionsMissing: missingQuestionIds.length
+        }
       }),
       { 
         status: 200, 
