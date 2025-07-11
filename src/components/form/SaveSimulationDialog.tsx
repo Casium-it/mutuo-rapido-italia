@@ -1,13 +1,13 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
+import { Copy, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { SaveSimulationData, SaveSimulationResult } from "@/services/saveSimulationService";
 import { validateAndFormatItalianPhone } from "@/utils/phoneValidation";
-import { Loader2, Copy, Check } from "lucide-react";
 
 interface SaveSimulationDialogProps {
   open: boolean;
@@ -30,6 +30,25 @@ export function SaveSimulationDialog({
   const [resumeCode, setResumeCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [errors, setErrors] = useState<Partial<SaveSimulationData>>({});
+  const [isFromResume, setIsFromResume] = useState<boolean>(false);
+  
+  const { toast } = useToast();
+
+  // Check if user came from a saved simulation
+  useEffect(() => {
+    const resumeMetadata = localStorage.getItem('resumeMetadata');
+    if (resumeMetadata) {
+      try {
+        const metadata = JSON.parse(resumeMetadata);
+        if (metadata.isFromResume && metadata.contactInfo) {
+          setIsFromResume(true);
+          setFormData(metadata.contactInfo);
+        }
+      } catch (error) {
+        console.error('Error parsing resume metadata:', error);
+      }
+    }
+  }, [open]);
 
   const validateForm = (): boolean => {
     const newErrors: Partial<SaveSimulationData> = {};
@@ -76,13 +95,24 @@ export function SaveSimulationDialog({
       
       if (result.success && result.resumeCode) {
         setResumeCode(result.resumeCode);
-        toast.success("Simulazione salvata con successo!");
+        toast({
+          title: "Successo!",
+          description: "Simulazione salvata con successo!"
+        });
       } else {
-        toast.error(result.error || "Errore durante il salvataggio");
+        toast({
+          variant: "destructive",
+          title: "Errore",
+          description: result.error || "Errore durante il salvataggio"
+        });
       }
     } catch (error) {
       console.error('Errore nel salvataggio:', error);
-      toast.error("Errore imprevisto durante il salvataggio");
+      toast({
+        variant: "destructive",
+        title: "Errore",
+        description: "Errore imprevisto durante il salvataggio"
+      });
     }
   };
 
@@ -91,11 +121,18 @@ export function SaveSimulationDialog({
       try {
         await navigator.clipboard.writeText(resumeCode);
         setCopied(true);
-        toast.success("Codice copiato negli appunti!");
+        toast({
+          title: "Successo!",
+          description: "Codice copiato negli appunti!"
+        });
         setTimeout(() => setCopied(false), 2000);
       } catch (error) {
         console.error('Errore nella copia:', error);
-        toast.error("Impossibile copiare il codice");
+        toast({
+          variant: "destructive",
+          title: "Errore",
+          description: "Impossibile copiare il codice"
+        });
       }
     }
   };
@@ -123,56 +160,102 @@ export function SaveSimulationDialog({
     <Dialog open={open} onOpenChange={() => !isLoading && handleClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            {resumeCode ? "Simulazione salvata!" : "Salva la tua simulazione"}
+          <DialogTitle className="text-xl font-medium text-[#245C4F] text-center">
+            {resumeCode ? "Simulazione Salvata!" : isFromResume ? "Aggiorna la tua simulazione" : "Salva la tua simulazione"}
           </DialogTitle>
         </DialogHeader>
 
         {resumeCode ? (
           // Success state - show resume code
-          <div className="space-y-4">
-            <div className="bg-[#245C4F]/10 p-4 rounded-lg text-center">
-              <p className="text-sm text-gray-600 mb-3">
-                Il tuo codice di ripresa è:
-              </p>
-              <div className="flex items-center justify-center gap-2 mb-3">
-                <code className="text-xl font-mono font-bold bg-white px-3 py-2 rounded border">
-                  {resumeCode}
-                </code>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleCopyCode}
-                  className="flex items-center gap-1"
-                >
-                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  {copied ? "Copiato!" : "Copia"}
-                </Button>
+          <div className="space-y-4 text-center">
+            <div className="text-gray-600 text-sm">
+              La tua simulazione è stata salvata con successo! Usa questo codice per riprenderla in futuro:
+            </div>
+            
+            <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-4">
+              <div className="text-2xl font-bold text-[#245C4F] tracking-wider">
+                {resumeCode}
               </div>
-              <p className="text-xs text-gray-500">
-                Salva questo codice per riprendere la simulazione in futuro
-              </p>
             </div>
-
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <p className="text-sm text-blue-800 font-medium mb-2">
-                💡 Come riprendere la simulazione:
-              </p>
-              <ul className="text-sm text-blue-700 space-y-1">
-                <li>• Usa il link diretto: <code className="bg-blue-100 px-1 rounded">gomutui.it/riprendi/{resumeCode}</code></li>
-                <li>• Oppure vai su "Riprendi simulazione" e inserisci il codice</li>
-              </ul>
-            </div>
-
-            <Button 
-              onClick={handleClose}
-              className="w-full bg-[#245C4F] hover:bg-[#1e4f44] text-white"
+            
+            <Button
+              onClick={handleCopyCode}
+              variant="outline"
+              className="w-full"
+              disabled={isLoading}
             >
-              Continua
+              <Copy className="w-4 h-4 mr-2" />
+              {copied ? "Copiato!" : "Copia codice"}
             </Button>
+            
+            <div className="text-xs text-gray-500">
+              Questo codice è valido per 30 giorni. Conservalo in un posto sicuro!
+            </div>
+            
+            <div className="flex gap-3 pt-4">
+              <Button
+                onClick={handleClose}
+                variant="outline"
+                className="flex-1"
+                disabled={isLoading}
+              >
+                Chiudi
+              </Button>
+              <Button
+                onClick={handleClose}
+                className="flex-1 bg-[#245C4F] hover:bg-[#1e4f44] text-white"
+                disabled={isLoading}
+              >
+                Continua simulazione
+              </Button>
+            </div>
+          </div>
+        ) : isFromResume ? (
+          // Update mode - just show update button with contact info display
+          <div className="space-y-4">
+            <div className="text-gray-600 text-sm text-center">
+              Aggiorna la tua simulazione salvata:
+            </div>
+            
+            <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+              <div className="text-sm font-medium text-gray-700">
+                <strong>Nome:</strong> {formData.name}
+              </div>
+              <div className="text-sm font-medium text-gray-700">
+                <strong>Telefono:</strong> {formData.phone}
+              </div>
+              <div className="text-sm font-medium text-gray-700">
+                <strong>Email:</strong> {formData.email}
+              </div>
+            </div>
+            
+            <div className="flex gap-3 pt-4">
+              <Button
+                onClick={handleClose}
+                variant="outline"
+                className="flex-1"
+                disabled={isLoading}
+              >
+                Annulla
+              </Button>
+              <Button
+                onClick={handleSubmit}
+                className="flex-1 bg-[#245C4F] hover:bg-[#1e4f44] text-white"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Aggiornamento...
+                  </>
+                ) : (
+                  "Aggiorna simulazione"
+                )}
+              </Button>
+            </div>
           </div>
         ) : (
-          // Form state - collect user data
+          // Form state - collect user data for new save
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name" className="text-sm font-medium text-gray-700">
@@ -251,20 +334,20 @@ export function SaveSimulationDialog({
               )}
             </div>
 
-            <div className="flex gap-2 pt-4">
+            <div className="flex gap-3 pt-4">
               <Button
                 type="button"
-                variant="outline"
                 onClick={handleClose}
-                disabled={isLoading}
+                variant="outline"
                 className="flex-1"
+                disabled={isLoading}
               >
                 Annulla
               </Button>
               <Button
                 type="submit"
-                disabled={isLoading}
                 className="flex-1 bg-[#245C4F] hover:bg-[#1e4f44] text-white"
+                disabled={isLoading}
               >
                 {isLoading ? (
                   <>

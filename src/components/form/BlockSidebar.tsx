@@ -13,13 +13,14 @@ import { useSimulationTimer } from "@/hooks/useSimulationTimer";
 import { trackSimulationExit } from "@/utils/analytics";
 
 export function BlockSidebar() {
+  const form = useFormExtended();
   const {
     blocks,
     state,
     isBlockCompleted,
     goToQuestion,
     getProgress
-  } = useFormExtended();
+  } = form;
   const params = useParams<{
     formSlug?: string;
   }>();
@@ -72,22 +73,20 @@ export function BlockSidebar() {
     setShowSaveDialog(true);
   };
 
-  // Handle saving simulation
+  // Use form context save function  
   const handleSaveSimulation = async (contactData: SaveSimulationData) => {
     setIsSaving(true);
     
     try {
-      const formSlug = params.formSlug || "unknown";
-      const result = await saveSimulation(state, contactData, formSlug);
-      
+      const result = await form.handleSaveSimulation(contactData);
       setIsSaving(false);
       return result;
     } catch (error) {
+      console.error("Error saving simulation:", error);
       setIsSaving(false);
-      console.error('Errore nel salvataggio:', error);
-      return { 
-        success: false, 
-        error: "Errore imprevisto durante il salvataggio" 
+      return {
+        success: false,
+        error: "Errore durante il salvataggio della simulazione"
       };
     }
   };

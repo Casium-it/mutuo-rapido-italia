@@ -9,6 +9,9 @@ import {
   getParentMultiBlockManager,
   getQuestionsAfterInBlock
 } from "@/utils/formUtils";
+import { supabase } from "@/integrations/supabase/client";
+import { SaveSimulationData, SaveSimulationResult } from "@/services/saveSimulationService";
+import { resumeSimulation } from "@/services/resumeSimulationService";
 
 type FormContextType = {
   state: FormState;
@@ -31,6 +34,8 @@ type FormContextType = {
   markBlockAsCompleted: (blockId: string) => void;
   removeBlockFromCompleted: (blockId: string) => void;
   isQuestionPendingRemoval: (questionId: string) => boolean;
+  handleSaveSimulation: (contactData: SaveSimulationData) => Promise<SaveSimulationResult>;
+  handleResumeSimulation: (resumeCode: string) => Promise<{ success: boolean; error?: string }>;
 };
 
 type Action =
@@ -1143,6 +1148,96 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
     dispatch({ type: "DELETE_QUESTION_RESPONSES", questionIds });
   }, []);
 
+  // Handle save simulation with edge function
+  const handleSaveSimulation = useCallback(async (contactData: SaveSimulationData): Promise<SaveSimulationResult> => {
+    try {
+      // Check if user came from a saved simulation
+      const resumeMetadata = localStorage.getItem('resumeMetadata');
+      const resumeCode = resumeMetadata ? JSON.parse(resumeMetadata).resumeCode : undefined;
+
+      const { data, error } = await supabase.functions.invoke('save-simulation', {
+        body: {
+          formState: state,
+          formSlug: formSlug || "simulazione-mutuo",
+          contactData,
+          resumeCode
+        }
+      });
+
+      if (error) {
+        console.error("Edge function error:", error);
+        return {
+          success: false,
+          error: "Errore durante il salvataggio della simulazione"
+        };
+      }
+
+      if (!data.success) {
+        return {
+          success: false,
+          error: data.error
+        };
+      }
+
+      // Store contact info and update resume metadata
+      localStorage.setItem('contactInfo', JSON.stringify(contactData));
+      localStorage.setItem('resumeMetadata', JSON.stringify({
+        resumeCode: data.resumeCode,
+        contactInfo: contactData,
+        isFromResume: true
+      }));
+
+      return {
+        success: true,
+        resumeCode: data.resumeCode
+      };
+    } catch (error) {
+      console.error("Error saving simulation:", error);
+      return {
+        success: false,
+        error: "Errore durante il salvataggio della simulazione"
+      };
+    }
+  }, [state, formSlug]);
+
+  // Handle resume simulation
+  const handleResumeSimulation = useCallback(async (resumeCode: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const resumeResult = await resumeSimulation(resumeCode);
+      
+      if (resumeResult.success && resumeResult.data) {
+        // Convert answeredQuestions array back to Set
+        const formStateWithSet = {
+          ...resumeResult.data.formState,
+          answeredQuestions: new Set(resumeResult.data.formState.answeredQuestions || [])
+        };
+        
+        dispatch({ type: "SET_FORM_STATE", state: formStateWithSet });
+        
+        // Store contact info and resume metadata
+        localStorage.setItem('contactInfo', JSON.stringify(resumeResult.data.contactInfo));
+        localStorage.setItem('resumeMetadata', JSON.stringify({
+          resumeCode,
+          contactInfo: resumeResult.data.contactInfo,
+          isFromResume: true
+        }));
+        
+        return { success: true };
+      } else {
+        return { 
+          success: false, 
+          error: resumeResult.error || "Errore durante il caricamento" 
+        };
+      }
+    } catch (error) {
+      console.error("Error resuming simulation:", error);
+      return {
+        success: false,
+        error: "Errore imprevisto durante il caricamento della simulazione"
+      };
+    }
+  }, []);
+
   return (
     <FormContext.Provider
       value={{
@@ -1168,7 +1263,9 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
         isBlockCompleted,
         markBlockAsCompleted,
         removeBlockFromCompleted,
-        isQuestionPendingRemoval
+        isQuestionPendingRemoval,
+        handleSaveSimulation,
+        handleResumeSimulation
       }}
     >
       {children}
