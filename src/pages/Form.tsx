@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useForm } from "@/contexts/FormContext";
 import { BlockSidebar } from "@/components/form/BlockSidebar";
@@ -12,7 +11,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SaveSimulationDialog } from "@/components/form/SaveSimulationDialog";
 import { ExitConfirmationDialog } from "@/components/form/ExitConfirmationDialog";
-import { saveSimulation, SaveSimulationData } from "@/services/saveSimulationService";
+import { saveSimulation, SaveSimulationData, getResumeContext } from "@/services/saveSimulationService";
 import { toast } from "sonner";
 import { useTimeTracking } from "@/hooks/useTimeTracking";
 import { useSimulationTimer } from "@/hooks/useSimulationTimer";
@@ -81,13 +80,21 @@ export default function Form() {
     setShowSaveDialog(true);
   };
 
-  // Gestisci il salvataggio della simulazione
+  // Handle simulation save with smart detection of existing simulation
   const handleSaveSimulation = async (contactData: SaveSimulationData) => {
     setIsSaving(true);
     
     try {
       const formSlug = params.formSlug || "unknown";
-      const result = await saveSimulation(state, contactData, formSlug);
+      const resumeContext = getResumeContext();
+      
+      // If we have resume context, update the existing simulation
+      const result = await saveSimulation(
+        state, 
+        contactData, 
+        formSlug, 
+        resumeContext.resumeCode
+      );
       
       setIsSaving(false);
       return result;
@@ -101,23 +108,18 @@ export default function Form() {
     }
   };
 
-  // Gestisci il salvataggio e l'uscita
+  // Handle save and exit
   const handleSaveAndExit = () => {
     setShowSaveDialog(true);
   };
 
-  // Gestisci la chiusura del dialog di salvataggio - FIXED: only navigate on successful save
+  // Handle close save dialog - FIXED: only navigate on successful save
   const handleCloseSaveDialog = (shouldNavigate: boolean = false) => {
     setShowSaveDialog(false);
     // Only navigate to home page if shouldNavigate is true (successful save)
     if (shouldNavigate) {
       navigate("/");
     }
-  };
-
-  // Handle successful save and exit
-  const handleSaveSuccess = () => {
-    handleCloseSaveDialog(true); // Navigate to home on successful save
   };
 
   // Track tab close/page unload as simulation exit - WITH GLOBAL TRACKING
@@ -207,7 +209,7 @@ export default function Form() {
         onClose={() => setShowExitDialog(false)}
         onConfirmExit={handleConfirmExit}
         onSaveAndExit={handleExitWithSave}
-        progress={progress}
+        progress={getProgress()}
       />
 
       {/* Save Simulation Dialog */}
