@@ -566,8 +566,14 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
         const { code, formState, contactInfo } = JSON.parse(resumeData);
         console.log("🔄 FormProvider detected resume data, setting form state");
         
-        // Set the form state
-        dispatch({ type: "SET_FORM_STATE", state: formState });
+        // Convert answeredQuestions array back to Set for proper functionality
+        const processedFormState = {
+          ...formState,
+          answeredQuestions: new Set(formState.answeredQuestions || [])
+        };
+        
+        // Set the form state with proper data types
+        dispatch({ type: "SET_FORM_STATE", state: processedFormState });
         
         // Clear the resume data to prevent repeated application
         sessionStorage.removeItem('resumeData');
