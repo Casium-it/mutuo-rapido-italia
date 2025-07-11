@@ -175,22 +175,34 @@ export function SaveSimulationDialog({
           // Form state - collect user data
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nome e Cognome *</Label>
+              <Label htmlFor="name" className="text-sm font-medium text-gray-700">
+                Nome e Cognome *
+              </Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => handleInputChange("name", e.target.value)}
                 placeholder="Mario Rossi"
                 disabled={isLoading}
-                className={errors.name ? "border-red-500" : ""}
+                className={`
+                  text-left px-[18px] py-[12px] border-[1.5px] rounded-[10px] 
+                  font-['Inter'] text-[16px] md:text-[16px] font-medium transition-all
+                  shadow-[0_3px_0_0_#AFA89F] mb-[10px] w-full h-auto
+                  hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)]
+                  focus-visible:outline-none focus-visible:ring-0 focus-visible:border-[#245C4F]
+                  ${errors.name ? 'border-red-500' : 'border-[#BEB8AE]'}
+                  ${formData.name ? 'border-[#245C4F] bg-gray-50' : 'border-[#BEB8AE]'}
+                `}
               />
               {errors.name && (
-                <p className="text-sm text-red-600">{errors.name}</p>
+                <p className="text-red-500 text-sm">{errors.name}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">Numero di telefono *</Label>
+              <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
+                Numero di telefono *
+              </Label>
               <Input
                 id="phone"
                 type="tel"
@@ -198,15 +210,25 @@ export function SaveSimulationDialog({
                 onChange={(e) => handleInputChange("phone", e.target.value)}
                 placeholder="+39 123 456 7890"
                 disabled={isLoading}
-                className={errors.phone ? "border-red-500" : ""}
+                className={`
+                  text-left px-[18px] py-[12px] border-[1.5px] rounded-[10px] 
+                  font-['Inter'] text-[16px] md:text-[16px] font-medium transition-all
+                  shadow-[0_3px_0_0_#AFA89F] mb-[10px] w-full h-auto
+                  hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)]
+                  focus-visible:outline-none focus-visible:ring-0 focus-visible:border-[#245C4F]
+                  ${errors.phone ? 'border-red-500' : 'border-[#BEB8AE]'}
+                  ${formData.phone ? 'border-[#245C4F] bg-gray-50' : 'border-[#BEB8AE]'}
+                `}
               />
               {errors.phone && (
-                <p className="text-sm text-red-600">{errors.phone}</p>
+                <p className="text-red-500 text-sm">{errors.phone}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email *</Label>
+              <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                Email *
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -214,10 +236,18 @@ export function SaveSimulationDialog({
                 onChange={(e) => handleInputChange("email", e.target.value)}
                 placeholder="mario.rossi@email.com"
                 disabled={isLoading}
-                className={errors.email ? "border-red-500" : ""}
+                className={`
+                  text-left px-[18px] py-[12px] border-[1.5px] rounded-[10px] 
+                  font-['Inter'] text-[16px] md:text-[16px] font-medium transition-all
+                  shadow-[0_3px_0_0_#AFA89F] mb-[10px] w-full h-auto
+                  hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)]
+                  focus-visible:outline-none focus-visible:ring-0 focus-visible:border-[#245C4F]
+                  ${errors.email ? 'border-red-500' : 'border-[#BEB8AE]'}
+                  ${formData.email ? 'border-[#245C4F] bg-gray-50' : 'border-[#BEB8AE]'}
+                `}
               />
               {errors.email && (
-                <p className="text-sm text-red-600">{errors.email}</p>
+                <p className="text-red-500 text-sm">{errors.email}</p>
               )}
             </div>
 
