@@ -1155,9 +1155,17 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
       const resumeMetadata = localStorage.getItem('resumeMetadata');
       const resumeCode = resumeMetadata ? JSON.parse(resumeMetadata).resumeCode : undefined;
 
+      // Serialize form state properly - convert Set to Array for JSON
+      const serializedFormState = {
+        ...state,
+        answeredQuestions: Array.from(state.answeredQuestions || [])
+      };
+
+      console.log('💾 Saving simulation with answeredQuestions:', serializedFormState.answeredQuestions);
+
       const { data, error } = await supabase.functions.invoke('save-simulation', {
         body: {
-          formState: state,
+          formState: serializedFormState,
           formSlug: formSlug || "simulazione-mutuo",
           contactData,
           resumeCode
