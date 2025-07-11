@@ -325,7 +325,7 @@ export default function FormCompleted() {
           
           <div className="my-6 space-y-3">
             <div className="flex items-center justify-center bg-[#F8F4EF] px-4 py-3 rounded-lg border-2 border-[#245C4F]">
-              <User className="h-5 w-5 text-[#245C4F] mr-2" />
+              <User className="h-6 w-7 text-[#245C4F] mr-2 rounded-none" />
               <span className="text-lg font-bold text-[#245C4F]">
                 {firstName}
               </span>
