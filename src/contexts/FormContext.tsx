@@ -23,6 +23,7 @@ type FormContextType = {
   navigateToNextQuestion: (currentQuestionId: string, leadsTo: string) => void;
   getProgress: () => number;
   resetForm: () => void;
+  setFormState: (state: Partial<FormState>) => void;
   getNavigationHistoryFor: (questionId: string) => NavigationHistory | undefined;
   createDynamicBlock: (blockBlueprintId: string) => string | null;
   deleteDynamicBlock: (blockId: string) => boolean;
@@ -1143,6 +1144,10 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
     dispatch({ type: "DELETE_QUESTION_RESPONSES", questionIds });
   }, []);
 
+  const setFormState = useCallback((state: Partial<FormState>) => {
+    dispatch({ type: "SET_FORM_STATE", state });
+  }, []);
+
   return (
     <FormContext.Provider
       value={{
@@ -1161,6 +1166,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
         navigateToNextQuestion,
         getProgress,
         resetForm,
+        setFormState,
         getNavigationHistoryFor,
         createDynamicBlock,
         deleteDynamicBlock,
