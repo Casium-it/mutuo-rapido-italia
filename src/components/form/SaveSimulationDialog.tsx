@@ -12,7 +12,7 @@ import { validateAndFormatItalianPhone } from "@/utils/phoneValidation";
 interface SaveSimulationDialogProps {
   open: boolean;
   onClose: (shouldNavigate?: boolean) => void;
-  onSave: (data: SaveSimulationData) => Promise<SaveSimulationResult>;
+  onSave: (data: Omit<SaveSimulationData, 'percentage'>) => Promise<SaveSimulationResult>;
   isLoading: boolean;
 }
 
@@ -22,14 +22,14 @@ export function SaveSimulationDialog({
   onSave,
   isLoading
 }: SaveSimulationDialogProps) {
-  const [formData, setFormData] = useState<SaveSimulationData>({
+  const [formData, setFormData] = useState<Omit<SaveSimulationData, 'percentage'>>({
     name: "",
     phone: "",
     email: ""
   });
   const [resumeCode, setResumeCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [errors, setErrors] = useState<Partial<SaveSimulationData>>({});
+  const [errors, setErrors] = useState<Partial<Omit<SaveSimulationData, 'percentage'>>>({});
   const [isFromResume, setIsFromResume] = useState<boolean>(false);
   
   const { toast } = useToast();
@@ -51,7 +51,7 @@ export function SaveSimulationDialog({
   }, [open]);
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<SaveSimulationData> = {};
+    const newErrors: Partial<Omit<SaveSimulationData, 'percentage'>> = {};
 
     // Name validation
     if (!formData.name.trim()) {
@@ -148,7 +148,7 @@ export function SaveSimulationDialog({
     onClose(!!resumeCode);
   };
 
-  const handleInputChange = (field: keyof SaveSimulationData, value: string) => {
+  const handleInputChange = (field: keyof Omit<SaveSimulationData, 'percentage'>, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {

@@ -13,6 +13,7 @@ interface SaveSimulationRequest {
     name: string;
     phone: string;
     email: string;
+    percentage: number;
   };
   resumeCode?: string; // If provided, update existing
 }
@@ -92,7 +93,7 @@ Deno.serve(async (req) => {
     const { formState, formSlug, contactData, resumeCode }: SaveSimulationRequest = await req.json();
 
     // Validate required fields
-    if (!formState || !formSlug || !contactData?.name || !contactData?.phone || !contactData?.email) {
+    if (!formState || !formSlug || !contactData?.name || !contactData?.phone || !contactData?.email || contactData?.percentage === undefined) {
       console.error('❌ Missing required fields');
       return new Response(
         JSON.stringify({ success: false, error: 'Dati mancanti richiesti' }),
@@ -122,6 +123,7 @@ Deno.serve(async (req) => {
           form_state: serializedFormState,
           form_slug: formSlug,
           expires_at: expires_at.toISOString(),
+          percentage: contactData.percentage,
           updated_at: new Date().toISOString()
         })
         .eq('resume_code', resumeCode)
@@ -169,7 +171,8 @@ Deno.serve(async (req) => {
           email: contactData.email,
           form_state: serializedFormState,
           form_slug: formSlug,
-          expires_at: expires_at.toISOString()
+          expires_at: expires_at.toISOString(),
+          percentage: contactData.percentage
         })
         .select('resume_code')
         .single();

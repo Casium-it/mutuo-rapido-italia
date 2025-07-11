@@ -34,7 +34,7 @@ type FormContextType = {
   markBlockAsCompleted: (blockId: string) => void;
   removeBlockFromCompleted: (blockId: string) => void;
   isQuestionPendingRemoval: (questionId: string) => boolean;
-  handleSaveSimulation: (contactData: SaveSimulationData) => Promise<SaveSimulationResult>;
+  handleSaveSimulation: (contactData: Omit<SaveSimulationData, 'percentage'>) => Promise<SaveSimulationResult>;
   handleResumeSimulation: (resumeCode: string) => Promise<{ success: boolean; error?: string }>;
 };
 
@@ -1149,11 +1149,20 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
   }, []);
 
   // Handle save simulation with edge function
-  const handleSaveSimulation = useCallback(async (contactData: SaveSimulationData): Promise<SaveSimulationResult> => {
+  const handleSaveSimulation = useCallback(async (contactData: Omit<SaveSimulationData, 'percentage'>): Promise<SaveSimulationResult> => {
     try {
       // Check if user came from a saved simulation
       const resumeMetadata = localStorage.getItem('resumeMetadata');
       const resumeCode = resumeMetadata ? JSON.parse(resumeMetadata).resumeCode : undefined;
+
+      // Calculate current progress percentage
+      const percentage = getProgress();
+
+      // Add percentage to contact data
+      const contactDataWithPercentage = {
+        ...contactData,
+        percentage
+      };
 
       // Serialize form state properly - convert Set to Array for JSON
       const serializedFormState = {
@@ -1161,13 +1170,13 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
         answeredQuestions: Array.from(state.answeredQuestions || [])
       };
 
-      console.log('💾 Saving simulation with answeredQuestions:', serializedFormState.answeredQuestions);
+      console.log('💾 Saving simulation with percentage:', percentage, 'and answeredQuestions:', serializedFormState.answeredQuestions);
 
       const { data, error } = await supabase.functions.invoke('save-simulation', {
         body: {
           formState: serializedFormState,
           formSlug: formSlug || "simulazione-mutuo",
-          contactData,
+          contactData: contactDataWithPercentage,
           resumeCode
         }
       });
@@ -1206,7 +1215,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
         error: "Errore durante il salvataggio della simulazione"
       };
     }
-  }, [state, formSlug]);
+  }, [state, formSlug, getProgress]);
 
   // Handle resume simulation
   const handleResumeSimulation = useCallback(async (resumeCode: string): Promise<{ success: boolean; error?: string }> => {

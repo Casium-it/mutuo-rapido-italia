@@ -318,6 +318,7 @@ export type Database = {
           id: string
           linked_form_id: string | null
           name: string
+          percentage: number
           phone: string
           resume_code: string
           updated_at: string
@@ -331,6 +332,7 @@ export type Database = {
           id?: string
           linked_form_id?: string | null
           name: string
+          percentage?: number
           phone: string
           resume_code?: string
           updated_at?: string
@@ -344,6 +346,7 @@ export type Database = {
           id?: string
           linked_form_id?: string | null
           name?: string
+          percentage?: number
           phone?: string
           resume_code?: string
           updated_at?: string

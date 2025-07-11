@@ -6,6 +6,7 @@ export interface SaveSimulationData {
   name: string;
   phone: string;
   email: string;
+  percentage: number;
 }
 
 export interface SaveSimulationResult {
@@ -22,8 +23,8 @@ export interface SaveSimulationResult {
  * @returns Risultato dell'operazione con il codice di ripresa
  */
 export async function saveSimulation(
-  formState: FormState,
-  contactData: SaveSimulationData,
+  formState: FormState, 
+  contactData: SaveSimulationData, 
   formSlug: string
 ): Promise<SaveSimulationResult> {
   try {
@@ -56,6 +57,7 @@ export async function saveSimulation(
         form_state: formStateToSave,
         form_slug: formSlug,
         expires_at: expiresAt.toISOString(),
+        percentage: contactData.percentage,
         linked_form_id: null // Regular simulations don't have linked forms
       })
       .select('resume_code')
@@ -188,7 +190,8 @@ export async function loadSimulation(resumeCode: string): Promise<{
         contactInfo: {
           name: data.name,
           phone: data.phone,
-          email: data.email
+          email: data.email,
+          percentage: data.percentage || 0
         },
         linkedFormId: data.linked_form_id // Include linked form ID if present
       }
