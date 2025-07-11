@@ -1,5 +1,6 @@
 
 
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.3'
 import { corsHeaders } from '../_shared/cors.ts'
 
@@ -77,15 +78,12 @@ Deno.serve(async (req) => {
     console.log(`📋 Processing request for: ${name} (${email})`);
     console.log(`📝 Form Slug: ${formSlug}`);
 
-    // Create Supabase client with service role for bypassing RLS
-    const supabaseServiceRole = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    // Create Supabase client with secret: true to bypass RLS
+    const supabase = createClient(req, { secret: true });
 
     // Step 1: Create linked form record
     console.log('💾 Creating linked form record');
-    const { data: linkedForm, error: linkedFormError } = await supabaseServiceRole
+    const { data: linkedForm, error: linkedFormError } = await supabase
       .from('linked_forms')
       .insert({
         name,
@@ -140,7 +138,7 @@ Deno.serve(async (req) => {
     expiresAt.setDate(expiresAt.getDate() + 30);
 
     // Insert the saved simulation
-    const { data: savedSimulation, error: saveError } = await supabaseServiceRole
+    const { data: savedSimulation, error: saveError } = await supabase
       .from('saved_simulations')
       .insert({
         name,
@@ -158,7 +156,7 @@ Deno.serve(async (req) => {
       console.error('❌ Error creating saved simulation:', saveError);
       
       // Cleanup: delete the linked form record if simulation creation failed
-      await supabaseServiceRole
+      await supabase
         .from('linked_forms')
         .delete()
         .eq('id', linkedFormId);
@@ -182,7 +180,7 @@ Deno.serve(async (req) => {
     const finalLink = `https://app.gomutuo.it/riprendi/${resumeCode}`;
     
     console.log('🔗 Updating linked form with resume link');
-    const { error: updateError } = await supabaseServiceRole
+    const { error: updateError } = await supabase
       .from('linked_forms')
       .update({ link: finalLink })
       .eq('id', linkedFormId);
@@ -229,4 +227,5 @@ Deno.serve(async (req) => {
     );
   }
 });
+
 
