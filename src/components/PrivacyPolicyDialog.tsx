@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   Dialog,
@@ -18,10 +17,10 @@ export function PrivacyPolicyDialog({ open, onOpenChange }: PrivacyPolicyDialogP
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
-        className="w-[calc(100vw-2rem)] max-w-4xl max-h-[80vh] overflow-y-auto p-0 gap-0"
+        className="w-[calc(100vw-2rem)] max-w-4xl max-h-[80vh] overflow-hidden p-0 gap-0 flex flex-col"
         hideCloseButton={false}
       >
-        <DialogHeader className="px-6 py-4 border-b bg-[#f8f5f1]">
+        <DialogHeader className="px-6 py-4 border-b bg-[#f8f5f1] sticky top-0 z-10">
           <DialogTitle className="text-xl font-bold text-[#245C4F]">
             Privacy Policy - GoMutuo
           </DialogTitle>
@@ -30,7 +29,7 @@ export function PrivacyPolicyDialog({ open, onOpenChange }: PrivacyPolicyDialogP
           </DialogDescription>
         </DialogHeader>
         
-        <div className="px-6 py-4 space-y-6 text-sm leading-relaxed">
+        <div className="px-6 py-4 space-y-6 text-sm leading-relaxed overflow-y-auto flex-1">
           <section>
             <h2 className="text-lg font-semibold text-[#245C4F] mb-3">1. Titolare del Trattamento</h2>
             <p className="text-gray-700">
