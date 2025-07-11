@@ -104,6 +104,37 @@ export async function sendFormCompletionMessage(
 }
 
 /**
+ * Send simulation saved message with link_simulazione_salvata campaign
+ * @param firstName - User's first name
+ * @param phoneNumber - Phone number in format +390000000000
+ * @param resumeCode - The simulation resume code
+ * @param expirationDate - Expiration date in dd/mm/yyyy format
+ * @returns Result of the operation
+ */
+export async function sendSimulationSavedMessage(
+  firstName: string,
+  phoneNumber: string,
+  resumeCode: string,
+  expirationDate: string
+): Promise<AisensyMessageResult> {
+  return sendCustomAisensyMessage({
+    campaignName: 'link_simulazione_salvata',
+    destination: phoneNumber,
+    userName: firstName,
+    source: 'simulation-saved',
+    media: {
+      url: 'https://i.ibb.co/DfWNjp7g/simulazione-salvata.png',
+      filename: 'simulazione-salvata.png'
+    },
+    templateParams: [
+      firstName,
+      resumeCode,
+      expirationDate
+    ]
+  });
+}
+
+/**
  * Send notification message
  * @param campaignName - Name of the notification campaign
  * @param firstName - User's first name

@@ -1,3 +1,4 @@
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -14,6 +15,63 @@ interface SaveSimulationRequest {
     email: string;
   };
   resumeCode?: string; // If provided, update existing
+}
+
+// Helper function to format date as dd/mm/yyyy
+function formatDateToDDMMYYYY(date: Date): string {
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
+// Helper function to send AiSensy message
+async function sendSimulationSavedNotification(
+  supabase: any,
+  contactData: { name: string; phone: string; email: string },
+  resumeCode: string,
+  expiresAt: Date
+): Promise<void> {
+  try {
+    console.log('🔔 Sending simulation saved WhatsApp notification...');
+    
+    const firstName = contactData.name.split(' ')[0];
+    const expirationDate = formatDateToDDMMYYYY(expiresAt);
+    
+    const { data, error } = await supabase.functions.invoke('send-aisensy-message', {
+      body: {
+        campaignName: 'link_simulazione_salvata',
+        destination: contactData.phone,
+        userName: firstName,
+        source: 'simulation-saved',
+        media: {
+          url: 'https://i.ibb.co/DfWNjp7g/simulazione-salvata.png',
+          filename: 'simulazione-salvata.png'
+        },
+        templateParams: [
+          firstName,
+          resumeCode,
+          expirationDate
+        ]
+      }
+    });
+
+    if (error) {
+      console.error('❌ Error sending simulation saved notification:', error);
+      return; // Don't fail the main operation
+    }
+
+    if (!data?.success) {
+      console.error('❌ AiSensy error:', data?.error);
+      return; // Don't fail the main operation
+    }
+
+    console.log('✅ Simulation saved WhatsApp notification sent successfully');
+    
+  } catch (error) {
+    console.error('❌ Unexpected error sending simulation saved notification:', error);
+    // Don't fail the main operation - just log the error
+  }
 }
 
 Deno.serve(async (req) => {
@@ -86,6 +144,9 @@ Deno.serve(async (req) => {
         );
       }
 
+      // Send WhatsApp notification for updated simulation
+      await sendSimulationSavedNotification(supabase, contactData, data.resume_code, expires_at);
+
       console.log('✅ Simulation updated successfully');
       return new Response(
         JSON.stringify({ 
@@ -120,6 +181,9 @@ Deno.serve(async (req) => {
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
+
+      // Send WhatsApp notification for new simulation
+      await sendSimulationSavedNotification(supabase, contactData, data.resume_code, expires_at);
 
       console.log('✅ New simulation created successfully');
       return new Response(
