@@ -1,6 +1,4 @@
 
-
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.3'
 import { corsHeaders } from '../_shared/cors.ts'
 
@@ -23,6 +21,7 @@ Deno.serve(async (req) => {
     console.log('🔄 Starting generateLinkAPI function');
     
     if (req.method !== 'GET') {
+      console.log('❌ Invalid method:', req.method);
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -39,6 +38,7 @@ Deno.serve(async (req) => {
     const apiKey = req.headers.get('x-api-key');
     const expectedApiKey = Deno.env.get('PORTALE_API_KEY');
 
+    console.log('🔑 Checking API key authentication');
     if (!apiKey || apiKey !== expectedApiKey) {
       console.error('❌ Invalid or missing API key');
       return new Response(
@@ -60,9 +60,11 @@ Deno.serve(async (req) => {
     const phone = url.searchParams.get('phone');
     const formSlug = url.searchParams.get('form-slug');
 
+    console.log('📥 Extracted parameters:', { name, email, phone, formSlug });
+
     // Validate required parameters
     if (!name || !email || !phone || !formSlug) {
-      console.error('❌ Missing required parameters');
+      console.error('❌ Missing required parameters:', { name: !!name, email: !!email, phone: !!phone, formSlug: !!formSlug });
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -78,8 +80,27 @@ Deno.serve(async (req) => {
     console.log(`📋 Processing request for: ${name} (${email})`);
     console.log(`📝 Form Slug: ${formSlug}`);
 
-    // Create Supabase client with secret: true to bypass RLS
-    const supabase = createClient(req, { secret: true });
+    // Create Supabase client with service role for bypassing RLS
+    console.log('🔧 Creating Supabase client with service role');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('❌ Missing Supabase environment variables');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Server configuration error' 
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    console.log('✅ Supabase client created successfully');
 
     // Step 1: Create linked form record
     console.log('💾 Creating linked form record');
@@ -136,8 +157,10 @@ Deno.serve(async (req) => {
     // Calculate expiration date (30 days from now)
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
+    console.log('📅 Expiration date set to:', expiresAt.toISOString());
 
     // Insert the saved simulation
+    console.log('💾 Inserting saved simulation record');
     const { data: savedSimulation, error: saveError } = await supabase
       .from('saved_simulations')
       .insert({
@@ -156,6 +179,7 @@ Deno.serve(async (req) => {
       console.error('❌ Error creating saved simulation:', saveError);
       
       // Cleanup: delete the linked form record if simulation creation failed
+      console.log('🧹 Cleaning up linked form record');
       await supabase
         .from('linked_forms')
         .delete()
@@ -179,7 +203,7 @@ Deno.serve(async (req) => {
     // Step 3: Generate the final link and update linked form
     const finalLink = `https://app.gomutuo.it/riprendi/${resumeCode}`;
     
-    console.log('🔗 Updating linked form with resume link');
+    console.log('🔗 Updating linked form with resume link:', finalLink);
     const { error: updateError } = await supabase
       .from('linked_forms')
       .update({ link: finalLink })
@@ -215,6 +239,11 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('💥 Unexpected error in generateLinkAPI:', error);
+    console.error('💥 Error details:', {
+      name: error?.name,
+      message: error?.message,
+      stack: error?.stack
+    });
     return new Response(
       JSON.stringify({ 
         success: false, 
@@ -227,5 +256,3 @@ Deno.serve(async (req) => {
     );
   }
 });
-
-
