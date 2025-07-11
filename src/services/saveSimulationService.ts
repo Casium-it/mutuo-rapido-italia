@@ -54,8 +54,9 @@ export async function saveSimulation(
         phone: contactData.phone,
         email: contactData.email,
         form_state: formStateToSave,
-        form_slug: formSlug, // Usa direttamente il form_slug
-        expires_at: expiresAt.toISOString()
+        form_slug: formSlug,
+        expires_at: expiresAt.toISOString(),
+        linked_form_id: null // Regular simulations don't have linked forms
       })
       .select('resume_code')
       .single();
@@ -105,6 +106,7 @@ export async function loadSimulation(resumeCode: string): Promise<{
     formState: FormState;
     formSlug: string;
     contactInfo: SaveSimulationData;
+    linkedFormId?: string; // New field for linked form tracking
   };
   error?: string;
 }> {
@@ -182,12 +184,13 @@ export async function loadSimulation(resumeCode: string): Promise<{
       success: true,
       data: {
         formState,
-        formSlug: data.form_slug, // Usa direttamente form_slug dal database
+        formSlug: data.form_slug,
         contactInfo: {
           name: data.name,
           phone: data.phone,
           email: data.email
-        }
+        },
+        linkedFormId: data.linked_form_id // Include linked form ID if present
       }
     };
     

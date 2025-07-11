@@ -14,6 +14,7 @@ export interface ResumeSimulationResult {
     formState: FormState;
     formSlug: string;
     contactInfo: ResumeSimulationData;
+    linkedFormId?: string; // New field for linked form tracking
   };
   error?: string;
 }
@@ -61,7 +62,8 @@ export async function resumeSimulation(resumeCode: string): Promise<ResumeSimula
       data: {
         formState,
         formSlug: data.data.formSlug,
-        contactInfo: data.data.contactInfo
+        contactInfo: data.data.contactInfo,
+        linkedFormId: data.data.linkedFormId // Include linked form ID if present
       }
     };
     

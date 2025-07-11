@@ -242,6 +242,45 @@ export type Database = {
         }
         Relationships: []
       }
+      linked_forms: {
+        Row: {
+          created_at: string
+          email: string
+          form_slug: string
+          id: string
+          link: string | null
+          name: string
+          percentage: number
+          phone_number: string
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          form_slug?: string
+          id?: string
+          link?: string | null
+          name: string
+          percentage?: number
+          phone_number: string
+          state?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          form_slug?: string
+          id?: string
+          link?: string | null
+          name?: string
+          percentage?: number
+          phone_number?: string
+          state?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -277,7 +316,7 @@ export type Database = {
           form_slug: string
           form_state: Json
           id: string
-          linked_form: string | null
+          linked_form_id: string | null
           name: string
           phone: string
           resume_code: string
@@ -290,7 +329,7 @@ export type Database = {
           form_slug?: string
           form_state: Json
           id?: string
-          linked_form?: string | null
+          linked_form_id?: string | null
           name: string
           phone: string
           resume_code?: string
@@ -303,13 +342,21 @@ export type Database = {
           form_slug?: string
           form_state?: Json
           id?: string
-          linked_form?: string | null
+          linked_form_id?: string | null
           name?: string
           phone?: string
           resume_code?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "saved_simulations_linked_form_id_fkey"
+            columns: ["linked_form_id"]
+            isOneToOne: false
+            referencedRelation: "linked_forms"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
