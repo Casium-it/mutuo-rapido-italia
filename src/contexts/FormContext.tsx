@@ -23,7 +23,6 @@ type FormContextType = {
   navigateToNextQuestion: (currentQuestionId: string, leadsTo: string) => void;
   getProgress: () => number;
   resetForm: () => void;
-  setFormState: (state: Partial<FormState>) => void;
   getNavigationHistoryFor: (questionId: string) => NavigationHistory | undefined;
   createDynamicBlock: (blockBlueprintId: string) => string | null;
   deleteDynamicBlock: (blockId: string) => boolean;
@@ -557,34 +556,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
     
     navigate("/simulazione/simulazione-mutuo/introduzione/soggetto_acquisto", { replace: true });
   }, [params.formSlug, navigate]);
-
-  // Handle resume simulation on initial load
-  useEffect(() => {
-    const resumeData = sessionStorage.getItem('resumeData');
-    if (resumeData) {
-      try {
-        const { code, formState, contactInfo } = JSON.parse(resumeData);
-        console.log("🔄 FormProvider detected resume data, setting form state");
-        
-        // Convert answeredQuestions array back to Set for proper functionality
-        const processedFormState = {
-          ...formState,
-          answeredQuestions: new Set(formState.answeredQuestions || [])
-        };
-        
-        // Set the form state with proper data types
-        dispatch({ type: "SET_FORM_STATE", state: processedFormState });
-        
-        // Clear the resume data to prevent repeated application
-        sessionStorage.removeItem('resumeData');
-        
-        console.log("✅ Resume data applied successfully");
-      } catch (error) {
-        console.error("❌ Error applying resume data:", error);
-        sessionStorage.removeItem('resumeData');
-      }
-    }
-  }, []); // Only run once on mount
 
   useEffect(() => {
     const { blockId, questionId } = params;
@@ -1172,10 +1143,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
     dispatch({ type: "DELETE_QUESTION_RESPONSES", questionIds });
   }, []);
 
-  const setFormState = useCallback((state: Partial<FormState>) => {
-    dispatch({ type: "SET_FORM_STATE", state });
-  }, []);
-
   return (
     <FormContext.Provider
       value={{
@@ -1194,7 +1161,6 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
         navigateToNextQuestion,
         getProgress,
         resetForm,
-        setFormState,
         getNavigationHistoryFor,
         createDynamicBlock,
         deleteDynamicBlock,

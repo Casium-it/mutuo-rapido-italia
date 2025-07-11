@@ -2,72 +2,68 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { resumeSimulation } from "@/services/resumeSimulationService";
-import { setResumeContext } from "@/services/saveSimulationService";
+import { toast } from "sonner";
 import { Logo } from "@/components/Logo";
 import { Loader2 } from "lucide-react";
 
 export default function AutoResumeSimulation() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const resumeUserSimulation = async () => {
+    const handleResume = async () => {
       if (!code) {
         setError("Codice di ripresa mancante");
-        setLoading(false);
+        setIsLoading(false);
         return;
       }
 
-      console.log("🔄 Auto-resuming simulation with code:", code);
-
       try {
+        console.log("Auto-resuming simulation with code:", code);
+        
         const result = await resumeSimulation(code);
-
+        
         if (result.success && result.data) {
-          console.log("✅ Simulation resumed successfully, storing data and redirecting");
+          // Save form state to localStorage
+          const stateToSave = {
+            ...result.data.formState,
+            answeredQuestions: Array.from(result.data.formState.answeredQuestions)
+          };
           
-          // Store resume data in sessionStorage for FormProvider to pick up
-          sessionStorage.setItem('resumeData', JSON.stringify({
-            code: code,
-            formState: result.data.formState,
-            contactInfo: result.data.contactInfo
-          }));
+          localStorage.setItem(`form-state-${result.data.formSlug}`, JSON.stringify(stateToSave));
           
-          // Store resume context for pre-population in save dialog
-          setResumeContext(code, result.data.contactInfo);
+          toast.success(`Bentornato ${result.data.contactInfo.name}! Simulazione ripristinata.`);
           
-          // Extract the active question from the resumed form state
+          // Navigate to the form at the correct question
           const { activeQuestion } = result.data.formState;
-          const targetUrl = `/simulazione/${result.data.formSlug}/${activeQuestion.block_id}/${activeQuestion.question_id}`;
-          
-          console.log("🎯 Navigating to specific question:", targetUrl);
-          
-          // Navigate to the specific block and question where user left off
-          navigate(targetUrl);
+          navigate(`/simulazione/${result.data.formSlug}/${activeQuestion.block_id}/${activeQuestion.question_id}`);
         } else {
-          console.error("❌ Resume failed:", result.error);
-          setError(result.error || "Errore durante il caricamento della simulazione");
-          setLoading(false);
+          setError(result.error || "Simulazione non trovata o scaduta");
+          setIsLoading(false);
         }
       } catch (error) {
-        console.error("❌ Auto-resume error:", error);
-        setError("Errore imprevisto durante il caricamento");
-        setLoading(false);
+        console.error('Auto-resume error:', error);
+        setError("Si è verificato un errore nel caricamento della simulazione");
+        setIsLoading(false);
       }
     };
 
-    resumeUserSimulation();
+    handleResume();
   }, [code, navigate]);
 
-  if (loading) {
+  const handleGoHome = () => {
+    navigate("/");
+  };
+
+  if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
-        <header className="py-6 px-4 md:px-6 flex justify-between items-center">
-          <Logo />
+        <header className="py-6 px-4 md:px-6">
+          <Logo onClick={handleGoHome} />
         </header>
-
+        
         <main className="flex-1 flex items-center justify-center px-4">
           <div className="text-center">
             <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-[#245C4F]" />
@@ -75,7 +71,7 @@ export default function AutoResumeSimulation() {
               Caricamento simulazione...
             </h1>
             <p className="text-gray-600">
-              Stiamo riprendendo la tua simulazione
+              Stiamo ripristinando la tua simulazione
             </p>
           </div>
         </main>
@@ -83,42 +79,30 @@ export default function AutoResumeSimulation() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
-        <header className="py-6 px-4 md:px-6 flex justify-between items-center">
-          <Logo />
-        </header>
-
-        <main className="flex-1 flex items-center justify-center px-4 md:px-6 py-8 md:py-12">
-          <div className="max-w-md mx-auto text-center">
-            <div className="bg-white rounded-[12px] border border-[#BEB8AE] shadow-[0_3px_0_0_#AFA89F] p-8">
-              <h1 className="text-xl font-semibold text-gray-900 mb-4">
-                Impossibile caricare la simulazione
-              </h1>
-              <p className="text-gray-600 mb-6">{error}</p>
-              
-              <div className="space-y-3">
-                <button
-                  onClick={() => navigate("/riprendi")}
-                  className="w-full px-4 py-3 bg-[#245C4F] text-white rounded-[10px] font-medium hover:bg-[#1e4f44] transition-colors shadow-[0_3px_0_0_#1a453e] hover:shadow-[0_3px_4px_rgba(36,92,79,0.25)] active:shadow-[0_1px_0_0_#1a453e] active:translate-y-[2px]"
-                >
-                  Inserisci il codice manualmente
-                </button>
-                
-                <button
-                  onClick={() => navigate("/")}
-                  className="w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-[10px] font-medium hover:bg-gray-50 transition-colors"
-                >
-                  Torna alla home
-                </button>
-              </div>
-            </div>
+  return (
+    <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
+      <header className="py-6 px-4 md:px-6">
+        <Logo onClick={handleGoHome} />
+      </header>
+      
+      <main className="flex-1 flex items-center justify-center px-4">
+        <div className="max-w-md mx-auto text-center">
+          <div className="bg-white p-6 rounded-[12px] border border-[#BEB8AE] shadow-[0_3px_0_0_#AFA89F]">
+            <h1 className="text-xl font-semibold text-gray-900 mb-4">
+              Simulazione non trovata
+            </h1>
+            <p className="text-gray-600 mb-6">
+              {error || "La simulazione richiesta non è stata trovata o è scaduta."}
+            </p>
+            <button
+              onClick={handleGoHome}
+              className="w-full bg-[#245C4F] hover:bg-[#1e4f44] text-white font-medium py-3 px-4 rounded-lg shadow-[0_3px_0_0_#1a453e] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a453e] transition-all"
+            >
+              Torna alla home
+            </button>
           </div>
-        </main>
-      </div>
-    );
-  }
-
-  return null;
+        </div>
+      </main>
+    </div>
+  );
 }
