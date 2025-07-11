@@ -413,7 +413,7 @@ export default function FormCompleted() {
               </span>
             </div>
             <div className="flex items-center justify-center bg-[#F8F4EF] px-4 py-3 rounded-lg border-2 border-[#245C4F]">
-              <Phone className="h-5 w-5 text-[#245C4F] mr-2" />
+              <img src="/lovable-uploads/f2895a7f-b3f5-43ac-aed7-c5fe560df948.png" alt="WhatsApp" className="h-5 w-5 mr-2" />
               <span className="text-lg font-bold text-[#245C4F]">
                 {phoneNumber}
               </span>
