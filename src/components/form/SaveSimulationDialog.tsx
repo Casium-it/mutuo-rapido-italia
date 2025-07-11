@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Copy, Loader2 } from "lucide-react";
+import { Copy, Loader2, MessageCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { SaveSimulationData, SaveSimulationResult } from "@/services/saveSimulationService";
 import { validateAndFormatItalianPhone } from "@/utils/phoneValidation";
@@ -166,10 +166,29 @@ export function SaveSimulationDialog({
         </DialogHeader>
 
         {resumeCode ? (
-          // Success state - show resume code
+          // Success state - show WhatsApp notification and resume code
           <div className="space-y-4 text-center">
+            {/* WhatsApp Notification */}
+            <div className="bg-[#25D366]/10 border border-[#25D366]/20 rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-center space-x-2">
+                <div className="w-8 h-8 bg-[#25D366] rounded-full flex items-center justify-center">
+                  <MessageCircle className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-sm font-medium text-[#25D366]">WhatsApp</span>
+              </div>
+              
+              <div className="text-sm text-gray-700">
+                <div className="font-medium mb-1">
+                  Link di accesso inviato via WhatsApp!
+                </div>
+                <div className="text-xs text-gray-600">
+                  Numero: {formData.phone}
+                </div>
+              </div>
+            </div>
+
             <div className="text-gray-600 text-sm">
-              La tua simulazione è stata salvata con successo! Usa questo codice per riprenderla in futuro:
+              Puoi anche utilizzare questo codice per riprendere la simulazione in futuro:
             </div>
             
             <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-4">
