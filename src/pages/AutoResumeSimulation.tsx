@@ -3,14 +3,12 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { resumeSimulation } from "@/services/resumeSimulationService";
 import { setResumeContext } from "@/services/saveSimulationService";
-import { useForm } from "@/contexts/FormContext";
 import { Logo } from "@/components/Logo";
 import { Loader2 } from "lucide-react";
 
 export default function AutoResumeSimulation() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
-  const { setFormState } = useForm();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,15 +26,19 @@ export default function AutoResumeSimulation() {
         const result = await resumeSimulation(code);
 
         if (result.success && result.data) {
-          console.log("✅ Simulation resumed successfully, redirecting to form");
+          console.log("✅ Simulation resumed successfully, storing data and redirecting");
           
-          // Set the form state from the resumed simulation
-          setFormState(result.data.formState);
+          // Store resume data in sessionStorage for FormLauncher to pick up
+          sessionStorage.setItem('resumeData', JSON.stringify({
+            code: code,
+            formState: result.data.formState,
+            contactInfo: result.data.contactInfo
+          }));
           
           // Store resume context for pre-population in save dialog
           setResumeContext(code, result.data.contactInfo);
           
-          // Navigate to the form
+          // Navigate to the form - FormLauncher will handle setting the state
           navigate(`/simulazione/${result.data.formSlug}`);
         } else {
           console.error("❌ Resume failed:", result.error);
@@ -51,7 +53,7 @@ export default function AutoResumeSimulation() {
     };
 
     resumeUserSimulation();
-  }, [code, navigate, setFormState]);
+  }, [code, navigate]);
 
   if (loading) {
     return (

@@ -558,6 +558,28 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
     navigate("/simulazione/simulazione-mutuo/introduzione/soggetto_acquisto", { replace: true });
   }, [params.formSlug, navigate]);
 
+  // Handle resume simulation on initial load
+  useEffect(() => {
+    const resumeData = sessionStorage.getItem('resumeData');
+    if (resumeData) {
+      try {
+        const { code, formState, contactInfo } = JSON.parse(resumeData);
+        console.log("🔄 FormProvider detected resume data, setting form state");
+        
+        // Set the form state
+        dispatch({ type: "SET_FORM_STATE", state: formState });
+        
+        // Clear the resume data to prevent repeated application
+        sessionStorage.removeItem('resumeData');
+        
+        console.log("✅ Resume data applied successfully");
+      } catch (error) {
+        console.error("❌ Error applying resume data:", error);
+        sessionStorage.removeItem('resumeData');
+      }
+    }
+  }, []); // Only run once on mount
+
   useEffect(() => {
     const { blockId, questionId } = params;
     

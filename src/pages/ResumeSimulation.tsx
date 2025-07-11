@@ -9,11 +9,9 @@ import { toast } from "sonner";
 import { Loader2, ArrowRight } from "lucide-react";
 import { resumeSimulation } from "@/services/resumeSimulationService";
 import { setResumeContext } from "@/services/saveSimulationService";
-import { useForm } from "@/contexts/FormContext";
 
 export default function ResumeSimulation() {
   const navigate = useNavigate();
-  const { setFormState } = useForm();
   const [resumeCode, setResumeCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [codeError, setCodeError] = useState("");
@@ -42,15 +40,19 @@ export default function ResumeSimulation() {
       if (result.success && result.data) {
         console.log("✅ Simulation resumed successfully");
         
-        // Set the form state from the resumed simulation
-        setFormState(result.data.formState);
+        // Store resume data in sessionStorage for FormLauncher to pick up
+        sessionStorage.setItem('resumeData', JSON.stringify({
+          code: resumeCode.trim().toUpperCase(),
+          formState: result.data.formState,
+          contactInfo: result.data.contactInfo
+        }));
         
         // Store resume context for pre-population in save dialog
         setResumeContext(resumeCode.trim().toUpperCase(), result.data.contactInfo);
         
         toast.success("Simulazione caricata con successo!");
         
-        // Navigate to the form
+        // Navigate to the form - FormLauncher will handle setting the state
         navigate(`/simulazione/${result.data.formSlug}`);
       } else {
         console.error("❌ Resume failed:", result.error);
