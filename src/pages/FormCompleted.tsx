@@ -12,6 +12,7 @@ import { validatePhoneNumber } from "@/utils/validationUtils";
 import { toast } from "sonner";
 import { updateSubmissionWithContact } from "@/services/contactSubmissionService";
 import { trackSimulationContactDetails, trackSimulationLostDetails } from "@/utils/analytics";
+import { PrivacyPolicyDialog } from "@/components/PrivacyPolicyDialog";
 
 export default function FormCompleted() {
   const navigate = useNavigate();
@@ -31,6 +32,9 @@ export default function FormCompleted() {
 
   // New state for confirmation dialog
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+
+  // New state for privacy policy dialog
+  const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
 
   const submissionData = location.state?.submissionData;
 
@@ -348,7 +352,14 @@ export default function FormCompleted() {
                 className="h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b] flex-shrink-0 mt-0.5" 
               />
               <Label htmlFor="privacy" className="text-sm text-gray-600 leading-relaxed cursor-pointer">
-                Ho preso visione e accetto la <Link to="/privacy" className="text-[#245C4F] underline hover:text-[#1a453b] font-medium">privacy policy</Link>.
+                Ho preso visione e accetto la{' '}
+                <button
+                  type="button"
+                  onClick={() => setShowPrivacyDialog(true)}
+                  className="text-[#245C4F] underline hover:text-[#1a453b] font-medium"
+                >
+                  privacy policy
+                </button>.
               </Label>
             </div>
             {privacyError && <p className="text-red-500 text-sm">{privacyError}</p>}
@@ -422,6 +433,12 @@ export default function FormCompleted() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Privacy Policy Dialog */}
+      <PrivacyPolicyDialog 
+        open={showPrivacyDialog} 
+        onOpenChange={setShowPrivacyDialog} 
+      />
 
       {/* Footer */}
       <footer className="py-6 px-4 bg-gray-50 border-t border-gray-200 mt-auto">
