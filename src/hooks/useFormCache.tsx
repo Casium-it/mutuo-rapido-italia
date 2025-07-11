@@ -31,10 +31,9 @@ export const useFormCache = (formSlug?: string): UseFormCacheResult => {
           setForms([form]);
           setBlocks(form.blocks);
         } else {
-          // Fallback to static blocks
-          console.warn(`⚠️ Form not found: ${formSlug}, using fallback blocks`);
-          const fallbackBlocks = formCacheService.getFallbackBlocks();
-          setBlocks(fallbackBlocks);
+          console.error(`❌ Form not found: ${formSlug}`);
+          setError(`Form "${formSlug}" not found. Please check if the form exists and is active.`);
+          setBlocks([]);
           setForms([]);
         }
       } else {
@@ -44,19 +43,18 @@ export const useFormCache = (formSlug?: string): UseFormCacheResult => {
         const cachedForms = getCachedForms();
         setForms(cachedForms);
         
-        // If no forms found, use fallback blocks
+        // If no forms found, set error
         if (cachedForms.length === 0) {
-          const fallbackBlocks = formCacheService.getFallbackBlocks();
-          setBlocks(fallbackBlocks);
+          setError("No forms available. Please check your database connection.");
+          setBlocks([]);
         }
       }
     } catch (err) {
       console.error('❌ Error loading forms:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load forms');
-      
-      // Fallback to static blocks on error
-      const fallbackBlocks = formCacheService.getFallbackBlocks();
-      setBlocks(fallbackBlocks);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load forms';
+      setError(errorMessage);
+      setBlocks([]);
+      setForms([]);
     } finally {
       setLoading(false);
     }

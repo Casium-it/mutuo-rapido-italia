@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
@@ -6,7 +5,6 @@ import { Progress } from "@/components/ui/progress";
 import { FormResponse } from "@/types/form";
 import { submitFormToSupabase } from "@/services/formSubmissionService";
 import { formBehaviorService } from "@/services/formBehaviorService";
-import { allBlocks } from "@/data/blocks";
 import { toast } from "sonner";
 import { useSimulationTimer } from "@/hooks/useSimulationTimer";
 import { trackSimulationCompleted } from "@/utils/analytics";
@@ -116,16 +114,12 @@ export default function FormLoading() {
       console.log("FormLoading: Active blocks:", formData.activeBlocks.length);
       console.log("FormLoading: Dynamic blocks:", formData.dynamicBlocks?.length || 0);
       
-      // Combine all blocks for submission service
-      const allAvailableBlocks = [...allBlocks, ...(formData.dynamicBlocks || [])];
-      console.log("FormLoading: Total blocks available:", allAvailableBlocks.length);
-      
       // Create form state for submission service with proper types
       const formStateForSubmission = {
         activeBlocks: formData.activeBlocks,
         responses: formData.responses,
         completedBlocks: formData.completedBlocks,
-        dynamicBlocks: formData.dynamicBlocks,
+        dynamicBlocks: formData.dynamicBlocks || [],
         activeQuestion: { block_id: '', question_id: '' },
         answeredQuestions: new Set<string>(),
         navigationHistory: [],
@@ -147,7 +141,9 @@ export default function FormLoading() {
       }
       
       console.log("FormLoading: Using formSlug for submission:", formSlug);
-      const result = await submitFormToSupabase(formStateForSubmission, allAvailableBlocks, formSlug);
+      
+      // Updated call with only 2 arguments - removed allAvailableBlocks parameter
+      const result = await submitFormToSupabase(formStateForSubmission, formSlug);
       
       if (result.success && result.submissionId) {
         console.log("FormLoading: Form submitted successfully, ID:", result.submissionId);
