@@ -226,11 +226,11 @@ export default function FormCompleted() {
             <div className="space-y-2 mb-4">
               <div className="flex items-center justify-center gap-2">
                 <Check className="w-4 h-4 text-green-500" />
-                <span className="text-sm text-gray-700">Ricevi su Whatsapp entro 1 minuto</span>
+                <span className="text-sm text-gray-700">Ricevi in 1 minuto. su Whatsapp</span>
               </div>
               <div className="flex items-center justify-center gap-2">
                 <Check className="w-4 h-4 text-green-500" />
-                <span className="text-sm text-gray-700">Nessuna pubblicità, promesso!</span>
+                <span className="text-sm text-gray-700">Nessuna pubblicità, nessuno spam</span>
               </div>
             </div>
             
