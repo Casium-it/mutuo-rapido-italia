@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { Link } from "react-router-dom";
-import { ArrowRight, User, Phone } from "lucide-react";
+import { ArrowRight, User, Phone, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -222,7 +222,17 @@ export default function FormCompleted() {
               Simulazione pronta, ricevila ora su WhatsApp 
               <img src="/lovable-uploads/f2895a7f-b3f5-43ac-aed7-c5fe560df948.png" alt="WhatsApp" className="inline-block w-6 h-6 ml-2" />
             </h1>
-            <p className="text-sm text-gray-600 mb-2">Abbiamo confrontato più di 109 banche ed offerte di mutui. </p>
+            {/* Positive points */}
+            <div className="space-y-2 mb-4">
+              <div className="flex items-center justify-center gap-2">
+                <Check className="w-4 h-4 text-green-500" />
+                <span className="text-sm text-gray-700">Ricevi su Whatsapp entro 1 minuto</span>
+              </div>
+              <div className="flex items-center justify-center gap-2">
+                <Check className="w-4 h-4 text-green-500" />
+                <span className="text-sm text-gray-700">Nessuna pubblicità, promesso!</span>
+              </div>
+            </div>
             
             {/* Rating display for confidence */}
             <div className="flex items-center justify-center gap-2 mb-4">
@@ -234,17 +244,6 @@ export default function FormCompleted() {
               <span className="text-sm font-medium text-gray-700">4.8/5 - 872 recensioni</span>
             </div>
 
-            {/* Positive points */}
-            <div className="space-y-2 mb-4">
-              <div className="flex items-center justify-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-gray-700">Ricevi su Whatsapp entro 1 minuto</span>
-              </div>
-              <div className="flex items-center justify-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-gray-700">Nessuna pubblicità, promesso!</span>
-              </div>
-            </div>
           </div>
 
           <form onSubmit={handleWhatsAppSubmit} className="space-y-6">
