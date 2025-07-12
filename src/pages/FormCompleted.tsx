@@ -244,10 +244,6 @@ export default function FormCompleted() {
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <span className="text-sm text-gray-700">Nessuna pubblicità, promesso!</span>
               </div>
-              <div className="flex items-center justify-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-gray-700">I tuoi dati personali non sono condivisi con nessuna banca, vengono utilizzati solo per la simulazione</span>
-              </div>
             </div>
           </div>
 
@@ -305,12 +301,15 @@ export default function FormCompleted() {
                 setPrivacyError("");
               }
             }} className="h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b] flex-shrink-0 mt-0.5" />
-              <Label htmlFor="privacy" className="text-sm text-gray-600 leading-relaxed cursor-pointer">
-                Ho preso visione e accetto la{' '}
-                <button type="button" onClick={() => setShowPrivacyDialog(true)} className="text-[#245C4F] underline hover:text-[#1a453b] font-medium">
-                  privacy policy
-                </button>.
-              </Label>
+              <div>
+                <Label htmlFor="privacy" className="text-sm font-medium text-gray-700 cursor-pointer leading-relaxed">
+                  Ho preso visione e accetto la{' '}
+                  <button type="button" onClick={() => setShowPrivacyDialog(true)} className="text-[#245C4F] underline hover:text-[#1a453b] font-medium">
+                    privacy policy
+                  </button>.
+                </Label>
+                <p className="text-xs text-gray-500 mt-1">I tuoi dati personali non sono condivisi con nessuna banca, vengono utilizzati solo per la simulazione</p>
+              </div>
             </div>
             {privacyError && <p className="text-red-500 text-sm">{privacyError}</p>}
 
