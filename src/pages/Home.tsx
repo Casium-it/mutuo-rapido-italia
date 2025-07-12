@@ -63,16 +63,16 @@ const HomePage = () => {
   }, [isVisible, currentNotification, notifications.length]);
   const benefits = [{
     title: "Il miglior Mutuo",
-    description: "Confrontiamo e parliamo con più di 100 banche senza che devi andare in filiale"
+    description: "Confrontiamo e parliamo con più di 100 banche senza che tu debba andare in filiale"
   }, {
     title: "Trasparenza",
     description: "La trasparenza è al primo posto, niente termini incomprensibili"
   }, {
     title: "Esperti su tutta Italia",
-    description: "Rete di 90+ mediatori partner esperti su tutta italia, pronti ad aiutarti"
+    description: "Rete di 90+ mediatori partner esperti su tutta Italia, pronti ad aiutarti"
   }, {
     title: "Mutuo per tutti",
-    description: "Mutuo difficile? Partita Iva? Segnalazioni? Ci pensiamo noi a te siamo esperti in questo"
+    description: "Mutuo difficile? Partita IVA? Segnalazioni? Ci pensiamo noi, siamo esperti in questo"
   }];
   const handleWhatsAppContact = () => {
     trackWhatsAppContact('home_page');
@@ -124,7 +124,7 @@ const HomePage = () => {
                 <div className="absolute -bottom-1 left-0 right-0 h-1 md:h-3 bg-[#d3f54f] rounded-full opacity-80 animate-[expand-line_1.2s_ease-out_0.8s_both] scale-x-0 origin-left"></div>
               </span>
             </h1>
-            <p className="text-gray-600 mb-4 max-w-3xl mx-auto lg:mx-0 leading-relaxed text-lg md:text-lg animate-[fade-in_0.6s_ease-out_0.6s_both] opacity-0 py-[5px]">Noi siamo dalla tua parte, non da quella delle banche! GoMutuo è il partner che ti segue dall'inizio alla fine.</p>
+            <p className="text-gray-600 mb-4 max-w-3xl mx-auto lg:mx-0 leading-relaxed text-lg md:text-lg animate-[fade-in_0.6s_ease-out_0.6s_both] opacity-0 py-[5px]">Siamo dalla tua parte, non da quella delle banche! GoMutuo ti accompagna dall'inizio alla fine.</p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start items-center mb-6 animate-[fade-in_0.6s_ease-out_0.9s_both] opacity-0">
               <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-8 py-4 text-lg rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all relative overflow-hidden group" onClick={() => handleSimulationClick('hero')}>
