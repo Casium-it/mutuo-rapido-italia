@@ -234,7 +234,7 @@ export default function FormCompleted() {
               </div>
               <div className="flex items-center justify-center gap-2">
                 <Check className="w-4 h-4 text-green-500" />
-                <span className="text-sm text-gray-700">Facile, veloce e sicuro</span>
+                <span className="text-sm text-gray-700">Nessun dato condiviso con le banche</span>
               </div>
             </div>
             
@@ -283,9 +283,7 @@ export default function FormCompleted() {
                   ${phoneNumber && phoneNumber !== '+39 ' ? 'border-[#245C4F] bg-gray-50' : 'border-[#BEB8AE]'}
                 `} inputMode="numeric" />
               {phoneError && <p className="text-red-500 text-sm">{phoneError}</p>}
-              <p className="text-xs text-gray-500 mt-2 italic">
-                Utilizziamo il numero solo per inviarti la simulazione in maniera veloce e sicura o avvisarti di eventuali errori. Nessuna pubblicità o spam!
-              </p>
+              <p className="text-xs text-gray-500 mt-2 italic">Utilizziamo il numero solo per inviarti la simulazione o avvisarti di eventuali errori. Nessuno spam, promesso!</p>
             </div>
 
             {/* Consultation Checkbox */}
