@@ -308,7 +308,7 @@ export default function FormCompleted() {
                     privacy policy
                   </button>.
                 </Label>
-                <p className="text-xs text-gray-500 mt-1">I tuoi dati personali non sono condivisi con nessuna banca, vengono utilizzati solo per la simulazione</p>
+                <p className="text-xs text-gray-500 mt-1">I tuoi dati personali non sono condivisi con nessuna banca, niente spam e pubblicità.</p>
               </div>
             </div>
             {privacyError && <p className="text-red-500 text-sm">{privacyError}</p>}
