@@ -205,7 +205,7 @@ export default function FormCompleted() {
   if (!submissionData) {
     return null;
   }
-  return <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
+  return <div className="min-h-screen flex flex-col bg-[#fff8ef]">
       {/* Header */}
       <header className="py-6 px-4 md:px-6 flex justify-between items-center">
         <Link to="/">
