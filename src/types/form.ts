@@ -84,7 +84,11 @@ export type PendingRemoval = {
   timestamp: number;
 };
 
+export type SessionType = 'new' | 'resumed';
+
 export type FormState = {
+  simulationId: string; // Unique identifier for this simulation session
+  sessionType: SessionType; // Whether this is a new simulation or resumed one
   activeBlocks: string[];
   activeQuestion: {
     block_id: string;

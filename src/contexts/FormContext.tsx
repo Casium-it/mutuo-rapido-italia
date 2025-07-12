@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback, useRef } from "react";
-import { Block, FormState, FormResponse, NavigationHistory, Placeholder, SelectPlaceholder, PendingRemoval } from "@/types/form";
+import { Block, FormState, FormResponse, NavigationHistory, Placeholder, SelectPlaceholder, PendingRemoval, SessionType } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { ensureBlockHasPriority } from "@/utils/blockUtils";
 import { 
@@ -12,6 +12,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { SaveSimulationData, SaveSimulationResult } from "@/services/saveSimulationService";
 import { resumeSimulation } from "@/services/resumeSimulationService";
+import { generateSimulationId } from "@/utils/simulationId";
 
 type FormContextType = {
   state: FormState;
@@ -58,6 +59,8 @@ type Action =
   | { type: "PROCESS_PENDING_REMOVALS"; currentBlockId: string };
 
 const initialState: FormState = {
+  simulationId: '', // Will be set when FormProvider initializes
+  sessionType: 'new' as SessionType,
   activeBlocks: [],
   activeQuestion: {
     block_id: "introduzione",
@@ -353,9 +356,15 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
   const usedNextBlockNavRef = useRef<boolean>(false);
   
   const sortedBlocks = [...blocks].sort((a, b) => a.priority - b.priority);
+
+  // Initialize session detection
+  const isResumedSession = location.state?.isResumedSession === true;
+  const resumedSimulationId = location.state?.simulationId as string;
   
   const [state, dispatch] = useReducer(formReducer, {
     ...initialState,
+    simulationId: resumedSimulationId || generateSimulationId(),
+    sessionType: isResumedSession ? 'resumed' : 'new',
     activeBlocks: sortedBlocks.filter(b => b.default_active).map(b => b.block_id),
     dynamicBlocks: [],
     blockActivations: {},
@@ -553,6 +562,12 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
   }, [blocks]);
 
   const resetForm = useCallback(() => {
+    // Clear simulation-specific localStorage
+    if (state.simulationId) {
+      localStorage.removeItem(`form-state-${state.simulationId}`);
+    }
+    
+    // Clear old localStorage keys as well for cleanup
     if (params.formSlug) {
       localStorage.removeItem(`form-state-${params.formSlug}`);
     }
@@ -560,7 +575,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
     dispatch({ type: "RESET_FORM" });
     
     navigate("/simulazione/simulazione-mutuo/introduzione/soggetto_acquisto", { replace: true });
-  }, [params.formSlug, navigate]);
+  }, [params.formSlug, navigate, state.simulationId]);
 
   useEffect(() => {
     const { blockId, questionId } = params;
@@ -602,69 +617,103 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
       }
     }
     
-    // Handle migration from old blockType-based keys to formSlug-based keys
-    let savedState = localStorage.getItem(`form-state-${params.formSlug}`);
-    if (!savedState && params.formSlug === 'simulazione-mutuo') {
-      // Try to migrate from old 'mutuo' key
-      const oldSavedState = localStorage.getItem('form-state-mutuo');
-      if (oldSavedState) {
-        console.log('🔄 Migrating saved state from old format');
-        localStorage.setItem(`form-state-${params.formSlug}`, oldSavedState);
-        localStorage.removeItem('form-state-mutuo');
-        savedState = oldSavedState;
+    // Load state based on session type
+    if (state.sessionType === 'new') {
+      console.log('🆕 New simulation session, clearing old localStorage');
+      
+      // Clear old localStorage entries for fresh start
+      localStorage.removeItem(`form-state-${params.formSlug}`);
+      localStorage.removeItem('form-state-mutuo'); // Legacy cleanup
+      
+      // Also clear resume metadata for truly new sessions (not resumed)
+      if (!isResumedSession) {
+        localStorage.removeItem('resumeMetadata');
+        localStorage.removeItem('contactInfo');
       }
-    }
-    if (savedState) {
-      try {
-        const parsedState = JSON.parse(savedState);
-        
-        if (Array.isArray(parsedState.answeredQuestions)) {
-          parsedState.answeredQuestions = new Set(parsedState.answeredQuestions);
-        } else {
-          parsedState.answeredQuestions = new Set();
+      
+    } else if (state.sessionType === 'resumed') {
+      console.log('🔄 Resumed simulation session');
+      
+      // Try to load simulation-specific state first
+      let savedState = localStorage.getItem(`form-state-${state.simulationId}`);
+      
+      if (!savedState) {
+        // Fallback to old formSlug-based keys for backward compatibility
+        savedState = localStorage.getItem(`form-state-${params.formSlug}`);
+        if (!savedState && params.formSlug === 'simulazione-mutuo') {
+          savedState = localStorage.getItem('form-state-mutuo');
         }
         
-        if (Array.isArray(parsedState.dynamicBlocks)) {
-          parsedState.dynamicBlocks = parsedState.dynamicBlocks.map(block => 
-            ensureBlockHasPriority(block)
-          );
-        } else {
-          parsedState.dynamicBlocks = [];
+        // If we found old state, migrate it to the new simulation ID format
+        if (savedState) {
+          console.log('🔄 Migrating saved state to simulation ID format');
+          localStorage.setItem(`form-state-${state.simulationId}`, savedState);
+          
+          // Clean up old keys
+          localStorage.removeItem(`form-state-${params.formSlug}`);
+          localStorage.removeItem('form-state-mutuo');
         }
-        
-        // Initialize pendingRemovals if not present
-        if (!parsedState.pendingRemovals) {
-          parsedState.pendingRemovals = [];
+      }
+      
+      if (savedState) {
+        try {
+          const parsedState = JSON.parse(savedState);
+          
+          if (Array.isArray(parsedState.answeredQuestions)) {
+            parsedState.answeredQuestions = new Set(parsedState.answeredQuestions);
+          } else {
+            parsedState.answeredQuestions = new Set();
+          }
+          
+          if (Array.isArray(parsedState.dynamicBlocks)) {
+            parsedState.dynamicBlocks = parsedState.dynamicBlocks.map(block => 
+              ensureBlockHasPriority(block)
+            );
+          } else {
+            parsedState.dynamicBlocks = [];
+          }
+          
+          // Initialize pendingRemovals if not present
+          if (!parsedState.pendingRemovals) {
+            parsedState.pendingRemovals = [];
+          }
+          
+          // Ensure the loaded state maintains the correct simulation ID
+          parsedState.simulationId = state.simulationId;
+          parsedState.sessionType = 'resumed';
+          
+          dispatch({ type: "SET_FORM_STATE", state: parsedState });
+          
+          if (parsedState.activeBlocks) {
+            parsedState.activeBlocks.forEach((blockId: string) => {
+              if (!state.activeBlocks.includes(blockId)) {
+                dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
+              }
+            });
+          }
+          
+          if (parsedState.responses) {
+            activateRequiredBlocksBasedOnResponses(parsedState.responses);
+          }
+        } catch (e) {
+          console.error("Errore nel caricamento dello stato salvato:", e);
         }
-        
-        dispatch({ type: "SET_FORM_STATE", state: parsedState });
-        
-        if (parsedState.activeBlocks) {
-          parsedState.activeBlocks.forEach((blockId: string) => {
-            if (!state.activeBlocks.includes(blockId)) {
-              dispatch({ type: "ADD_ACTIVE_BLOCK", block_id: blockId });
-            }
-          });
-        }
-        
-        if (parsedState.responses) {
-          activateRequiredBlocksBasedOnResponses(parsedState.responses);
-        }
-      } catch (e) {
-        console.error("Errore nel caricamento dello stato salvato:", e);
       }
     }
   }, [params.blockId, params.questionId, params.formSlug, blocks, navigate]);
 
+  // Auto-save state using simulation ID
   useEffect(() => {
-    if (params.formSlug) {
+    if (state.simulationId) {
       const stateToSave = {
         ...state,
         answeredQuestions: Array.from(state.answeredQuestions)
       };
-      localStorage.setItem(`form-state-${params.formSlug}`, JSON.stringify(stateToSave));
+      localStorage.setItem(`form-state-${state.simulationId}`, JSON.stringify(stateToSave));
+      
+      console.log(`💾 Auto-saved form state for simulation: ${state.simulationId}`);
     }
-  }, [state, params.formSlug]);
+  }, [state]);
 
   const activateRequiredBlocksBasedOnResponses = (responses: FormResponse) => {
     for (const questionId of Object.keys(responses)) {
@@ -1151,9 +1200,11 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
   // Handle save simulation with edge function
   const handleSaveSimulation = useCallback(async (contactData: Omit<SaveSimulationData, 'percentage'>): Promise<SaveSimulationResult> => {
     try {
-      // Check if user came from a saved simulation
-      const resumeMetadata = localStorage.getItem('resumeMetadata');
-      const resumeCode = resumeMetadata ? JSON.parse(resumeMetadata).resumeCode : undefined;
+      // Only use resumeCode for genuine resume sessions, not for new simulations with old localStorage
+      const resumeCode = state.sessionType === 'resumed' ? (() => {
+        const resumeMetadata = localStorage.getItem('resumeMetadata');
+        return resumeMetadata ? JSON.parse(resumeMetadata).resumeCode : undefined;
+      })() : undefined;
 
       // Calculate current progress percentage
       const percentage = getProgress();
@@ -1170,14 +1221,15 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
         answeredQuestions: Array.from(state.answeredQuestions || [])
       };
 
-      console.log('💾 Saving simulation with percentage:', percentage, 'and answeredQuestions:', serializedFormState.answeredQuestions);
+      console.log(`💾 Saving simulation (${state.sessionType}) with ID: ${state.simulationId}, percentage:`, percentage);
 
       const { data, error } = await supabase.functions.invoke('save-simulation', {
         body: {
           formState: serializedFormState,
           formSlug: formSlug || "simulazione-mutuo",
           contactData: contactDataWithPercentage,
-          resumeCode
+          simulationId: state.simulationId, // Include simulation ID
+          resumeCode // Only passed for resumed sessions
         }
       });
 
@@ -1196,13 +1248,17 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
         };
       }
 
-      // Store contact info and update resume metadata
+      // Store contact info and update resume metadata with simulation ID
       localStorage.setItem('contactInfo', JSON.stringify(contactData));
       localStorage.setItem('resumeMetadata', JSON.stringify({
         resumeCode: data.resumeCode,
+        simulationId: state.simulationId,
         contactInfo: contactData,
         isFromResume: true
       }));
+
+      // Update session type to resumed for future saves
+      dispatch({ type: "SET_FORM_STATE", state: { sessionType: 'resumed' as SessionType } });
 
       return {
         success: true,
@@ -1223,21 +1279,26 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
       const resumeResult = await resumeSimulation(resumeCode);
       
       if (resumeResult.success && resumeResult.data) {
-        // Convert answeredQuestions array back to Set
+        // Convert answeredQuestions array back to Set and ensure simulation ID tracking
         const formStateWithSet = {
           ...resumeResult.data.formState,
+          simulationId: resumeResult.data.simulationId || state.simulationId, // Use retrieved or current
+          sessionType: 'resumed' as SessionType,
           answeredQuestions: new Set(resumeResult.data.formState.answeredQuestions || [])
         };
         
         dispatch({ type: "SET_FORM_STATE", state: formStateWithSet });
         
-        // Store contact info and resume metadata
+        // Store contact info and resume metadata with simulation ID
         localStorage.setItem('contactInfo', JSON.stringify(resumeResult.data.contactInfo));
         localStorage.setItem('resumeMetadata', JSON.stringify({
           resumeCode,
+          simulationId: resumeResult.data.simulationId,
           contactInfo: resumeResult.data.contactInfo,
           isFromResume: true
         }));
+        
+        console.log(`🔄 Resumed simulation with ID: ${resumeResult.data.simulationId}`);
         
         return { success: true };
       } else {

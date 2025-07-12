@@ -15,6 +15,7 @@ interface SaveSimulationRequest {
     email: string;
     percentage: number;
   };
+  simulationId?: string; // Unique simulation identifier
   resumeCode?: string; // If provided, update existing
 }
 
@@ -91,13 +92,22 @@ Deno.serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { formState, formSlug, contactData, resumeCode }: SaveSimulationRequest = await req.json();
+    const { formState, formSlug, contactData, simulationId, resumeCode }: SaveSimulationRequest = await req.json();
 
     // Validate required fields
     if (!formState || !formSlug || !contactData?.name || !contactData?.phone || !contactData?.email || contactData?.percentage === undefined) {
       console.error('❌ Missing required fields');
       return new Response(
         JSON.stringify({ success: false, error: 'Dati mancanti richiesti' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate simulation ID format if provided
+    if (simulationId && typeof simulationId !== 'string') {
+      console.error('❌ Invalid simulation ID format');
+      return new Response(
+        JSON.stringify({ success: false, error: 'ID simulazione non valido' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -125,6 +135,7 @@ Deno.serve(async (req) => {
           form_slug: formSlug,
           expires_at: expires_at.toISOString(),
           percentage: contactData.percentage,
+          simulation_id: simulationId || null,
           updated_at: new Date().toISOString()
         })
         .eq('resume_code', resumeCode)
@@ -173,7 +184,8 @@ Deno.serve(async (req) => {
           form_state: serializedFormState,
           form_slug: formSlug,
           expires_at: expires_at.toISOString(),
-          percentage: contactData.percentage
+          percentage: contactData.percentage,
+          simulation_id: simulationId || null
         })
         .select('resume_code')
         .single();

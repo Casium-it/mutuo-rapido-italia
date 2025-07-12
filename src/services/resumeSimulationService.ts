@@ -13,6 +13,7 @@ export interface ResumeSimulationResult {
   data?: {
     formState: FormState;
     formSlug: string;
+    simulationId?: string; // Unique simulation identifier
     contactInfo: ResumeSimulationData;
     linkedFormId?: string; // New field for linked form tracking
   };
@@ -62,6 +63,7 @@ export async function resumeSimulation(resumeCode: string): Promise<ResumeSimula
       data: {
         formState,
         formSlug: data.data.formSlug,
+        simulationId: data.data.simulationId, // Include simulation ID
         contactInfo: data.data.contactInfo,
         linkedFormId: data.data.linkedFormId // Include linked form ID if present
       }

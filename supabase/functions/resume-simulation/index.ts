@@ -123,6 +123,7 @@ Deno.serve(async (req) => {
     const responseData = {
       formState: simulation.form_state,
       formSlug: simulation.form_slug,
+      simulationId: simulation.simulation_id, // Include simulation ID for session tracking
       contactInfo: {
         name: simulation.name,
         phone: simulation.phone,

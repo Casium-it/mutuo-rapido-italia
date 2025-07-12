@@ -321,6 +321,7 @@ export type Database = {
           percentage: number
           phone: string
           resume_code: string
+          simulation_id: string | null
           updated_at: string
         }
         Insert: {
@@ -335,6 +336,7 @@ export type Database = {
           percentage?: number
           phone: string
           resume_code?: string
+          simulation_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -349,6 +351,7 @@ export type Database = {
           percentage?: number
           phone?: string
           resume_code?: string
+          simulation_id?: string | null
           updated_at?: string
         }
         Relationships: [

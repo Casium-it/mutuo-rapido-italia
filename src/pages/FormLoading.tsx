@@ -33,6 +33,8 @@ export default function FormLoading() {
     dynamicBlocks: any[];
     submissionId?: string;
     formSlug?: string;
+    simulationId?: string;
+    sessionType?: string;
   };
   
   useEffect(() => {
@@ -116,6 +118,8 @@ export default function FormLoading() {
       
       // Create form state for submission service with proper types
       const formStateForSubmission = {
+        simulationId: formData.simulationId || 'LEGACY-SUBMISSION',
+        sessionType: (formData.sessionType || 'new') as any,
         activeBlocks: formData.activeBlocks,
         responses: formData.responses,
         completedBlocks: formData.completedBlocks,
