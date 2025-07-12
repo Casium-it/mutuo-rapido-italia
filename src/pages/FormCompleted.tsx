@@ -234,7 +234,7 @@ export default function FormCompleted() {
               </div>
               <div className="flex items-center justify-center gap-2">
                 <Check className="w-4 h-4 text-green-500" />
-                <span className="text-sm text-gray-700">Nessun dato condiviso con le banche</span>
+                <span className="text-sm text-gray-700">Non condividiamo mai i tuoi dati</span>
               </div>
             </div>
             
