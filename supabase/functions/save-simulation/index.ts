@@ -41,16 +41,17 @@ async function sendSimulationSavedNotification(
     
     const { data, error } = await supabase.functions.invoke('send-aisensy-message', {
       body: {
-        campaignName: 'link_simulazione_salvata',
+        campaignName: 'link_simulazione_salvata2',
         destination: contactData.phone,
         userName: firstName,
         source: 'simulation-saved',
         media: {
-          url: 'https://i.ibb.co/DfWNjp7g/simulazione-salvata.png',
+          url: 'https://i.ibb.co/xtxK7zqC/simulazione-salvata.png',
           filename: 'simulazione-salvata.png'
         },
         templateParams: [
           firstName,
+          "4",
           resumeCode,
           expirationDate
         ]
