@@ -303,7 +303,7 @@ export default function FormCompleted() {
             }} className="h-5 w-5 border-2 border-[#245C4F] data-[state=checked]:bg-[#245C4F] data-[state=checked]:border-[#245C4F] rounded-md shadow-[0_2px_0_0_#1a453b] flex-shrink-0 mt-0.5" />
               <div>
                 <Label htmlFor="privacy" className="text-sm font-medium text-gray-700 cursor-pointer leading-relaxed">
-                  Ho preso visione e accetto la{' '}
+                  Ho letto e accetto la{' '}
                   <button type="button" onClick={() => setShowPrivacyDialog(true)} className="text-[#245C4F] underline hover:text-[#1a453b] font-medium">
                     privacy policy
                   </button>.
