@@ -185,6 +185,7 @@ export function BlockSidebar() {
         onClose={() => handleCloseSaveDialog(false)}
         onSave={handleSaveSimulation}
         isLoading={isSaving}
+        currentSimulationId={state.simulationId}
       />
     </>
   );

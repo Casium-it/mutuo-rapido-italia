@@ -215,6 +215,7 @@ export default function Form() {
         onClose={() => handleCloseSaveDialog(false)} // Don't navigate on cancel/close
         onSave={handleSaveSimulation}
         isLoading={isSaving}
+        currentSimulationId={state.simulationId}
       />
     </div>;
 }

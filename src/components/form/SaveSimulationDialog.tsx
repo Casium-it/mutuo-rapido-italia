@@ -14,13 +14,15 @@ interface SaveSimulationDialogProps {
   onClose: (shouldNavigate?: boolean) => void;
   onSave: (data: Omit<SaveSimulationData, 'percentage'>) => Promise<SaveSimulationResult>;
   isLoading: boolean;
+  currentSimulationId: string;
 }
 
 export function SaveSimulationDialog({
   open,
   onClose,
   onSave,
-  isLoading
+  isLoading,
+  currentSimulationId
 }: SaveSimulationDialogProps) {
   const [formData, setFormData] = useState<Omit<SaveSimulationData, 'percentage'>>({
     name: "",
@@ -40,7 +42,7 @@ export function SaveSimulationDialog({
     if (resumeMetadata) {
       try {
         const metadata = JSON.parse(resumeMetadata);
-        if (metadata.isFromResume && metadata.contactInfo) {
+        if (metadata.isFromResume && metadata.contactInfo && metadata.simulationId === currentSimulationId) {
           setIsFromResume(true);
           setFormData(metadata.contactInfo);
         }
@@ -48,7 +50,7 @@ export function SaveSimulationDialog({
         console.error('Error parsing resume metadata:', error);
       }
     }
-  }, [open]);
+  }, [open, currentSimulationId]);
 
   const validateForm = (): boolean => {
     const newErrors: Partial<Omit<SaveSimulationData, 'percentage'>> = {};
