@@ -28,19 +28,47 @@ export default function ResumeSimulation() {
       const result = await resumeSimulation(resumeCode.trim());
       
       if (result.success && result.data) {
-        // Save form state to localStorage
+        // Ensure we have the simulation ID
+        const simulationId = result.data.simulationId || result.data.formState.simulationId;
+        
+        if (!simulationId) {
+          toast.error("Errore nel caricamento: ID simulazione mancante");
+          return;
+        }
+        
+        // Save form state to localStorage using simulationId
         const stateToSave = {
           ...result.data.formState,
+          formSlug: result.data.formSlug, // Include formSlug in the state
           answeredQuestions: Array.from(result.data.formState.answeredQuestions)
         };
         
-        localStorage.setItem(`form-state-${result.data.formSlug}`, JSON.stringify(stateToSave));
+        localStorage.setItem(`form-state-${simulationId}`, JSON.stringify(stateToSave));
+        
+        // Save resume metadata
+        const resumeMetadata = {
+          resumeCode: resumeCode.trim().toUpperCase(),
+          simulationId: simulationId,
+          contactInfo: {
+            name: result.data.contactInfo.name,
+            phone: result.data.contactInfo.phone,
+            email: result.data.contactInfo.email
+          },
+          isFromResume: true
+        };
+        
+        localStorage.setItem('resumeMetadata', JSON.stringify(resumeMetadata));
         
         toast.success(`Bentornato ${result.data.contactInfo.name}! Simulazione ripristinata.`);
         
-        // Navigate to the form at the correct question
+        // Navigate to the form at the correct question with simulationId in state
         const { activeQuestion } = result.data.formState;
-        navigate(`/simulazione/${result.data.formSlug}/${activeQuestion.block_id}/${activeQuestion.question_id}`);
+        navigate(`/simulazione/${result.data.formSlug}/${activeQuestion.block_id}/${activeQuestion.question_id}`, {
+          state: {
+            isResumedSession: true,
+            simulationId: simulationId
+          }
+        });
       } else {
         toast.error(result.error || "Simulazione non trovata o scaduta");
       }

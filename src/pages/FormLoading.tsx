@@ -120,6 +120,7 @@ export default function FormLoading() {
       const formStateForSubmission = {
         simulationId: formData.simulationId || 'LEGACY-SUBMISSION',
         sessionType: (formData.sessionType || 'new') as any,
+        formSlug: formData.formSlug, // Include formSlug in submission
         activeBlocks: formData.activeBlocks,
         responses: formData.responses,
         completedBlocks: formData.completedBlocks,

@@ -61,6 +61,7 @@ type Action =
 const initialState: FormState = {
   simulationId: '', // Will be set when FormProvider initializes
   sessionType: 'new' as SessionType,
+  formSlug: undefined, // Will be set when FormProvider initializes
   activeBlocks: [],
   activeQuestion: {
     block_id: "introduzione",
@@ -365,6 +366,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
     ...initialState,
     simulationId: resumedSimulationId || generateSimulationId(),
     sessionType: isResumedSession ? 'resumed' : 'new',
+    formSlug: formSlug, // Store the form slug in state
     activeBlocks: sortedBlocks.filter(b => b.default_active).map(b => b.block_id),
     dynamicBlocks: [],
     blockActivations: {},

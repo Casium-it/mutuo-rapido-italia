@@ -25,17 +25,29 @@ export default function AutoResumeSimulation() {
         const result = await resumeSimulation(code);
         
         if (result.success && result.data) {
-          // Save form state to localStorage
+          // Ensure we have the simulation ID
+          const simulationId = result.data.simulationId || result.data.formState.simulationId;
+          
+          if (!simulationId) {
+            console.error("No simulation ID found in resume data");
+            setError("Errore nel caricamento: ID simulazione mancante");
+            setIsLoading(false);
+            return;
+          }
+          
+          // Save form state to localStorage using simulationId
           const stateToSave = {
             ...result.data.formState,
+            formSlug: result.data.formSlug, // Include formSlug in the state
             answeredQuestions: Array.from(result.data.formState.answeredQuestions)
           };
           
-          localStorage.setItem(`form-state-${result.data.formSlug}`, JSON.stringify(stateToSave));
+          localStorage.setItem(`form-state-${simulationId}`, JSON.stringify(stateToSave));
           
           // Save resume metadata for the save dialog to detect this is a resumed simulation
           const resumeMetadata = {
             resumeCode: code.toUpperCase(),
+            simulationId: simulationId,
             contactInfo: {
               name: result.data.contactInfo.name,
               phone: result.data.contactInfo.phone,
@@ -48,9 +60,14 @@ export default function AutoResumeSimulation() {
           
           toast.success(`Bentornato ${result.data.contactInfo.name}! Simulazione ripristinata.`);
           
-          // Navigate to the form at the correct question
+          // Navigate to the form at the correct question with simulationId in state
           const { activeQuestion } = result.data.formState;
-          navigate(`/simulazione/${result.data.formSlug}/${activeQuestion.block_id}/${activeQuestion.question_id}`);
+          navigate(`/simulazione/${result.data.formSlug}/${activeQuestion.block_id}/${activeQuestion.question_id}`, {
+            state: {
+              isResumedSession: true,
+              simulationId: simulationId
+            }
+          });
         } else {
           setError(result.error || "Simulazione non trovata o scaduta");
           setIsLoading(false);

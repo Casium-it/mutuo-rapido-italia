@@ -89,6 +89,7 @@ export type SessionType = 'new' | 'resumed';
 export type FormState = {
   simulationId: string; // Unique identifier for this simulation session
   sessionType: SessionType; // Whether this is a new simulation or resumed one
+  formSlug?: string; // Form slug for this simulation
   activeBlocks: string[];
   activeQuestion: {
     block_id: string;
