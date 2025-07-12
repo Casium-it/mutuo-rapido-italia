@@ -233,6 +233,22 @@ export default function FormCompleted() {
               </div>
               <span className="text-sm font-medium text-gray-700">4.8/5 - 872 recensioni</span>
             </div>
+
+            {/* Positive points */}
+            <div className="space-y-2 mb-4">
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-gray-700">Ricevi su Whatsapp entro 1 minuto</span>
+              </div>
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-gray-700">Nessuna pubblicità, promesso!</span>
+              </div>
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-gray-700">I tuoi dati personali non sono condivisi con nessuna banca, vengono utilizzati solo per la simulazione</span>
+              </div>
+            </div>
           </div>
 
           <form onSubmit={handleWhatsAppSubmit} className="space-y-6">
