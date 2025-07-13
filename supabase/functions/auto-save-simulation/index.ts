@@ -49,7 +49,11 @@ Deno.serve(async (req) => {
     // Serialize form state to handle Sets - explicitly handle answeredQuestions like manual save
     const serializedFormState = {
       ...formState,
-      answeredQuestions: Array.from(formState.answeredQuestions || [])
+      answeredQuestions: formState.answeredQuestions instanceof Set 
+        ? Array.from(formState.answeredQuestions)
+        : Array.isArray(formState.answeredQuestions) 
+          ? formState.answeredQuestions
+          : []
     };
 
     const expiresAt = new Date();
@@ -60,10 +64,14 @@ Deno.serve(async (req) => {
       .from('saved_simulations')
       .select('id, is_auto_save')
       .eq('simulation_id', simulationId)
-      .single();
+      .maybeSingle();
 
-    if (queryError && queryError.code !== 'PGRST116') {
+    if (queryError) {
       console.error('Database query error:', queryError);
+      return new Response(
+        JSON.stringify({ success: false, error: `Query failed: ${queryError.message}` }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     let result;
