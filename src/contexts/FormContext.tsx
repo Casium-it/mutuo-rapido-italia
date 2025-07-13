@@ -1179,36 +1179,23 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
     return Math.round(totalProgress);
   }, [state.activeBlocks, state.answeredQuestions, state.completedBlocks, state.dynamicBlocks, sortedBlocks]);
 
-  // Debounced auto-save function
-  const debouncedAutoSave = useCallback(async () => {
-    if (!state.simulationId || !formSlug) {
-      console.log('Skipping auto-save:', { 
-        hasSimulationId: !!state.simulationId, 
-        hasFormSlug: !!formSlug,
-        simulationId: state.simulationId
-      });
+  // Simple auto-save function
+  const triggerAutoSave = useCallback(async () => {
+    if (!state.simulationId || !formSlug || Object.keys(state.responses).length === 0) {
       return;
     }
     
     const now = Date.now();
     const timeSinceLastSave = now - lastAutoSaveRef.current;
     
-    // Only save if enough time has passed (10 seconds)
+    // Only save if 10+ seconds have passed since last auto-save
     if (timeSinceLastSave < 10000) {
-      console.log('Auto-save skipped - too soon:', { timeSinceLastSave });
       return;
     }
     
     try {
       const progress = getProgress();
-      console.log('Triggering auto-save:', {
-        simulationId: state.simulationId,
-        progress,
-        formSlug,
-        answeredQuestions: state.answeredQuestions.size,
-        activeBlocks: state.activeBlocks.length
-      });
-
+      
       const result = await createOrUpdateAutoSave({
         simulationId: state.simulationId,
         formState: state,
@@ -1218,43 +1205,18 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
       
       if (result.success) {
         lastAutoSaveRef.current = now;
-        console.log(`🔄 Auto-saved simulation ${state.simulationId} at ${progress}%`);
-      } else {
-        console.error('Auto-save failed:', result.error);
       }
     } catch (error) {
       console.error('Auto-save failed:', error);
     }
   }, [state, formSlug, getProgress]);
 
-  // Initial auto-save on form start
+  // Auto-save on response changes with 10-second cooldown
   useEffect(() => {
-    if (state.simulationId && !hasInitialAutoSaveRef.current && state.sessionType === 'new') {
-      console.log('🚀 Creating initial auto-save for new simulation');
-      hasInitialAutoSaveRef.current = true;
-      debouncedAutoSave();
+    if (Object.keys(state.responses).length > 0) {
+      triggerAutoSave();
     }
-  }, [state.simulationId, state.sessionType, debouncedAutoSave]);
-
-  // Auto-save trigger on responses and periodic intervals
-  useEffect(() => {
-    // Clear existing timeout
-    if (autoSaveTimeoutRef.current) {
-      clearTimeout(autoSaveTimeoutRef.current);
-    }
-
-    // Set new timeout for periodic auto-save
-    autoSaveTimeoutRef.current = setTimeout(() => {
-      debouncedAutoSave();
-    }, 10000); // 10 seconds
-
-    // Cleanup on unmount
-    return () => {
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-      }
-    };
-  }, [state.responses, debouncedAutoSave]);
+  }, [state.responses, triggerAutoSave]);
 
   const getNavigationHistoryFor = useCallback((questionId: string): NavigationHistory | undefined => {
     const sortedHistory = [...state.navigationHistory].sort((a, b) => b.timestamp - a.timestamp);

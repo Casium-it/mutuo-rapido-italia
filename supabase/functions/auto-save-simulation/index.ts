@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('Auto-save request:', { simulationId, percentage, formSlug, hasFormState: !!formState });
+    // Minimal logging for production
 
     // Serialize form state to handle Sets
     const serializedFormState = JSON.parse(JSON.stringify(formState, (key, value) => {
@@ -57,12 +57,11 @@ Deno.serve(async (req) => {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
 
-    // Check if auto-save already exists for this simulation
-    const { data: existingAutoSave, error: queryError } = await supabase
+    // Check if ANY record exists for this simulation (auto-save or user-save)
+    const { data: existingRecord, error: queryError } = await supabase
       .from('saved_simulations')
-      .select('id')
+      .select('id, is_auto_save')
       .eq('simulation_id', simulationId)
-      .eq('is_auto_save', true)
       .single();
 
     if (queryError && queryError.code !== 'PGRST116') {
@@ -71,9 +70,8 @@ Deno.serve(async (req) => {
 
     let result;
     
-    if (existingAutoSave) {
-      console.log('Updating existing auto-save:', existingAutoSave.id);
-      // Update existing auto-save
+    if (existingRecord) {
+      // Update existing record (whether it's auto-save or user-save)
       result = await supabase
         .from('saved_simulations')
         .update({
@@ -81,11 +79,12 @@ Deno.serve(async (req) => {
           percentage: percentage || 0,
           form_slug: formSlug || 'simulazione-mutuo',
           expires_at: expiresAt.toISOString(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
+          // Keep it as auto-save if it was already auto-save, otherwise preserve user-save status
+          is_auto_save: existingRecord.is_auto_save
         })
-        .eq('id', existingAutoSave.id);
+        .eq('id', existingRecord.id);
     } else {
-      console.log('Creating new auto-save record');
       // Create new auto-save record
       result = await supabase
         .from('saved_simulations')
@@ -111,7 +110,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('Auto-save completed successfully');
+    // Auto-save completed successfully
     return new Response(
       JSON.stringify({ success: true }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
