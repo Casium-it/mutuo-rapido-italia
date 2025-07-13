@@ -1,3 +1,4 @@
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.3'
 
 const corsHeaders = {
@@ -46,24 +47,41 @@ Deno.serve(async (req) => {
 
     console.log('🔄 Auto-saving simulation:', simulationId);
 
-    // Serialize form state to handle Sets - explicitly handle answeredQuestions like manual save
+    // Robust handling of answeredQuestions - ensure it's always stored as an array
+    let answeredQuestionsArray = [];
+    if (formState.answeredQuestions) {
+      if (Array.isArray(formState.answeredQuestions)) {
+        answeredQuestionsArray = formState.answeredQuestions;
+      } else if (formState.answeredQuestions instanceof Set) {
+        answeredQuestionsArray = Array.from(formState.answeredQuestions);
+      } else if (typeof formState.answeredQuestions === 'object') {
+        // Handle case where it might be stored as an object with keys
+        answeredQuestionsArray = Object.keys(formState.answeredQuestions);
+      }
+    }
+
+    // Serialize form state with robust answeredQuestions handling
     const serializedFormState = {
       ...formState,
-      answeredQuestions: Array.from(formState.answeredQuestions || [])
+      answeredQuestions: answeredQuestionsArray
     };
 
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
 
-    // Check if ANY record exists for this simulation (auto-save or user-save)
+    // Check if ANY record exists for this simulation (auto-save or user-save) - FIX: use maybeSingle()
     const { data: existingRecord, error: queryError } = await supabase
       .from('saved_simulations')
       .select('id, is_auto_save')
       .eq('simulation_id', simulationId)
-      .single();
+      .maybeSingle();
 
-    if (queryError && queryError.code !== 'PGRST116') {
+    if (queryError) {
       console.error('Database query error:', queryError);
+      return new Response(
+        JSON.stringify({ success: false, error: `Database query failed: ${queryError.message}` }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     let result;

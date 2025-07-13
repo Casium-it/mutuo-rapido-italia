@@ -52,15 +52,29 @@ export async function resumeSimulation(resumeCode: string): Promise<ResumeSimula
 
     console.log("✅ Simulation resumed successfully");
     
-    // Convert answeredQuestions back to Set - handle both array and object cases
+    // Robust handling of answeredQuestions - convert to Set properly
     const answeredQuestions = data.data.formState.answeredQuestions;
+    let answeredQuestionsArray = [];
+    
+    if (answeredQuestions) {
+      if (Array.isArray(answeredQuestions)) {
+        answeredQuestionsArray = answeredQuestions;
+      } else if (typeof answeredQuestions === 'object') {
+        // Handle case where it might be stored as an object (old format)
+        if (answeredQuestions instanceof Set) {
+          answeredQuestionsArray = Array.from(answeredQuestions);
+        } else {
+          // If it's a plain object, try to extract keys or values
+          answeredQuestionsArray = Object.keys(answeredQuestions).length > 0 
+            ? Object.keys(answeredQuestions) 
+            : Object.values(answeredQuestions).filter(v => typeof v === 'string');
+        }
+      }
+    }
+
     const formState: FormState = {
       ...data.data.formState,
-      answeredQuestions: new Set(
-        Array.isArray(answeredQuestions) 
-          ? answeredQuestions 
-          : []
-      )
+      answeredQuestions: new Set(answeredQuestionsArray)
     };
 
     return {

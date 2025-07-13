@@ -1,3 +1,4 @@
+
 import { FormState } from "@/types/form";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -31,6 +32,11 @@ export async function createOrUpdateAutoSave(data: AutoSaveData): Promise<AutoSa
     if (error) {
       console.error('Auto-save failed:', error);
       return { success: false, error: error.message };
+    }
+
+    if (!responseData || !responseData.success) {
+      console.error('Auto-save failed:', responseData?.error || 'Unknown error');
+      return { success: false, error: responseData?.error || 'Auto-save failed' };
     }
 
     console.log('✅ Auto-save successful for simulation:', data.simulationId);
