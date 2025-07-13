@@ -6,20 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { ArrowLeft, Clock, User, Phone, Mail, FileText, Trash2, Eye, RefreshCw, Search, Filter } from 'lucide-react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, Clock, User, Phone, Mail, FileText, Trash2, Eye, RefreshCw, Search, Filter, Calendar, CalendarCheck, Check, X, Save, UserCheck } from 'lucide-react';
 
 interface SavedSimulation {
   id: string;
@@ -414,7 +401,9 @@ export default function AdminSimulations() {
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">
                       {getSimulationDisplayName(simulation)}
-                      <span className="ml-2 font-bold text-[#245C4F]">- {simulation.form_slug.toUpperCase()}</span>
+                      <span className="ml-2 font-bold text-[#245C4F] bg-green-50 px-2 py-1 rounded text-sm">
+                        {simulation.form_slug.toUpperCase()}
+                      </span>
                     </CardTitle>
                     <div className="flex items-center gap-2">
                       <Badge className={`text-lg font-bold ${simulation.percentage === 100 ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
@@ -424,11 +413,22 @@ export default function AdminSimulations() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Clock className="h-4 w-4" />
                       Aggiornata: {formatDate(simulation.updated_at)}
                     </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <CalendarCheck className="h-4 w-4" />
+                      Creata: {formatDate(simulation.created_at)}
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Calendar className="h-4 w-4" />
+                      Scadenza: {formatDate(simulation.expires_at)}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                     {simulation.phone && (
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Phone className="h-4 w-4" />
@@ -443,29 +443,36 @@ export default function AdminSimulations() {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 text-sm text-gray-600">
+                  <div className="text-sm text-gray-600 mb-3">
                     <div>
                       <strong>Codice Ripresa:</strong> {simulation.resume_code}
-                    </div>
-                    <div>
-                      <strong>Creata:</strong> {formatDate(simulation.created_at)}
-                    </div>
-                    <div>
-                      <strong>Scadenza:</strong> {formatDate(simulation.expires_at)}
                     </div>
                   </div>
 
                   {simulation.simulation_id && (
-                    <div className="text-sm text-gray-600 mb-4">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <div className="text-sm text-gray-600 mb-3">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                         <div>
                           <strong>ID Simulazione:</strong> {simulation.simulation_id}
                         </div>
-                        <div>
-                          <strong>Tipo Salvataggio:</strong> {simulation.is_auto_save ? 'Auto-salvata' : 'Manuale'}
-                        </div>
-                        <div>
-                          <strong>Contatti:</strong> {hasContactData(simulation) ? 'Con contatti' : 'Senza contatti'}
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-1">
+                            <Save className="h-3 w-3" />
+                            <span className="text-xs">Salvataggio: {simulation.is_auto_save ? 'Automatico' : 'Manuale'}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {hasContactData(simulation) ? (
+                              <>
+                                <Check className="h-3 w-3 text-green-600" />
+                                <span className="text-xs">Contatti</span>
+                              </>
+                            ) : (
+                              <>
+                                <X className="h-3 w-3 text-red-600" />
+                                <span className="text-xs">Contatti</span>
+                              </>
+                            )}
+                          </div>
                         </div>
                         {isExpired(simulation.expires_at) && (
                           <div className="text-red-600">
@@ -477,13 +484,24 @@ export default function AdminSimulations() {
                    )}
                    
                    {!simulation.simulation_id && (
-                     <div className="text-sm text-gray-600 mb-4">
-                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                         <div>
-                           <strong>Tipo Salvataggio:</strong> {simulation.is_auto_save ? 'Auto-salvata' : 'Manuale'}
+                     <div className="text-sm text-gray-600 mb-3">
+                       <div className="flex items-center gap-4">
+                         <div className="flex items-center gap-1">
+                           <Save className="h-3 w-3" />
+                           <span className="text-xs">Salvataggio: {simulation.is_auto_save ? 'Automatico' : 'Manuale'}</span>
                          </div>
-                         <div>
-                           <strong>Contatti:</strong> {hasContactData(simulation) ? 'Con contatti' : 'Senza contatti'}
+                         <div className="flex items-center gap-1">
+                           {hasContactData(simulation) ? (
+                             <>
+                               <Check className="h-3 w-3 text-green-600" />
+                               <span className="text-xs">Contatti</span>
+                             </>
+                           ) : (
+                             <>
+                               <X className="h-3 w-3 text-red-600" />
+                               <span className="text-xs">Contatti</span>
+                             </>
+                           )}
                          </div>
                          {isExpired(simulation.expires_at) && (
                            <div className="text-red-600">
