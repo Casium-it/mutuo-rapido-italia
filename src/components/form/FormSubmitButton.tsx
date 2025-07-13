@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useForm } from "@/contexts/FormContext";
 import { createOrUpdateAutoSave } from "@/services/autoSaveService";
-import { generateSimulationId } from "@/utils/simulationId";
 
 export function FormSubmitButton() {
   const { state, blocks, formSlug } = useForm();
@@ -14,6 +13,7 @@ export function FormSubmitButton() {
   const handleSubmit = async () => {
     setIsNavigating(true);
     console.log("FormSubmitButton: Navigating to FormLoading...");
+    console.log("FormSubmitButton: Using existing simulationId:", state.simulationId);
     console.log("FormSubmitButton: FormSlug from context:", formSlug);
     console.log("FormSubmitButton: Form state data:", {
       responses: Object.keys(state.responses).length,
@@ -23,17 +23,27 @@ export function FormSubmitButton() {
     });
     
     try {
-      // Final auto-save with 100% completion before submission
-      const simulationId = generateSimulationId();
-      await createOrUpdateAutoSave({
-        simulationId,
-        formState: {
-          ...state,
-          answeredQuestions: Array.from(state.answeredQuestions)
-        },
-        percentage: 100,
-        formSlug: formSlug || 'simulazione-mutuo'
-      });
+      // Final auto-save with 100% completion before submission using existing simulationId
+      if (state.simulationId) {
+        console.log("FormSubmitButton: Performing 100% auto-save with existing ID...");
+        const autoSaveResult = await createOrUpdateAutoSave({
+          simulationId: state.simulationId,
+          formState: {
+            ...state,
+            answeredQuestions: Array.from(state.answeredQuestions)
+          },
+          percentage: 100,
+          formSlug: formSlug || 'simulazione-mutuo'
+        });
+
+        if (autoSaveResult.success) {
+          console.log("✅ FormSubmitButton: 100% auto-save successful");
+        } else {
+          console.error("❌ FormSubmitButton: Auto-save failed:", autoSaveResult.error);
+        }
+      } else {
+        console.warn("⚠️ FormSubmitButton: No simulationId found, skipping auto-save");
+      }
 
       // Navigate to FormLoading with form data (same format as CompleteFormButton)
       navigate('/form-loading', { 
@@ -48,7 +58,7 @@ export function FormSubmitButton() {
         } 
       });
     } catch (error) {
-      console.error('Error navigating to FormLoading:', error);
+      console.error('FormSubmitButton: Error during submission:', error);
       setIsNavigating(false);
     }
   };

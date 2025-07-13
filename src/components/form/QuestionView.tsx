@@ -4,6 +4,7 @@ import { FormQuestion } from "./FormQuestion";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, AlertCircle } from "lucide-react";
+import { createOrUpdateAutoSave } from "@/services/autoSaveService";
 
 export function QuestionView() {
   const { 
@@ -12,7 +13,8 @@ export function QuestionView() {
     goToQuestion, 
     isBlockCompleted,
     markBlockAsCompleted,
-    getIncompleteBlocks
+    getIncompleteBlocks,
+    formSlug
   } = useFormExtended();
   const location = useLocation();
   const navigate = useNavigate();
@@ -85,17 +87,60 @@ export function QuestionView() {
       return;
     }
 
-    // Navigate immediately to loading page with form data
-    navigate("/form-loading", {
-      state: { 
-        formData: {
-          responses: state.responses,
-          activeBlocks: state.activeBlocks,
-          completedBlocks: state.completedBlocks,
-          dynamicBlocks: state.dynamicBlocks
+    console.log("QuestionView.handleSubmitForm: Starting form submission...");
+    console.log("QuestionView.handleSubmitForm: Using simulationId:", state.simulationId);
+    console.log("QuestionView.handleSubmitForm: FormSlug:", formSlug);
+
+    try {
+      // Final auto-save with 100% completion before submission
+      if (state.simulationId) {
+        console.log("QuestionView.handleSubmitForm: Performing 100% auto-save...");
+        const autoSaveResult = await createOrUpdateAutoSave({
+          simulationId: state.simulationId,
+          formState: {
+            ...state,
+            answeredQuestions: Array.from(state.answeredQuestions)
+          },
+          percentage: 100,
+          formSlug: formSlug || 'simulazione-mutuo'
+        });
+
+        if (autoSaveResult.success) {
+          console.log("✅ QuestionView.handleSubmitForm: 100% auto-save successful");
+        } else {
+          console.error("❌ QuestionView.handleSubmitForm: Auto-save failed:", autoSaveResult.error);
         }
+      } else {
+        console.warn("⚠️ QuestionView.handleSubmitForm: No simulationId found, skipping auto-save");
       }
-    });
+
+      // Navigate immediately to loading page with form data
+      navigate("/form-loading", {
+        state: { 
+          formData: {
+            responses: state.responses,
+            activeBlocks: state.activeBlocks,
+            completedBlocks: state.completedBlocks,
+            dynamicBlocks: state.dynamicBlocks,
+            formSlug: formSlug
+          }
+        }
+      });
+    } catch (error) {
+      console.error('QuestionView.handleSubmitForm: Error during submission:', error);
+      // Still navigate even if auto-save fails
+      navigate("/form-loading", {
+        state: { 
+          formData: {
+            responses: state.responses,
+            activeBlocks: state.activeBlocks,
+            completedBlocks: state.completedBlocks,
+            dynamicBlocks: state.dynamicBlocks,
+            formSlug: formSlug
+          }
+        }
+      });
+    }
   };
 
   if (!activeBlock || !activeQuestion) {
