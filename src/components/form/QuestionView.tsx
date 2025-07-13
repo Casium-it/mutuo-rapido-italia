@@ -4,7 +4,7 @@ import { FormQuestion } from "./FormQuestion";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, AlertCircle } from "lucide-react";
-import { completeFormSave } from "@/services/autoSaveService";
+import { completedSave } from "@/services/smartSaveService";
 
 export function QuestionView() {
   const { 
@@ -95,15 +95,11 @@ export function QuestionView() {
       // Final completed form save with 100% completion before submission
       if (state.simulationId) {
         console.log("QuestionView.handleSubmitForm: Performing 100% completed form save...");
-        const completeSaveResult = await completeFormSave({
-          simulationId: state.simulationId,
-          formState: {
-            ...state,
-            answeredQuestions: Array.from(state.answeredQuestions)
-          },
-          percentage: 100,
-          formSlug: formSlug || 'simulazione-mutuo'
-        });
+        const completeSaveResult = await completedSave(
+          state.simulationId,
+          state,
+          formSlug || 'simulazione-mutuo'
+        );
 
         if (completeSaveResult.success) {
           console.log("✅ QuestionView.handleSubmitForm: 100% completed form save successful");

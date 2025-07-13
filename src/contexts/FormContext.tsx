@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SaveSimulationData, SaveSimulationResult } from "@/services/saveSimulationService";
 import { resumeSimulation } from "@/services/resumeSimulationService";
 import { generateSimulationId } from "@/utils/simulationId";
-import { createOrUpdateAutoSave } from "@/services/autoSaveService";
+import { autoSave, manualSave } from "@/services/smartSaveService";
 
 type FormContextType = {
   state: FormState;
@@ -1209,12 +1209,12 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
         answeredQuestions: Array.from(state.answeredQuestions || [])
       };
       
-      const result = await createOrUpdateAutoSave({
-        simulationId: state.simulationId,
-        formState: serializedFormState,
-        percentage: progress,
-        formSlug: formSlug
-      });
+      const result = await autoSave(
+        state.simulationId,
+        state,
+        progress,
+        formSlug || 'simulazione-mutuo'
+      );
       
       if (result.success) {
         lastAutoSaveRef.current = now;
@@ -1260,79 +1260,52 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
     dispatch({ type: "DELETE_QUESTION_RESPONSES", questionIds });
   }, []);
 
-  // Handle save simulation with edge function
+  // Handle save simulation with smart save service
   const handleSaveSimulation = useCallback(async (contactData: Omit<SaveSimulationData, 'percentage'>): Promise<SaveSimulationResult> => {
     // Set manual saving flag to prevent auto-saves during manual save
     isManualSavingRef.current = true;
     
     try {
-      // Only use resumeCode for genuine resume sessions, not for new simulations with old localStorage
-      const resumeCode = state.sessionType === 'resumed' ? (() => {
-        const resumeMetadata = localStorage.getItem('resumeMetadata');
-        return resumeMetadata ? JSON.parse(resumeMetadata).resumeCode : undefined;
-      })() : undefined;
-
       // Calculate current progress percentage
       const percentage = getProgress();
 
-      // Add percentage to contact data
-      const contactDataWithPercentage = {
-        ...contactData,
-        percentage
-      };
+      console.log(`💾 Starting manual save for simulation: ${state.simulationId}, percentage: ${percentage}%`);
 
-      // Serialize form state properly - convert Set to Array for JSON
-      const serializedFormState = {
-        ...state,
-        answeredQuestions: Array.from(state.answeredQuestions || [])
-      };
+      const result = await manualSave(
+        state.simulationId,
+        state,
+        percentage,
+        formSlug || 'simulazione-mutuo',
+        contactData
+      );
 
-      console.log(`💾 Saving simulation (${state.sessionType}) with ID: ${state.simulationId}, percentage:`, percentage);
+      if (result.success) {
+        // Store contact info and update resume metadata with simulation ID
+        localStorage.setItem('contactInfo', JSON.stringify(contactData));
+        localStorage.setItem('resumeMetadata', JSON.stringify({
+          resumeCode: result.resumeCode,
+          simulationId: state.simulationId,
+          contactInfo: contactData,
+          isFromResume: true
+        }));
 
-      const { data, error } = await supabase.functions.invoke('save-simulation', {
-        body: {
-          formState: serializedFormState,
-          formSlug: formSlug || "simulazione-mutuo",
-          contactData: contactDataWithPercentage,
-          simulationId: state.simulationId, // Include simulation ID
-          resumeCode, // Only passed for resumed sessions
-          convertFromAutoSave: state.sessionType === 'new' // Convert auto-save for new sessions
-        }
-      });
+        // Update session type to resumed for future saves
+        dispatch({ type: "SET_FORM_STATE", state: { sessionType: 'resumed' as SessionType } });
 
-      if (error) {
-        console.error("Edge function error:", error);
+        console.log('✅ Manual save completed successfully');
+        return {
+          success: true,
+          resumeCode: result.resumeCode
+        };
+      } else {
+        console.error('❌ Manual save failed:', result.error);
         return {
           success: false,
-          error: "Errore durante il salvataggio della simulazione"
+          error: result.error || "Errore durante il salvataggio della simulazione"
         };
       }
-
-      if (!data.success) {
-        return {
-          success: false,
-          error: data.error
-        };
-      }
-
-      // Store contact info and update resume metadata with simulation ID
-      localStorage.setItem('contactInfo', JSON.stringify(contactData));
-      localStorage.setItem('resumeMetadata', JSON.stringify({
-        resumeCode: data.resumeCode,
-        simulationId: state.simulationId,
-        contactInfo: contactData,
-        isFromResume: true
-      }));
-
-      // Update session type to resumed for future saves
-      dispatch({ type: "SET_FORM_STATE", state: { sessionType: 'resumed' as SessionType } });
-
-      return {
-        success: true,
-        resumeCode: data.resumeCode
-      };
     } catch (error) {
-      console.error("Error saving simulation:", error);
+      console.error("Error in manual save:", error);
       return {
         success: false,
         error: "Errore durante il salvataggio della simulazione"
@@ -1341,7 +1314,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
       // Clear manual saving flag
       isManualSavingRef.current = false;
     }
-  }, [state, formSlug, getProgress]);
+  }, [state, formSlug, getProgress, manualSave]);
 
   // Handle resume simulation
   const handleResumeSimulation = useCallback(async (resumeCode: string): Promise<{ success: boolean; error?: string }> => {

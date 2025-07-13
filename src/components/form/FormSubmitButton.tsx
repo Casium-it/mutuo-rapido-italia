@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useForm } from "@/contexts/FormContext";
-import { completeFormSave } from "@/services/autoSaveService";
+import { completedSave } from "@/services/smartSaveService";
 
 export function FormSubmitButton() {
   const { state, blocks, formSlug } = useForm();
@@ -26,15 +26,11 @@ export function FormSubmitButton() {
       // Final completed form save with 100% completion before submission using existing simulationId
       if (state.simulationId) {
         console.log("FormSubmitButton: Performing 100% completed form save with existing ID...");
-        const completeSaveResult = await completeFormSave({
-          simulationId: state.simulationId,
-          formState: {
-            ...state,
-            answeredQuestions: Array.from(state.answeredQuestions)
-          },
-          percentage: 100,
-          formSlug: formSlug || 'simulazione-mutuo'
-        });
+        const completeSaveResult = await completedSave(
+          state.simulationId,
+          state,
+          formSlug || 'simulazione-mutuo'
+        );
 
         if (completeSaveResult.success) {
           console.log("✅ FormSubmitButton: 100% completed form save successful");
