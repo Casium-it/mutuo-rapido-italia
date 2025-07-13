@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Block } from '@/types/form';
 
 interface AdminBlock extends Block {
+  id: string;
   form_id: string;
   form_title: string;
   form_slug: string;
@@ -70,6 +71,7 @@ export function useAdminBlocks() {
         const blockData = item.block_data as Block;
         return {
           ...blockData,
+          id: item.id,
           form_id: item.form_id,
           form_title: item.forms.title,
           form_slug: item.forms.slug,
@@ -125,6 +127,77 @@ export function useAdminBlocks() {
     };
   };
 
+  const updateBlock = async (blockId: string, updatedBlock: Block, newFormId?: string) => {
+    try {
+      const currentBlock = blocks.find(b => b.block_id === blockId);
+      if (!currentBlock) {
+        throw new Error('Block not found');
+      }
+
+      const formId = newFormId || currentBlock.form_id;
+      
+      const { error } = await supabase
+        .from('form_blocks')
+        .update({
+          block_data: updatedBlock,
+          form_id: formId,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', currentBlock.id);
+
+      if (error) throw error;
+
+      // Refresh data
+      await loadBlocksFromDatabase();
+    } catch (error) {
+      console.error('Error updating block:', error);
+      throw error;
+    }
+  };
+
+  const duplicateBlock = async (block: Block, targetFormId: string) => {
+    try {
+      // Find the target form to get the next block number
+      const targetForm = forms.find(f => f.id === targetFormId);
+      if (!targetForm) {
+        throw new Error('Target form not found');
+      }
+
+      // Get existing blocks in target form to determine next block number
+      const targetFormBlocks = blocks.filter(b => b.form_id === targetFormId);
+      const maxBlockNumber = Math.max(
+        ...targetFormBlocks.map(b => parseInt(b.block_number) || 0),
+        0
+      );
+      const nextBlockNumber = (maxBlockNumber + 1).toString();
+
+      // Create the duplicated block with new ID and number
+      const duplicatedBlock: Block = {
+        ...block,
+        block_id: `${block.block_id}_copy_${Date.now()}`,
+        block_number: nextBlockNumber,
+        title: `${block.title} (Copia)`,
+        copy_number: (block.copy_number || 0) + 1
+      };
+
+      const { error } = await supabase
+        .from('form_blocks')
+        .insert({
+          form_id: targetFormId,
+          block_data: duplicatedBlock,
+          sort_order: parseInt(nextBlockNumber)
+        });
+
+      if (error) throw error;
+
+      // Refresh data
+      await loadBlocksFromDatabase();
+    } catch (error) {
+      console.error('Error duplicating block:', error);
+      throw error;
+    }
+  };
+
   return {
     blocks,
     forms,
@@ -134,6 +207,8 @@ export function useAdminBlocks() {
     getBlocksByForm,
     getStats,
     getTotalQuestions,
+    updateBlock,
+    duplicateBlock,
     refetch: loadBlocksFromDatabase,
   };
 }

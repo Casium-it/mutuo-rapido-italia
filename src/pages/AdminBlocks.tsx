@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAdminBlocks } from '@/hooks/useAdminBlocks';
 import { getBlockValidation, BlockValidation, BlockActivatorUnion } from '@/utils/blockValidation';
+import { BlockEditDialog } from '@/components/admin/BlockEditDialog';
 
 export default function AdminBlocks() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -16,7 +17,7 @@ export default function AdminBlocks() {
   const [searchParams] = useSearchParams();
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
-  const { blocks, forms, loading, error, getFilteredBlocks, getStats, refetch } = useAdminBlocks();
+  const { blocks, forms, loading, error, getFilteredBlocks, getStats, updateBlock, duplicateBlock, refetch } = useAdminBlocks();
 
   // Auto-set form filter from URL parameter
   useEffect(() => {
@@ -387,9 +388,19 @@ export default function AdminBlocks() {
                             </span>
                           </div>
                         </div>
-                        {hasValidationErrors && (
-                          <AlertTriangle className="h-5 w-5 text-red-500" />
-                        )}
+                        <div className="flex items-center gap-2">
+                          {hasValidationErrors && (
+                            <AlertTriangle className="h-5 w-5 text-red-500" />
+                          )}
+                          <BlockEditDialog
+                            block={block}
+                            formId={block.form_id}
+                            formTitle={block.form_title || 'Unknown'}
+                            availableForms={forms.map(f => ({ id: f.id, title: f.title, slug: f.slug }))}
+                            onUpdate={updateBlock}
+                            onDuplicate={duplicateBlock}
+                          />
+                        </div>
                       </div>
 
                       {/* Stats Row */}
