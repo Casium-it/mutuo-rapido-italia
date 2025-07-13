@@ -106,7 +106,7 @@ const AppWithTracking = () => {
           <AdminBlockDetail />
         </ProtectedRoute>
       } />
-      <Route path="/admin/form/:submissionId" element={
+      <Route path="/admin/leads/:submissionId" element={
         <ProtectedRoute requireAdmin>
           <AdminFormDetail />
         </ProtectedRoute>

@@ -263,7 +263,7 @@ export default function AdminFormDetail() {
       <header className="bg-white border-b border-[#BEB8AE] px-4 py-4">
         <div className="max-w-7xl mx-auto flex items-center gap-4">
           <Button 
-            onClick={() => navigate('/admin')}
+            onClick={() => navigate('/admin/leads')}
             variant="outline"
             size="sm"
             className="flex items-center gap-2"

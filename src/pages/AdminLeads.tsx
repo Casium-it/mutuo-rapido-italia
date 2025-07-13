@@ -278,7 +278,7 @@ export default function AdminLeads() {
                   
                   <div className="flex justify-end items-center gap-2">
                     <Button
-                      onClick={() => navigate(`/admin/form/${submission.id}`)}
+                      onClick={() => navigate(`/admin/leads/${submission.id}`)}
                       className="bg-[#245C4F] hover:bg-[#1e4f44] flex items-center gap-2"
                     >
                       <Eye className="h-4 w-4" />
