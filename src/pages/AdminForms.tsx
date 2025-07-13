@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { LogOut, ArrowLeft, Database, Eye, Settings, Plus, Search, RefreshCw, AlertTriangle } from 'lucide-react';
+import { LogOut, ArrowLeft, Database, Eye, Settings, Search, RefreshCw, Blocks } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useAdminBlocks } from '@/hooks/useAdminBlocks';
 
@@ -200,11 +199,9 @@ export default function AdminForms() {
                       <div className="flex-1">
                         <CardTitle className="text-xl text-[#245C4F] flex items-center gap-2">
                           {form.title}
-                          {!form.is_active && (
-                            <Badge variant="secondary" className="bg-red-100 text-red-800">
-                              Inattivo
-                            </Badge>
-                          )}
+                          <Badge variant="default" className="bg-green-100 text-green-800">
+                            Attivo
+                          </Badge>
                         </CardTitle>
                         <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
                           <span>
@@ -215,9 +212,7 @@ export default function AdminForms() {
                             Tipo: <Badge variant="outline" className="text-xs">{form.form_type}</Badge>
                           </span>
                         </div>
-                        {form.description && (
-                          <p className="text-sm text-gray-600 mt-2">{form.description}</p>
-                        )}
+                        <p className="text-sm text-gray-600 mt-2">Form per simulazioni mutui</p>
                       </div>
                     </div>
                   </CardHeader>
@@ -233,8 +228,8 @@ export default function AdminForms() {
                       <div className="flex items-center gap-2 text-sm">
                         <Settings className="h-4 w-4 text-gray-500" />
                         <span className="text-gray-600">Stato:</span>
-                        <Badge variant={form.is_active ? "default" : "secondary"} className="text-xs">
-                          {form.is_active ? "Attivo" : "Inattivo"}
+                        <Badge variant="default" className="text-xs">
+                          Attivo
                         </Badge>
                       </div>
                     </div>
@@ -242,19 +237,10 @@ export default function AdminForms() {
                     {/* Action Buttons */}
                     <div className="flex justify-end gap-2 pt-4 border-t border-gray-100">
                       <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate(`/admin/forms/${form.slug}`)}
-                        className="flex items-center gap-2"
-                      >
-                        <Eye className="h-4 w-4" />
-                        Visualizza Dettagli
-                      </Button>
-                      <Button
-                        onClick={() => navigate(`/admin/forms/${form.slug}?tab=blocks`)}
+                        onClick={() => navigate(`/admin/blocks?form=${form.slug}`)}
                         className="bg-[#245C4F] hover:bg-[#1e4f44] flex items-center gap-2"
                       >
-                        <Settings className="h-4 w-4" />
+                        <Blocks className="h-4 w-4" />
                         Gestisci Blocchi ({blockCount})
                       </Button>
                     </div>

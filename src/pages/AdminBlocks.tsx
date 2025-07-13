@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,9 +13,18 @@ import { getBlockValidation, BlockValidation, BlockActivatorUnion } from '@/util
 export default function AdminBlocks() {
   const [searchTerm, setSearchTerm] = useState('');
   const [formFilter, setFormFilter] = useState<string>('all');
+  const [searchParams] = useSearchParams();
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
   const { blocks, forms, loading, error, getFilteredBlocks, getStats, refetch } = useAdminBlocks();
+
+  // Auto-set form filter from URL parameter
+  useEffect(() => {
+    const formParam = searchParams.get('form');
+    if (formParam && forms.some(form => form.slug === formParam)) {
+      setFormFilter(formParam);
+    }
+  }, [searchParams, forms]);
 
   const handleSignOut = async () => {
     await signOut();
