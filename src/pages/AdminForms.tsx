@@ -226,7 +226,8 @@ export default function AdminForms() {
                             <span>
                               <strong>Tipo form:</strong> {form.form_type}
                             </span>
-                            <span>•</span>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-gray-600">
                             <span>
                               <strong>Completion behaviour:</strong> {form.completion_behavior}
                             </span>
@@ -256,18 +257,18 @@ export default function AdminForms() {
 
                   <CardContent className="space-y-4">
                     {/* Statistics Row */}
-                    <div className="grid grid-cols-3 gap-4 py-3 px-4 bg-gray-50 rounded-lg">
-                      <div className="text-center">
-                        <div className="text-lg font-semibold text-[#245C4F]">{form.version}</div>
-                        <div className="text-xs text-gray-600">Versione</div>
+                    <div className="flex items-center gap-6 text-sm text-gray-600">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-gray-500" />
+                        <span>Versione: <span className="font-medium">{form.version}</span></span>
                       </div>
-                      <div className="text-center">
-                        <div className="text-lg font-semibold text-[#245C4F]">{blockCount}</div>
-                        <div className="text-xs text-gray-600">Blocchi</div>
+                      <div className="flex items-center gap-2">
+                        <Blocks className="h-4 w-4 text-gray-500" />
+                        <span>Blocchi: <span className="font-medium">{blockCount}</span></span>
                       </div>
-                      <div className="text-center">
-                        <div className="text-lg font-semibold text-[#245C4F]">{questionCount}</div>
-                        <div className="text-xs text-gray-600">Domande Totali</div>
+                      <div className="flex items-center gap-2">
+                        <HelpCircle className="h-4 w-4 text-gray-500" />
+                        <span>Domande: <span className="font-medium">{questionCount}</span></span>
                       </div>
                     </div>
 

@@ -197,7 +197,12 @@ export function FormEditDialog({ open, onOpenChange, form, onFormUpdated }: Form
                   <FormItem>
                     <FormLabel>Slug</FormLabel>
                     <FormControl>
-                      <Input placeholder="form-slug" {...field} />
+                      <Input 
+                        placeholder="form-slug" 
+                        {...field} 
+                        disabled
+                        className="bg-gray-50 text-gray-500 cursor-not-allowed"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -210,19 +215,9 @@ export function FormEditDialog({ open, onOpenChange, form, onFormUpdated }: Form
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Tipo Form</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleziona tipo" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="general">Generale</SelectItem>
-                        <SelectItem value="simulation">Simulazione</SelectItem>
-                        <SelectItem value="survey">Questionario</SelectItem>
-                        <SelectItem value="lead-capture">Acquisizione Lead</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Input placeholder="Tipo del form" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -242,8 +237,8 @@ export function FormEditDialog({ open, onOpenChange, form, onFormUpdated }: Form
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="form-completed">Form Completato</SelectItem>
-                      <SelectItem value="form-completed-redirect">Form Completato con Redirect</SelectItem>
+                      <SelectItem value="form-completed">form-completed</SelectItem>
+                      <SelectItem value="form-completed-redirect">form-completed-redirect</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
