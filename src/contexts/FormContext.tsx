@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SaveSimulationData, SaveSimulationResult } from "@/services/saveSimulationService";
 import { resumeSimulation } from "@/services/resumeSimulationService";
 import { generateSimulationId } from "@/utils/simulationId";
+import { createOrUpdateAutoSave } from "@/services/autoSaveService";
 
 type FormContextType = {
   state: FormState;
@@ -355,6 +356,11 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
   const previousQuestionIdRef = useRef<string | null>(null);
   const isNavigatingRef = useRef<boolean | undefined>(false);
   const usedNextBlockNavRef = useRef<boolean>(false);
+  
+  // Auto-save refs and state
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastAutoSaveRef = useRef<number>(0);
+  const hasInitialAutoSaveRef = useRef<boolean>(false);
   
   const sortedBlocks = [...blocks].sort((a, b) => a.priority - b.priority);
 
@@ -704,7 +710,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
     }
   }, [params.blockId, params.questionId, params.formSlug, blocks, navigate]);
 
-  // Auto-save state using simulation ID
+
+  // Auto-save state using simulation ID (localStorage)
   useEffect(() => {
     if (state.simulationId) {
       const stateToSave = {
@@ -716,6 +723,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
       console.log(`💾 Auto-saved form state for simulation: ${state.simulationId}`);
     }
   }, [state]);
+
 
   const activateRequiredBlocksBasedOnResponses = (responses: FormResponse) => {
     for (const questionId of Object.keys(responses)) {
@@ -1171,6 +1179,61 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
     return Math.round(totalProgress);
   }, [state.activeBlocks, state.answeredQuestions, state.completedBlocks, state.dynamicBlocks, sortedBlocks]);
 
+  // Debounced auto-save function
+  const debouncedAutoSave = useCallback(async () => {
+    if (!state.simulationId || !formSlug) return;
+    
+    const now = Date.now();
+    const timeSinceLastSave = now - lastAutoSaveRef.current;
+    
+    // Only save if enough time has passed (10 seconds)
+    if (timeSinceLastSave < 10000) return;
+    
+    try {
+      const progress = getProgress();
+      await createOrUpdateAutoSave({
+        simulationId: state.simulationId,
+        formState: state,
+        percentage: progress,
+        formSlug: formSlug
+      });
+      
+      lastAutoSaveRef.current = now;
+      console.log(`🔄 Auto-saved simulation ${state.simulationId} at ${progress}%`);
+    } catch (error) {
+      console.error('Auto-save failed:', error);
+    }
+  }, [state, formSlug, getProgress]);
+
+  // Initial auto-save on form start
+  useEffect(() => {
+    if (state.simulationId && !hasInitialAutoSaveRef.current && state.sessionType === 'new') {
+      console.log('🚀 Creating initial auto-save for new simulation');
+      hasInitialAutoSaveRef.current = true;
+      debouncedAutoSave();
+    }
+  }, [state.simulationId, state.sessionType, debouncedAutoSave]);
+
+  // Auto-save trigger on responses and periodic intervals
+  useEffect(() => {
+    // Clear existing timeout
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+
+    // Set new timeout for periodic auto-save
+    autoSaveTimeoutRef.current = setTimeout(() => {
+      debouncedAutoSave();
+    }, 10000); // 10 seconds
+
+    // Cleanup on unmount
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, [state.responses, debouncedAutoSave]);
+
   const getNavigationHistoryFor = useCallback((questionId: string): NavigationHistory | undefined => {
     const sortedHistory = [...state.navigationHistory].sort((a, b) => b.timestamp - a.timestamp);
     
@@ -1231,7 +1294,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
           formSlug: formSlug || "simulazione-mutuo",
           contactData: contactDataWithPercentage,
           simulationId: state.simulationId, // Include simulation ID
-          resumeCode // Only passed for resumed sessions
+          resumeCode, // Only passed for resumed sessions
+          convertFromAutoSave: state.sessionType === 'new' // Convert auto-save for new sessions
         }
       });
 

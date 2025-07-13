@@ -6,3 +6,6 @@ verify_jwt = false
 
 [functions.sendLinkedFormWebhook]
 verify_jwt = false
+
+[functions.auto-save-simulation]
+verify_jwt = false

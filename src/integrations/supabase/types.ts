@@ -311,45 +311,48 @@ export type Database = {
       saved_simulations: {
         Row: {
           created_at: string
-          email: string
+          email: string | null
           expires_at: string
           form_slug: string
           form_state: Json
           id: string
+          is_auto_save: boolean | null
           linked_form_id: string | null
-          name: string
+          name: string | null
           percentage: number
-          phone: string
+          phone: string | null
           resume_code: string
           simulation_id: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
-          email: string
+          email?: string | null
           expires_at?: string
           form_slug?: string
           form_state: Json
           id?: string
+          is_auto_save?: boolean | null
           linked_form_id?: string | null
-          name: string
+          name?: string | null
           percentage?: number
-          phone: string
+          phone?: string | null
           resume_code?: string
           simulation_id?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
-          email?: string
+          email?: string | null
           expires_at?: string
           form_slug?: string
           form_state?: Json
           id?: string
+          is_auto_save?: boolean | null
           linked_form_id?: string | null
-          name?: string
+          name?: string | null
           percentage?: number
-          phone?: string
+          phone?: string | null
           resume_code?: string
           simulation_id?: string | null
           updated_at?: string

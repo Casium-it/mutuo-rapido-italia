@@ -17,6 +17,7 @@ interface SaveSimulationRequest {
   };
   simulationId?: string; // Unique simulation identifier
   resumeCode?: string; // If provided, update existing
+  convertFromAutoSave?: boolean; // Convert existing auto-save to user save
 }
 
 // Helper function to format date as dd/mm/yyyy
@@ -92,7 +93,7 @@ Deno.serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { formState, formSlug, contactData, simulationId, resumeCode }: SaveSimulationRequest = await req.json();
+    const { formState, formSlug, contactData, simulationId, resumeCode, convertFromAutoSave }: SaveSimulationRequest = await req.json();
 
     // Validate required fields
     if (!formState || !formSlug || !contactData?.name || !contactData?.phone || !contactData?.email || contactData?.percentage === undefined) {
@@ -171,6 +172,87 @@ Deno.serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
 
+    } else if (convertFromAutoSave && simulationId) {
+      // Convert existing auto-save to user save
+      console.log('🔄 Converting auto-save to user save for simulation:', simulationId);
+      
+      const { data, error } = await supabase
+        .from('saved_simulations')
+        .update({
+          name: contactData.name,
+          phone: contactData.phone,
+          email: contactData.email,
+          form_state: serializedFormState,
+          form_slug: formSlug,
+          expires_at: expires_at.toISOString(),
+          percentage: contactData.percentage,
+          is_auto_save: false,
+          updated_at: new Date().toISOString()
+        })
+        .eq('simulation_id', simulationId)
+        .eq('is_auto_save', true)
+        .select('resume_code')
+        .single();
+
+      if (error) {
+        console.error('❌ Error converting auto-save:', error);
+        return new Response(
+          JSON.stringify({ success: false, error: 'Errore durante la conversione del salvataggio automatico' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (!data) {
+        console.log('❌ No auto-save found, creating new simulation instead');
+        // Fallback: create new simulation if auto-save not found
+        const { data: newData, error: newError } = await supabase
+          .from('saved_simulations')
+          .insert({
+            name: contactData.name,
+            phone: contactData.phone,
+            email: contactData.email,
+            form_state: serializedFormState,
+            form_slug: formSlug,
+            expires_at: expires_at.toISOString(),
+            percentage: contactData.percentage,
+            simulation_id: simulationId,
+            is_auto_save: false
+          })
+          .select('resume_code')
+          .single();
+
+        if (newError) {
+          console.error('❌ Error creating new simulation:', newError);
+          return new Response(
+            JSON.stringify({ success: false, error: 'Errore durante il salvataggio della simulazione' }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        await sendSimulationSavedNotification(supabase, contactData, newData.resume_code, expires_at);
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            resumeCode: newData.resume_code,
+            message: 'Simulazione salvata con successo'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Send WhatsApp notification for converted simulation
+      await sendSimulationSavedNotification(supabase, contactData, data.resume_code, expires_at);
+
+      console.log('✅ Auto-save converted to user save successfully');
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          resumeCode: data.resume_code,
+          message: 'Simulazione salvata con successo'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+
     } else {
       // Create new simulation
       console.log('🔄 Creating new simulation');
@@ -185,7 +267,8 @@ Deno.serve(async (req) => {
           form_slug: formSlug,
           expires_at: expires_at.toISOString(),
           percentage: contactData.percentage,
-          simulation_id: simulationId || null
+          simulation_id: simulationId || null,
+          is_auto_save: false
         })
         .select('resume_code')
         .single();
