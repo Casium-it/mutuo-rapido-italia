@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useForm } from "@/contexts/FormContext";
+import { createOrUpdateAutoSave } from "@/services/autoSaveService";
+import { generateSimulationId } from "@/utils/simulationId";
 
 export function FormSubmitButton() {
   const { state, blocks, formSlug } = useForm();
@@ -21,6 +23,18 @@ export function FormSubmitButton() {
     });
     
     try {
+      // Final auto-save with 100% completion before submission
+      const simulationId = generateSimulationId();
+      await createOrUpdateAutoSave({
+        simulationId,
+        formState: {
+          ...state,
+          answeredQuestions: Array.from(state.answeredQuestions)
+        },
+        percentage: 100,
+        formSlug: formSlug || 'simulazione-mutuo'
+      });
+
       // Navigate to FormLoading with form data (same format as CompleteFormButton)
       navigate('/form-loading', { 
         state: { 
