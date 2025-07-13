@@ -31,6 +31,7 @@ import AdminSimulations from "./pages/AdminSimulations";
 import AdminBlocks from "./pages/AdminBlocks";
 import AdminBlockDetail from "./pages/AdminBlockDetail";
 import AdminFormDetail from "./pages/AdminFormDetail";
+import AdminSimulationDetail from "./pages/AdminSimulationDetail";
 import AdminNotifications from "./pages/AdminNotifications";
 
 const queryClient = new QueryClient();
@@ -88,6 +89,11 @@ const AppWithTracking = () => {
       <Route path="/admin/simulations" element={
         <ProtectedRoute requireAdmin>
           <AdminSimulations />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/simulations/:simulationId" element={
+        <ProtectedRoute requireAdmin>
+          <AdminSimulationDetail />
         </ProtectedRoute>
       } />
       <Route path="/admin/blocks" element={

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { ArrowLeft, Clock, User, Phone, Mail, FileText, Trash2, Eye, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Clock, User, Phone, Mail, FileText, Trash2, Eye, RefreshCw, Search, Filter } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,6 +18,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface SavedSimulation {
   id: string;
@@ -37,8 +39,13 @@ interface SavedSimulation {
 
 export default function AdminSimulations() {
   const [simulations, setSimulations] = useState<SavedSimulation[]>([]);
+  const [filteredSimulations, setFilteredSimulations] = useState<SavedSimulation[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [completionFilter, setCompletionFilter] = useState<'all' | 'completed' | 'in_progress'>('all');
+  const [contactFilter, setContactFilter] = useState<'all' | 'with_contact' | 'without_contact'>('all');
+  const [formTypeFilter, setFormTypeFilter] = useState<string>('all');
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -62,6 +69,7 @@ export default function AdminSimulations() {
         });
       } else {
         setSimulations(data || []);
+        setFilteredSimulations(data || []);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -91,6 +99,7 @@ export default function AdminSimulations() {
 
       // Update local state
       setSimulations(prev => prev.filter(s => s.id !== simulationId));
+      setFilteredSimulations(prev => prev.filter(s => s.id !== simulationId));
       
       toast({
         title: "Successo",
@@ -129,6 +138,56 @@ export default function AdminSimulations() {
     return `Simulazione ${simulation.resume_code}`;
   };
 
+  const hasContactData = (simulation: SavedSimulation) => {
+    return !!(simulation.name || simulation.phone || simulation.email);
+  };
+
+  // Apply filters when simulations or filters change
+  useEffect(() => {
+    let filtered = [...simulations];
+
+    // Search filter
+    if (searchTerm) {
+      filtered = filtered.filter(sim => 
+        getSimulationDisplayName(sim).toLowerCase().includes(searchTerm.toLowerCase()) ||
+        sim.resume_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        sim.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        sim.email?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Completion filter
+    if (completionFilter === 'completed') {
+      filtered = filtered.filter(sim => sim.percentage === 100);
+    } else if (completionFilter === 'in_progress') {
+      filtered = filtered.filter(sim => sim.percentage < 100);
+    }
+
+    // Contact filter
+    if (contactFilter === 'with_contact') {
+      filtered = filtered.filter(sim => hasContactData(sim));
+    } else if (contactFilter === 'without_contact') {
+      filtered = filtered.filter(sim => !hasContactData(sim));
+    }
+
+    // Form type filter
+    if (formTypeFilter !== 'all') {
+      filtered = filtered.filter(sim => sim.form_slug === formTypeFilter);
+    }
+
+    setFilteredSimulations(filtered);
+  }, [simulations, searchTerm, completionFilter, contactFilter, formTypeFilter]);
+
+  // Get unique form types for filter
+  const formTypes = [...new Set(simulations.map(sim => sim.form_slug))];
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setCompletionFilter('all');
+    setContactFilter('all');
+    setFormTypeFilter('all');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f8f5f1]">
@@ -143,6 +202,8 @@ export default function AdminSimulations() {
   const autoSaveSimulations = simulations.filter(s => s.is_auto_save);
   const manualSimulations = simulations.filter(s => !s.is_auto_save);
   const expiredSimulations = simulations.filter(s => isExpired(s.expires_at));
+  const completedSimulations = simulations.filter(s => s.percentage === 100);
+  const withContactSimulations = simulations.filter(s => hasContactData(s));
 
   return (
     <div className="min-h-screen bg-[#f8f5f1]">
@@ -174,7 +235,7 @@ export default function AdminSimulations() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
@@ -219,26 +280,135 @@ export default function AdminSimulations() {
               </div>
             </CardContent>
           </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <User className="h-5 w-5 text-purple-600" />
+                <div>
+                  <p className="text-sm text-gray-600">Con Contatti</p>
+                  <p className="text-2xl font-bold text-purple-600">{withContactSimulations.length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Filters */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              Filtri
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Cerca</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Nome, telefono, email, codice..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium mb-2 block">Completamento</label>
+                <Select value={completionFilter} onValueChange={(value: any) => setCompletionFilter(value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutte</SelectItem>
+                    <SelectItem value="completed">Completate (100%)</SelectItem>
+                    <SelectItem value="in_progress">In corso (&lt;100%)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Contatti</label>
+                <Select value={contactFilter} onValueChange={(value: any) => setContactFilter(value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutte</SelectItem>
+                    <SelectItem value="with_contact">Con contatti</SelectItem>
+                    <SelectItem value="without_contact">Senza contatti</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Tipo Form</label>
+                <Select value={formTypeFilter} onValueChange={setFormTypeFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutti</SelectItem>
+                    {formTypes.map(type => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-600">
+                Mostrando {filteredSimulations.length} di {simulations.length} simulazioni
+              </p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={clearFilters}
+                className="text-gray-600"
+              >
+                Pulisci Filtri
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="mb-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Simulazioni Salvate</h2>
           <p className="text-gray-600">Visualizza tutte le simulazioni salvate dagli utenti</p>
         </div>
 
-        {simulations.length === 0 ? (
+        {filteredSimulations.length === 0 ? (
+          simulations.length === 0 ? (
           <Card>
-            <CardContent className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Nessuna simulazione trovata</h3>
-                <p className="text-gray-600">Le simulazioni appariranno qui quando gli utenti le salveranno.</p>
-              </div>
-            </CardContent>
-          </Card>
+              <CardContent className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Nessuna simulazione trovata</h3>
+                  <p className="text-gray-600">Le simulazioni appariranno qui quando gli utenti le salveranno.</p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Nessun risultato</h3>
+                  <p className="text-gray-600">Nessuna simulazione corrisponde ai filtri selezionati.</p>
+                  <Button variant="outline" onClick={clearFilters} className="mt-3">
+                    Pulisci Filtri
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )
         ) : (
           <div className="grid gap-4">
-            {simulations.map((simulation) => (
+            {filteredSimulations.map((simulation) => (
               <Card key={simulation.id} className={`hover:shadow-md transition-shadow ${isExpired(simulation.expires_at) ? 'border-red-200 bg-red-50' : ''}`}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
@@ -260,6 +430,15 @@ export default function AdminSimulations() {
                       {isExpired(simulation.expires_at) && (
                         <Badge className="bg-red-100 text-red-800">
                           Scaduta
+                        </Badge>
+                      )}
+                      {hasContactData(simulation) ? (
+                        <Badge className="bg-green-100 text-green-800">
+                          Con contatti
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-gray-100 text-gray-800">
+                          Senza contatti
                         </Badge>
                       )}
                     </div>
@@ -305,15 +484,12 @@ export default function AdminSimulations() {
                   
                   <div className="flex justify-end items-center gap-2">
                     <Button
-                      onClick={() => {
-                        // Navigate to resume simulation page
-                        window.open(`/riprendi/${simulation.resume_code}`, '_blank');
-                      }}
+                      onClick={() => navigate(`/admin/simulations/${simulation.id}`)}
                       variant="outline"
                       className="flex items-center gap-2"
                     >
                       <Eye className="h-4 w-4" />
-                      Visualizza Simulazione
+                      Dettagli
                     </Button>
                     
                     <AlertDialog>
