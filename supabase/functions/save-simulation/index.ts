@@ -52,7 +52,7 @@ async function sendSimulationSavedNotification(
         },
         templateParams: [
           firstName,
-          "4",
+          contactData.percentage.toString(),
           resumeCode,
           expirationDate
         ]
