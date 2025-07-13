@@ -41,23 +41,39 @@ async function sendWhatsAppNotification(
   supabase: any,
   contactData: { name: string; phone: string; email: string },
   resumeCode: string,
-  expiresAt: Date
+  expiresAt: Date,
+  percentage: number
 ): Promise<void> {
   try {
     const formattedDate = formatDateToDDMMYYYY(expiresAt);
+    const firstName = contactData.name.split(' ')[0];
     
-    await supabase.functions.invoke('send-aisensy-message', {
+    console.log('📱 Sending WhatsApp notification to:', contactData.phone);
+    
+    const { data, error } = await supabase.functions.invoke('send-aisensy-message', {
       body: {
-        phoneNumber: contactData.phone,
-        templateName: 'simulazione_salvata_v2',
-        templateData: {
-          nome: contactData.name,
-          codice: resumeCode,
-          scadenza: formattedDate
-        }
+        campaignName: 'link_simulazione_salvata2',
+        destination: contactData.phone,
+        userName: firstName,
+        source: 'simulation-saved',
+        media: {
+          url: 'https://i.ibb.co/xtxK7zqC/simulazione-salvata.png',
+          filename: 'simulazione-salvata.png'
+        },
+        templateParams: [
+          firstName,
+          percentage.toString(),
+          resumeCode,
+          formattedDate
+        ]
       }
     });
-    console.log('✅ WhatsApp notification sent successfully');
+
+    if (error) {
+      console.error('❌ WhatsApp notification API error:', error);
+    } else {
+      console.log('✅ WhatsApp notification sent successfully to:', contactData.phone);
+    }
   } catch (error) {
     console.error('❌ Failed to send WhatsApp notification:', error);
     // Don't throw - notification failure shouldn't break the save
@@ -76,23 +92,18 @@ async function handleAutoSave(
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 30);
 
-  const upsertData = {
-    simulation_id: data.simulationId,
-    form_state: data.formState,
-    percentage: data.percentage,
-    form_slug: data.formSlug,
-    expires_at: expiresAt.toISOString(),
-    updated_at: new Date().toISOString(),
-    save_method: 'auto-save' as const,
-    // Contact fields are left NULL for auto-save (will be preserved if they exist)
-    name: null,
-    phone: null,
-    email: null
-  };
-
+  // For auto-save, we only update non-contact fields to preserve existing contact info
   const { error } = await supabase
     .from('saved_simulations')
-    .upsert(upsertData, { 
+    .upsert({
+      simulation_id: data.simulationId,
+      form_state: data.formState,
+      percentage: data.percentage,
+      form_slug: data.formSlug,
+      expires_at: expiresAt.toISOString(),
+      updated_at: new Date().toISOString(),
+      save_method: 'auto-save' as const
+    }, { 
       onConflict: 'simulation_id',
       ignoreDuplicates: false 
     });
@@ -167,7 +178,7 @@ async function handleManualSave(
   }
 
   // Send WhatsApp notification
-  await sendWhatsAppNotification(supabase, data.contactData, resumeCode, expiresAt);
+  await sendWhatsAppNotification(supabase, data.contactData, resumeCode, expiresAt, data.percentage);
 
   console.log('✅ Manual save completed for simulation:', data.simulationId);
   return { success: true, resumeCode };
@@ -185,23 +196,18 @@ async function handleCompletedSave(
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 90); // Extended expiry for completed forms
 
-  const upsertData = {
-    simulation_id: data.simulationId,
-    form_state: data.formState,
-    percentage: 100, // Always 100% for completed saves
-    form_slug: data.formSlug,
-    expires_at: expiresAt.toISOString(),
-    updated_at: new Date().toISOString(),
-    save_method: 'completed-save' as const,
-    // Contact fields are left NULL for completed saves (will be preserved if they exist)
-    name: null,
-    phone: null,
-    email: null
-  };
-
+  // For completed saves, we only update non-contact fields to preserve existing contact info
   const { error } = await supabase
     .from('saved_simulations')
-    .upsert(upsertData, { 
+    .upsert({
+      simulation_id: data.simulationId,
+      form_state: data.formState,
+      percentage: 100, // Always 100% for completed saves
+      form_slug: data.formSlug,
+      expires_at: expiresAt.toISOString(),
+      updated_at: new Date().toISOString(),
+      save_method: 'completed-save' as const
+    }, { 
       onConflict: 'simulation_id',
       ignoreDuplicates: false 
     });

@@ -1227,6 +1227,12 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
 
   // Auto-save on response changes with 10-second cooldown
   useEffect(() => {
+    // Skip auto-save if manual save is in progress
+    if (isManualSavingRef.current) {
+      console.log('🚫 Auto-save skipped - manual save in progress');
+      return;
+    }
+    
     if (Object.keys(state.responses).length > 0) {
       triggerAutoSave();
     }
@@ -1289,8 +1295,10 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
           isFromResume: true
         }));
 
-        // Update session type to resumed for future saves
-        dispatch({ type: "SET_FORM_STATE", state: { sessionType: 'resumed' as SessionType } });
+        // Update session type to resumed for future saves (after manual save flag is cleared)
+        setTimeout(() => {
+          dispatch({ type: "SET_FORM_STATE", state: { sessionType: 'resumed' as SessionType } });
+        }, 100);
 
         console.log('✅ Manual save completed successfully');
         return {
