@@ -146,7 +146,7 @@ export default function Admin() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
@@ -176,37 +176,6 @@ export default function Admin() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
-                <TrendingUp className="h-8 w-8 text-green-600" />
-                <div>
-                  <p className="text-sm text-gray-600">Attività Recente</p>
-                  <p className="text-2xl font-bold text-green-600">{stats.recentSubmissions + stats.recentSimulations}</p>
-                  <p className="text-xs text-gray-500">ultimi 7 giorni</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <Clock className="h-8 w-8 text-orange-600" />
-                <div>
-                  <p className="text-sm text-gray-600">% Form Completati</p>
-                  <p className="text-2xl font-bold text-orange-600">
-                    {stats.totalSimulations > 0 ? Math.round((stats.totalSubmissions / stats.totalSimulations) * 100) : 0}%
-                  </p>
-                  <p className="text-xs text-gray-500">submission / simulazioni</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Second Row of Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
                 <Users className="h-8 w-8 text-purple-600" />
                 <div>
                   <p className="text-sm text-gray-600">% Form con Contatti</p>
@@ -214,45 +183,6 @@ export default function Admin() {
                     {stats.totalSimulations > 0 ? Math.round((stats.simulationsWithContact / stats.totalSimulations) * 100) : 0}%
                   </p>
                   <p className="text-xs text-gray-500">contatti / simulazioni</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8"></div>
-                <div>
-                  <p className="text-sm text-gray-600">-</p>
-                  <p className="text-2xl font-bold text-gray-400">-</p>
-                  <p className="text-xs text-gray-500">-</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8"></div>
-                <div>
-                  <p className="text-sm text-gray-600">-</p>
-                  <p className="text-2xl font-bold text-gray-400">-</p>
-                  <p className="text-xs text-gray-500">-</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8"></div>
-                <div>
-                  <p className="text-sm text-gray-600">-</p>
-                  <p className="text-2xl font-bold text-gray-400">-</p>
-                  <p className="text-xs text-gray-500">-</p>
                 </div>
               </div>
             </CardContent>
