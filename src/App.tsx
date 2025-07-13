@@ -26,12 +26,11 @@ import Simulazioni from "./pages/Simulazioni";
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
-import AdminForms from "./pages/AdminForms";
-import AdminFormDetail from "./pages/AdminFormDetail";
 import AdminLeads from "./pages/AdminLeads";
 import AdminSimulations from "./pages/AdminSimulations";
 import AdminBlocks from "./pages/AdminBlocks";
 import AdminBlockDetail from "./pages/AdminBlockDetail";
+import AdminFormDetail from "./pages/AdminFormDetail";
 import AdminSimulationDetail from "./pages/AdminSimulationDetail";
 import AdminNotifications from "./pages/AdminNotifications";
 
@@ -82,26 +81,6 @@ const AppWithTracking = () => {
           <Admin />
         </ProtectedRoute>
       } />
-      <Route path="/admin/forms" element={
-        <ProtectedRoute requireAdmin>
-          <AdminForms />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/forms/:formSlug" element={
-        <ProtectedRoute requireAdmin>
-          <AdminFormDetail />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/blocks" element={
-        <ProtectedRoute requireAdmin>
-          <AdminBlocks />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/blocks/:blockId" element={
-        <ProtectedRoute requireAdmin>
-          <AdminBlockDetail />
-        </ProtectedRoute>
-      } />
       <Route path="/admin/leads" element={
         <ProtectedRoute requireAdmin>
           <AdminLeads />
@@ -115,6 +94,21 @@ const AppWithTracking = () => {
       <Route path="/admin/simulations/:simulationId" element={
         <ProtectedRoute requireAdmin>
           <AdminSimulationDetail />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/blocks" element={
+        <ProtectedRoute requireAdmin>
+          <AdminBlocks />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/blocks/:blockId" element={
+        <ProtectedRoute requireAdmin>
+          <AdminBlockDetail />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/leads/:submissionId" element={
+        <ProtectedRoute requireAdmin>
+          <AdminFormDetail />
         </ProtectedRoute>
       } />
       <Route path="/admin/notifications" element={
