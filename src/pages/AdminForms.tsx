@@ -4,15 +4,17 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { LogOut, ArrowLeft, Database, Eye, Settings, Search, RefreshCw, Blocks } from 'lucide-react';
+import { LogOut, ArrowLeft, Database, Eye, Settings, Search, RefreshCw, Blocks, FileText, HelpCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useAdminBlocks } from '@/hooks/useAdminBlocks';
+import { FormEditDialog } from '@/components/admin/FormEditDialog';
 
 export default function AdminForms() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [editFormDialog, setEditFormDialog] = useState<{ open: boolean; form: any }>({ open: false, form: null });
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
-  const { forms, loading, error, getStats, refetch } = useAdminBlocks();
+  const { forms, loading, error, getStats, getTotalQuestions, refetch } = useAdminBlocks();
 
   const handleSignOut = async () => {
     await signOut();
@@ -28,6 +30,14 @@ export default function AdminForms() {
 
   const getFormBlockCount = (formSlug: string) => {
     return stats.blocksByForm.find(stat => stat.formSlug === formSlug)?.count || 0;
+  };
+
+  const handleEditForm = (form: any) => {
+    setEditFormDialog({ open: true, form });
+  };
+
+  const handleFormUpdated = () => {
+    refetch();
   };
 
   if (loading) {
@@ -191,57 +201,84 @@ export default function AdminForms() {
           <div className="grid gap-6">
             {filteredForms.map((form) => {
               const blockCount = getFormBlockCount(form.slug);
+              const questionCount = getTotalQuestions(form.slug);
               
               return (
                 <Card key={form.id} className="hover:shadow-md transition-shadow">
                   <CardHeader className="pb-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <CardTitle className="text-xl text-[#245C4F] flex items-center gap-2">
+                        <CardTitle className="text-xl text-[#245C4F] mb-2">
                           {form.title}
-                          <Badge variant="default" className="bg-green-100 text-green-800">
-                            Attivo
-                          </Badge>
                         </CardTitle>
-                        <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
-                          <span>
-                            Slug: <code className="bg-gray-100 px-1 rounded text-xs">{form.slug}</code>
-                          </span>
-                          <span>•</span>
-                          <span>
-                            Tipo: <Badge variant="outline" className="text-xs">{form.form_type}</Badge>
-                          </span>
+                        {form.description && (
+                          <p className="text-sm text-gray-600 mb-3">{form.description}</p>
+                        )}
+                        
+                        {/* Form Metadata */}
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                            <span>
+                              <strong>Slug:</strong> <code className="bg-gray-100 px-2 py-1 rounded text-xs">{form.slug}</code>
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                            <span>
+                              <strong>Tipo form:</strong> {form.form_type}
+                            </span>
+                            <span>•</span>
+                            <span>
+                              <strong>Completion behaviour:</strong> {form.completion_behavior}
+                            </span>
+                          </div>
                         </div>
-                        <p className="text-sm text-gray-600 mt-2">Form per simulazioni mutui</p>
+                      </div>
+                      
+                      {/* Status Badge and Settings Button */}
+                      <div className="flex items-center gap-2">
+                        <Badge 
+                          variant={form.is_active ? "default" : "secondary"}
+                          className={form.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}
+                        >
+                          {form.is_active ? 'Attivo' : 'Inattivo'}
+                        </Badge>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEditForm(form)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Settings className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   </CardHeader>
 
                   <CardContent className="space-y-4">
-                    {/* Form Stats */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Database className="h-4 w-4 text-gray-500" />
-                        <span className="text-gray-600">Blocchi:</span>
-                        <span className="font-medium">{blockCount}</span>
+                    {/* Statistics Row */}
+                    <div className="grid grid-cols-3 gap-4 py-3 px-4 bg-gray-50 rounded-lg">
+                      <div className="text-center">
+                        <div className="text-lg font-semibold text-[#245C4F]">{form.version}</div>
+                        <div className="text-xs text-gray-600">Versione</div>
                       </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Settings className="h-4 w-4 text-gray-500" />
-                        <span className="text-gray-600">Stato:</span>
-                        <Badge variant="default" className="text-xs">
-                          Attivo
-                        </Badge>
+                      <div className="text-center">
+                        <div className="text-lg font-semibold text-[#245C4F]">{blockCount}</div>
+                        <div className="text-xs text-gray-600">Blocchi</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-semibold text-[#245C4F]">{questionCount}</div>
+                        <div className="text-xs text-gray-600">Domande Totali</div>
                       </div>
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex justify-end gap-2 pt-4 border-t border-gray-100">
+                    {/* Action Button */}
+                    <div className="flex justify-end pt-2">
                       <Button
                         onClick={() => navigate(`/admin/blocks?form=${form.slug}`)}
                         className="bg-[#245C4F] hover:bg-[#1e4f44] flex items-center gap-2"
                       >
                         <Blocks className="h-4 w-4" />
-                        Gestisci Blocchi ({blockCount})
+                        Gestisci Blocchi
                       </Button>
                     </div>
                   </CardContent>
@@ -251,6 +288,14 @@ export default function AdminForms() {
           </div>
         )}
       </main>
+
+      {/* Form Edit Dialog */}
+      <FormEditDialog
+        open={editFormDialog.open}
+        onOpenChange={(open) => setEditFormDialog({ open, form: null })}
+        form={editFormDialog.form}
+        onFormUpdated={handleFormUpdated}
+      />
     </div>
   );
 }

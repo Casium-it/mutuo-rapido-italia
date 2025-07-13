@@ -10,9 +10,20 @@ interface AdminBlock extends Block {
   form_type: string;
 }
 
+interface FormData {
+  id: string;
+  title: string;
+  description: string | null;
+  slug: string;
+  form_type: string;
+  completion_behavior: string;
+  is_active: boolean;
+  version: number;
+}
+
 export function useAdminBlocks() {
   const [blocks, setBlocks] = useState<AdminBlock[]>([]);
-  const [forms, setForms] = useState<Array<{ id: string; title: string; slug: string; form_type: string }>>([]);
+  const [forms, setForms] = useState<FormData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,11 +36,10 @@ export function useAdminBlocks() {
       setLoading(true);
       setError(null);
 
-      // Load forms first
+      // Load forms first (including inactive ones for admin interface)
       const { data: formsData, error: formsError } = await supabase
         .from('forms')
-        .select('id, title, slug, form_type')
-        .eq('is_active', true)
+        .select('id, title, description, slug, form_type, completion_behavior, is_active, version')
         .order('title');
 
       if (formsError) throw formsError;
@@ -94,6 +104,13 @@ export function useAdminBlocks() {
     return blocksByForm;
   };
 
+  const getTotalQuestions = (formSlug: string) => {
+    const formBlocks = blocks.filter(block => block.form_slug === formSlug);
+    return formBlocks.reduce((total, block) => {
+      return total + (block.questions?.length || 0);
+    }, 0);
+  };
+
   const getStats = () => {
     const blocksByForm = getBlocksByForm();
     return {
@@ -103,6 +120,7 @@ export function useAdminBlocks() {
         formSlug,
         formTitle: forms.find(f => f.slug === formSlug)?.title || formSlug,
         count: formBlocks.length,
+        totalQuestions: getTotalQuestions(formSlug),
       })),
     };
   };
@@ -115,6 +133,7 @@ export function useAdminBlocks() {
     getFilteredBlocks,
     getBlocksByForm,
     getStats,
+    getTotalQuestions,
     refetch: loadBlocksFromDatabase,
   };
 }
