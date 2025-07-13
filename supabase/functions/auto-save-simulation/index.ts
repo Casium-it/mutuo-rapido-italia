@@ -54,62 +54,37 @@ Deno.serve(async (req) => {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
 
-    // Check if ANY record exists for this simulation (auto-save or user-save) - FIX: use maybeSingle()
-    const { data: existingRecord, error: queryError } = await supabase
+    // Use UPSERT to handle both insert and update atomically - prevents race conditions
+    const upsertData = {
+      simulation_id: simulationId,
+      form_state: serializedFormState,
+      percentage: percentage || 0,
+      form_slug: formSlug || 'simulazione-mutuo',
+      expires_at: expiresAt.toISOString(),
+      updated_at: new Date().toISOString(),
+      is_auto_save: true,
+      // Contact fields are left NULL for auto-save (will be preserved if they exist)
+      name: null,
+      phone: null,
+      email: null
+    };
+
+    const { error: upsertError } = await supabase
       .from('saved_simulations')
-      .select('id, is_auto_save')
-      .eq('simulation_id', simulationId)
-      .maybeSingle();
+      .upsert(upsertData, { 
+        onConflict: 'simulation_id',
+        ignoreDuplicates: false 
+      });
 
-    if (queryError) {
-      console.error('Database query error:', queryError);
+    if (upsertError) {
+      console.error('Database upsert error:', upsertError);
       return new Response(
-        JSON.stringify({ success: false, error: `Database query failed: ${queryError.message}` }),
+        JSON.stringify({ success: false, error: `Database operation failed: ${upsertError.message}` }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    let result;
-    
-    if (existingRecord) {
-      // Update existing record (whether it's auto-save or user-save)
-      result = await supabase
-        .from('saved_simulations')
-        .update({
-          form_state: serializedFormState,
-          percentage: percentage || 0,
-          form_slug: formSlug || 'simulazione-mutuo',
-          expires_at: expiresAt.toISOString(),
-          updated_at: new Date().toISOString(),
-          // Keep it as auto-save if it was already auto-save, otherwise preserve user-save status
-          is_auto_save: existingRecord.is_auto_save
-        })
-        .eq('id', existingRecord.id);
-    } else {
-      // Create new auto-save record
-      result = await supabase
-        .from('saved_simulations')
-        .insert({
-          simulation_id: simulationId,
-          form_state: serializedFormState,
-          percentage: percentage || 0,
-          form_slug: formSlug || 'simulazione-mutuo',
-          expires_at: expiresAt.toISOString(),
-          is_auto_save: true,
-          // Contact fields are left NULL for auto-save
-          name: null,
-          phone: null,
-          email: null
-        });
-    }
-
-    if (result.error) {
-      console.error('Database error:', result.error);
-      return new Response(
-        JSON.stringify({ success: false, error: `Database operation failed: ${result.error.message}` }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    console.log('💾 Auto-save upsert completed for simulation:', simulationId);
 
     console.log('✅ Auto-save completed successfully for simulation:', simulationId, 'with', serializedFormState.answeredQuestions?.length || 0, 'answered questions');
     return new Response(
