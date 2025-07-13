@@ -1225,18 +1225,23 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
     }
   }, [state, formSlug, getProgress]);
 
-  // Auto-save on response changes with 10-second cooldown
+  // Auto-save only on navigation completion (moved from response changes)
   useEffect(() => {
+    const currentQuestionId = state.activeQuestion.question_id;
+    const previousQuestionId = previousQuestionIdRef.current;
+
     // Skip auto-save if manual save is in progress
     if (isManualSavingRef.current) {
       console.log('🚫 Auto-save skipped - manual save in progress');
       return;
     }
-    
-    if (Object.keys(state.responses).length > 0) {
+
+    // Only trigger auto-save when user navigates to a new question
+    if (previousQuestionId && previousQuestionId !== currentQuestionId && Object.keys(state.responses).length > 0) {
+      console.log('🔄 Auto-saving after navigation from', previousQuestionId, 'to', currentQuestionId);
       triggerAutoSave();
     }
-  }, [state.responses, triggerAutoSave]);
+  }, [state.activeQuestion.question_id, triggerAutoSave]);
 
   const getNavigationHistoryFor = useCallback((questionId: string): NavigationHistory | undefined => {
     const sortedHistory = [...state.navigationHistory].sort((a, b) => b.timestamp - a.timestamp);
