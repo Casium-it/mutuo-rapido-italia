@@ -10,7 +10,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { ArrowLeft, Clock, User, Phone, Mail, FileText, Trash2, Eye, RefreshCw, Search, Filter, Calendar, CalendarCheck, Check, X, Save, UserCheck } from 'lucide-react';
-
 interface SavedSimulation {
   id: string;
   created_at: string;
@@ -26,7 +25,6 @@ interface SavedSimulation {
   simulation_id: string | null;
   form_state: any;
 }
-
 export default function AdminSimulations() {
   const [simulations, setSimulations] = useState<SavedSimulation[]>([]);
   const [filteredSimulations, setFilteredSimulations] = useState<SavedSimulation[]>([]);
@@ -36,20 +34,21 @@ export default function AdminSimulations() {
   const [completionFilter, setCompletionFilter] = useState<'all' | 'completed' | 'in_progress'>('all');
   const [contactFilter, setContactFilter] = useState<'all' | 'with_contact' | 'without_contact'>('all');
   const [formTypeFilter, setFormTypeFilter] = useState<string>('all');
-  const { user } = useAuth();
+  const {
+    user
+  } = useAuth();
   const navigate = useNavigate();
-
   useEffect(() => {
     fetchSimulations();
   }, []);
-
   const fetchSimulations = async () => {
     try {
-      const { data, error } = await supabase
-        .from('saved_simulations')
-        .select('*')
-        .order('updated_at', { ascending: false });
-
+      const {
+        data,
+        error
+      } = await supabase.from('saved_simulations').select('*').order('updated_at', {
+        ascending: false
+      });
       if (error) {
         console.error('Error fetching simulations:', error);
         toast({
@@ -72,16 +71,12 @@ export default function AdminSimulations() {
       setLoading(false);
     }
   };
-
   const handleDeleteSimulation = async (simulationId: string) => {
     setDeletingId(simulationId);
-    
     try {
-      const { error } = await supabase
-        .from('saved_simulations')
-        .delete()
-        .eq('id', simulationId);
-
+      const {
+        error
+      } = await supabase.from('saved_simulations').delete().eq('id', simulationId);
       if (error) {
         console.error('Error deleting simulation:', error);
         throw error;
@@ -90,10 +85,9 @@ export default function AdminSimulations() {
       // Update local state
       setSimulations(prev => prev.filter(s => s.id !== simulationId));
       setFilteredSimulations(prev => prev.filter(s => s.id !== simulationId));
-      
       toast({
         title: "Successo",
-        description: "Simulazione eliminata con successo",
+        description: "Simulazione eliminata con successo"
       });
     } catch (error) {
       console.error('Error deleting simulation:', error);
@@ -106,7 +100,6 @@ export default function AdminSimulations() {
       setDeletingId(null);
     }
   };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('it-IT', {
       day: '2-digit',
@@ -116,18 +109,15 @@ export default function AdminSimulations() {
       minute: '2-digit'
     });
   };
-
   const isExpired = (expiresAt: string) => {
     return new Date(expiresAt) < new Date();
   };
-
   const getSimulationDisplayName = (simulation: SavedSimulation) => {
     if (simulation.name) return simulation.name;
     if (simulation.phone) return `Simulazione ${simulation.phone}`;
     if (simulation.email) return `Simulazione ${simulation.email}`;
     return `Simulazione ${simulation.resume_code}`;
   };
-
   const hasContactData = (simulation: SavedSimulation) => {
     return !!(simulation.name || simulation.phone || simulation.email);
   };
@@ -138,12 +128,7 @@ export default function AdminSimulations() {
 
     // Search filter
     if (searchTerm) {
-      filtered = filtered.filter(sim => 
-        getSimulationDisplayName(sim).toLowerCase().includes(searchTerm.toLowerCase()) ||
-        sim.resume_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        sim.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        sim.email?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      filtered = filtered.filter(sim => getSimulationDisplayName(sim).toLowerCase().includes(searchTerm.toLowerCase()) || sim.resume_code.toLowerCase().includes(searchTerm.toLowerCase()) || sim.phone?.toLowerCase().includes(searchTerm.toLowerCase()) || sim.email?.toLowerCase().includes(searchTerm.toLowerCase()));
     }
 
     // Completion filter
@@ -164,49 +149,36 @@ export default function AdminSimulations() {
     if (formTypeFilter !== 'all') {
       filtered = filtered.filter(sim => sim.form_slug === formTypeFilter);
     }
-
     setFilteredSimulations(filtered);
   }, [simulations, searchTerm, completionFilter, contactFilter, formTypeFilter]);
 
   // Get unique form types for filter
   const formTypes = [...new Set(simulations.map(sim => sim.form_slug))];
-
   const clearFilters = () => {
     setSearchTerm('');
     setCompletionFilter('all');
     setContactFilter('all');
     setFormTypeFilter('all');
   };
-
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f8f5f1]">
+    return <div className="min-h-screen flex items-center justify-center bg-[#f8f5f1]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#245C4F] mx-auto"></div>
           <p className="mt-2 text-gray-600">Caricamento simulazioni...</p>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   const autoSaveSimulations = simulations.filter(s => s.is_auto_save);
   const manualSimulations = simulations.filter(s => !s.is_auto_save);
   const expiredSimulations = simulations.filter(s => isExpired(s.expires_at));
   const completedSimulations = simulations.filter(s => s.percentage === 100);
   const withContactSimulations = simulations.filter(s => hasContactData(s));
-
-  return (
-    <div className="min-h-screen bg-[#f8f5f1]">
+  return <div className="min-h-screen bg-[#f8f5f1]">
       {/* Header */}
       <header className="bg-white border-b border-[#BEB8AE] px-4 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button
-              onClick={() => navigate('/admin')}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2"
-            >
+            <Button onClick={() => navigate('/admin')} variant="outline" size="sm" className="flex items-center gap-2">
               <ArrowLeft className="h-4 w-4" />
               Torna al Dashboard
             </Button>
@@ -297,12 +269,7 @@ export default function AdminSimulations() {
                 <label className="text-sm font-medium mb-2 block">Cerca</label>
                 <div className="relative">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Nome, telefono, email, codice..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
+                  <Input placeholder="Nome, telefono, email, codice..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10" />
                 </div>
               </div>
               
@@ -342,9 +309,7 @@ export default function AdminSimulations() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tutti</SelectItem>
-                    {formTypes.map(type => (
-                      <SelectItem key={type} value={type}>{type}</SelectItem>
-                    ))}
+                    {formTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -354,12 +319,7 @@ export default function AdminSimulations() {
               <p className="text-sm text-gray-600">
                 Mostrando {filteredSimulations.length} di {simulations.length} simulazioni
               </p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={clearFilters}
-                className="text-gray-600"
-              >
+              <Button variant="outline" size="sm" onClick={clearFilters} className="text-gray-600">
                 Pulisci Filtri
               </Button>
             </div>
@@ -371,9 +331,7 @@ export default function AdminSimulations() {
           <p className="text-gray-600">Visualizza tutte le simulazioni salvate dagli utenti</p>
         </div>
 
-        {filteredSimulations.length === 0 ? (
-          simulations.length === 0 ? (
-          <Card>
+        {filteredSimulations.length === 0 ? simulations.length === 0 ? <Card>
               <CardContent className="flex items-center justify-center py-12">
                 <div className="text-center">
                   <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -381,9 +339,7 @@ export default function AdminSimulations() {
                   <p className="text-gray-600">Le simulazioni appariranno qui quando gli utenti le salveranno.</p>
                 </div>
               </CardContent>
-            </Card>
-          ) : (
-            <Card>
+            </Card> : <Card>
               <CardContent className="flex items-center justify-center py-12">
                 <div className="text-center">
                   <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -394,12 +350,8 @@ export default function AdminSimulations() {
                   </Button>
                 </div>
               </CardContent>
-            </Card>
-          )
-        ) : (
-          <div className="grid gap-4">
-            {filteredSimulations.map((simulation) => (
-              <Card key={simulation.id} className={`hover:shadow-md transition-shadow ${isExpired(simulation.expires_at) ? 'border-red-200 bg-red-50' : ''}`}>
+            </Card> : <div className="grid gap-4">
+            {filteredSimulations.map(simulation => <Card key={simulation.id} className={`hover:shadow-md transition-shadow ${isExpired(simulation.expires_at) ? 'border-red-200 bg-red-50' : ''}`}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">
@@ -432,18 +384,14 @@ export default function AdminSimulations() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                    {simulation.phone && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                    {simulation.phone && <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Phone className="h-4 w-4" />
                         {simulation.phone}
-                      </div>
-                    )}
-                    {simulation.email && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                      </div>}
+                    {simulation.email && <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Mail className="h-4 w-4" />
                         {simulation.email}
-                      </div>
-                    )}
+                      </div>}
                   </div>
 
                   <div className="text-sm text-gray-600 mb-3">
@@ -452,12 +400,11 @@ export default function AdminSimulations() {
                     </div>
                   </div>
 
-                  {simulation.simulation_id && (
-                    <div className="text-sm text-gray-600 mb-3">
+                  {simulation.simulation_id && <div className="text-sm text-gray-600 mb-3">
                       <div>
                         <strong>ID Simulazione:</strong> {simulation.simulation_id}
                       </div>
-                      <div className="space-y-1 mt-1">
+                      <div className="space-y-1 mt-1 my-[12px]">
                         <div className="text-xs">
                           Salvataggio: {simulation.is_auto_save ? 'Automatico' : 'Manuale'}
                         </div>
@@ -465,16 +412,12 @@ export default function AdminSimulations() {
                           Contatti: {hasContactData(simulation) ? '✓' : '✗'}
                         </div>
                       </div>
-                      {isExpired(simulation.expires_at) && (
-                        <div className="text-red-600 mt-1">
+                      {isExpired(simulation.expires_at) && <div className="text-red-600 mt-1">
                           <strong>Stato:</strong> Scaduta
-                        </div>
-                      )}
-                    </div>
-                   )}
+                        </div>}
+                    </div>}
                    
-                   {!simulation.simulation_id && (
-                     <div className="text-sm text-gray-600 mb-3">
+                   {!simulation.simulation_id && <div className="text-sm text-gray-600 mb-3">
                        <div className="space-y-1">
                          <div className="text-xs">
                            Salvataggio: {simulation.is_auto_save ? 'Automatico' : 'Manuale'}
@@ -483,38 +426,22 @@ export default function AdminSimulations() {
                            Contatti: {hasContactData(simulation) ? '✓' : '✗'}
                          </div>
                        </div>
-                       {isExpired(simulation.expires_at) && (
-                         <div className="text-red-600 mt-1">
+                       {isExpired(simulation.expires_at) && <div className="text-red-600 mt-1">
                            <strong>Stato:</strong> Scaduta
-                         </div>
-                       )}
-                     </div>
-                   )}
+                         </div>}
+                     </div>}
                    
                   
                   <div className="flex justify-end items-center gap-2">
-                    <Button
-                      onClick={() => navigate(`/admin/simulations/${simulation.id}`)}
-                      variant="outline"
-                      className="flex items-center gap-2"
-                    >
+                    <Button onClick={() => navigate(`/admin/simulations/${simulation.id}`)} variant="outline" className="flex items-center gap-2">
                       <Eye className="h-4 w-4" />
                       Dettagli
                     </Button>
                     
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 flex items-center gap-2"
-                          disabled={deletingId === simulation.id}
-                        >
-                          {deletingId === simulation.id ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
-                          )}
+                        <Button variant="outline" size="sm" className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 flex items-center gap-2" disabled={deletingId === simulation.id}>
+                          {deletingId === simulation.id ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div> : <Trash2 className="h-4 w-4" />}
                           Elimina
                         </Button>
                       </AlertDialogTrigger>
@@ -535,10 +462,7 @@ export default function AdminSimulations() {
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Annulla</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDeleteSimulation(simulation.id)}
-                            className="bg-red-600 hover:bg-red-700"
-                          >
+                          <AlertDialogAction onClick={() => handleDeleteSimulation(simulation.id)} className="bg-red-600 hover:bg-red-700">
                             Elimina Definitivamente
                           </AlertDialogAction>
                         </AlertDialogFooter>
@@ -546,11 +470,8 @@ export default function AdminSimulations() {
                     </AlertDialog>
                   </div>
                 </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+              </Card>)}
+          </div>}
       </main>
-    </div>
-  );
+    </div>;
 }
