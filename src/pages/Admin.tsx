@@ -228,11 +228,11 @@ export default function Admin() {
               </CardContent>
             </Card>
 
-            <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/blocks')}>
+            <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/forms')}>
               <CardContent className="p-6 text-center">
-                <Blocks className="h-12 w-12 text-[#245C4F] mx-auto mb-3" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Gestisci Blocchi</h3>
-                <p className="text-sm text-gray-600">Visualizza e modifica i blocchi dei form</p>
+                <FileText className="h-12 w-12 text-[#245C4F] mx-auto mb-3" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Gestisci Form</h3>
+                <p className="text-sm text-gray-600">Visualizza e gestisci i form e i loro blocchi</p>
               </CardContent>
             </Card>
 
