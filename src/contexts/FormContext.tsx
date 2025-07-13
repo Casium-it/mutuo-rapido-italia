@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback, useRef } from "react";
+import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback, useRef, useState } from "react";
 import { Block, FormState, FormResponse, NavigationHistory, Placeholder, SelectPlaceholder, PendingRemoval, SessionType } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { ensureBlockHasPriority } from "@/utils/blockUtils";
@@ -38,6 +38,8 @@ type FormContextType = {
   isQuestionPendingRemoval: (questionId: string) => boolean;
   handleSaveSimulation: (contactData: Omit<SaveSimulationData, 'percentage'>) => Promise<SaveSimulationResult>;
   handleResumeSimulation: (resumeCode: string) => Promise<{ success: boolean; error?: string }>;
+  isManualSaving: boolean;
+  setManualSaving: (saving: boolean) => void;
 };
 
 type Action =
@@ -362,6 +364,14 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
   const lastAutoSaveRef = useRef<number>(0);
   const hasInitialAutoSaveRef = useRef<boolean>(false);
   const isManualSavingRef = useRef<boolean>(false);
+  const [isManualSaving, setIsManualSaving] = useState<boolean>(false);
+
+  // Manual save protection
+  const setManualSaving = useCallback((saving: boolean) => {
+    console.log(`🔒 Manual save ${saving ? 'STARTED' : 'ENDED'}`);
+    isManualSavingRef.current = saving;
+    setIsManualSaving(saving);
+  }, []);
   
   const sortedBlocks = [...blocks].sort((a, b) => a.priority - b.priority);
 
@@ -1410,10 +1420,12 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
         deleteQuestionResponses,
         isBlockCompleted,
         markBlockAsCompleted,
-        removeBlockFromCompleted,
-        isQuestionPendingRemoval,
-        handleSaveSimulation,
-        handleResumeSimulation
+    removeBlockFromCompleted,
+    isQuestionPendingRemoval,
+    handleSaveSimulation,
+    handleResumeSimulation,
+    isManualSaving,
+    setManualSaving
       }}
     >
       {children}

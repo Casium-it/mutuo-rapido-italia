@@ -25,80 +25,56 @@ export interface SaveSimulationResult {
 export async function saveSimulation(
   formState: FormState, 
   contactData: SaveSimulationData, 
-  formSlug: string
+  formSlug: string,
+  saveMethod: 'manual-save' | 'completed-save' = 'manual-save'
 ): Promise<SaveSimulationResult> {
   try {
-    console.log("Inizio salvataggio simulazione...");
-    console.log("Form slug:", formSlug);
-    console.log("Contact data:", contactData);
+    console.log(`📝 SAVE-SIMULATION: Starting with method: ${saveMethod}`);
     
-    // Prepara lo stato del form per il salvataggio
-    const formStateToSave = {
+    // Convert Sets to Arrays for JSON serialization
+    const serializedFormState = {
       ...formState,
-      // Converte Set in Array per la serializzazione JSON
       answeredQuestions: Array.from(formState.answeredQuestions || [])
     };
-    
-    console.log("Form state prepared for saving:", formStateToSave);
-    
-    // Calcola la data di scadenza (30 giorni da ora)
+
+    // Calculate expiration date (30 days from now)
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
-    
-    console.log("Expires at:", expiresAt.toISOString());
-    
-    // Determine save method based on completion and contact data
-    const saveMethod = (contactData.percentage === 100 && contactData.name && contactData.phone && contactData.email) 
-      ? 'completed-save' 
-      : 'manual-save';
 
-    // Inserisci i dati nella tabella saved_simulations usando direttamente form_slug
-    const { data, error } = await supabase
-      .from('saved_simulations')
-      .insert({
-        name: contactData.name,
-        phone: contactData.phone,
-        email: contactData.email,
-        form_state: formStateToSave,
-        form_slug: formSlug,
-        expires_at: expiresAt.toISOString(),
-        percentage: contactData.percentage,
-        save_method: saveMethod,
-        linked_form_id: null // Regular simulations don't have linked forms
-      })
-      .select('resume_code')
-      .single();
+    console.log(`📝 SAVE-SIMULATION: Calling save-simulation edge function with explicit method: ${saveMethod}`);
 
-    console.log("Supabase response - data:", data);
-    console.log("Supabase response - error:", error);
+    const { data, error } = await supabase.functions.invoke('save-simulation', {
+      body: {
+        formState: serializedFormState,
+        formSlug,
+        contactData,
+        simulationId: formState.simulationId,
+        convertFromAutoSave: true, // Try to convert existing auto-save
+        saveMethod // Explicit save method parameter
+      }
+    });
 
     if (error) {
-      console.error("Errore nel salvataggio della simulazione:", error);
-      return { 
-        success: false, 
-        error: `Errore durante il salvataggio: ${error.message}` 
-      };
+      console.error('❌ SAVE-SIMULATION: Edge function error:', error);
+      return { success: false, error: error.message };
     }
 
-    if (!data?.resume_code) {
-      console.error("Codice di ripresa non generato");
-      return { 
-        success: false, 
-        error: "Codice di ripresa non generato dal database" 
-      };
+    if (!data || !data.success) {
+      console.error('❌ SAVE-SIMULATION: Failed:', data?.error || 'Unknown error');
+      return { success: false, error: data?.error || 'Errore durante il salvataggio' };
     }
 
-    console.log(`SaveSimulation: Successfully saved with resume code: ${data.resume_code}`);
+    console.log(`✅ SAVE-SIMULATION: Success with resume code: ${data.resumeCode}`);
     return { 
       success: true, 
-      resumeCode: data.resume_code 
+      resumeCode: data.resumeCode 
     };
-    
+
   } catch (error) {
-    console.error("Errore durante il salvataggio della simulazione:", error);
+    console.error('❌ SAVE-SIMULATION: Unexpected error:', error);
     return { 
       success: false, 
-      error: error instanceof Error ? error.message : "Errore imprevisto durante il salvataggio" 
+      error: error instanceof Error ? error.message : 'Errore sconosciuto' 
     };
   }
 }

@@ -18,6 +18,7 @@ interface SaveSimulationRequest {
   simulationId?: string; // Unique simulation identifier
   resumeCode?: string; // If provided, update existing
   convertFromAutoSave?: boolean; // Convert existing auto-save to user save
+  saveMethod?: 'manual-save' | 'completed-save'; // Explicit save method
 }
 
 // Helper function to format date as dd/mm/yyyy
@@ -93,7 +94,7 @@ Deno.serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { formState, formSlug, contactData, simulationId, resumeCode, convertFromAutoSave }: SaveSimulationRequest = await req.json();
+    const { formState, formSlug, contactData, simulationId, resumeCode, convertFromAutoSave, saveMethod }: SaveSimulationRequest = await req.json();
 
     // Validate required fields
     if (!formState || !formSlug || !contactData?.name || !contactData?.phone || !contactData?.email || contactData?.percentage === undefined) {
@@ -122,14 +123,19 @@ Deno.serve(async (req) => {
     const expires_at = new Date();
     expires_at.setDate(expires_at.getDate() + 30); // 30 days from now
 
-    // Determine save method based on completion and contact data
-    const saveMethod = (contactData.percentage === 100 && contactData.name && contactData.phone && contactData.email) 
-      ? 'completed-save' 
-      : 'manual-save';
+    // Use explicit save method if provided, otherwise determine based on completion and contact data
+    const finalSaveMethod = saveMethod || (
+      (contactData.percentage === 100 && contactData.name && contactData.phone && contactData.email) 
+        ? 'completed-save' 
+        : 'manual-save'
+    );
+    
+    console.log(`💾 SAVE-SIMULATION: Using save method: ${finalSaveMethod} (explicit: ${!!saveMethod})`);
+    console.log(`💾 SAVE-SIMULATION: Contact data provided - Name: ${!!contactData.name}, Phone: ${!!contactData.phone}, Email: ${!!contactData.email}, Percentage: ${contactData.percentage}%`);
 
     if (resumeCode) {
       // Update existing simulation
-      console.log('🔄 Updating existing simulation with code:', resumeCode);
+      console.log(`🔄 MANUAL-SAVE: Updating existing simulation with code: ${resumeCode}, method: ${finalSaveMethod}`);
       
       const { data, error } = await supabase
         .from('saved_simulations')
@@ -142,7 +148,7 @@ Deno.serve(async (req) => {
           expires_at: expires_at.toISOString(),
           percentage: contactData.percentage,
           simulation_id: simulationId || null,
-          save_method: saveMethod,
+          save_method: finalSaveMethod,
           updated_at: new Date().toISOString()
         })
         .eq('resume_code', resumeCode)
@@ -168,7 +174,7 @@ Deno.serve(async (req) => {
       // Send WhatsApp notification for updated simulation
       await sendSimulationSavedNotification(supabase, contactData, data.resume_code, expires_at);
 
-      console.log('✅ Simulation updated successfully with', serializedFormState.answeredQuestions?.length || 0, 'answered questions');
+      console.log(`✅ MANUAL-SAVE: Simulation updated successfully with method: ${finalSaveMethod}, questions: ${serializedFormState.answeredQuestions?.length || 0}`);
       return new Response(
         JSON.stringify({ 
           success: true, 
@@ -180,7 +186,7 @@ Deno.serve(async (req) => {
 
     } else if (convertFromAutoSave && simulationId) {
       // Convert existing auto-save to user save
-      console.log('🔄 Converting auto-save to user save for simulation:', simulationId);
+      console.log(`🔄 MANUAL-SAVE: Converting auto-save to user save for simulation: ${simulationId}, method: ${finalSaveMethod}`);
       
       const { data, error } = await supabase
         .from('saved_simulations')
@@ -192,7 +198,7 @@ Deno.serve(async (req) => {
           form_slug: formSlug,
           expires_at: expires_at.toISOString(),
           percentage: contactData.percentage,
-          save_method: saveMethod,
+          save_method: finalSaveMethod,
           updated_at: new Date().toISOString()
         })
         .eq('simulation_id', simulationId)
@@ -209,7 +215,7 @@ Deno.serve(async (req) => {
       }
 
       if (!data) {
-        console.log('❌ No auto-save found, creating new simulation instead');
+        console.log(`❌ MANUAL-SAVE: No auto-save found for simulation ${simulationId}, creating new simulation instead with method: ${finalSaveMethod}`);
         // Fallback: create new simulation if auto-save not found
         const { data: newData, error: newError } = await supabase
           .from('saved_simulations')
@@ -222,7 +228,7 @@ Deno.serve(async (req) => {
             expires_at: expires_at.toISOString(),
             percentage: contactData.percentage,
             simulation_id: simulationId,
-            save_method: saveMethod
+            save_method: finalSaveMethod
           })
           .select('resume_code')
           .single();
@@ -236,6 +242,7 @@ Deno.serve(async (req) => {
         }
 
         await sendSimulationSavedNotification(supabase, contactData, newData.resume_code, expires_at);
+        console.log(`✅ MANUAL-SAVE: New simulation created as fallback with method: ${finalSaveMethod}`);
         return new Response(
           JSON.stringify({ 
             success: true, 
@@ -249,7 +256,7 @@ Deno.serve(async (req) => {
       // Send WhatsApp notification for converted simulation
       await sendSimulationSavedNotification(supabase, contactData, data.resume_code, expires_at);
 
-      console.log('✅ Auto-save converted to user save successfully with', serializedFormState.answeredQuestions?.length || 0, 'answered questions');
+      console.log(`✅ MANUAL-SAVE: Auto-save converted to user save successfully with method: ${finalSaveMethod}, questions: ${serializedFormState.answeredQuestions?.length || 0}`);
       return new Response(
         JSON.stringify({ 
           success: true, 
@@ -261,7 +268,7 @@ Deno.serve(async (req) => {
 
     } else {
       // Create new simulation
-      console.log('🔄 Creating new simulation');
+      console.log(`🔄 MANUAL-SAVE: Creating new simulation with method: ${finalSaveMethod}`);
       
       const { data, error } = await supabase
         .from('saved_simulations')
@@ -274,7 +281,7 @@ Deno.serve(async (req) => {
           expires_at: expires_at.toISOString(),
           percentage: contactData.percentage,
           simulation_id: simulationId || null,
-          save_method: saveMethod
+          save_method: finalSaveMethod
         })
         .select('resume_code')
         .single();
@@ -290,7 +297,7 @@ Deno.serve(async (req) => {
       // Send WhatsApp notification for new simulation
       await sendSimulationSavedNotification(supabase, contactData, data.resume_code, expires_at);
 
-      console.log('✅ New simulation created successfully with', serializedFormState.answeredQuestions?.length || 0, 'answered questions');
+      console.log(`✅ MANUAL-SAVE: New simulation created successfully with method: ${finalSaveMethod}, questions: ${serializedFormState.answeredQuestions?.length || 0}`);
       return new Response(
         JSON.stringify({ 
           success: true, 
