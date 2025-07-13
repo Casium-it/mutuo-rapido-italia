@@ -34,12 +34,21 @@ interface ProcessedResponse {
   response_value: any;
 }
 
+interface BlockStatus {
+  block_id: string;
+  title: string;
+  priority: number;
+  status: 'completed' | 'partial' | 'not_started';
+  answeredQuestions: number;
+  totalQuestions: number;
+}
+
 export default function AdminSimulationDetail() {
   const { simulationId } = useParams<{ simulationId: string }>();
   const navigate = useNavigate();
   const [simulation, setSimulation] = useState<SavedSimulation | null>(null);
   const [processedResponses, setProcessedResponses] = useState<ProcessedResponse[]>([]);
-  const [missingBlocks, setMissingBlocks] = useState<string[]>([]);
+  const [missingBlocks, setMissingBlocks] = useState<BlockStatus[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -121,11 +130,42 @@ export default function AdminSimulationDetail() {
 
       setProcessedResponses(responses);
 
-      // Calculate missing blocks
+      // Calculate block completion status
       const activeBlocks = formState.activeBlocks || [];
       const completedBlocks = formState.completedBlocks || [];
-      const missing = activeBlocks.filter((blockId: string) => !completedBlocks.includes(blockId));
-      setMissingBlocks(missing);
+      const answeredQuestions = formState.answeredQuestions || new Set();
+      
+      // Create block status for all blocks, ordered by priority
+      const allBlocksStatus = blocks
+        .filter(block => activeBlocks.includes(block.block_id))
+        .sort((a, b) => a.priority - b.priority)
+        .map(block => {
+          const blockQuestions = block.questions || [];
+          const answeredInBlock = blockQuestions.filter(q => 
+            answeredQuestions.has ? answeredQuestions.has(q.question_id) : 
+            Array.from(answeredQuestions).includes(q.question_id)
+          ).length;
+          
+          let status: 'completed' | 'partial' | 'not_started';
+          if (completedBlocks.includes(block.block_id)) {
+            status = 'completed';
+          } else if (answeredInBlock > 0) {
+            status = 'partial';
+          } else {
+            status = 'not_started';
+          }
+
+          return {
+            block_id: block.block_id,
+            title: block.title,
+            priority: block.priority,
+            status,
+            answeredQuestions: answeredInBlock,
+            totalQuestions: blockQuestions.length
+          };
+        });
+
+      setMissingBlocks(allBlocksStatus);
 
     } catch (error) {
       console.error('Error processing form state:', error);
@@ -345,16 +385,48 @@ export default function AdminSimulationDetail() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
-                Blocchi Mancanti
+                Blocchi
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-600 mb-3">I seguenti blocchi sono attivi ma non ancora completati:</p>
-              <div className="flex flex-wrap gap-2">
-                {missingBlocks.map((blockId) => (
-                  <Badge key={blockId} className="bg-yellow-100 text-yellow-800">
-                    {blockId}
-                  </Badge>
+              <p className="text-gray-600 mb-4">Stato di completamento dei blocchi attivi (ordinati per priorità):</p>
+              <div className="space-y-3">
+                {missingBlocks.map((block) => (
+                  <div 
+                    key={block.block_id} 
+                    className={`p-3 rounded-lg border-l-4 ${
+                      block.status === 'completed' 
+                        ? 'bg-green-50 border-l-green-500' 
+                        : block.status === 'partial'
+                        ? 'bg-yellow-50 border-l-yellow-500'
+                        : 'bg-red-50 border-l-red-500'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium text-gray-900">{block.title}</h4>
+                        <p className="text-sm text-gray-600">
+                          {block.answeredQuestions} di {block.totalQuestions} domande risposte
+                        </p>
+                      </div>
+                      <Badge 
+                        className={`${
+                          block.status === 'completed' 
+                            ? 'bg-green-100 text-green-800' 
+                            : block.status === 'partial'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {block.status === 'completed' 
+                          ? 'Completato' 
+                          : block.status === 'partial'
+                          ? 'Parziale'
+                          : 'Non iniziato'
+                        }
+                      </Badge>
+                    </div>
+                  </div>
                 ))}
               </div>
             </CardContent>
