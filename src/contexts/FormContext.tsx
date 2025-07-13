@@ -1181,25 +1181,47 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
 
   // Debounced auto-save function
   const debouncedAutoSave = useCallback(async () => {
-    if (!state.simulationId || !formSlug) return;
+    if (!state.simulationId || !formSlug) {
+      console.log('Skipping auto-save:', { 
+        hasSimulationId: !!state.simulationId, 
+        hasFormSlug: !!formSlug,
+        simulationId: state.simulationId
+      });
+      return;
+    }
     
     const now = Date.now();
     const timeSinceLastSave = now - lastAutoSaveRef.current;
     
     // Only save if enough time has passed (10 seconds)
-    if (timeSinceLastSave < 10000) return;
+    if (timeSinceLastSave < 10000) {
+      console.log('Auto-save skipped - too soon:', { timeSinceLastSave });
+      return;
+    }
     
     try {
       const progress = getProgress();
-      await createOrUpdateAutoSave({
+      console.log('Triggering auto-save:', {
+        simulationId: state.simulationId,
+        progress,
+        formSlug,
+        answeredQuestions: state.answeredQuestions.size,
+        activeBlocks: state.activeBlocks.length
+      });
+
+      const result = await createOrUpdateAutoSave({
         simulationId: state.simulationId,
         formState: state,
         percentage: progress,
         formSlug: formSlug
       });
       
-      lastAutoSaveRef.current = now;
-      console.log(`🔄 Auto-saved simulation ${state.simulationId} at ${progress}%`);
+      if (result.success) {
+        lastAutoSaveRef.current = now;
+        console.log(`🔄 Auto-saved simulation ${state.simulationId} at ${progress}%`);
+      } else {
+        console.error('Auto-save failed:', result.error);
+      }
     } catch (error) {
       console.error('Auto-save failed:', error);
     }

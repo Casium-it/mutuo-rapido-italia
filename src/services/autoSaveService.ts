@@ -18,8 +18,16 @@ export interface AutoSaveResult {
  */
 export async function createOrUpdateAutoSave(data: AutoSaveData): Promise<AutoSaveResult> {
   try {
+    console.log('Auto-save request data:', {
+      simulationId: data.simulationId,
+      percentage: data.percentage,
+      formSlug: data.formSlug,
+      hasFormState: !!data.formState,
+      formStateKeys: data.formState ? Object.keys(data.formState) : []
+    });
+
     // Call the auto-save edge function
-    const { error } = await supabase.functions.invoke('auto-save-simulation', {
+    const { data: responseData, error } = await supabase.functions.invoke('auto-save-simulation', {
       body: {
         simulationId: data.simulationId,
         formState: data.formState,
@@ -33,6 +41,7 @@ export async function createOrUpdateAutoSave(data: AutoSaveData): Promise<AutoSa
       return { success: false, error: error.message };
     }
 
+    console.log('Auto-save successful:', responseData);
     return { success: true };
   } catch (error) {
     console.error('Auto-save service error:', error);
