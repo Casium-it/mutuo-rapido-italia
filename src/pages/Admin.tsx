@@ -228,11 +228,11 @@ export default function Admin() {
               </CardContent>
             </Card>
 
-            <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/blocks')}>
+            <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/forms')}>
               <CardContent className="p-6 text-center">
-                <Blocks className="h-12 w-12 text-[#245C4F] mx-auto mb-3" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Gestisci Blocchi</h3>
-                <p className="text-sm text-gray-600">Visualizza e modifica i blocchi dei form</p>
+                <Database className="h-12 w-12 text-[#245C4F] mx-auto mb-3" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Gestisci Form</h3>
+                <p className="text-sm text-gray-600">Visualizza e gestisci i form e i loro blocchi</p>
               </CardContent>
             </Card>
 
@@ -246,7 +246,7 @@ export default function Admin() {
 
             <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/simulations')}>
               <CardContent className="p-6 text-center">
-                <Database className="h-12 w-12 text-[#245C4F] mx-auto mb-3" />
+                <TrendingUp className="h-12 w-12 text-[#245C4F] mx-auto mb-3" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Simulations</h3>
                 <p className="text-sm text-gray-600">Visualizza le simulazioni salvate dagli utenti</p>
               </CardContent>
@@ -263,6 +263,12 @@ export default function Admin() {
               className="bg-[#245C4F] hover:bg-[#1e4f44]"
             >
               Visualizza Tutti i Leads
+            </Button>
+            <Button 
+              onClick={() => navigate('/admin/forms')}
+              variant="outline"
+            >
+              Gestisci Form
             </Button>
             <Button 
               onClick={() => navigate('/admin/simulations')}
