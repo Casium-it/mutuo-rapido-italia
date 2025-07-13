@@ -7,6 +7,7 @@ export interface AutoSaveData {
   formState: Omit<FormState, 'answeredQuestions'> & { answeredQuestions: string[] };
   percentage: number;
   formSlug: string;
+  saveMethod?: 'auto-save' | 'manual-save' | 'completed-save';
 }
 
 export interface AutoSaveResult {
@@ -25,7 +26,8 @@ export async function createOrUpdateAutoSave(data: AutoSaveData): Promise<AutoSa
         simulationId: data.simulationId,
         formState: data.formState,
         percentage: data.percentage,
-        formSlug: data.formSlug
+        formSlug: data.formSlug,
+        saveMethod: data.saveMethod || 'auto-save'
       }
     });
 
@@ -78,4 +80,14 @@ export async function convertAutoSaveToUserSave(
     console.error('Convert auto-save service error:', error);
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
+}
+
+/**
+ * Creates a completed form save - used when user completes the form
+ */
+export async function completeFormSave(data: AutoSaveData): Promise<AutoSaveResult> {
+  return createOrUpdateAutoSave({
+    ...data,
+    saveMethod: 'completed-save'
+  });
 }

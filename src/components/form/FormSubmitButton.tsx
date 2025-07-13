@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useForm } from "@/contexts/FormContext";
-import { createOrUpdateAutoSave } from "@/services/autoSaveService";
+import { completeFormSave } from "@/services/autoSaveService";
 
 export function FormSubmitButton() {
   const { state, blocks, formSlug } = useForm();
@@ -23,10 +23,10 @@ export function FormSubmitButton() {
     });
     
     try {
-      // Final auto-save with 100% completion before submission using existing simulationId
+      // Final completed form save with 100% completion before submission using existing simulationId
       if (state.simulationId) {
-        console.log("FormSubmitButton: Performing 100% auto-save with existing ID...");
-        const autoSaveResult = await createOrUpdateAutoSave({
+        console.log("FormSubmitButton: Performing 100% completed form save with existing ID...");
+        const completeSaveResult = await completeFormSave({
           simulationId: state.simulationId,
           formState: {
             ...state,
@@ -36,13 +36,13 @@ export function FormSubmitButton() {
           formSlug: formSlug || 'simulazione-mutuo'
         });
 
-        if (autoSaveResult.success) {
-          console.log("✅ FormSubmitButton: 100% auto-save successful");
+        if (completeSaveResult.success) {
+          console.log("✅ FormSubmitButton: 100% completed form save successful");
         } else {
-          console.error("❌ FormSubmitButton: Auto-save failed:", autoSaveResult.error);
+          console.error("❌ FormSubmitButton: Completed form save failed:", completeSaveResult.error);
         }
       } else {
-        console.warn("⚠️ FormSubmitButton: No simulationId found, skipping auto-save");
+        console.warn("⚠️ FormSubmitButton: No simulationId found, skipping completed form save");
       }
 
       // Navigate to FormLoading with form data (same format as CompleteFormButton)

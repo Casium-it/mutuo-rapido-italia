@@ -11,6 +11,7 @@ interface AutoSaveRequest {
   formState: any;
   percentage: number;
   formSlug: string;
+  saveMethod?: 'auto-save' | 'manual-save' | 'completed-save';
 }
 
 Deno.serve(async (req) => {
@@ -25,7 +26,7 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { simulationId, formState, percentage, formSlug }: AutoSaveRequest = await req.json();
+    const { simulationId, formState, percentage, formSlug, saveMethod }: AutoSaveRequest = await req.json();
 
     // Validate required fields
     if (!simulationId || !formState) {
@@ -45,7 +46,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('🔄 Auto-saving simulation:', simulationId);
+    console.log('🔄 Auto-saving simulation:', simulationId, 'with method:', saveMethod || 'auto-save');
     console.log('📝 Received answeredQuestions:', formState.answeredQuestions, 'Type:', typeof formState.answeredQuestions, 'IsArray:', Array.isArray(formState.answeredQuestions));
 
     // Simple handling since formState now comes pre-serialized from client
@@ -54,6 +55,9 @@ Deno.serve(async (req) => {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
 
+    // Determine save method - default to auto-save if not specified
+    const finalSaveMethod = saveMethod || 'auto-save';
+    
     // Use UPSERT to handle both insert and update atomically - prevents race conditions
     const upsertData = {
       simulation_id: simulationId,
@@ -62,7 +66,7 @@ Deno.serve(async (req) => {
       form_slug: formSlug || 'simulazione-mutuo',
       expires_at: expiresAt.toISOString(),
       updated_at: new Date().toISOString(),
-      save_method: 'auto-save',
+      save_method: finalSaveMethod,
       // Contact fields are left NULL for auto-save (will be preserved if they exist)
       name: null,
       phone: null,

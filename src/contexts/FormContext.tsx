@@ -361,6 +361,7 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastAutoSaveRef = useRef<number>(0);
   const hasInitialAutoSaveRef = useRef<boolean>(false);
+  const isManualSavingRef = useRef<boolean>(false);
   
   const sortedBlocks = [...blocks].sort((a, b) => a.priority - b.priority);
 
@@ -1185,6 +1186,12 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
       return;
     }
     
+    // Skip auto-save if manual save is in progress
+    if (isManualSavingRef.current) {
+      console.log('⏸️ Skipping auto-save - manual save in progress');
+      return;
+    }
+    
     const now = Date.now();
     const timeSinceLastSave = now - lastAutoSaveRef.current;
     
@@ -1255,6 +1262,9 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
 
   // Handle save simulation with edge function
   const handleSaveSimulation = useCallback(async (contactData: Omit<SaveSimulationData, 'percentage'>): Promise<SaveSimulationResult> => {
+    // Set manual saving flag to prevent auto-saves during manual save
+    isManualSavingRef.current = true;
+    
     try {
       // Only use resumeCode for genuine resume sessions, not for new simulations with old localStorage
       const resumeCode = state.sessionType === 'resumed' ? (() => {
@@ -1327,6 +1337,9 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
         success: false,
         error: "Errore durante il salvataggio della simulazione"
       };
+    } finally {
+      // Clear manual saving flag
+      isManualSavingRef.current = false;
     }
   }, [state, formSlug, getProgress]);
 

@@ -4,7 +4,7 @@ import { FormQuestion } from "./FormQuestion";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, AlertCircle } from "lucide-react";
-import { createOrUpdateAutoSave } from "@/services/autoSaveService";
+import { completeFormSave } from "@/services/autoSaveService";
 
 export function QuestionView() {
   const { 
@@ -92,10 +92,10 @@ export function QuestionView() {
     console.log("QuestionView.handleSubmitForm: FormSlug:", formSlug);
 
     try {
-      // Final auto-save with 100% completion before submission
+      // Final completed form save with 100% completion before submission
       if (state.simulationId) {
-        console.log("QuestionView.handleSubmitForm: Performing 100% auto-save...");
-        const autoSaveResult = await createOrUpdateAutoSave({
+        console.log("QuestionView.handleSubmitForm: Performing 100% completed form save...");
+        const completeSaveResult = await completeFormSave({
           simulationId: state.simulationId,
           formState: {
             ...state,
@@ -105,13 +105,13 @@ export function QuestionView() {
           formSlug: formSlug || 'simulazione-mutuo'
         });
 
-        if (autoSaveResult.success) {
-          console.log("✅ QuestionView.handleSubmitForm: 100% auto-save successful");
+        if (completeSaveResult.success) {
+          console.log("✅ QuestionView.handleSubmitForm: 100% completed form save successful");
         } else {
-          console.error("❌ QuestionView.handleSubmitForm: Auto-save failed:", autoSaveResult.error);
+          console.error("❌ QuestionView.handleSubmitForm: Completed form save failed:", completeSaveResult.error);
         }
       } else {
-        console.warn("⚠️ QuestionView.handleSubmitForm: No simulationId found, skipping auto-save");
+        console.warn("⚠️ QuestionView.handleSubmitForm: No simulationId found, skipping completed form save");
       }
 
       // Navigate immediately to loading page with form data
@@ -128,7 +128,7 @@ export function QuestionView() {
       });
     } catch (error) {
       console.error('QuestionView.handleSubmitForm: Error during submission:', error);
-      // Still navigate even if auto-save fails
+      // Still navigate even if completed form save fails
       navigate("/form-loading", {
         state: { 
           formData: {
