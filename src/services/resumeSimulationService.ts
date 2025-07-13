@@ -52,10 +52,15 @@ export async function resumeSimulation(resumeCode: string): Promise<ResumeSimula
 
     console.log("✅ Simulation resumed successfully");
     
-    // Convert answeredQuestions array back to Set
+    // Convert answeredQuestions back to Set - handle both array and object cases
+    const answeredQuestions = data.data.formState.answeredQuestions;
     const formState: FormState = {
       ...data.data.formState,
-      answeredQuestions: new Set(data.data.formState.answeredQuestions || [])
+      answeredQuestions: new Set(
+        Array.isArray(answeredQuestions) 
+          ? answeredQuestions 
+          : []
+      )
     };
 
     return {

@@ -33,6 +33,7 @@ export async function createOrUpdateAutoSave(data: AutoSaveData): Promise<AutoSa
       return { success: false, error: error.message };
     }
 
+    console.log('✅ Auto-save successful for simulation:', data.simulationId);
     return { success: true };
   } catch (error) {
     console.error('Auto-save failed:', error);

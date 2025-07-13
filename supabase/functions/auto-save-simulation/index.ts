@@ -44,15 +44,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Minimal logging for production
+    console.log('🔄 Auto-saving simulation:', simulationId);
 
-    // Serialize form state to handle Sets
-    const serializedFormState = JSON.parse(JSON.stringify(formState, (key, value) => {
-      if (value instanceof Set) {
-        return Array.from(value);
-      }
-      return value;
-    }));
+    // Serialize form state to handle Sets - explicitly handle answeredQuestions like manual save
+    const serializedFormState = {
+      ...formState,
+      answeredQuestions: Array.from(formState.answeredQuestions || [])
+    };
 
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
@@ -110,7 +108,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Auto-save completed successfully
+    console.log('✅ Auto-save completed successfully for simulation:', simulationId);
     return new Response(
       JSON.stringify({ success: true }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
