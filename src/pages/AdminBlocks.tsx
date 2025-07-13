@@ -301,14 +301,16 @@ export default function AdminBlocks() {
         {/* Search and Filter */}
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Blocchi del Database</h2>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {stats.blocksByForm.map((formStat) => (
-                <Badge key={formStat.formSlug} variant="outline" className="text-xs">
-                  {formStat.formTitle}: {formStat.count}
+            <h2 className="text-xl font-semibold text-gray-900">
+              Blocchi del Database: {formFilter === 'all' ? 'TUTTI I BLOCCHI' : formFilter.toUpperCase()}
+            </h2>
+            {formFilter !== 'all' && (
+              <div className="mt-2">
+                <Badge variant="default" className="bg-[#245C4F] text-white">
+                  Form selezionato: {forms.find(f => f.slug === formFilter)?.title || formFilter}
                 </Badge>
-              ))}
-            </div>
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-2 max-w-md">
             <Select value={formFilter} onValueChange={setFormFilter}>
