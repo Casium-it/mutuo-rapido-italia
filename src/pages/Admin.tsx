@@ -12,6 +12,7 @@ interface DashboardStats {
   totalSubmissions: number;
   totalSimulations: number;
   simulationsWithContact: number;
+  submissionsWithContact: number;
   recentSubmissions: number;
   recentSimulations: number;
 }
@@ -21,6 +22,7 @@ export default function Admin() {
     totalSubmissions: 0,
     totalSimulations: 0,
     simulationsWithContact: 0,
+    submissionsWithContact: 0,
     recentSubmissions: 0,
     recentSimulations: 0
   });
@@ -64,6 +66,17 @@ export default function Admin() {
 
       if (simulationsWithContactError) throw simulationsWithContactError;
 
+      // Get submissions with contact info from start date
+      const { count: submissionsWithContactCount, error: submissionsWithContactError } = await supabase
+        .from('form_submissions')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', startDate.toISOString())
+        .not('email', 'is', null)
+        .not('phone_number', 'is', null)
+        .not('first_name', 'is', null);
+
+      if (submissionsWithContactError) throw submissionsWithContactError;
+
       // Get recent submissions (last 7 days)
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -87,6 +100,7 @@ export default function Admin() {
         totalSubmissions: submissionsCount || 0,
         totalSimulations: simulationsCount || 0,
         simulationsWithContact: simulationsWithContactCount || 0,
+        submissionsWithContact: submissionsWithContactCount || 0,
         recentSubmissions: recentSubmissionsCount || 0,
         recentSimulations: recentSimulationsCount || 0
       });
@@ -195,9 +209,9 @@ export default function Admin() {
                 <div>
                   <p className="text-sm text-gray-600">% Form con Contatti</p>
                   <p className="text-2xl font-bold text-purple-600">
-                    {stats.totalSimulations > 0 ? Math.round((stats.simulationsWithContact / stats.totalSimulations) * 100) : 0}%
+                    {stats.totalSimulations > 0 ? Math.round((stats.submissionsWithContact / stats.totalSimulations) * 100) : 0}%
                   </p>
-                  <p className="text-xs text-gray-500">contatti / simulazioni</p>
+                  <p className="text-xs text-gray-500">submissions contatti / simulazioni</p>
                 </div>
               </div>
             </CardContent>
