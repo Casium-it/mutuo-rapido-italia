@@ -11,6 +11,7 @@ import { LogOut, FileText, Database, Users, Bell, Blocks, TrendingUp, Clock } fr
 interface DashboardStats {
   totalSubmissions: number;
   totalSimulations: number;
+  simulationsWithContact: number;
   recentSubmissions: number;
   recentSimulations: number;
 }
@@ -19,6 +20,7 @@ export default function Admin() {
   const [stats, setStats] = useState<DashboardStats>({
     totalSubmissions: 0,
     totalSimulations: 0,
+    simulationsWithContact: 0,
     recentSubmissions: 0,
     recentSimulations: 0
   });
@@ -32,19 +34,35 @@ export default function Admin() {
 
   const fetchStats = async () => {
     try {
-      // Get submissions count
+      // Start date: July 13, 2025 00:00
+      const startDate = new Date('2025-07-13T00:00:00.000Z');
+      
+      // Get submissions count from start date
       const { count: submissionsCount, error: submissionsError } = await supabase
         .from('form_submissions')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', startDate.toISOString());
 
       if (submissionsError) throw submissionsError;
 
-      // Get simulations count
+      // Get simulations count from start date
       const { count: simulationsCount, error: simulationsError } = await supabase
         .from('saved_simulations')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', startDate.toISOString());
 
       if (simulationsError) throw simulationsError;
+
+      // Get simulations with contact info from start date
+      const { count: simulationsWithContactCount, error: simulationsWithContactError } = await supabase
+        .from('saved_simulations')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', startDate.toISOString())
+        .not('email', 'is', null)
+        .not('phone', 'is', null)
+        .not('name', 'is', null);
+
+      if (simulationsWithContactError) throw simulationsWithContactError;
 
       // Get recent submissions (last 7 days)
       const sevenDaysAgo = new Date();
@@ -68,6 +86,7 @@ export default function Admin() {
       setStats({
         totalSubmissions: submissionsCount || 0,
         totalSimulations: simulationsCount || 0,
+        simulationsWithContact: simulationsWithContactCount || 0,
         recentSubmissions: recentSubmissionsCount || 0,
         recentSimulations: recentSimulationsCount || 0
       });
@@ -172,11 +191,68 @@ export default function Admin() {
               <div className="flex items-center gap-3">
                 <Clock className="h-8 w-8 text-orange-600" />
                 <div>
-                  <p className="text-sm text-gray-600">Tasso di Conversione</p>
+                  <p className="text-sm text-gray-600">% Form Completati</p>
                   <p className="text-2xl font-bold text-orange-600">
                     {stats.totalSimulations > 0 ? Math.round((stats.totalSubmissions / stats.totalSimulations) * 100) : 0}%
                   </p>
-                  <p className="text-xs text-gray-500">sim → submission</p>
+                  <p className="text-xs text-gray-500">submission / simulazioni</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Second Row of Statistics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <Users className="h-8 w-8 text-purple-600" />
+                <div>
+                  <p className="text-sm text-gray-600">% Form con Contatti</p>
+                  <p className="text-2xl font-bold text-purple-600">
+                    {stats.totalSimulations > 0 ? Math.round((stats.simulationsWithContact / stats.totalSimulations) * 100) : 0}%
+                  </p>
+                  <p className="text-xs text-gray-500">contatti / simulazioni</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8"></div>
+                <div>
+                  <p className="text-sm text-gray-600">-</p>
+                  <p className="text-2xl font-bold text-gray-400">-</p>
+                  <p className="text-xs text-gray-500">-</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8"></div>
+                <div>
+                  <p className="text-sm text-gray-600">-</p>
+                  <p className="text-2xl font-bold text-gray-400">-</p>
+                  <p className="text-xs text-gray-500">-</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8"></div>
+                <div>
+                  <p className="text-sm text-gray-600">-</p>
+                  <p className="text-2xl font-bold text-gray-400">-</p>
+                  <p className="text-xs text-gray-500">-</p>
                 </div>
               </div>
             </CardContent>
