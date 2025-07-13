@@ -10,14 +10,23 @@ export function FormSubmitButton() {
   const [isNavigating, setIsNavigating] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = async (): Promise<void> => {
+  const handleSubmit = async () => {
     setIsNavigating(true);
+    console.log("FormSubmitButton: Navigating to FormLoading...");
+    console.log("FormSubmitButton: Using existing simulationId:", state.simulationId);
+    console.log("FormSubmitButton: FormSlug from context:", formSlug);
+    console.log("FormSubmitButton: Form state data:", {
+      responses: Object.keys(state.responses).length,
+      activeBlocks: state.activeBlocks,
+      completedBlocks: state.completedBlocks,
+      dynamicBlocks: state.dynamicBlocks?.length || 0
+    });
     
     try {
-      // Perform final save if we have a simulation ID - this is completion save
+      // Final completed form save with 100% completion before submission using existing simulationId
       if (state.simulationId) {
-        console.log('🎯 FORM-SUBMIT: Performing final completion save before submission...');
-        await completeFormSave({
+        console.log("FormSubmitButton: Performing 100% completed form save with existing ID...");
+        const completeSaveResult = await completeFormSave({
           simulationId: state.simulationId,
           formState: {
             ...state,
@@ -26,9 +35,17 @@ export function FormSubmitButton() {
           percentage: 100,
           formSlug: formSlug || 'simulazione-mutuo'
         });
+
+        if (completeSaveResult.success) {
+          console.log("✅ FormSubmitButton: 100% completed form save successful");
+        } else {
+          console.error("❌ FormSubmitButton: Completed form save failed:", completeSaveResult.error);
+        }
+      } else {
+        console.warn("⚠️ FormSubmitButton: No simulationId found, skipping completed form save");
       }
 
-      // Navigate to loading page with form data
+      // Navigate to FormLoading with form data (same format as CompleteFormButton)
       navigate('/form-loading', { 
         state: { 
           formData: {
@@ -40,9 +57,8 @@ export function FormSubmitButton() {
           }
         } 
       });
-      
     } catch (error) {
-      console.error('❌ FORM-SUBMIT: Error in form submission:', error);
+      console.error('FormSubmitButton: Error during submission:', error);
       setIsNavigating(false);
     }
   };
