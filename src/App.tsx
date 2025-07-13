@@ -26,6 +26,8 @@ import Simulazioni from "./pages/Simulazioni";
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
+import AdminLeads from "./pages/AdminLeads";
+import AdminSimulations from "./pages/AdminSimulations";
 import AdminBlocks from "./pages/AdminBlocks";
 import AdminBlockDetail from "./pages/AdminBlockDetail";
 import AdminFormDetail from "./pages/AdminFormDetail";
@@ -76,6 +78,16 @@ const AppWithTracking = () => {
       <Route path="/admin" element={
         <ProtectedRoute requireAdmin>
           <Admin />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/leads" element={
+        <ProtectedRoute requireAdmin>
+          <AdminLeads />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/simulations" element={
+        <ProtectedRoute requireAdmin>
+          <AdminSimulations />
         </ProtectedRoute>
       } />
       <Route path="/admin/blocks" element={

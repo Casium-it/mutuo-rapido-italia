@@ -4,72 +4,79 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { Eye, LogOut, Phone, Calendar, FileText, Mail, User, StickyNote, Trash2, Blocks, Bell } from 'lucide-react';
-import { LeadStatusBadge } from '@/components/admin/LeadStatusBadge';
-import { LeadStatus } from '@/types/leadStatus';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+import { LogOut, FileText, Database, Users, Bell, Blocks, TrendingUp, Clock } from 'lucide-react';
 
-interface FormSubmission {
-  id: string;
-  created_at: string;
-  form_type: string;
-  phone_number: string | null;
-  consulting: boolean | null;
-  user_identifier: string | null;
-  metadata: any;
-  first_name: string | null;
-  last_name: string | null;
-  email: string | null;
-  notes: string | null;
-  lead_status: LeadStatus;
+interface DashboardStats {
+  totalSubmissions: number;
+  totalSimulations: number;
+  recentSubmissions: number;
+  recentSimulations: number;
 }
 
 export default function Admin() {
-  const [submissions, setSubmissions] = useState<FormSubmission[]>([]);
+  const [stats, setStats] = useState<DashboardStats>({
+    totalSubmissions: 0,
+    totalSimulations: 0,
+    recentSubmissions: 0,
+    recentSimulations: 0
+  });
   const [loading, setLoading] = useState(true);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchSubmissions();
+    fetchStats();
   }, []);
 
-  const fetchSubmissions = async () => {
+  const fetchStats = async () => {
     try {
-      const { data, error } = await supabase
+      // Get submissions count
+      const { count: submissionsCount, error: submissionsError } = await supabase
         .from('form_submissions')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*', { count: 'exact', head: true });
 
-      if (error) {
-        console.error('Error fetching submissions:', error);
-        toast({
-          title: "Errore",
-          description: "Errore nel caricamento delle submissions",
-          variant: "destructive"
-        });
-      } else {
-        setSubmissions(data || []);
-      }
+      if (submissionsError) throw submissionsError;
+
+      // Get simulations count
+      const { count: simulationsCount, error: simulationsError } = await supabase
+        .from('saved_simulations')
+        .select('*', { count: 'exact', head: true });
+
+      if (simulationsError) throw simulationsError;
+
+      // Get recent submissions (last 7 days)
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      const { count: recentSubmissionsCount, error: recentSubmissionsError } = await supabase
+        .from('form_submissions')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', sevenDaysAgo.toISOString());
+
+      if (recentSubmissionsError) throw recentSubmissionsError;
+
+      // Get recent simulations (last 7 days)
+      const { count: recentSimulationsCount, error: recentSimulationsError } = await supabase
+        .from('saved_simulations')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', sevenDaysAgo.toISOString());
+
+      if (recentSimulationsError) throw recentSimulationsError;
+
+      setStats({
+        totalSubmissions: submissionsCount || 0,
+        totalSimulations: simulationsCount || 0,
+        recentSubmissions: recentSubmissionsCount || 0,
+        recentSimulations: recentSimulationsCount || 0
+      });
+
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error fetching stats:', error);
       toast({
         title: "Errore",
-        description: "Errore imprevisto",
+        description: "Errore nel caricamento delle statistiche",
         variant: "destructive"
       });
     } finally {
@@ -77,78 +84,19 @@ export default function Admin() {
     }
   };
 
-  const handleDeleteSubmission = async (submissionId: string) => {
-    setDeletingId(submissionId);
-    
-    try {
-      console.log('Starting deletion process for submission:', submissionId);
-      
-      // First delete related responses
-      const { error: responsesError } = await supabase
-        .from('form_responses')
-        .delete()
-        .eq('submission_id', submissionId);
-
-      if (responsesError) {
-        console.error('Error deleting responses:', responsesError);
-        throw responsesError;
-      }
-
-      console.log('Successfully deleted responses for submission:', submissionId);
-
-      // Then delete the submission
-      const { error: submissionError } = await supabase
-        .from('form_submissions')
-        .delete()
-        .eq('id', submissionId);
-
-      if (submissionError) {
-        console.error('Error deleting submission:', submissionError);
-        throw submissionError;
-      }
-
-      console.log('Successfully deleted submission:', submissionId);
-
-      // Update local state
-      setSubmissions(prev => prev.filter(s => s.id !== submissionId));
-      
-      toast({
-        title: "Successo",
-        description: "Submission eliminata con successo",
-      });
-    } catch (error) {
-      console.error('Error deleting submission:', error);
-      toast({
-        title: "Errore",
-        description: `Errore nell'eliminazione della submission: ${error.message}`,
-        variant: "destructive"
-      });
-    } finally {
-      setDeletingId(null);
-    }
-  };
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('it-IT', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f8f5f1]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#245C4F] mx-auto"></div>
-          <p className="mt-2 text-gray-600">Caricamento submissions...</p>
+          <p className="mt-2 text-gray-600">Caricamento dashboard...</p>
         </div>
       </div>
     );
@@ -164,22 +112,6 @@ export default function Admin() {
             <p className="text-gray-600">Benvenuto, {user?.email}</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              onClick={() => navigate('/admin/notifications')}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <Bell className="h-4 w-4" />
-              Gestisci Notifiche
-            </Button>
-            <Button
-              onClick={() => navigate('/admin/blocks')}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <Blocks className="h-4 w-4" />
-              Gestisci Blocchi
-            </Button>
             <Button 
               onClick={handleSignOut}
               variant="outline"
@@ -194,167 +126,125 @@ export default function Admin() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">Form Submissions</h2>
-            <p className="text-gray-600">Totale: {submissions.length} submissions</p>
-          </div>
-          <Button onClick={fetchSubmissions} variant="outline">
-            Aggiorna
-          </Button>
-        </div>
-
-        {submissions.length === 0 ? (
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <Card>
-            <CardContent className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Nessuna submission trovata</h3>
-                <p className="text-gray-600">Le submissions appariranno qui quando gli utenti invieranno i form.</p>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <FileText className="h-8 w-8 text-[#245C4F]" />
+                <div>
+                  <p className="text-sm text-gray-600">Submissions Totali</p>
+                  <p className="text-2xl font-bold text-[#245C4F]">{stats.totalSubmissions}</p>
+                  <p className="text-xs text-gray-500">+{stats.recentSubmissions} ultimi 7gg</p>
+                </div>
               </div>
             </CardContent>
           </Card>
-        ) : (
-          <div className="grid gap-4">
-            {submissions.map((submission) => (
-              <Card key={submission.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">
-                      Submission #{submission.id.slice(0, 8)}
-                      {(submission.first_name || submission.last_name) && (
-                        <span className="ml-2 font-bold text-[#245C4F]">
-                          {submission.first_name} {submission.last_name}
-                        </span>
-                      )}
-                    </CardTitle>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary">
-                        {submission.form_type}
-                      </Badge>
-                      {submission.consulting && (
-                        <Badge className="bg-green-100 text-green-800">
-                          Consulenza richiesta
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Calendar className="h-4 w-4" />
-                      {formatDate(submission.created_at)}
-                    </div>
-                    {submission.phone_number && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Phone className="h-4 w-4" />
-                        {submission.phone_number}
-                      </div>
-                    )}
-                    {submission.email && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Mail className="h-4 w-4" />
-                        {submission.email}
-                      </div>
-                    )}
-                    {submission.user_identifier && (
-                      <div className="text-sm text-gray-600">
-                        ID Utente: {submission.user_identifier}
-                      </div>
-                    )}
-                  </div>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <Database className="h-8 w-8 text-blue-600" />
+                <div>
+                  <p className="text-sm text-gray-600">Simulazioni Salvate</p>
+                  <p className="text-2xl font-bold text-blue-600">{stats.totalSimulations}</p>
+                  <p className="text-xs text-gray-500">+{stats.recentSimulations} ultimi 7gg</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <TrendingUp className="h-8 w-8 text-green-600" />
+                <div>
+                  <p className="text-sm text-gray-600">Attività Recente</p>
+                  <p className="text-2xl font-bold text-green-600">{stats.recentSubmissions + stats.recentSimulations}</p>
+                  <p className="text-xs text-gray-500">ultimi 7 giorni</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <Clock className="h-8 w-8 text-orange-600" />
+                <div>
+                  <p className="text-sm text-gray-600">Tasso di Conversione</p>
+                  <p className="text-2xl font-bold text-orange-600">
+                    {stats.totalSimulations > 0 ? Math.round((stats.totalSubmissions / stats.totalSimulations) * 100) : 0}%
+                  </p>
+                  <p className="text-xs text-gray-500">sim → submission</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-                  {/* Lead Status */}
-                  <div className="mb-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <User className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm text-gray-600">Status Lead:</span>
-                    </div>
-                    <LeadStatusBadge status={submission.lead_status} />
-                  </div>
+        {/* Navigation Cards */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Gestisci Piattaforma</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/notifications')}>
+              <CardContent className="p-6 text-center">
+                <Bell className="h-12 w-12 text-[#245C4F] mx-auto mb-3" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Gestisci Notifiche</h3>
+                <p className="text-sm text-gray-600">Configura le notifiche admin e i messaggi WhatsApp</p>
+              </CardContent>
+            </Card>
 
-                  {/* Notes */}
-                  {submission.notes && (
-                    <div className="mb-4">
-                      <div className="flex items-start gap-2 mb-2">
-                        <StickyNote className="h-4 w-4 text-gray-500 mt-0.5" />
-                        <span className="text-sm text-gray-600">Note:</span>
-                      </div>
-                      <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">
-                        {submission.notes}
-                      </p>
-                    </div>
-                  )}
-                  
-                  {submission.metadata && (
-                    <div className="text-sm text-gray-600 mb-4">
-                      <p>Blocchi attivi: {submission.metadata.blocks?.length || 0}</p>
-                      <p>Blocchi completati: {submission.metadata.completedBlocks?.length || 0}</p>
-                      {submission.metadata.slug && (
-                        <p>Slug: {submission.metadata.slug}</p>
-                      )}
-                    </div>
-                  )}
-                  
-                  <div className="flex justify-end items-center gap-2">
-                    <Button
-                      onClick={() => navigate(`/admin/form/${submission.id}`)}
-                      className="bg-[#245C4F] hover:bg-[#1e4f44] flex items-center gap-2"
-                    >
-                      <Eye className="h-4 w-4" />
-                      Visualizza Dettagli
-                    </Button>
-                    
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 flex items-center gap-2"
-                          disabled={deletingId === submission.id}
-                        >
-                          {deletingId === submission.id ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
-                          )}
-                          Elimina
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Conferma Eliminazione</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Sei sicuro di voler eliminare questa submission? 
-                            {(submission.first_name || submission.last_name) && (
-                              <span className="font-medium">
-                                {' '}({submission.first_name} {submission.last_name})
-                              </span>
-                            )}
-                            <br />
-                            <span className="text-red-600 font-medium">
-                              Questa azione non può essere annullata e eliminerà anche tutte le risposte associate.
-                            </span>
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Annulla</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDeleteSubmission(submission.id)}
-                            className="bg-red-600 hover:bg-red-700"
-                          >
-                            Elimina Definitivamente
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/blocks')}>
+              <CardContent className="p-6 text-center">
+                <Blocks className="h-12 w-12 text-[#245C4F] mx-auto mb-3" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Gestisci Blocchi</h3>
+                <p className="text-sm text-gray-600">Visualizza e modifica i blocchi dei form</p>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/leads')}>
+              <CardContent className="p-6 text-center">
+                <Users className="h-12 w-12 text-[#245C4F] mx-auto mb-3" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Leads Submissions</h3>
+                <p className="text-sm text-gray-600">Gestisci i lead e le submissions complete</p>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/simulations')}>
+              <CardContent className="p-6 text-center">
+                <Database className="h-12 w-12 text-[#245C4F] mx-auto mb-3" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Simulations</h3>
+                <p className="text-sm text-gray-600">Visualizza le simulazioni salvate dagli utenti</p>
+              </CardContent>
+            </Card>
           </div>
-        )}
+        </div>
+
+        {/* Quick Actions */}
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Azioni Rapide</h3>
+          <div className="flex flex-wrap gap-3">
+            <Button 
+              onClick={() => navigate('/admin/leads')}
+              className="bg-[#245C4F] hover:bg-[#1e4f44]"
+            >
+              Visualizza Tutti i Leads
+            </Button>
+            <Button 
+              onClick={() => navigate('/admin/simulations')}
+              variant="outline"
+            >
+              Gestisci Simulazioni
+            </Button>
+            <Button 
+              onClick={fetchStats}
+              variant="outline"
+            >
+              Aggiorna Statistiche
+            </Button>
+          </div>
+        </div>
       </main>
     </div>
   );
