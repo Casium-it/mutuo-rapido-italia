@@ -71,9 +71,7 @@ export default function Admin() {
         .from('form_submissions')
         .select('*', { count: 'exact', head: true })
         .gte('created_at', startDate.toISOString())
-        .not('email', 'is', null)
-        .not('phone_number', 'is', null)
-        .not('first_name', 'is', null);
+        .not('phone_number', 'is', null);
 
       if (submissionsWithContactError) throw submissionsWithContactError;
 
