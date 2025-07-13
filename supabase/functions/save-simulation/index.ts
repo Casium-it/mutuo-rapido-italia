@@ -162,7 +162,7 @@ Deno.serve(async (req) => {
       // Send WhatsApp notification for updated simulation
       await sendSimulationSavedNotification(supabase, contactData, data.resume_code, expires_at);
 
-      console.log('✅ Simulation updated successfully');
+      console.log('✅ Simulation updated successfully with', serializedFormState.answeredQuestions?.length || 0, 'answered questions');
       return new Response(
         JSON.stringify({ 
           success: true, 
@@ -243,7 +243,7 @@ Deno.serve(async (req) => {
       // Send WhatsApp notification for converted simulation
       await sendSimulationSavedNotification(supabase, contactData, data.resume_code, expires_at);
 
-      console.log('✅ Auto-save converted to user save successfully');
+      console.log('✅ Auto-save converted to user save successfully with', serializedFormState.answeredQuestions?.length || 0, 'answered questions');
       return new Response(
         JSON.stringify({ 
           success: true, 
@@ -284,7 +284,7 @@ Deno.serve(async (req) => {
       // Send WhatsApp notification for new simulation
       await sendSimulationSavedNotification(supabase, contactData, data.resume_code, expires_at);
 
-      console.log('✅ New simulation created successfully');
+      console.log('✅ New simulation created successfully with', serializedFormState.answeredQuestions?.length || 0, 'answered questions');
       return new Response(
         JSON.stringify({ 
           success: true, 

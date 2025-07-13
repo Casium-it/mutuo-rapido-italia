@@ -46,25 +46,10 @@ Deno.serve(async (req) => {
     }
 
     console.log('🔄 Auto-saving simulation:', simulationId);
+    console.log('📝 Received answeredQuestions:', formState.answeredQuestions, 'Type:', typeof formState.answeredQuestions, 'IsArray:', Array.isArray(formState.answeredQuestions));
 
-    // Robust handling of answeredQuestions - ensure it's always stored as an array
-    let answeredQuestionsArray = [];
-    if (formState.answeredQuestions) {
-      if (Array.isArray(formState.answeredQuestions)) {
-        answeredQuestionsArray = formState.answeredQuestions;
-      } else if (formState.answeredQuestions instanceof Set) {
-        answeredQuestionsArray = Array.from(formState.answeredQuestions);
-      } else if (typeof formState.answeredQuestions === 'object') {
-        // Handle case where it might be stored as an object with keys
-        answeredQuestionsArray = Object.keys(formState.answeredQuestions);
-      }
-    }
-
-    // Serialize form state with robust answeredQuestions handling
-    const serializedFormState = {
-      ...formState,
-      answeredQuestions: answeredQuestionsArray
-    };
+    // Simple handling since formState now comes pre-serialized from client
+    const serializedFormState = formState;
 
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
@@ -126,7 +111,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('✅ Auto-save completed successfully for simulation:', simulationId);
+    console.log('✅ Auto-save completed successfully for simulation:', simulationId, 'with', serializedFormState.answeredQuestions?.length || 0, 'answered questions');
     return new Response(
       JSON.stringify({ success: true }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

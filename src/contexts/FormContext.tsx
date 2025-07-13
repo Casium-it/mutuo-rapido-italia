@@ -1196,15 +1196,22 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
     try {
       const progress = getProgress();
       
+      // Serialize formState for auto-save - convert Set to Array like manual save does
+      const serializedFormState = {
+        ...state,
+        answeredQuestions: Array.from(state.answeredQuestions || [])
+      };
+      
       const result = await createOrUpdateAutoSave({
         simulationId: state.simulationId,
-        formState: state,
+        formState: serializedFormState,
         percentage: progress,
         formSlug: formSlug
       });
       
       if (result.success) {
         lastAutoSaveRef.current = now;
+        console.log('✅ Auto-save successful with', serializedFormState.answeredQuestions.length, 'answered questions');
       }
     } catch (error) {
       console.error('Auto-save failed:', error);

@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface AutoSaveData {
   simulationId: string;
-  formState: FormState;
+  formState: Omit<FormState, 'answeredQuestions'> & { answeredQuestions: string[] };
   percentage: number;
   formSlug: string;
 }
