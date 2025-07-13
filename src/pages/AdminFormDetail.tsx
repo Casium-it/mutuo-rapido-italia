@@ -1,93 +1,70 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Calendar, Phone, FileText, Download } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ArrowLeft, Calendar, Database, Eye, Settings, Users, AlertTriangle, CheckCircle, XCircle, Blocks } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { getQuestionTextWithStyledResponses } from '@/utils/formUtils';
-import { generateSubmissionPDF, PDFSubmissionData } from '@/utils/pdfUtils';
-import { LeadManagementCard } from '@/components/admin/LeadManagementCard';
-import { LeadStatus } from '@/types/leadStatus';
+import { useAdminBlocks } from '@/hooks/useAdminBlocks';
+import { getBlockValidation, BlockValidation } from '@/utils/blockValidation';
 
-interface FormSubmission {
+interface FormData {
   id: string;
-  created_at: string;
+  title: string;
+  slug: string;
+  description: string | null;
   form_type: string;
-  phone_number: string | null;
-  consulting: boolean | null;
-  user_identifier: string | null;
-  metadata: any;
-  first_name: string | null;
-  last_name: string | null;
-  email: string | null;
-  notes: string | null;
-  lead_status: LeadStatus;
-  mediatore: string | null;
+  is_active: boolean;
+  version: number;
+  completion_behavior: string;
+  created_at: string;
+  updated_at: string;
 }
 
-interface FormResponse {
-  id: string;
-  question_id: string;
-  question_text: string;
-  block_id: string;
-  response_value: any;
-  created_at: string;
+interface FormStats {
+  totalBlocks: number;
+  totalSubmissions: number;
+  activeBlocks: number;
 }
 
 export default function AdminFormDetail() {
-  const { submissionId } = useParams<{ submissionId: string }>();
+  const { formSlug } = useParams<{ formSlug: string }>();
   const navigate = useNavigate();
-  const [submission, setSubmission] = useState<FormSubmission | null>(null);
-  const [responses, setResponses] = useState<FormResponse[]>([]);
+  const [form, setForm] = useState<FormData | null>(null);
+  const [stats, setStats] = useState<FormStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [pdfLoading, setPdfLoading] = useState(false);
+  const { blocks, loading: blocksLoading, error: blocksError, getFilteredBlocks } = useAdminBlocks();
 
   useEffect(() => {
-    if (submissionId) {
-      fetchSubmissionDetails();
+    if (formSlug) {
+      fetchFormDetails();
+      fetchFormStats();
     }
-  }, [submissionId]);
+  }, [formSlug]);
 
-  const fetchSubmissionDetails = async () => {
+  const fetchFormDetails = async () => {
     try {
-      // Fetch submission
-      const { data: submissionData, error: submissionError } = await supabase
-        .from('form_submissions')
+      const { data: formData, error: formError } = await supabase
+        .from('forms')
         .select('*')
-        .eq('id', submissionId)
+        .eq('slug', formSlug)
         .single();
 
-      if (submissionError) {
-        console.error('Error fetching submission:', submissionError);
+      if (formError) {
+        console.error('Error fetching form:', formError);
         toast({
           title: "Errore",
-          description: "Submission non trovata",
+          description: "Form non trovato",
           variant: "destructive"
         });
-        navigate('/admin');
+        navigate('/admin/forms');
         return;
       }
 
-      // Fetch responses
-      const { data: responsesData, error: responsesError } = await supabase
-        .from('form_responses')
-        .select('*')
-        .eq('submission_id', submissionId)
-        .order('created_at', { ascending: true });
-
-      if (responsesError) {
-        console.error('Error fetching responses:', responsesError);
-        toast({
-          title: "Errore",
-          description: "Errore nel caricamento delle risposte",
-          variant: "destructive"
-        });
-      }
-
-      setSubmission(submissionData);
-      setResponses(responsesData || []);
+      setForm(formData);
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -95,47 +72,42 @@ export default function AdminFormDetail() {
         description: "Errore imprevisto",
         variant: "destructive"
       });
+    }
+  };
+
+  const fetchFormStats = async () => {
+    try {
+      // Get total submissions for this form
+      const { count: submissionsCount } = await supabase
+        .from('form_submissions')
+        .select('*', { count: 'exact', head: true })
+        .eq('form_type', formSlug || '');
+
+      setStats({
+        totalBlocks: 0, // Will be updated when blocks load
+        totalSubmissions: submissionsCount || 0,
+        activeBlocks: 0 // Will be updated when blocks load
+      });
+    } catch (error) {
+      console.error('Error fetching stats:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLeadUpdate = async (field: string, value: string) => {
-    if (!submission) return;
-
-    try {
-      const { error } = await supabase
-        .from('form_submissions')
-        .update({ [field]: value })
-        .eq('id', submission.id);
-
-      if (error) {
-        console.error('Error updating lead:', error);
-        toast({
-          title: "Errore",
-          description: "Errore nell'aggiornamento del lead",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Update local state
-      setSubmission(prev => prev ? { ...prev, [field]: value } : null);
+  // Update stats when blocks are loaded
+  useEffect(() => {
+    if (blocks.length > 0 && formSlug) {
+      const formBlocks = getFilteredBlocks(formSlug);
+      const activeBlocks = formBlocks.filter(block => !block.invisible).length;
       
-      toast({
-        title: "Successo",
-        description: "Lead aggiornato con successo",
-        variant: "default"
-      });
-    } catch (error) {
-      console.error('Error updating lead:', error);
-      toast({
-        title: "Errore",
-        description: "Errore imprevisto nell'aggiornamento",
-        variant: "destructive"
-      });
+      setStats(prev => prev ? {
+        ...prev,
+        totalBlocks: formBlocks.length,
+        activeBlocks: activeBlocks
+      } : null);
     }
-  };
+  }, [blocks, formSlug, getFilteredBlocks]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('it-IT', {
@@ -147,123 +119,67 @@ export default function AdminFormDetail() {
     });
   };
 
-  const formatResponseValue = (value: any) => {
-    if (typeof value === 'object' && value !== null) {
-      if (Array.isArray(value)) {
-        return value.join(', ');
-      }
-      return JSON.stringify(value, null, 2);
-    }
-    return String(value);
+  const getSpecialLabels = (block: any) => {
+    const labels = [];
+    if (block.default_active) labels.push('Attivo di default');
+    if (block.multiBlock) labels.push('Multi-blocco');
+    if (block.invisible) labels.push('Invisibile');
+    return labels;
   };
 
-  const handleDownloadPDF = async () => {
-    if (!submission || !responses) {
-      toast({
-        title: "Errore",
-        description: "Dati della submission non disponibili",
-        variant: "destructive"
-      });
-      return;
-    }
+  const renderValidationStatus = (validation: BlockValidation) => {
+    const hasActivationError = !validation.activationSources.isValid;
+    const hasLeadsToError = !validation.leadsToValidation.isValid;
+    const hasAddBlockError = !validation.addBlockValidation.isValid;
+    const hasAnyError = hasActivationError || hasLeadsToError || hasAddBlockError;
 
-    setPdfLoading(true);
-    try {
-      const pdfData: PDFSubmissionData = {
-        id: submission.id,
-        created_at: submission.created_at,
-        form_type: submission.form_type,
-        phone_number: submission.phone_number,
-        consulting: submission.consulting,
-        user_identifier: submission.user_identifier,
-        metadata: submission.metadata,
-        first_name: submission.first_name,
-        last_name: submission.last_name,
-        email: submission.email,
-        notes: submission.notes,
-        lead_status: submission.lead_status,
-        responses: responses
-      };
-
-      await generateSubmissionPDF(pdfData);
-      
-      toast({
-        title: "PDF generato",
-        description: "Il PDF è stato scaricato con successo",
-        variant: "default"
-      });
-    } catch (error) {
-      console.error('PDF generation error:', error);
-      toast({
-        title: "Errore",
-        description: "Errore nella generazione del PDF",
-        variant: "destructive"
-      });
-    } finally {
-      setPdfLoading(false);
-    }
-  };
-
-  const StyledQuestionText = ({ questionText, questionId, responseValue }: {
-    questionText: string;
-    questionId: string;
-    responseValue: any;
-  }) => {
-    const { parts } = getQuestionTextWithStyledResponses(questionText, questionId, responseValue);
-    
     return (
-      <div className="mb-2">
-        {parts.map((part, index) => (
-          <span key={index}>
-            {part.type === 'response' ? (
-              <span className="font-bold underline text-[#245C4F]">
-                {part.content}
-              </span>
-            ) : (
-              part.content
-            )}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          {hasAnyError ? (
+            <XCircle className="h-4 w-4 text-red-500" />
+          ) : (
+            <CheckCircle className="h-4 w-4 text-green-500" />
+          )}
+          <span className="text-xs font-medium">
+            {hasAnyError ? 'Problemi di validazione' : 'Validazione OK'}
           </span>
-        ))}
+        </div>
       </div>
     );
   };
 
-  const responsesByBlock = responses.reduce((acc, response) => {
-    if (!acc[response.block_id]) {
-      acc[response.block_id] = [];
-    }
-    acc[response.block_id].push(response);
-    return acc;
-  }, {} as Record<string, FormResponse[]>);
-
-  if (loading) {
+  if (loading || blocksLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f8f5f1]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#245C4F] mx-auto"></div>
-          <p className="mt-2 text-gray-600">Caricamento dettagli...</p>
+          <p className="mt-2 text-gray-600">Caricamento dettagli form...</p>
         </div>
       </div>
     );
   }
 
-  if (!submission) {
+  if (!form) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f8f5f1]">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-2">Submission non trovata</h1>
-          <Button onClick={() => navigate('/admin')}>Torna alla Dashboard</Button>
+          <h1 className="text-2xl font-bold text-red-600 mb-2">Form non trovato</h1>
+          <Button onClick={() => navigate('/admin/forms')}>Torna ai Form</Button>
         </div>
       </div>
     );
   }
 
+  const formBlocks = getFilteredBlocks(formSlug || '').sort((a, b) => a.priority - b.priority);
+
   return (
     <div className="min-h-screen bg-[#f8f5f1]">
+      {/* Header */}
       <header className="bg-white border-b border-[#BEB8AE] px-4 py-4">
         <div className="max-w-7xl mx-auto flex items-center gap-4">
           <Button 
-            onClick={() => navigate('/admin/leads')}
+            onClick={() => navigate('/admin/forms')}
             variant="outline"
             size="sm"
             className="flex items-center gap-2"
@@ -272,150 +188,215 @@ export default function AdminFormDetail() {
             Indietro
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-[#245C4F]">Dettagli Submission</h1>
-            <p className="text-gray-600">ID: {submission.id}</p>
+            <h1 className="text-2xl font-bold text-[#245C4F]">{form.title}</h1>
+            <p className="text-gray-600">Slug: {form.slug}</p>
           </div>
         </div>
       </header>
 
+      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Informazioni Generali</span>
-              <div className="flex gap-2">
-                <Badge variant="secondary">
-                  {submission.form_type}
-                </Badge>
-                {submission.consulting && (
-                  <Badge className="bg-green-100 text-green-800">
-                    Consulenza richiesta
-                  </Badge>
-                )}
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-gray-500" />
-                <div>
-                  <p className="text-sm text-gray-600">Data Invio</p>
-                  <p className="font-medium">{formatDate(submission.created_at)}</p>
-                </div>
-              </div>
-              
-              {submission.phone_number && (
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-gray-500" />
-                  <div>
-                    <p className="text-sm text-gray-600">Telefono</p>
-                    <p className="font-medium">{submission.phone_number}</p>
-                  </div>
-                </div>
-              )}
-              
-              {submission.user_identifier && (
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-gray-500" />
-                  <div>
-                    <p className="text-sm text-gray-600">ID Utente</p>
-                    <p className="font-medium">{submission.user_identifier}</p>
-                  </div>
-                </div>
-              )}
+        <Tabs defaultValue="general" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="general">Informazioni Generali</TabsTrigger>
+            <TabsTrigger value="blocks">Blocchi ({formBlocks.length})</TabsTrigger>
+          </TabsList>
 
-              <div className="flex items-center gap-2">
-                <Button
-                  onClick={handleDownloadPDF}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2 text-[#245C4F] border-[#245C4F] hover:bg-[#245C4F] hover:text-white"
-                  disabled={pdfLoading}
-                >
-                  <Download className="h-4 w-4" />
-                  {pdfLoading ? 'Generando PDF...' : 'Scarica PDF'}
-                </Button>
-              </div>
-            </div>
-            
-            {submission.metadata && (
-              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-medium mb-2">Metadata</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">Blocchi attivi:</span> {submission.metadata.blocks?.length || 0}
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Blocchi completati:</span> {submission.metadata.completedBlocks?.length || 0}
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Blocchi dinamici:</span> {submission.metadata.dynamicBlocks || 0}
-                  </div>
-                  {submission.metadata.slug && (
-                    <div className="col-span-full">
-                      <span className="text-gray-600">Slug:</span> {submission.metadata.slug}
+          <TabsContent value="general">
+            <div className="space-y-6">
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2">
+                      <Blocks className="h-5 w-5 text-[#245C4F]" />
+                      <div>
+                        <p className="text-sm text-gray-600">Blocchi Totali</p>
+                        <p className="text-2xl font-bold text-[#245C4F]">{stats?.totalBlocks || 0}</p>
+                      </div>
                     </div>
-                  )}
-                </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2">
+                      <Database className="h-5 w-5 text-[#245C4F]" />
+                      <div>
+                        <p className="text-sm text-gray-600">Submissions</p>
+                        <p className="text-2xl font-bold text-[#245C4F]">{stats?.totalSubmissions || 0}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2">
+                      <Eye className="h-5 w-5 text-[#245C4F]" />
+                      <div>
+                        <p className="text-sm text-gray-600">Blocchi Attivi</p>
+                        <p className="text-2xl font-bold text-[#245C4F]">{stats?.activeBlocks || 0}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-            )}
-          </CardContent>
-        </Card>
 
-        <div className="mb-6">
-          <LeadManagementCard
-            submission={submission}
-            onUpdate={handleLeadUpdate}
-          />
-        </div>
-
-        <div className="space-y-6">
-          <h2 className="text-xl font-semibold text-gray-900">
-            Risposte ({responses.length} totali)
-          </h2>
-          
-          {Object.keys(responsesByBlock).length === 0 ? (
-            <Card>
-              <CardContent className="flex items-center justify-center py-12">
-                <div className="text-center">
-                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Nessuna risposta trovata</h3>
-                  <p className="text-gray-600">Questa submission non contiene risposte.</p>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            Object.entries(responsesByBlock).map(([blockId, blockResponses]) => (
-              <Card key={blockId}>
+              {/* Form Details */}
+              <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">
-                    Blocco: {blockId}
-                    <span className="ml-2 text-sm font-normal text-gray-600">
-                      ({blockResponses.length} risposte)
-                    </span>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Dettagli Form</span>
+                    <div className="flex gap-2">
+                      <Badge variant={form.is_active ? "default" : "secondary"}>
+                        {form.is_active ? "Attivo" : "Inattivo"}
+                      </Badge>
+                      <Badge variant="outline">v{form.version}</Badge>
+                    </div>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {blockResponses.map((response) => (
-                      <div key={response.id} className="border-l-4 border-[#245C4F] pl-4">
-                        <div className="mb-2">
-                          <StyledQuestionText 
-                            questionText={response.question_text}
-                            questionId={response.question_id}
-                            responseValue={response.response_value}
-                          />
-                          <p className="text-xs text-gray-500">ID: {response.question_id}</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Titolo</label>
+                        <p className="text-lg font-medium">{form.title}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Slug</label>
+                        <p className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">{form.slug}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Tipo Form</label>
+                        <p>{form.form_type}</p>
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Comportamento Completamento</label>
+                        <p>{form.completion_behavior}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-gray-500" />
+                        <div>
+                          <p className="text-sm text-gray-600">Creato</p>
+                          <p className="text-sm">{formatDate(form.created_at)}</p>
                         </div>
                       </div>
-                    ))}
+                      <div className="flex items-center gap-2">
+                        <Settings className="h-4 w-4 text-gray-500" />
+                        <div>
+                          <p className="text-sm text-gray-600">Aggiornato</p>
+                          <p className="text-sm">{formatDate(form.updated_at)}</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
+                  {form.description && (
+                    <div className="mt-6 pt-6 border-t border-gray-200">
+                      <label className="text-sm font-medium text-gray-600">Descrizione</label>
+                      <p className="mt-2 text-gray-700">{form.description}</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
-            ))
-          )}
-        </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="blocks">
+            <div className="space-y-6">
+              {blocksError ? (
+                <Card>
+                  <CardContent className="text-center py-12">
+                    <Database className="h-12 w-12 text-red-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Errore nel caricamento</h3>
+                    <p className="text-gray-600">{blocksError}</p>
+                  </CardContent>
+                </Card>
+              ) : formBlocks.length === 0 ? (
+                <Card>
+                  <CardContent className="text-center py-12">
+                    <Blocks className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Nessun blocco trovato</h3>
+                    <p className="text-gray-600">Questo form non contiene blocchi configurati.</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid gap-6">
+                  {formBlocks.map((block) => {
+                    const validation = getBlockValidation(block, blocks);
+                    const specialLabels = getSpecialLabels(block);
+                    const hasValidationErrors = !validation.activationSources.isValid || 
+                                              !validation.leadsToValidation.isValid || 
+                                              !validation.addBlockValidation.isValid;
+
+                    return (
+                      <Card key={`${block.form_id}-${block.block_id}`} className={`hover:shadow-md transition-shadow ${hasValidationErrors ? 'border-red-200' : ''}`}>
+                        <CardHeader className="pb-4">
+                          <div className="space-y-3">
+                            {/* Main Header */}
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <CardTitle className="text-xl text-[#245C4F] flex items-center gap-2">
+                                  #{block.block_number} {block.title}
+                                  {hasValidationErrors && (
+                                    <AlertTriangle className="h-5 w-5 text-red-500" />
+                                  )}
+                                </CardTitle>
+                                <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                                  <span>
+                                    ID: <code className="bg-gray-100 px-1 rounded text-xs">{block.block_id}</code>
+                                  </span>
+                                  <span>•</span>
+                                  <span>Priorità: {block.priority}</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm">
+                                <Users className="h-4 w-4 text-gray-500" />
+                                <span className="text-gray-600">Domande:</span>
+                                <span className="font-medium">{block.questions.length}</span>
+                              </div>
+                            </div>
+
+                            {/* Special Labels */}
+                            {specialLabels.length > 0 && (
+                              <div className="flex flex-wrap gap-2">
+                                {specialLabels.map((label, index) => (
+                                  <Badge 
+                                    key={index} 
+                                    variant="secondary"
+                                    className="text-xs bg-green-100 text-green-800"
+                                  >
+                                    {label}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </CardHeader>
+
+                        <CardContent className="space-y-4">
+                          {/* Block Validation Status */}
+                          {renderValidationStatus(validation)}
+
+                          {/* Action Button */}
+                          <div className="flex justify-end pt-4 border-t border-gray-100">
+                            <Button
+                              onClick={() => navigate(`/admin/blocks/${block.block_id}?form=${form.slug}`)}
+                              className="bg-[#245C4F] hover:bg-[#1e4f44] flex items-center gap-2"
+                            >
+                              <Eye className="h-4 w-4" />
+                              Visualizza Dettagli
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
