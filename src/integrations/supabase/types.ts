@@ -316,12 +316,12 @@ export type Database = {
           form_slug: string
           form_state: Json
           id: string
-          is_auto_save: boolean | null
           linked_form_id: string | null
           name: string | null
           percentage: number
           phone: string | null
           resume_code: string
+          save_method: Database["public"]["Enums"]["save_method_type"]
           simulation_id: string | null
           updated_at: string
         }
@@ -332,12 +332,12 @@ export type Database = {
           form_slug?: string
           form_state: Json
           id?: string
-          is_auto_save?: boolean | null
           linked_form_id?: string | null
           name?: string | null
           percentage?: number
           phone?: string | null
           resume_code?: string
+          save_method: Database["public"]["Enums"]["save_method_type"]
           simulation_id?: string | null
           updated_at?: string
         }
@@ -348,12 +348,12 @@ export type Database = {
           form_slug?: string
           form_state?: Json
           id?: string
-          is_auto_save?: boolean | null
           linked_form_id?: string | null
           name?: string | null
           percentage?: number
           phone?: string | null
           resume_code?: string
+          save_method?: Database["public"]["Enums"]["save_method_type"]
           simulation_id?: string | null
           updated_at?: string
         }
@@ -434,6 +434,7 @@ export type Database = {
         | "da_risentire"
         | "prenotata_consulenza"
         | "pratica_bocciata"
+      save_method_type: "auto-save" | "manual-save" | "completed-save"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -577,6 +578,7 @@ export const Constants = {
         "prenotata_consulenza",
         "pratica_bocciata",
       ],
+      save_method_type: ["auto-save", "manual-save", "completed-save"],
     },
   },
 } as const

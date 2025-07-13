@@ -122,6 +122,11 @@ Deno.serve(async (req) => {
     const expires_at = new Date();
     expires_at.setDate(expires_at.getDate() + 30); // 30 days from now
 
+    // Determine save method based on completion and contact data
+    const saveMethod = (contactData.percentage === 100 && contactData.name && contactData.phone && contactData.email) 
+      ? 'completed-save' 
+      : 'manual-save';
+
     if (resumeCode) {
       // Update existing simulation
       console.log('🔄 Updating existing simulation with code:', resumeCode);
@@ -137,6 +142,7 @@ Deno.serve(async (req) => {
           expires_at: expires_at.toISOString(),
           percentage: contactData.percentage,
           simulation_id: simulationId || null,
+          save_method: saveMethod,
           updated_at: new Date().toISOString()
         })
         .eq('resume_code', resumeCode)
@@ -186,11 +192,11 @@ Deno.serve(async (req) => {
           form_slug: formSlug,
           expires_at: expires_at.toISOString(),
           percentage: contactData.percentage,
-          is_auto_save: false,
+          save_method: saveMethod,
           updated_at: new Date().toISOString()
         })
         .eq('simulation_id', simulationId)
-        .eq('is_auto_save', true)
+        .eq('save_method', 'auto-save')
         .select('resume_code')
         .single();
 
@@ -216,7 +222,7 @@ Deno.serve(async (req) => {
             expires_at: expires_at.toISOString(),
             percentage: contactData.percentage,
             simulation_id: simulationId,
-            is_auto_save: false
+            save_method: saveMethod
           })
           .select('resume_code')
           .single();
@@ -268,7 +274,7 @@ Deno.serve(async (req) => {
           expires_at: expires_at.toISOString(),
           percentage: contactData.percentage,
           simulation_id: simulationId || null,
-          is_auto_save: false
+          save_method: saveMethod
         })
         .select('resume_code')
         .single();

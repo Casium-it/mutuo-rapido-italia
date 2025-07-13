@@ -21,7 +21,7 @@ interface SavedSimulation {
   percentage: number;
   form_slug: string;
   resume_code: string;
-  is_auto_save: boolean | null;
+  save_method: 'auto-save' | 'manual-save' | 'completed-save';
   simulation_id: string | null;
   form_state: any;
 }
@@ -168,8 +168,9 @@ export default function AdminSimulations() {
         </div>
       </div>;
   }
-  const autoSaveSimulations = simulations.filter(s => s.is_auto_save);
-  const manualSimulations = simulations.filter(s => !s.is_auto_save);
+  const autoSaveSimulations = simulations.filter(s => s.save_method === 'auto-save');
+  const manualSimulations = simulations.filter(s => s.save_method === 'manual-save');
+  const completedSaveSimulations = simulations.filter(s => s.save_method === 'completed-save');
   const expiredSimulations = simulations.filter(s => isExpired(s.expires_at));
   const completedSimulations = simulations.filter(s => s.percentage === 100);
   const withContactSimulations = simulations.filter(s => hasContactData(s));
@@ -197,7 +198,7 @@ export default function AdminSimulations() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
@@ -227,6 +228,17 @@ export default function AdminSimulations() {
                 <div>
                   <p className="text-sm text-gray-600">Manuali</p>
                   <p className="text-2xl font-bold text-green-600">{manualSimulations.length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <Check className="h-5 w-5 text-emerald-600" />
+                <div>
+                  <p className="text-sm text-gray-600">Completati</p>
+                  <p className="text-2xl font-bold text-emerald-600">{completedSaveSimulations.length}</p>
                 </div>
               </div>
             </CardContent>
@@ -406,7 +418,8 @@ export default function AdminSimulations() {
                       </div>
                       <div className="space-y-1 mt-1 my-[12px]">
                         <div className="text-xs">
-                          Salvataggio: {simulation.is_auto_save ? 'Automatico' : 'Manuale'}
+                          Salvataggio: {simulation.save_method === 'auto-save' ? 'Automatico' : 
+                                       simulation.save_method === 'manual-save' ? 'Manuale' : 'Completato'}
                         </div>
                         <div className="text-xs">
                           Contatti: {hasContactData(simulation) ? '✓' : '✗'}
@@ -417,19 +430,20 @@ export default function AdminSimulations() {
                         </div>}
                     </div>}
                    
-                   {!simulation.simulation_id && <div className="text-sm text-gray-600 mb-3">
-                       <div className="space-y-1">
-                         <div className="text-xs">
-                           Salvataggio: {simulation.is_auto_save ? 'Automatico' : 'Manuale'}
-                         </div>
-                         <div className="text-xs">
-                           Contatti: {hasContactData(simulation) ? '✓' : '✗'}
-                         </div>
-                       </div>
-                       {isExpired(simulation.expires_at) && <div className="text-red-600 mt-1">
-                           <strong>Stato:</strong> Scaduta
-                         </div>}
-                     </div>}
+                       {!simulation.simulation_id && <div className="text-sm text-gray-600 mb-3">
+                        <div className="space-y-1">
+                          <div className="text-xs">
+                            Salvataggio: {simulation.save_method === 'auto-save' ? 'Automatico' : 
+                                         simulation.save_method === 'manual-save' ? 'Manuale' : 'Completato'}
+                          </div>
+                          <div className="text-xs">
+                            Contatti: {hasContactData(simulation) ? '✓' : '✗'}
+                          </div>
+                        </div>
+                        {isExpired(simulation.expires_at) && <div className="text-red-600 mt-1">
+                            <strong>Stato:</strong> Scaduta
+                          </div>}
+                      </div>}
                    
                   
                   <div className="flex justify-end items-center gap-2">

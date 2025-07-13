@@ -21,7 +21,7 @@ interface SavedSimulation {
   percentage: number;
   form_slug: string;
   resume_code: string;
-  is_auto_save: boolean | null;
+  save_method: 'auto-save' | 'manual-save' | 'completed-save';
   simulation_id: string | null;
   form_state: any;
 }
@@ -284,11 +284,14 @@ export default function AdminSimulationDetail() {
                 <Badge className={`${simulation.percentage === 100 ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                   {simulation.percentage}% completata
                 </Badge>
-                {simulation.is_auto_save && (
-                  <Badge className="bg-blue-100 text-blue-800">
-                    Auto-salvata
-                  </Badge>
-                )}
+                <Badge className={`${
+                  simulation.save_method === 'auto-save' ? 'bg-blue-100 text-blue-800' : 
+                  simulation.save_method === 'manual-save' ? 'bg-green-100 text-green-800' : 
+                  'bg-emerald-100 text-emerald-800'
+                }`}>
+                  {simulation.save_method === 'auto-save' ? 'Auto-salvata' : 
+                   simulation.save_method === 'manual-save' ? 'Manuale' : 'Completata'}
+                </Badge>
                 {isExpired(simulation.expires_at) && (
                   <Badge className="bg-red-100 text-red-800">
                     Scaduta

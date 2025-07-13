@@ -47,6 +47,11 @@ export async function saveSimulation(
     
     console.log("Expires at:", expiresAt.toISOString());
     
+    // Determine save method based on completion and contact data
+    const saveMethod = (contactData.percentage === 100 && contactData.name && contactData.phone && contactData.email) 
+      ? 'completed-save' 
+      : 'manual-save';
+
     // Inserisci i dati nella tabella saved_simulations usando direttamente form_slug
     const { data, error } = await supabase
       .from('saved_simulations')
@@ -58,6 +63,7 @@ export async function saveSimulation(
         form_slug: formSlug,
         expires_at: expiresAt.toISOString(),
         percentage: contactData.percentage,
+        save_method: saveMethod,
         linked_form_id: null // Regular simulations don't have linked forms
       })
       .select('resume_code')

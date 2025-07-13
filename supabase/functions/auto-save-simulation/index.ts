@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
       form_slug: formSlug || 'simulazione-mutuo',
       expires_at: expiresAt.toISOString(),
       updated_at: new Date().toISOString(),
-      is_auto_save: true,
+      save_method: 'auto-save',
       // Contact fields are left NULL for auto-save (will be preserved if they exist)
       name: null,
       phone: null,
