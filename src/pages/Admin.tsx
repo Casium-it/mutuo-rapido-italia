@@ -146,7 +146,7 @@ export default function Admin() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
@@ -168,6 +168,21 @@ export default function Admin() {
                   <p className="text-sm text-gray-600">Simulazioni Salvate</p>
                   <p className="text-2xl font-bold text-blue-600">{stats.totalSimulations}</p>
                   <p className="text-xs text-gray-500">+{stats.recentSimulations} ultimi 7gg</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <Clock className="h-8 w-8 text-orange-600" />
+                <div>
+                  <p className="text-sm text-gray-600">% Form Completati</p>
+                  <p className="text-2xl font-bold text-orange-600">
+                    {stats.totalSimulations > 0 ? Math.round((stats.totalSubmissions / stats.totalSimulations) * 100) : 0}%
+                  </p>
+                  <p className="text-xs text-gray-500">submission / simulazioni</p>
                 </div>
               </div>
             </CardContent>
