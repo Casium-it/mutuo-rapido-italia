@@ -414,33 +414,12 @@ export default function AdminSimulations() {
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">
                       {getSimulationDisplayName(simulation)}
+                      <span className="ml-2 font-bold text-[#245C4F]">- {simulation.form_slug.toUpperCase()}</span>
                     </CardTitle>
                     <div className="flex items-center gap-2">
-                      <Badge variant="secondary">
-                        {simulation.form_slug}
+                      <Badge className={`text-lg font-bold ${simulation.percentage === 100 ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                        {simulation.percentage}%
                       </Badge>
-                      <Badge className={`${simulation.percentage === 100 ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                        {simulation.percentage}% completata
-                      </Badge>
-                      {simulation.is_auto_save && (
-                        <Badge className="bg-blue-100 text-blue-800">
-                          Auto-salvata
-                        </Badge>
-                      )}
-                      {isExpired(simulation.expires_at) && (
-                        <Badge className="bg-red-100 text-red-800">
-                          Scaduta
-                        </Badge>
-                      )}
-                      {hasContactData(simulation) ? (
-                        <Badge className="bg-green-100 text-green-800">
-                          Con contatti
-                        </Badge>
-                      ) : (
-                        <Badge className="bg-gray-100 text-gray-800">
-                          Senza contatti
-                        </Badge>
-                      )}
                     </div>
                   </div>
                 </CardHeader>
@@ -478,9 +457,43 @@ export default function AdminSimulations() {
 
                   {simulation.simulation_id && (
                     <div className="text-sm text-gray-600 mb-4">
-                      <strong>ID Simulazione:</strong> {simulation.simulation_id}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                        <div>
+                          <strong>ID Simulazione:</strong> {simulation.simulation_id}
+                        </div>
+                        <div>
+                          <strong>Tipo Salvataggio:</strong> {simulation.is_auto_save ? 'Auto-salvata' : 'Manuale'}
+                        </div>
+                        <div>
+                          <strong>Contatti:</strong> {hasContactData(simulation) ? 'Con contatti' : 'Senza contatti'}
+                        </div>
+                        {isExpired(simulation.expires_at) && (
+                          <div className="text-red-600">
+                            <strong>Stato:</strong> Scaduta
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  )}
+                   )}
+                   
+                   {!simulation.simulation_id && (
+                     <div className="text-sm text-gray-600 mb-4">
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                         <div>
+                           <strong>Tipo Salvataggio:</strong> {simulation.is_auto_save ? 'Auto-salvata' : 'Manuale'}
+                         </div>
+                         <div>
+                           <strong>Contatti:</strong> {hasContactData(simulation) ? 'Con contatti' : 'Senza contatti'}
+                         </div>
+                         {isExpired(simulation.expires_at) && (
+                           <div className="text-red-600">
+                             <strong>Stato:</strong> Scaduta
+                           </div>
+                         )}
+                       </div>
+                     </div>
+                   )}
+                   
                   
                   <div className="flex justify-end items-center gap-2">
                     <Button
