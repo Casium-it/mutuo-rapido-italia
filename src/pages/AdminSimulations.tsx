@@ -416,17 +416,17 @@ export default function AdminSimulations() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Clock className="h-4 w-4" />
+                  <div className="space-y-1 mb-3">
+                    <div className="flex items-center gap-2 text-xs text-gray-600">
+                      <Clock className="h-3 w-3" />
                       Aggiornata: {formatDate(simulation.updated_at)}
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <CalendarCheck className="h-4 w-4" />
+                    <div className="flex items-center gap-2 text-xs text-gray-600">
+                      <CalendarCheck className="h-3 w-3" />
                       Creata: {formatDate(simulation.created_at)}
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Calendar className="h-4 w-4" />
+                    <div className="flex items-center gap-2 text-xs text-gray-600">
+                      <Calendar className="h-3 w-3" />
                       Scadenza: {formatDate(simulation.expires_at)}
                     </div>
                   </div>
@@ -454,64 +454,40 @@ export default function AdminSimulations() {
 
                   {simulation.simulation_id && (
                     <div className="text-sm text-gray-600 mb-3">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        <div>
-                          <strong>ID Simulazione:</strong> {simulation.simulation_id}
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-1">
-                            <Save className="h-3 w-3" />
-                            <span className="text-xs">Salvataggio: {simulation.is_auto_save ? 'Automatico' : 'Manuale'}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            {hasContactData(simulation) ? (
-                              <>
-                                <Check className="h-3 w-3 text-green-600" />
-                                <span className="text-xs">Contatti</span>
-                              </>
-                            ) : (
-                              <>
-                                <X className="h-3 w-3 text-red-600" />
-                                <span className="text-xs">Contatti</span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                        {isExpired(simulation.expires_at) && (
-                          <div className="text-red-600">
-                            <strong>Stato:</strong> Scaduta
-                          </div>
-                        )}
+                      <div>
+                        <strong>ID Simulazione:</strong> {simulation.simulation_id}
                       </div>
+                      <div className="space-y-1 mt-1">
+                        <div className="text-xs">
+                          Salvataggio: {simulation.is_auto_save ? 'Automatico' : 'Manuale'}
+                        </div>
+                        <div className="text-xs">
+                          Contatti: {hasContactData(simulation) ? '✓' : '✗'}
+                        </div>
+                      </div>
+                      {isExpired(simulation.expires_at) && (
+                        <div className="text-red-600 mt-1">
+                          <strong>Stato:</strong> Scaduta
+                        </div>
+                      )}
                     </div>
                    )}
                    
                    {!simulation.simulation_id && (
                      <div className="text-sm text-gray-600 mb-3">
-                       <div className="flex items-center gap-4">
-                         <div className="flex items-center gap-1">
-                           <Save className="h-3 w-3" />
-                           <span className="text-xs">Salvataggio: {simulation.is_auto_save ? 'Automatico' : 'Manuale'}</span>
+                       <div className="space-y-1">
+                         <div className="text-xs">
+                           Salvataggio: {simulation.is_auto_save ? 'Automatico' : 'Manuale'}
                          </div>
-                         <div className="flex items-center gap-1">
-                           {hasContactData(simulation) ? (
-                             <>
-                               <Check className="h-3 w-3 text-green-600" />
-                               <span className="text-xs">Contatti</span>
-                             </>
-                           ) : (
-                             <>
-                               <X className="h-3 w-3 text-red-600" />
-                               <span className="text-xs">Contatti</span>
-                             </>
-                           )}
+                         <div className="text-xs">
+                           Contatti: {hasContactData(simulation) ? '✓' : '✗'}
                          </div>
-                         {isExpired(simulation.expires_at) && (
-                           <div className="text-red-600">
-                             <strong>Stato:</strong> Scaduta
-                           </div>
-                         )}
                        </div>
+                       {isExpired(simulation.expires_at) && (
+                         <div className="text-red-600 mt-1">
+                           <strong>Stato:</strong> Scaduta
+                         </div>
+                       )}
                      </div>
                    )}
                    
