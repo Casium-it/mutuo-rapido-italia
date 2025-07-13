@@ -29,7 +29,7 @@ export function ExitConfirmationDialog({
 }: ExitConfirmationDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onClose}>
-      <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-md mx-auto p-4 sm:p-6">
+      <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-lg mx-auto p-4 sm:p-6">
         <AlertDialogHeader className="space-y-3">
           <AlertDialogTitle className="text-lg sm:text-xl font-semibold text-gray-900 text-center sm:text-left">
             Vuoi davvero uscire dalla simulazione?
@@ -43,7 +43,7 @@ export function ExitConfirmationDialog({
           </AlertDialogDescription>
         </AlertDialogHeader>
         
-        <AlertDialogFooter className="flex flex-col gap-3 mt-6">
+        <AlertDialogFooter className="flex flex-col gap-3 mt-6 sm:gap-2">
           {/* Primary action - Continue simulation */}
           <AlertDialogCancel 
             onClick={onClose}
@@ -57,13 +57,13 @@ export function ExitConfirmationDialog({
             <Button
               variant="outline"
               onClick={onSaveAndExit}
-              className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50 py-3"
+              className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50 py-3 min-w-0"
             >
               Salva ed esci
             </Button>
             <AlertDialogAction
               onClick={onConfirmExit}
-              className="flex-1 bg-red-600 hover:bg-red-700 text-white py-3"
+              className="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 min-w-0"
             >
               Esci senza salvare
             </AlertDialogAction>
