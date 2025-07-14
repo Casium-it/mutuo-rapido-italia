@@ -7,7 +7,9 @@ import { useNavigate } from "react-router-dom";
 const Simulazioni = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-  const simpleKeyPoints = [{
+  // ORIGINAL FULL KEY POINTS (preserved for future restoration):
+  /* 
+  const simpleKeyPointsFull = [{
     icon: Clock,
     text: "minuti per completare",
     highlight: "2"
@@ -23,7 +25,8 @@ const Simulazioni = () => {
     icon: Calculator,
     text: "Solo calcolatore fattibilità mutuo"
   }];
-  const advancedKeyPoints = [{
+  
+  const advancedKeyPointsFull = [{
     icon: Clock,
     text: "minuti per completare",
     highlight: "6"
@@ -38,6 +41,28 @@ const Simulazioni = () => {
   }, {
     icon: Check,
     text: "Ottieni il tuo mutuo 100% online"
+  }];
+  */
+
+  // SIMPLIFIED KEY POINTS (only time and precision):
+  const simpleKeyPoints = [{
+    icon: Clock,
+    text: "minuti per completare",
+    highlight: "2"
+  }, {
+    icon: Percent,
+    text: "di precisione",
+    highlight: "68%"
+  }];
+  
+  const advancedKeyPoints = [{
+    icon: Clock,
+    text: "minuti per completare",
+    highlight: "6"
+  }, {
+    icon: Percent,
+    text: "di precisione (il migliore in Italia!)",
+    highlight: "98%"
   }];
   const handlePathSelect = (path: string) => {
     navigate(path);
