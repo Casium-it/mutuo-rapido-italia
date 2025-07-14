@@ -62,14 +62,14 @@ const Simulazioni = () => {
         </div>
 
         <div className="flex flex-col md:flex-row gap-6 justify-center items-center md:items-stretch max-w-3xl mx-auto">
-          {/* Simulazione Veloce - Disabled */}
+          {/* Simulazione Veloce */}
           <PathOption 
             title="Simulazione Veloce"
             description="Analisi rapida prefattibilità mutuo"
             keyPoints={simpleKeyPoints}
-            ctaLabel="Veloce - Presto disponibile"
+            ctaLabel="Inizia Veloce"
             variant="primary"
-            disabled={true}
+            onClick={() => handlePathSelect("/simulazione-mutuo-veloce")}
           />
 
           {/* Simulazione Avanzata */}
