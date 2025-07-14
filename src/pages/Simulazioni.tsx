@@ -69,7 +69,7 @@ const Simulazioni = () => {
             keyPoints={simpleKeyPoints}
             ctaLabel="Inizia Veloce"
             variant="primary"
-            onClick={() => handlePathSelect("/simulazione-mutuo-veloce")}
+            onClick={() => handlePathSelect("/simulazione/simulazione-mutuo-veloce/introduzione/soggetto_acquisto")}
           />
 
           {/* Simulazione Avanzata */}
