@@ -56,43 +56,38 @@ export default function AdminLeads() {
 
   const fetchSubmissions = async () => {
     try {
-      // First get all forms to create a mapping
-      const { data: formsData, error: formsError } = await supabase
-        .from('forms')
-        .select('slug, title');
-
-      if (formsError) {
-        console.error('Error fetching forms:', formsError);
-      } else {
-        setForms(formsData || []);
-      }
-
-      // Then get submissions
-      const { data, error } = await supabase
+      // Get submissions
+      const { data: submissionsData, error: submissionsError } = await supabase
         .from('form_submissions')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching submissions:', error);
+      if (submissionsError) {
+        console.error('Error fetching submissions:', submissionsError);
         toast({
           title: "Errore",
           description: "Errore nel caricamento delle submissions",
           variant: "destructive"
         });
-      } else {
-        // Map form titles to submissions
-        const formsMap = (formsData || []).reduce((acc, form) => {
-          acc[form.slug] = form.title;
-          return acc;
-        }, {} as Record<string, string>);
-
-        const mappedData = (data || []).map(submission => ({
-          ...submission,
-          form_title: formsMap[submission.form_type] || submission.form_type
-        }));
-        setSubmissions(mappedData);
+        return;
       }
+
+      // Get forms for mapping
+      const { data: formsData } = await supabase
+        .from('forms')
+        .select('slug, title');
+
+      const formsMap = (formsData || []).reduce((acc, form) => {
+        acc[form.slug] = form.title;
+        return acc;
+      }, {} as Record<string, string>);
+
+      const mappedData = (submissionsData || []).map(submission => ({
+        ...submission,
+        form_title: formsMap[submission.form_type] || submission.form_type
+      }));
+      
+      setSubmissions(mappedData);
     } catch (error) {
       console.error('Error:', error);
       toast({
