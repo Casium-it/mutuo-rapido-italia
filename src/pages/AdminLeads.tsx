@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useEffect, useState, useLayoutEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -54,16 +54,62 @@ export default function AdminLeads() {
   const [phoneFilter, setPhoneFilter] = useState<'all' | 'with' | 'without'>('all');
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Initialize filters from URL params
+  // Session Storage helpers
+  const saveFiltersToSession = (status: string, phone: 'all' | 'with' | 'without') => {
+    try {
+      sessionStorage.setItem('adminLeads_statusFilter', status);
+      sessionStorage.setItem('adminLeads_phoneFilter', phone);
+    } catch (error) {
+      console.warn('Could not save filters to session storage:', error);
+    }
+  };
+
+  const loadFiltersFromSession = () => {
+    try {
+      const savedStatus = sessionStorage.getItem('adminLeads_statusFilter') || 'all';
+      const savedPhone = sessionStorage.getItem('adminLeads_phoneFilter') || 'all';
+      return { status: savedStatus, phone: savedPhone as 'all' | 'with' | 'without' };
+    } catch (error) {
+      console.warn('Could not load filters from session storage:', error);
+      return { status: 'all', phone: 'all' as const };
+    }
+  };
+
+  const saveScrollPosition = () => {
+    try {
+      sessionStorage.setItem('adminLeads_scrollPosition', window.pageYOffset.toString());
+    } catch (error) {
+      console.warn('Could not save scroll position:', error);
+    }
+  };
+
+  const restoreScrollPosition = () => {
+    try {
+      const savedPosition = sessionStorage.getItem('adminLeads_scrollPosition');
+      if (savedPosition) {
+        window.scrollTo(0, parseInt(savedPosition));
+        sessionStorage.removeItem('adminLeads_scrollPosition'); // Clean up after use
+      }
+    } catch (error) {
+      console.warn('Could not restore scroll position:', error);
+    }
+  };
+
+  // Initialize filters from session storage
   useEffect(() => {
-    const statusParam = searchParams.get('status') || 'all';
-    const phoneParam = searchParams.get('phone') || 'all';
-    
-    setStatusFilter(statusParam);
-    setPhoneFilter(phoneParam as 'all' | 'with' | 'without');
-  }, [searchParams]);
+    const { status, phone } = loadFiltersFromSession();
+    setStatusFilter(status);
+    setPhoneFilter(phone);
+  }, []);
+
+  // Restore scroll position after component mounts and DOM is ready
+  useLayoutEffect(() => {
+    const timer = setTimeout(() => {
+      restoreScrollPosition();
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     fetchSubmissions();
@@ -228,13 +274,7 @@ export default function AdminLeads() {
               <Filter className="h-4 w-4 text-gray-500" />
               <Select value={statusFilter} onValueChange={(value) => {
                 setStatusFilter(value);
-                const newParams = new URLSearchParams(searchParams);
-                if (value === 'all') {
-                  newParams.delete('status');
-                } else {
-                  newParams.set('status', value);
-                }
-                setSearchParams(newParams);
+                saveFiltersToSession(value, phoneFilter);
               }}>
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="Filtra per status" />
@@ -262,13 +302,7 @@ export default function AdminLeads() {
               <Label htmlFor="phone-filter" className="text-sm text-gray-600">Telefono:</Label>
               <Select value={phoneFilter} onValueChange={(value: 'all' | 'with' | 'without') => {
                 setPhoneFilter(value);
-                const newParams = new URLSearchParams(searchParams);
-                if (value === 'all') {
-                  newParams.delete('phone');
-                } else {
-                  newParams.set('phone', value);
-                }
-                setSearchParams(newParams);
+                saveFiltersToSession(statusFilter, value);
               }}>
                 <SelectTrigger className="w-32">
                   <SelectValue />
@@ -388,7 +422,10 @@ export default function AdminLeads() {
                   
                   <div className="flex justify-end items-center gap-2">
                     <Button
-                      onClick={() => navigate(`/admin/leads/${submission.id}`)}
+                      onClick={() => {
+                        saveScrollPosition();
+                        navigate(`/admin/leads/${submission.id}`);
+                      }}
                       className="bg-[#245C4F] hover:bg-[#1e4f44] flex items-center gap-2"
                     >
                       <Eye className="h-4 w-4" />
