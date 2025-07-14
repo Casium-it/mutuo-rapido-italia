@@ -6,7 +6,7 @@ import { LeadStatus } from '@/types/leadStatus';
 export interface PDFSubmissionData {
   id: string;
   created_at: string;
-  form_type: string;
+  form_title: string;
   phone_number: string | null;
   consulting: boolean | null;
   user_identifier: string | null;
@@ -16,6 +16,7 @@ export interface PDFSubmissionData {
   email: string | null;
   notes: string | null;
   lead_status: LeadStatus;
+  mediatore: string | null;
   responses: Array<{
     id: string;
     question_id: string;
@@ -255,9 +256,10 @@ const generateFirstPage = (pdf: jsPDF, data: PDFSubmissionData): void => {
     `Email: ${data.email || 'Non specificata'}`,
     `Telefono: ${data.phone_number || 'Non specificato'}`,
     `Status: ${getLeadStatusLabel(data.lead_status)}`,
-    `Tipo Form: ${data.form_type}`,
+    `Tipo Form: ${data.form_title}`,
     `Data Invio: ${formatDate(data.created_at)}`,
-    `Consulenza: ${data.consulting ? 'Richiesta' : 'Non richiesta'}`
+    `Consulenza: ${data.consulting ? 'Richiesta' : 'Non richiesta'}`,
+    `Mediatore: ${data.mediatore || 'Non specificato'}`
   ];
   
   leadInfo.forEach(info => {

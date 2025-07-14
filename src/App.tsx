@@ -31,6 +31,7 @@ import AdminBlocks from "./pages/AdminBlocks";
 import AdminBlockDetail from "./pages/AdminBlockDetail";
 
 import AdminSimulationDetail from "./pages/AdminSimulationDetail";
+import AdminLeadDetail from "./pages/AdminLeadDetail";
 import AdminNotifications from "./pages/AdminNotifications";
 import AdminForms from "./pages/AdminForms";
 
@@ -84,6 +85,11 @@ const AppWithTracking = () => {
       <Route path="/admin/leads" element={
         <ProtectedRoute requireAdmin>
           <AdminLeads />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/leads/:leadId" element={
+        <ProtectedRoute requireAdmin>
+          <AdminLeadDetail />
         </ProtectedRoute>
       } />
       <Route path="/admin/simulations" element={
