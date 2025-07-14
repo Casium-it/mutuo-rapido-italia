@@ -99,7 +99,7 @@ const Simulazioni = () => {
 
         <div className="flex flex-col md:flex-row gap-6 justify-center items-center md:items-stretch max-w-3xl mx-auto">
           {/* Simulazione Avanzata */}
-          <PathOption title="Simulazione Avanzata" description="Analisi completa e assistenza personalizzata" keyPoints={advancedKeyPoints} ctaLabel="Inizia Avanzata" variant="secondary" onClick={() => handlePathSelect("/simulazione-avanzata")} />
+          <PathOption title="Simulazione Avanzata" description="Analisi completa e mutuo 100% online" keyPoints={advancedKeyPoints} ctaLabel="Inizia Avanzata" variant="secondary" onClick={() => handlePathSelect("/simulazione-avanzata")} />
 
           {/* Simulazione Veloce */}
           <PathOption title="Simulazione Veloce" description="Analisi rapida prefattibilità mutuo" keyPoints={simpleKeyPoints} ctaLabel="Inizia Veloce" variant="primary" onClick={() => handlePathSelect("/simulazione/simulazione-mutuo-veloce/introduzione/tipo_mutuo")} />
