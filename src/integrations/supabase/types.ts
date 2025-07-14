@@ -121,6 +121,7 @@ export type Database = {
           email: string | null
           expires_at: string
           first_name: string | null
+          form_id: string | null
           form_type: string
           id: string
           last_name: string | null
@@ -137,6 +138,7 @@ export type Database = {
           email?: string | null
           expires_at: string
           first_name?: string | null
+          form_id?: string | null
           form_type: string
           id?: string
           last_name?: string | null
@@ -153,6 +155,7 @@ export type Database = {
           email?: string | null
           expires_at?: string
           first_name?: string | null
+          form_id?: string | null
           form_type?: string
           id?: string
           last_name?: string | null
@@ -163,7 +166,15 @@ export type Database = {
           phone_number?: string | null
           user_identifier?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "form_submissions_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       form_versions: {
         Row: {

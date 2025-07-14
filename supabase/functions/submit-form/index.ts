@@ -118,11 +118,11 @@ serve(async (req) => {
     }
 
     const { formData, blocks } = formResult;
-    const formType = formData.form_type;
+    const formId = formData.id;
 
     console.log('📋 Form submission details:', {
       formSlug,
-      formType,
+      formId,
       responseCount: Object.keys(formState.responses || {}).length,
       activeBlocks: formState.activeBlocks?.length || 0,
       completedBlocks: formState.completedBlocks?.length || 0,
@@ -143,7 +143,8 @@ serve(async (req) => {
       .from('form_submissions')
       .insert({
         user_identifier: referralId,
-        form_type: formType,
+        form_id: formId,
+        form_type: formData.form_type, // Keep for backwards compatibility during migration
         expires_at: expiresAt.toISOString(),
         metadata: { 
           blocks: formState.activeBlocks,
@@ -254,7 +255,7 @@ serve(async (req) => {
     console.log('🎉 Form submission completed successfully in', processingTime, 'ms');
     console.log('📊 Final stats:', {
       submissionId: submission.id,
-      formType,
+      formId,
       formVersion: formData.version,
       responseCount: responsesData.length,
       foundQuestions: foundQuestionIds.length,

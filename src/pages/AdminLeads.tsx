@@ -56,10 +56,16 @@ export default function AdminLeads() {
 
   const fetchSubmissions = async () => {
     try {
-      // Get submissions
+      // Get submissions with joined form data
       const { data: submissionsData, error: submissionsError } = await supabase
         .from('form_submissions')
-        .select('*')
+        .select(`
+          *,
+          forms (
+            title,
+            slug
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (submissionsError) {
@@ -72,19 +78,10 @@ export default function AdminLeads() {
         return;
       }
 
-      // Get forms for mapping
-      const { data: formsData } = await supabase
-        .from('forms')
-        .select('slug, title');
-
-      const formsMap = (formsData || []).reduce((acc, form) => {
-        acc[form.slug] = form.title;
-        return acc;
-      }, {} as Record<string, string>);
-
+      // Map the data to include form_title from the joined form
       const mappedData = (submissionsData || []).map(submission => ({
         ...submission,
-        form_title: formsMap[submission.form_type] || submission.form_type
+        form_title: submission.forms?.title || 'Form non trovato'
       }));
       
       setSubmissions(mappedData);
