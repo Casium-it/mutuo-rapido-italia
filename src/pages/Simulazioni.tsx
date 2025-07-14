@@ -4,41 +4,52 @@ import { PathOption } from "@/components/PathOption";
 import { Clock, Percent, Building2, Calculator, Check } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
-
 const Simulazioni = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-
-  const simpleKeyPoints = [
-    { icon: Clock, text: "minuti per completare", highlight: "2" },
-    { icon: Building2, text: "banche, offerte e condizioni confrontate", highlight: "48" },
-    { icon: Percent, text: "di precisione", highlight: "68%" },
-    { icon: Calculator, text: "Solo calcolatore fattibilità mutuo" },
-  ];
-
-  const advancedKeyPoints = [
-    { icon: Clock, text: "minuti per completare", highlight: "6" },
-    { icon: Building2, text: "banche, offerte e condizioni confrontate", highlight: "108" },
-    { icon: Percent, text: "di precisione (il migliore in Italia!)", highlight: "98%" },
-    { icon: Check, text: "Ottieni il tuo mutuo 100% online" },
-  ];
-
+  const simpleKeyPoints = [{
+    icon: Clock,
+    text: "minuti per completare",
+    highlight: "2"
+  }, {
+    icon: Building2,
+    text: "banche, offerte e condizioni confrontate",
+    highlight: "48"
+  }, {
+    icon: Percent,
+    text: "di precisione",
+    highlight: "68%"
+  }, {
+    icon: Calculator,
+    text: "Solo calcolatore fattibilità mutuo"
+  }];
+  const advancedKeyPoints = [{
+    icon: Clock,
+    text: "minuti per completare",
+    highlight: "6"
+  }, {
+    icon: Building2,
+    text: "banche, offerte e condizioni confrontate",
+    highlight: "108"
+  }, {
+    icon: Percent,
+    text: "di precisione (il migliore in Italia!)",
+    highlight: "98%"
+  }, {
+    icon: Check,
+    text: "Ottieni il tuo mutuo 100% online"
+  }];
   const handlePathSelect = (path: string) => {
     navigate(path);
   };
-
-  return (
-    <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
+  return <div className="min-h-screen flex flex-col bg-[fff7f0] bg-[#fff7f0]">
       {/* Header */}
       <header className="container mx-auto py-6 px-4 flex justify-between items-center">
         <div className="cursor-pointer" onClick={() => navigate("/")}>
           <Logo />
         </div>
         <div className="flex items-center gap-4">
-          <button 
-            onClick={() => navigate("/")}
-            className="text-gray-700 hover:text-[#245C4F] font-medium transition-colors"
-          >
+          <button onClick={() => navigate("/")} className="text-gray-700 hover:text-[#245C4F] font-medium transition-colors">
             Home
           </button>
         </div>
@@ -63,24 +74,10 @@ const Simulazioni = () => {
 
         <div className="flex flex-col md:flex-row gap-6 justify-center items-center md:items-stretch max-w-3xl mx-auto">
           {/* Simulazione Veloce */}
-          <PathOption 
-            title="Simulazione Veloce"
-            description="Analisi rapida prefattibilità mutuo"
-            keyPoints={simpleKeyPoints}
-            ctaLabel="Inizia Veloce"
-            variant="primary"
-            onClick={() => handlePathSelect("/simulazione/simulazione-mutuo-veloce/introduzione/tipo_mutuo")}
-          />
+          <PathOption title="Simulazione Veloce" description="Analisi rapida prefattibilità mutuo" keyPoints={simpleKeyPoints} ctaLabel="Inizia Veloce" variant="primary" onClick={() => handlePathSelect("/simulazione/simulazione-mutuo-veloce/introduzione/tipo_mutuo")} />
 
           {/* Simulazione Avanzata */}
-          <PathOption 
-            title="Simulazione Avanzata"
-            description="Analisi completa e assistenza personalizzata"
-            keyPoints={advancedKeyPoints}
-            ctaLabel="Inizia Avanzata"
-            variant="secondary"
-            onClick={() => handlePathSelect("/simulazione-avanzata")}
-          />
+          <PathOption title="Simulazione Avanzata" description="Analisi completa e assistenza personalizzata" keyPoints={advancedKeyPoints} ctaLabel="Inizia Avanzata" variant="secondary" onClick={() => handlePathSelect("/simulazione-avanzata")} />
         </div>
       </main>
 
@@ -89,10 +86,7 @@ const Simulazioni = () => {
         <div className="flex justify-between items-center mb-4">
           <p className="text-sm text-gray-600">© 2025 GoMutuo.it - Tutti i diritti riservati</p>
           <div className="flex gap-4">
-            <button 
-              onClick={() => navigate("/privacy")}
-              className="text-sm text-gray-600 hover:text-[#245C4F]"
-            >
+            <button onClick={() => navigate("/privacy")} className="text-sm text-gray-600 hover:text-[#245C4F]">
               Privacy
             </button>
             <a href="#" className="text-sm text-gray-600 hover:text-[#245C4F]">Termini</a>
@@ -110,8 +104,6 @@ const Simulazioni = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default Simulazioni;
