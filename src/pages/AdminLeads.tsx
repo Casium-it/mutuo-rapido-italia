@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { Eye, ArrowLeft, Phone, Calendar, FileText, Mail, User, StickyNote, Trash2 } from 'lucide-react';
+import { Eye, ArrowLeft, Phone, Calendar, FileText, Mail, User, StickyNote, Trash2, Filter } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LeadStatusBadge } from '@/components/admin/LeadStatusBadge';
 import { LeadStatus } from '@/types/leadStatus';
 import {
@@ -47,6 +48,7 @@ export default function AdminLeads() {
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [forms, setForms] = useState<FormInfo[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -158,6 +160,11 @@ export default function AdminLeads() {
     });
   };
 
+  // Filter submissions based on status
+  const filteredSubmissions = statusFilter === 'all' 
+    ? submissions 
+    : submissions.filter(submission => submission.lead_status === statusFilter);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f8f5f1]">
@@ -197,26 +204,57 @@ export default function AdminLeads() {
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold text-gray-900">Form Submissions</h2>
-            <p className="text-gray-600">Totale: {submissions.length} submissions</p>
+            <p className="text-gray-600">Totale: {filteredSubmissions.length} submissions</p>
           </div>
-          <Button onClick={fetchSubmissions} variant="outline">
-            Aggiorna
-          </Button>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-gray-500" />
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Filtra per status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutti gli status</SelectItem>
+                  <SelectItem value="not_contacted">Non Contattato</SelectItem>
+                  <SelectItem value="non_risponde_x1">Non Risponde x1</SelectItem>
+                  <SelectItem value="non_risponde_x2">Non Risponde x2</SelectItem>
+                  <SelectItem value="non_risponde_x3">Non Risponde x3</SelectItem>
+                  <SelectItem value="non_interessato">Non Interessato</SelectItem>
+                  <SelectItem value="da_risentire">Da Risentire</SelectItem>
+                  <SelectItem value="prenotata_consulenza">Prenotata Consulenza</SelectItem>
+                  <SelectItem value="pratica_bocciata">Pratica Bocciata</SelectItem>
+                  <SelectItem value="converted">Convertito</SelectItem>
+                  <SelectItem value="first_contact">Primo Contatto</SelectItem>
+                  <SelectItem value="advanced_conversations">Conversazioni Avanzate</SelectItem>
+                  <SelectItem value="rejected">Respinto</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={fetchSubmissions} variant="outline">
+              Aggiorna
+            </Button>
+          </div>
         </div>
 
-        {submissions.length === 0 ? (
+        {filteredSubmissions.length === 0 ? (
           <Card>
             <CardContent className="flex items-center justify-center py-12">
               <div className="text-center">
                 <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Nessuna submission trovata</h3>
-                <p className="text-gray-600">Le submissions appariranno qui quando gli utenti invieranno i form.</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  {statusFilter === 'all' ? 'Nessuna submission trovata' : 'Nessuna submission con questo status'}
+                </h3>
+                <p className="text-gray-600">
+                  {statusFilter === 'all' 
+                    ? 'Le submissions appariranno qui quando gli utenti invieranno i form.' 
+                    : 'Prova a cambiare il filtro per vedere altre submissions.'}
+                </p>
               </div>
             </CardContent>
           </Card>
         ) : (
           <div className="grid gap-4">
-            {submissions.map((submission) => (
+            {filteredSubmissions.map((submission) => (
               <Card key={submission.id} className="hover:shadow-md transition-shadow">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
