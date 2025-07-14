@@ -1,7 +1,7 @@
+
 import React from "react";
 import { Logo } from "@/components/Logo";
-import { PathOption } from "@/components/PathOption";
-import { Clock, Percent, Building2, Calculator, Check } from "lucide-react";
+import { Clock, Percent, ArrowRight } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
 
@@ -9,18 +9,14 @@ const Simulazioni = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
 
-  const simpleKeyPoints = [
-    { icon: Clock, text: "minuti per completare", highlight: "2" },
-    { icon: Building2, text: "banche, offerte e condizioni confrontate", highlight: "48" },
-    { icon: Percent, text: "di precisione", highlight: "68%" },
-    { icon: Calculator, text: "Solo calcolatore fattibilità mutuo" },
-  ];
-
   const advancedKeyPoints = [
     { icon: Clock, text: "minuti per completare", highlight: "6" },
-    { icon: Building2, text: "banche, offerte e condizioni confrontate", highlight: "108" },
     { icon: Percent, text: "di precisione (il migliore in Italia!)", highlight: "98%" },
-    { icon: Check, text: "Ottieni il tuo mutuo 100% online" },
+  ];
+
+  const simpleKeyPoints = [
+    { icon: Clock, text: "minuti per completare", highlight: "2" },
+    { icon: Percent, text: "di precisione", highlight: "68%" },
   ];
 
   const handlePathSelect = (path: string) => {
@@ -61,25 +57,24 @@ const Simulazioni = () => {
           <div className="absolute bottom-1/4 left-1/3 w-64 h-64 bg-gradient-to-r from-[#E8F5E9] to-[#F0EAE0] rounded-full blur-3xl opacity-20 animate-float-rotate"></div>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-6 justify-center items-center md:items-stretch max-w-3xl mx-auto">
-          {/* Simulazione Veloce */}
-          <PathOption 
-            title="Simulazione Veloce"
-            description="Analisi rapida prefattibilità mutuo"
-            keyPoints={simpleKeyPoints}
-            ctaLabel="Inizia Veloce"
-            variant="primary"
-            onClick={() => handlePathSelect("/simulazione/simulazione-mutuo-veloce/introduzione/tipo_mutuo")}
-          />
-
-          {/* Simulazione Avanzata */}
-          <PathOption 
+        <div className="space-y-4 max-w-2xl mx-auto">
+          {/* Simulazione Avanzata - First */}
+          <OptionCard 
             title="Simulazione Avanzata"
             description="Analisi completa e assistenza personalizzata"
             keyPoints={advancedKeyPoints}
-            ctaLabel="Inizia Avanzata"
-            variant="secondary"
             onClick={() => handlePathSelect("/simulazione-avanzata")}
+            variant="advanced"
+            badge="Consigliato"
+          />
+
+          {/* Simulazione Veloce - Second */}
+          <OptionCard 
+            title="Simulazione Veloce"
+            description="Analisi rapida prefattibilità mutuo"
+            keyPoints={simpleKeyPoints}
+            onClick={() => handlePathSelect("/simulazione/simulazione-mutuo-veloce/introduzione/soggetto_acquisto")}
+            variant="simple"
           />
         </div>
       </main>
@@ -110,6 +105,76 @@ const Simulazioni = () => {
           </div>
         </div>
       </footer>
+    </div>
+  );
+};
+
+// Compact OptionCard component similar to SimulazioneAvanzata style
+interface KeyPoint {
+  icon: React.ElementType;
+  text: string;
+  highlight?: string;
+}
+
+interface OptionCardProps {
+  title: string;
+  description: string;
+  keyPoints: KeyPoint[];
+  onClick: () => void;
+  variant: "advanced" | "simple";
+  badge?: string;
+}
+
+const OptionCard = ({ 
+  title, 
+  description, 
+  keyPoints,
+  onClick,
+  variant,
+  badge
+}: OptionCardProps) => {
+  const isMobile = useIsMobile();
+  
+  return (
+    <div 
+      className="flex items-center justify-between p-4 bg-white rounded-[12px] border border-[#BEB8AE] hover:shadow-md transition-all group cursor-pointer shadow-[0_3px_0_0_#AFA89F] hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)]" 
+      onClick={onClick}
+    >
+      <div className="flex-1">
+        <div className="flex items-center gap-2 mb-2">
+          <h3 className="text-lg font-semibold font-['Inter'] text-gray-900">{title}</h3>
+          {badge && (
+            <span className="bg-[#245C4F] text-white text-xs px-2 py-1 rounded-md font-medium">
+              {badge}
+            </span>
+          )}
+        </div>
+        <p className="text-sm font-['Inter'] text-gray-500 mb-3">{description}</p>
+        
+        {/* Key Points */}
+        <div className="space-y-2">
+          {keyPoints.map((point, index) => (
+            <div key={index} className="flex items-center gap-2">
+              <div className="rounded-full p-1 flex-shrink-0 text-[#245C4F] bg-[#F8F4EF]">
+                <point.icon className="h-3 w-3" />
+              </div>
+              <div className="text-xs text-gray-700">
+                {point.highlight ? (
+                  <span>
+                    <span className="font-semibold">{point.highlight}</span> {point.text}
+                  </span>
+                ) : (
+                  point.text
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      <div className="bg-[#245C4F] hover:bg-[#1e4f44] p-3 rounded-[10px] transition-colors flex items-center justify-center ml-4 flex-shrink-0 shadow-[0_3px_0_0_#1a453e]">
+        <ArrowRight className="w-5 h-5 text-white" />
+      </div>
     </div>
   );
 };
