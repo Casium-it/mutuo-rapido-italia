@@ -41,7 +41,7 @@ export function PathOption({
         : "bg-[#F8F4EF] border-2 border-[#245C4F] shadow-[0_3px_0_0_#1a3f37] hover:shadow-[0_3px_4px_rgba(26,63,55,0.25)]"
     } w-full max-w-sm rounded-[12px]`}>
       {variant === "secondary" && (
-        <Badge variant="outline" className="absolute -top-3 left-0 bg-[#245C4F] text-white border-[#245C4F] hover:bg-[#1e4f44] hover:border-[#1e4f44] z-10">
+        <Badge variant="outline" className="absolute -top-3 right-0 bg-[#245C4F] text-white border-[#245C4F] hover:bg-[#1e4f44] hover:border-[#1e4f44] z-10">
           Consigliato
         </Badge>
       )}
