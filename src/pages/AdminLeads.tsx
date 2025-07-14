@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -54,6 +54,16 @@ export default function AdminLeads() {
   const [phoneFilter, setPhoneFilter] = useState<'all' | 'with' | 'without'>('all');
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Initialize filters from URL params
+  useEffect(() => {
+    const statusParam = searchParams.get('status') || 'all';
+    const phoneParam = searchParams.get('phone') || 'all';
+    
+    setStatusFilter(statusParam);
+    setPhoneFilter(phoneParam as 'all' | 'with' | 'without');
+  }, [searchParams]);
 
   useEffect(() => {
     fetchSubmissions();
@@ -216,7 +226,16 @@ export default function AdminLeads() {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-gray-500" />
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select value={statusFilter} onValueChange={(value) => {
+                setStatusFilter(value);
+                const newParams = new URLSearchParams(searchParams);
+                if (value === 'all') {
+                  newParams.delete('status');
+                } else {
+                  newParams.set('status', value);
+                }
+                setSearchParams(newParams);
+              }}>
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="Filtra per status" />
                 </SelectTrigger>
@@ -241,7 +260,16 @@ export default function AdminLeads() {
             <div className="flex items-center gap-2 border-l pl-4">
               <Phone className="h-4 w-4 text-gray-500" />
               <Label htmlFor="phone-filter" className="text-sm text-gray-600">Telefono:</Label>
-              <Select value={phoneFilter} onValueChange={(value: 'all' | 'with' | 'without') => setPhoneFilter(value)}>
+              <Select value={phoneFilter} onValueChange={(value: 'all' | 'with' | 'without') => {
+                setPhoneFilter(value);
+                const newParams = new URLSearchParams(searchParams);
+                if (value === 'all') {
+                  newParams.delete('phone');
+                } else {
+                  newParams.set('phone', value);
+                }
+                setSearchParams(newParams);
+              }}>
                 <SelectTrigger className="w-32">
                   <SelectValue />
                 </SelectTrigger>
