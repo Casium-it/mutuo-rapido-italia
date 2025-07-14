@@ -34,12 +34,19 @@ interface FormSubmission {
   email: string | null;
   notes: string | null;
   lead_status: LeadStatus;
+  form_title?: string;
+}
+
+interface FormInfo {
+  slug: string;
+  title: string;
 }
 
 export default function AdminLeads() {
   const [submissions, setSubmissions] = useState<FormSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [forms, setForms] = useState<FormInfo[]>([]);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -49,6 +56,18 @@ export default function AdminLeads() {
 
   const fetchSubmissions = async () => {
     try {
+      // First get all forms to create a mapping
+      const { data: formsData, error: formsError } = await supabase
+        .from('forms')
+        .select('slug, title');
+
+      if (formsError) {
+        console.error('Error fetching forms:', formsError);
+      } else {
+        setForms(formsData || []);
+      }
+
+      // Then get submissions
       const { data, error } = await supabase
         .from('form_submissions')
         .select('*')
@@ -62,7 +81,17 @@ export default function AdminLeads() {
           variant: "destructive"
         });
       } else {
-        setSubmissions(data || []);
+        // Map form titles to submissions
+        const formsMap = (formsData || []).reduce((acc, form) => {
+          acc[form.slug] = form.title;
+          return acc;
+        }, {} as Record<string, string>);
+
+        const mappedData = (data || []).map(submission => ({
+          ...submission,
+          form_title: formsMap[submission.form_type] || submission.form_type
+        }));
+        setSubmissions(mappedData);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -209,7 +238,7 @@ export default function AdminLeads() {
                     </CardTitle>
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary">
-                        {submission.form_type}
+                        {submission.form_title || submission.form_type}
                       </Badge>
                       {submission.consulting && (
                         <Badge className="bg-green-100 text-green-800">
