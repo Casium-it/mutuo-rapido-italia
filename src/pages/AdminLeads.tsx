@@ -24,7 +24,7 @@ import {
 interface FormSubmission {
   id: string;
   created_at: string;
-  form_type: string;
+  form_id: string | null;
   phone_number: string | null;
   consulting: boolean | null;
   user_identifier: string | null;
@@ -34,7 +34,7 @@ interface FormSubmission {
   email: string | null;
   notes: string | null;
   lead_status: LeadStatus;
-  form_title?: string;
+  form_title: string;
 }
 
 interface FormInfo {
@@ -230,7 +230,7 @@ export default function AdminLeads() {
                     </CardTitle>
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary">
-                        {submission.form_title || submission.form_type}
+                        {submission.form_title}
                       </Badge>
                       {submission.consulting && (
                         <Badge className="bg-green-100 text-green-800">

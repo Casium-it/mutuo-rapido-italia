@@ -122,7 +122,6 @@ export type Database = {
           expires_at: string
           first_name: string | null
           form_id: string | null
-          form_type: string
           id: string
           last_name: string | null
           lead_status: Database["public"]["Enums"]["lead_status"] | null
@@ -139,7 +138,6 @@ export type Database = {
           expires_at: string
           first_name?: string | null
           form_id?: string | null
-          form_type: string
           id?: string
           last_name?: string | null
           lead_status?: Database["public"]["Enums"]["lead_status"] | null
@@ -156,7 +154,6 @@ export type Database = {
           expires_at?: string
           first_name?: string | null
           form_id?: string | null
-          form_type?: string
           id?: string
           last_name?: string | null
           lead_status?: Database["public"]["Enums"]["lead_status"] | null

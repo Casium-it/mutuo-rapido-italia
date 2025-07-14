@@ -144,7 +144,6 @@ serve(async (req) => {
       .insert({
         user_identifier: referralId,
         form_id: formId,
-        form_type: formData.form_type, // Keep for backwards compatibility during migration
         expires_at: expiresAt.toISOString(),
         metadata: { 
           blocks: formState.activeBlocks,

@@ -66,7 +66,7 @@ class SubmittedFormStateService {
         ...state,
         formState: {
           ...state.formState,
-          answeredQuestions: new Set(state.formState.answeredQuestions as any)
+          answeredQuestions: new Set(Array.isArray(state.formState.answeredQuestions) ? state.formState.answeredQuestions : [])
         }
       }));
     } catch (error) {
