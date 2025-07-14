@@ -31,7 +31,7 @@ export function PathOption({
   disabled = false
 }: PathOptionProps) {
   return (
-    <Card className={`transition-all duration-300 ${
+    <Card className={`relative transition-all duration-300 ${
       disabled 
         ? "opacity-60 cursor-not-allowed" 
         : "hover-grow"
@@ -40,6 +40,11 @@ export function PathOption({
         ? "border border-[#BEB8AE] bg-white shadow-[0_3px_0_0_#AFA89F] hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)]" 
         : "bg-[#F8F4EF] border-2 border-[#245C4F] shadow-[0_3px_0_0_#1a3f37] hover:shadow-[0_3px_4px_rgba(26,63,55,0.25)]"
     } w-full max-w-sm rounded-[12px]`}>
+      {variant === "secondary" && (
+        <Badge variant="outline" className="absolute -top-3 left-0 bg-[#245C4F] text-white border-[#245C4F] hover:bg-[#1e4f44] hover:border-[#1e4f44] z-10">
+          Consigliato
+        </Badge>
+      )}
       <CardHeader className={`${
         variant === "primary" 
           ? "bg-white border-b border-[#BEB8AE]" 
@@ -49,11 +54,6 @@ export function PathOption({
           <CardTitle className={`text-xl font-bold ${variant === "secondary" ? "text-[#245C4F]" : "text-gray-700"}`}>
             {title}
           </CardTitle>
-          {variant === "secondary" && (
-            <Badge variant="outline" className="bg-[#245C4F] text-white border-[#245C4F] hover:bg-[#1e4f44] hover:border-[#1e4f44]">
-              Consigliato
-            </Badge>
-          )}
         </div>
         <CardDescription className={`text-sm pt-1 ${variant === "secondary" ? "text-gray-700" : "text-gray-500"}`}>
           {description}
