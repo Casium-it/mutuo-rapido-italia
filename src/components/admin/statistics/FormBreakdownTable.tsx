@@ -81,11 +81,9 @@ export function FormBreakdownTable({ formStats }: FormBreakdownTableProps) {
                         {formatNumber(form.simulations.current)}
                       </div>
                       <div className="text-xs text-gray-500">
-                        era {formatNumber(form.simulations.previous)} → <span className={`inline-flex items-center gap-1 ${getTrendColor(form.simulations.change)}`}>
-                          {getTrendIcon(form.simulations.change)}
-                          {form.simulations.change >= 0 ? '+' : ''}{formatNumber(form.simulations.change)}%
-                        </span>
+                        era {formatNumber(form.simulations.previous)} → {form.simulations.change >= 0 ? '+' : ''}{formatNumber(form.simulations.change)}%
                       </div>
+                      <div className="w-8 h-px bg-gray-300 mx-auto my-1"></div>
                       <div className="text-xs font-medium text-[#245C4F]">
                         - conv.
                       </div>
@@ -95,16 +93,14 @@ export function FormBreakdownTable({ formStats }: FormBreakdownTableProps) {
                   {/* Submissions */}
                   <td className="py-4 px-2 text-center">
                     <div className="space-y-1">
-                      <div className="text-lg font-bold text-blue-600">
+                      <div className="text-lg font-bold text-[#245C4F]">
                         {formatNumber(form.submissions.current)}
                       </div>
                       <div className="text-xs text-gray-500">
-                        era {formatNumber(form.submissions.previous)} → <span className={`inline-flex items-center gap-1 ${getTrendColor(form.submissions.change)}`}>
-                          {getTrendIcon(form.submissions.change)}
-                          {form.submissions.change >= 0 ? '+' : ''}{formatNumber(form.submissions.change)}%
-                        </span>
+                        era {formatNumber(form.submissions.previous)} → {form.submissions.change >= 0 ? '+' : ''}{formatNumber(form.submissions.change)}%
                       </div>
-                      <div className="text-xs font-medium text-blue-700">
+                      <div className="w-8 h-px bg-gray-300 mx-auto my-1"></div>
+                      <div className="text-xs font-medium text-[#245C4F]">
                         conv. al {form.submissions.conversionRate !== undefined ? formatPercent(form.submissions.conversionRate) : '0%'}
                       </div>
                     </div>
@@ -113,16 +109,14 @@ export function FormBreakdownTable({ formStats }: FormBreakdownTableProps) {
                   {/* Con Contatto */}
                   <td className="py-4 px-2 text-center">
                     <div className="space-y-1">
-                      <div className="text-lg font-bold text-purple-600">
+                      <div className="text-lg font-bold text-[#245C4F]">
                         {formatNumber(form.submissionsWithContact.current)}
                       </div>
                       <div className="text-xs text-gray-500">
-                        era {formatNumber(form.submissionsWithContact.previous)} → <span className={`inline-flex items-center gap-1 ${getTrendColor(form.submissionsWithContact.change)}`}>
-                          {getTrendIcon(form.submissionsWithContact.change)}
-                          {form.submissionsWithContact.change >= 0 ? '+' : ''}{formatNumber(form.submissionsWithContact.change)}%
-                        </span>
+                        era {formatNumber(form.submissionsWithContact.previous)} → {form.submissionsWithContact.change >= 0 ? '+' : ''}{formatNumber(form.submissionsWithContact.change)}%
                       </div>
-                      <div className="text-xs font-medium text-purple-700">
+                      <div className="w-8 h-px bg-gray-300 mx-auto my-1"></div>
+                      <div className="text-xs font-medium text-[#245C4F]">
                         conv. al {form.submissionsWithContact.conversionRate !== undefined ? formatPercent(form.submissionsWithContact.conversionRate) : '0%'}
                       </div>
                     </div>

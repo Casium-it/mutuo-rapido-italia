@@ -43,34 +43,28 @@ export function StatisticCard({ title, metric, icon, showConversion = false }: S
         {icon && <div className="text-gray-400">{icon}</div>}
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
+        <div className="space-y-2">
           {/* Main metric */}
           <div className="text-2xl font-bold text-[#245C4F]">
             {formatNumber(metric.current)}
           </div>
 
           {/* Previous period comparison */}
-          <div className="flex items-center gap-2 text-sm">
-            {getTrendIcon()}
-            <span className={cn("font-medium", getTrendColor())}>
-              {metric.change >= 0 ? '+' : ''}{formatNumber(metric.change)}
-            </span>
-            <span className={cn("font-medium", getTrendColor())}>
-              ({metric.changePercent >= 0 ? '+' : ''}{formatPercent(metric.changePercent)})
-            </span>
-          </div>
-
-          {/* Previous period total */}
           <div className="text-xs text-gray-500">
-            Periodo precedente: {formatNumber(metric.previous)}
+            era {formatNumber(metric.previous)} → {metric.change >= 0 ? '+' : ''}{formatNumber(metric.change)}%
           </div>
 
-          {/* Conversion rate if available */}
-          {showConversion && metric.conversionRate !== undefined && (
-            <div className="pt-2 border-t">
-              <div className="text-sm font-medium text-gray-700">
-                Tasso di conversione: {formatPercent(metric.conversionRate)}
-              </div>
+          {/* Add divider line for all cards */}
+          <div className="w-8 h-px bg-gray-300"></div>
+          
+          {/* Only show conversion rate for submissions, not for simulazioni salvate */}
+          {showConversion && metric.conversionRate !== undefined && title !== "Simulazioni Salvate" ? (
+            <div className="text-xs font-medium text-[#245C4F]">
+              {formatPercent(metric.conversionRate)} conv.
+            </div>
+          ) : (
+            <div className="text-xs text-transparent">
+              &nbsp;
             </div>
           )}
         </div>
