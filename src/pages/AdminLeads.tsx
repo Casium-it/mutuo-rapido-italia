@@ -1,17 +1,15 @@
 import React, { useEffect, useState, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/hooks/use-toast';
 import { Eye, ArrowLeft, Phone, Calendar, FileText, Mail, User, StickyNote, Trash2, Filter } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { LeadStatusBadge } from '@/components/admin/LeadStatusBadge';
-import { LeadStatus } from '@/types/leadStatus';
+import { useLeads, Lead, LeadFilters } from '@/hooks/useLeads';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,42 +22,14 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
-interface FormSubmission {
-  id: string;
-  created_at: string;
-  form_id: string | null;
-  phone_number: string | null;
-  consulting: boolean | null;
-  user_identifier: string | null;
-  metadata: any;
-  first_name: string | null;
-  last_name: string | null;
-  email: string | null;
-  notes: string | null;
-  mediatore: string | null;
-  lead_status: LeadStatus;
-  form_title: string;
-  forms?: {
-    slug: string;
-    title: string;
-  };
-}
-
-interface FormInfo {
-  slug: string;
-  title: string;
-}
-
 export default function AdminLeads() {
-  const [submissions, setSubmissions] = useState<FormSubmission[]>([]);
-  const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [forms, setForms] = useState<FormInfo[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [phoneFilter, setPhoneFilter] = useState<'all' | 'with' | 'without'>('all');
   const [formFilter, setFormFilter] = useState<string>('all');
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { leads, loading, forms, fetchLeads, deleteLead, filterLeads } = useLeads();
 
   // Session Storage helpers
   const saveFiltersToSession = (status: string, phone: 'all' | 'with' | 'without', form: string) => {
@@ -124,119 +94,13 @@ export default function AdminLeads() {
     return () => clearTimeout(timer);
   }, []);
 
-  useEffect(() => {
-    fetchSubmissions();
-  }, []);
+  // Leads are fetched automatically by the useLeads hook
 
-  const fetchSubmissions = async () => {
-    try {
-      // Get submissions with joined form data
-      const { data: submissionsData, error: submissionsError } = await supabase
-        .from('form_submissions')
-        .select(`
-          *,
-          forms (
-            title,
-            slug
-          )
-        `)
-        .order('created_at', { ascending: false });
-
-      if (submissionsError) {
-        console.error('Error fetching submissions:', submissionsError);
-        toast({
-          title: "Errore",
-          description: "Errore nel caricamento delle submissions",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Map the data to include form_title from the joined form
-      const mappedData = (submissionsData || []).map(submission => ({
-        ...submission,
-        form_title: submission.forms?.title || 'Form non trovato'
-      }));
-      
-      setSubmissions(mappedData);
-
-      // Extract unique forms for the filter
-      const uniqueForms = Array.from(
-        new Map(
-          mappedData
-            .filter(submission => submission.forms)
-            .map(submission => [
-              submission.forms.slug,
-              {
-                slug: submission.forms.slug,
-                title: submission.forms.title
-              }
-            ])
-        ).values()
-      );
-      
-      setForms(uniqueForms);
-    } catch (error) {
-      console.error('Error:', error);
-      toast({
-        title: "Errore",
-        description: "Errore imprevisto",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDeleteSubmission = async (submissionId: string) => {
-    setDeletingId(submissionId);
+  const handleDeleteLead = async (leadId: string) => {
+    setDeletingId(leadId);
     
-    try {
-      console.log('Starting deletion process for submission:', submissionId);
-      
-      // First delete related responses
-      const { error: responsesError } = await supabase
-        .from('form_responses')
-        .delete()
-        .eq('submission_id', submissionId);
-
-      if (responsesError) {
-        console.error('Error deleting responses:', responsesError);
-        throw responsesError;
-      }
-
-      console.log('Successfully deleted responses for submission:', submissionId);
-
-      // Then delete the submission
-      const { error: submissionError } = await supabase
-        .from('form_submissions')
-        .delete()
-        .eq('id', submissionId);
-
-      if (submissionError) {
-        console.error('Error deleting submission:', submissionError);
-        throw submissionError;
-      }
-
-      console.log('Successfully deleted submission:', submissionId);
-
-      // Update local state
-      setSubmissions(prev => prev.filter(s => s.id !== submissionId));
-      
-      toast({
-        title: "Successo",
-        description: "Submission eliminata con successo",
-      });
-    } catch (error) {
-      console.error('Error deleting submission:', error);
-      toast({
-        title: "Errore",
-        description: `Errore nell'eliminazione della submission: ${error.message}`,
-        variant: "destructive"
-      });
-    } finally {
-      setDeletingId(null);
-    }
+    const success = await deleteLead(leadId);
+    setDeletingId(null);
   };
 
   const formatDate = (dateString: string) => {
@@ -249,22 +113,15 @@ export default function AdminLeads() {
     });
   };
 
-  // Filter submissions based on status, phone and form
-  const filteredSubmissions = submissions.filter(submission => {
-    const statusMatch = statusFilter === 'all' || submission.lead_status === statusFilter;
-    const phoneMatch = phoneFilter === 'all' || 
-      (phoneFilter === 'with' && submission.phone_number) ||
-      (phoneFilter === 'without' && !submission.phone_number);
-    const formMatch = formFilter === 'all' || submission.forms?.slug === formFilter;
-    return statusMatch && phoneMatch && formMatch;
-  });
+  // Filter leads based on status, phone and form
+  const filteredLeads = filterLeads(leads, { status: statusFilter, phone: phoneFilter, form: formFilter });
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f8f5f1]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#245C4F] mx-auto"></div>
-          <p className="mt-2 text-gray-600">Caricamento submissions...</p>
+          <p className="mt-2 text-gray-600">Caricamento leads...</p>
         </div>
       </div>
     );
@@ -287,7 +144,7 @@ export default function AdminLeads() {
             </Button>
             <div>
               <h1 className="text-2xl font-bold text-[#245C4F]">Gestione Leads</h1>
-              <p className="text-gray-600">Visualizza e gestisci le submissions dei form</p>
+              <p className="text-gray-600">Visualizza e gestisci i leads del sistema</p>
             </div>
           </div>
         </div>
@@ -297,8 +154,8 @@ export default function AdminLeads() {
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Form Submissions</h2>
-            <p className="text-gray-600">Totale: {filteredSubmissions.length} submissions</p>
+            <h2 className="text-xl font-semibold text-gray-900">Leads</h2>
+            <p className="text-gray-600">Totale: {filteredLeads.length} leads</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
@@ -368,49 +225,54 @@ export default function AdminLeads() {
               </Select>
             </div>
             
-            <Button onClick={fetchSubmissions} variant="outline">
+            <Button onClick={fetchLeads} variant="outline">
               Aggiorna
             </Button>
           </div>
         </div>
 
-        {filteredSubmissions.length === 0 ? (
+        {filteredLeads.length === 0 ? (
           <Card>
             <CardContent className="flex items-center justify-center py-12">
               <div className="text-center">
                 <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  {statusFilter === 'all' ? 'Nessuna submission trovata' : 'Nessuna submission con questo status'}
+                  {statusFilter === 'all' ? 'Nessun lead trovato' : 'Nessun lead con questo status'}
                 </h3>
                 <p className="text-gray-600">
                   {statusFilter === 'all' 
-                    ? 'Le submissions appariranno qui quando gli utenti invieranno i form.' 
-                    : 'Prova a cambiare il filtro per vedere altre submissions.'}
+                    ? 'I leads appariranno qui quando gli utenti invieranno i form.' 
+                    : 'Prova a cambiare il filtro per vedere altri leads.'}
                 </p>
               </div>
             </CardContent>
           </Card>
         ) : (
           <div className="grid gap-4">
-            {filteredSubmissions.map((submission) => (
-              <Card key={submission.id} className="hover:shadow-md transition-shadow">
+            {filteredLeads.map((lead) => (
+              <Card key={lead.id} className="hover:shadow-md transition-shadow">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">
-                      Submission #{submission.id.slice(0, 8)}
-                      {(submission.first_name || submission.last_name) && (
+                      Lead #{lead.id.slice(0, 8)}
+                      {(lead.first_name || lead.last_name) && (
                         <span className="ml-2 font-bold text-[#245C4F]">
-                          {submission.first_name} {submission.last_name}
+                          {lead.first_name} {lead.last_name}
                         </span>
                       )}
                     </CardTitle>
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary">
-                        {submission.form_title}
+                        {lead.form_submissions?.forms?.title || 'Form sconosciuto'}
                       </Badge>
-                      {submission.consulting && (
+                      {lead.form_submissions?.consulting && (
                         <Badge className="bg-green-100 text-green-800">
                           Consulenza richiesta
+                        </Badge>
+                      )}
+                      {lead.source && (
+                        <Badge variant="outline">
+                          {lead.source}
                         </Badge>
                       )}
                     </div>
@@ -420,23 +282,23 @@ export default function AdminLeads() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Calendar className="h-4 w-4" />
-                      {formatDate(submission.created_at)}
+                      {formatDate(lead.created_at)}
                     </div>
-                    {submission.phone_number && (
+                    {lead.phone_number && (
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Phone className="h-4 w-4" />
-                        {submission.phone_number}
+                        {lead.phone_number}
                       </div>
                     )}
-                    {submission.email && (
+                    {lead.email && (
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Mail className="h-4 w-4" />
-                        {submission.email}
+                        {lead.email}
                       </div>
                     )}
-                    {submission.user_identifier && (
+                    {lead.form_submissions?.user_identifier && (
                       <div className="text-sm text-gray-600">
-                        ID Utente: {submission.user_identifier}
+                        ID Utente: {lead.form_submissions.user_identifier}
                       </div>
                     )}
                   </div>
@@ -448,34 +310,39 @@ export default function AdminLeads() {
                       <span className="text-sm text-gray-600">Status Lead:</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <LeadStatusBadge status={submission.lead_status} />
-                      {submission.mediatore && (
+                      <LeadStatusBadge status={lead.lead_status} />
+                      {lead.mediatore && (
                         <span className="text-sm text-gray-600">
-                          → {submission.mediatore}
+                          → {lead.mediatore}
+                        </span>
+                      )}
+                      {lead.priority && (
+                        <span className="text-xs text-gray-500">
+                          Priorità: {lead.priority}
                         </span>
                       )}
                     </div>
                   </div>
 
                   {/* Notes */}
-                  {submission.notes && (
+                  {lead.notes && (
                     <div className="mb-4">
                       <div className="flex items-start gap-2 mb-2">
                         <StickyNote className="h-4 w-4 text-gray-500 mt-0.5" />
                         <span className="text-sm text-gray-600">Note:</span>
                       </div>
                       <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">
-                        {submission.notes}
+                        {lead.notes}
                       </p>
                     </div>
                   )}
                   
-                  {submission.metadata && (
+                  {lead.form_submissions?.metadata && (
                     <div className="text-sm text-gray-600 mb-4">
-                      <p>Blocchi attivi: {submission.metadata.blocks?.length || 0}</p>
-                      <p>Blocchi completati: {submission.metadata.completedBlocks?.length || 0}</p>
-                      {submission.metadata.slug && (
-                        <p>Slug: {submission.metadata.slug}</p>
+                      <p>Blocchi attivi: {lead.form_submissions.metadata.blocks?.length || 0}</p>
+                      <p>Blocchi completati: {lead.form_submissions.metadata.completedBlocks?.length || 0}</p>
+                      {lead.form_submissions.metadata.slug && (
+                        <p>Slug: {lead.form_submissions.metadata.slug}</p>
                       )}
                     </div>
                   )}
@@ -484,7 +351,7 @@ export default function AdminLeads() {
                     <Button
                       onClick={() => {
                         saveScrollPosition();
-                        navigate(`/admin/leads/${submission.id}`);
+                        navigate(`/admin/leads/${lead.id}`);
                       }}
                       className="bg-[#245C4F] hover:bg-[#1e4f44] flex items-center gap-2"
                     >
@@ -498,9 +365,9 @@ export default function AdminLeads() {
                           variant="outline"
                           size="sm"
                           className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 flex items-center gap-2"
-                          disabled={deletingId === submission.id}
+                          disabled={deletingId === lead.id}
                         >
-                          {deletingId === submission.id ? (
+                          {deletingId === lead.id ? (
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
                           ) : (
                             <Trash2 className="h-4 w-4" />
@@ -512,22 +379,22 @@ export default function AdminLeads() {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Conferma Eliminazione</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Sei sicuro di voler eliminare questa submission? 
-                            {(submission.first_name || submission.last_name) && (
+                            Sei sicuro di voler eliminare questo lead? 
+                            {(lead.first_name || lead.last_name) && (
                               <span className="font-medium">
-                                {' '}({submission.first_name} {submission.last_name})
+                                {' '}({lead.first_name} {lead.last_name})
                               </span>
                             )}
                             <br />
                             <span className="text-red-600 font-medium">
-                              Questa azione non può essere annullata e eliminerà anche tutte le risposte associate.
+                              Questa azione non può essere annullata e eliminerà anche tutte le interazioni associate.
                             </span>
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Annulla</AlertDialogCancel>
                           <AlertDialogAction
-                            onClick={() => handleDeleteSubmission(submission.id)}
+                            onClick={() => handleDeleteLead(lead.id)}
                             className="bg-red-600 hover:bg-red-700"
                           >
                             Elimina Definitivamente
