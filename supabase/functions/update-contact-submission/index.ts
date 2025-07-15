@@ -177,7 +177,7 @@ Deno.serve(async (req) => {
     try {
       const { data: whatsappResult, error: whatsappError } = await supabase.functions.invoke('send-aisensy-message', {
         body: {
-          campaignName: 'welcome3',
+          campaignName: consulting ? 'welcome1si' : 'welcome1no',
           destination: formattedPhone,
           userName: firstName,
           source: 'form-completion',
@@ -186,8 +186,7 @@ Deno.serve(async (req) => {
             filename: 'banner.png'
           },
           templateParams: [
-            firstName,
-            consulting ? "Si ✅" : "No ❌"
+            firstName
           ]
         }
       })

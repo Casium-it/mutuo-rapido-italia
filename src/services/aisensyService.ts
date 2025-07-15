@@ -88,7 +88,7 @@ export async function sendFormCompletionMessage(
   consultationRequest: boolean = false
 ): Promise<AisensyMessageResult> {
   return sendCustomAisensyMessage({
-    campaignName: 'welcome3',
+    campaignName: consultationRequest ? 'welcome1si' : 'welcome1no',
     destination: phoneNumber,
     userName: firstName,
     source: 'form-completion',
@@ -97,8 +97,7 @@ export async function sendFormCompletionMessage(
       filename: 'banner.png'
     },
     templateParams: [
-      firstName,
-      consultationRequest ? "Si ✅" : "No ❌"
+      firstName
     ]
   });
 }
