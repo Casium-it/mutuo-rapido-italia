@@ -8,6 +8,7 @@ export type LeadStatus =
   | 'prenotata_consulenza' 
   | 'pratica_bocciata' 
   | 'converted'
+  | 'perso'
   // Legacy values for backward compatibility
   | 'first_contact'
   | 'advanced_conversations' 

@@ -320,6 +320,7 @@ export default function AdminLeads() {
                   <SelectItem value="prenotata_consulenza">Prenotata Consulenza</SelectItem>
                   <SelectItem value="pratica_bocciata">Pratica Bocciata</SelectItem>
                   <SelectItem value="converted">Convertito</SelectItem>
+                  <SelectItem value="perso">Perso</SelectItem>
                   <SelectItem value="first_contact">Primo Contatto</SelectItem>
                   <SelectItem value="advanced_conversations">Conversazioni Avanzate</SelectItem>
                   <SelectItem value="rejected">Respinto</SelectItem>

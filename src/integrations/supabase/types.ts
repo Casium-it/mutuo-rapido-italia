@@ -442,6 +442,7 @@ export type Database = {
         | "da_risentire"
         | "prenotata_consulenza"
         | "pratica_bocciata"
+        | "perso"
       save_method_type: "auto-save" | "manual-save" | "completed-save"
     }
     CompositeTypes: {
@@ -585,6 +586,7 @@ export const Constants = {
         "da_risentire",
         "prenotata_consulenza",
         "pratica_bocciata",
+        "perso",
       ],
       save_method_type: ["auto-save", "manual-save", "completed-save"],
     },

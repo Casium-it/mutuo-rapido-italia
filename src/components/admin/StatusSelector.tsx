@@ -18,7 +18,8 @@ const statusOptions: { value: LeadStatus; label: string }[] = [
   { value: 'da_risentire', label: 'Da Risentire' },
   { value: 'prenotata_consulenza', label: 'Prenotata Consulenza' },
   { value: 'pratica_bocciata', label: 'Pratica Bocciata' },
-  { value: 'converted', label: 'Convertito' }
+  { value: 'converted', label: 'Convertito' },
+  { value: 'perso', label: 'Perso' }
 ];
 
 export function StatusSelector({ value, onValueChange }: StatusSelectorProps) {
