@@ -110,9 +110,9 @@ export function FormBreakdownTable({ formStats }: FormBreakdownTableProps) {
                       </div>
                     </td>
                     
-                    {/* Simulazioni */}
-                    <td className="py-4 px-2 text-center">
-                      <div className="space-y-1">
+                     {/* Simulazioni */}
+                    <td className="py-6 px-2 text-center">
+                      <div className="space-y-2">
                         <div className="text-lg font-bold text-[#245C4F]">
                           {formatNumber(form.simulations.current)}
                         </div>
@@ -122,25 +122,25 @@ export function FormBreakdownTable({ formStats }: FormBreakdownTableProps) {
                           </span>
                         </div>
                         <div className="w-8 h-px bg-gray-300 mx-auto my-1"></div>
-                        <div className="flex items-center justify-between px-2">
-                          <div className="text-xs font-medium text-[#245C4F]">
-                            - conv.
-                          </div>
+                        <div className="text-xs font-medium text-[#245C4F]">
+                          - conv.
+                        </div>
+                        <div className="flex justify-center mt-2">
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
                             onClick={() => openGraphDialog('simulations', form.formSlug, form.formTitle)}
-                            className="h-5 w-5 p-0 hover:bg-gray-100"
+                            className="h-7 w-7 p-0 hover:bg-gray-100"
                           >
-                            <BarChart3 className="h-3 w-3 text-gray-500" />
+                            <BarChart3 className="h-4 w-4 text-gray-600" />
                           </Button>
                         </div>
                       </div>
                     </td>
 
-                    {/* Submissions */}
-                    <td className="py-4 px-2 text-center">
-                      <div className="space-y-1">
+                     {/* Submissions */}
+                    <td className="py-6 px-2 text-center">
+                      <div className="space-y-2">
                         <div className="text-lg font-bold text-[#245C4F]">
                           {formatNumber(form.submissions.current)}
                         </div>
@@ -150,25 +150,25 @@ export function FormBreakdownTable({ formStats }: FormBreakdownTableProps) {
                           </span>
                         </div>
                         <div className="w-8 h-px bg-gray-300 mx-auto my-1"></div>
-                        <div className="flex items-center justify-between px-2">
-                          <div className="text-xs font-medium text-[#245C4F]">
-                            conv. al {form.submissions.conversionRate !== undefined ? formatPercent(form.submissions.conversionRate) : '0%'}
-                          </div>
+                        <div className="text-xs font-medium text-[#245C4F]">
+                          conv. al {form.submissions.conversionRate !== undefined ? formatPercent(form.submissions.conversionRate) : '0%'}
+                        </div>
+                        <div className="flex justify-center mt-2">
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
                             onClick={() => openGraphDialog('submissions', form.formSlug, form.formTitle)}
-                            className="h-5 w-5 p-0 hover:bg-gray-100"
+                            className="h-7 w-7 p-0 hover:bg-gray-100"
                           >
-                            <BarChart3 className="h-3 w-3 text-gray-500" />
+                            <BarChart3 className="h-4 w-4 text-gray-600" />
                           </Button>
                         </div>
                       </div>
                     </td>
 
-                    {/* Con Contatto */}
-                    <td className="py-4 px-2 text-center">
-                      <div className="space-y-1">
+                     {/* Con Contatto */}
+                    <td className="py-6 px-2 text-center">
+                      <div className="space-y-2">
                         <div className="text-lg font-bold text-[#245C4F]">
                           {formatNumber(form.submissionsWithContact.current)}
                         </div>
@@ -178,17 +178,17 @@ export function FormBreakdownTable({ formStats }: FormBreakdownTableProps) {
                           </span>
                         </div>
                         <div className="w-8 h-px bg-gray-300 mx-auto my-1"></div>
-                        <div className="flex items-center justify-between px-2">
-                          <div className="text-xs font-medium text-[#245C4F]">
-                            conv. al {form.submissionsWithContact.conversionRate !== undefined ? formatPercent(form.submissionsWithContact.conversionRate) : '0%'}
-                          </div>
+                        <div className="text-xs font-medium text-[#245C4F]">
+                          conv. al {form.submissionsWithContact.conversionRate !== undefined ? formatPercent(form.submissionsWithContact.conversionRate) : '0%'}
+                        </div>
+                        <div className="flex justify-center mt-2">
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
                             onClick={() => openGraphDialog('submissionsWithContact', form.formSlug, form.formTitle)}
-                            className="h-5 w-5 p-0 hover:bg-gray-100"
+                            className="h-7 w-7 p-0 hover:bg-gray-100"
                           >
-                            <BarChart3 className="h-3 w-3 text-gray-500" />
+                            <BarChart3 className="h-4 w-4 text-gray-600" />
                           </Button>
                         </div>
                       </div>

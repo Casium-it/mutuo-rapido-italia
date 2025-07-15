@@ -88,12 +88,12 @@ export function StatisticCard({ title, metric, icon, showConversion = false }: S
               
               {/* Graph button */}
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 onClick={() => setShowGraph(true)}
-                className="h-6 w-6 p-0 hover:bg-gray-100"
+                className="h-7 w-7 p-0 hover:bg-gray-100 border-gray-300"
               >
-                <BarChart3 className="h-4 w-4 text-gray-500" />
+                <BarChart3 className="h-4 w-4 text-gray-600" />
               </Button>
             </div>
           </div>
