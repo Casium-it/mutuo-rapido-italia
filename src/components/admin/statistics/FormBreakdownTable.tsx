@@ -77,17 +77,17 @@ export function FormBreakdownTable({ formStats }: FormBreakdownTableProps) {
                   {/* Simulazioni */}
                   <td className="py-4 px-2 text-center">
                     <div className="space-y-1">
-                      <div className="text-lg font-semibold text-[#245C4F]">
+                      <div className="text-lg font-bold text-[#245C4F]">
                         {formatNumber(form.simulations.current)}
                       </div>
-                      <div className="flex items-center justify-center gap-1 text-xs">
-                        {getTrendIcon(form.simulations.change)}
-                        <span className={`font-medium ${getTrendColor(form.simulations.change)}`}>
-                          {form.simulations.change >= 0 ? '+' : ''}{formatNumber(form.simulations.change)}
+                      <div className="text-xs text-gray-500">
+                        era {formatNumber(form.simulations.previous)} → <span className={`inline-flex items-center gap-1 ${getTrendColor(form.simulations.change)}`}>
+                          {getTrendIcon(form.simulations.change)}
+                          {form.simulations.change >= 0 ? '+' : ''}{formatNumber(form.simulations.change)}%
                         </span>
                       </div>
-                      <div className="text-xs text-gray-500">
-                        era {formatNumber(form.simulations.previous)}
+                      <div className="text-xs font-medium text-[#245C4F]">
+                        - conv.
                       </div>
                     </div>
                   </td>
@@ -95,46 +95,36 @@ export function FormBreakdownTable({ formStats }: FormBreakdownTableProps) {
                   {/* Submissions */}
                   <td className="py-4 px-2 text-center">
                     <div className="space-y-1">
-                      <div className="text-lg font-semibold text-blue-600">
+                      <div className="text-lg font-bold text-blue-600">
                         {formatNumber(form.submissions.current)}
                       </div>
-                      <div className="flex items-center justify-center gap-1 text-xs">
-                        {getTrendIcon(form.submissions.change)}
-                        <span className={`font-medium ${getTrendColor(form.submissions.change)}`}>
-                          {form.submissions.change >= 0 ? '+' : ''}{formatNumber(form.submissions.change)}
+                      <div className="text-xs text-gray-500">
+                        era {formatNumber(form.submissions.previous)} → <span className={`inline-flex items-center gap-1 ${getTrendColor(form.submissions.change)}`}>
+                          {getTrendIcon(form.submissions.change)}
+                          {form.submissions.change >= 0 ? '+' : ''}{formatNumber(form.submissions.change)}%
                         </span>
                       </div>
-                      <div className="text-xs text-gray-500">
-                        era {formatNumber(form.submissions.previous)}
+                      <div className="text-xs font-medium text-blue-700">
+                        conv. al {form.submissions.conversionRate !== undefined ? formatPercent(form.submissions.conversionRate) : '0%'}
                       </div>
-                      {form.submissions.conversionRate !== undefined && (
-                        <div className="text-xs font-medium text-blue-700">
-                          {formatPercent(form.submissions.conversionRate)} conv.
-                        </div>
-                      )}
                     </div>
                   </td>
 
                   {/* Con Contatto */}
                   <td className="py-4 px-2 text-center">
                     <div className="space-y-1">
-                      <div className="text-lg font-semibold text-purple-600">
+                      <div className="text-lg font-bold text-purple-600">
                         {formatNumber(form.submissionsWithContact.current)}
                       </div>
-                      <div className="flex items-center justify-center gap-1 text-xs">
-                        {getTrendIcon(form.submissionsWithContact.change)}
-                        <span className={`font-medium ${getTrendColor(form.submissionsWithContact.change)}`}>
-                          {form.submissionsWithContact.change >= 0 ? '+' : ''}{formatNumber(form.submissionsWithContact.change)}
+                      <div className="text-xs text-gray-500">
+                        era {formatNumber(form.submissionsWithContact.previous)} → <span className={`inline-flex items-center gap-1 ${getTrendColor(form.submissionsWithContact.change)}`}>
+                          {getTrendIcon(form.submissionsWithContact.change)}
+                          {form.submissionsWithContact.change >= 0 ? '+' : ''}{formatNumber(form.submissionsWithContact.change)}%
                         </span>
                       </div>
-                      <div className="text-xs text-gray-500">
-                        era {formatNumber(form.submissionsWithContact.previous)}
+                      <div className="text-xs font-medium text-purple-700">
+                        conv. al {form.submissionsWithContact.conversionRate !== undefined ? formatPercent(form.submissionsWithContact.conversionRate) : '0%'}
                       </div>
-                      {form.submissionsWithContact.conversionRate !== undefined && (
-                        <div className="text-xs font-medium text-purple-700">
-                          {formatPercent(form.submissionsWithContact.conversionRate)} conv.
-                        </div>
-                      )}
                     </div>
                   </td>
                 </tr>
