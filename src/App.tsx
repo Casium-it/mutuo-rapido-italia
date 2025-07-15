@@ -34,7 +34,6 @@ import AdminSimulationDetail from "./pages/AdminSimulationDetail";
 import AdminLeadDetail from "./pages/AdminLeadDetail";
 import AdminNotifications from "./pages/AdminNotifications";
 import AdminForms from "./pages/AdminForms";
-import AdminStatistics from "./pages/AdminStatistics";
 
 const queryClient = new QueryClient();
 
@@ -81,11 +80,6 @@ const AppWithTracking = () => {
       <Route path="/admin" element={
         <ProtectedRoute requireAdmin>
           <Admin />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/statistics" element={
-        <ProtectedRoute requireAdmin>
-          <AdminStatistics />
         </ProtectedRoute>
       } />
       <Route path="/admin/leads" element={

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -5,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { LogOut, FileText, Database, Users, Bell, Blocks, TrendingUp, Clock, BarChart3 } from 'lucide-react';
+import { LogOut, FileText, Database, Users, Bell, Blocks, TrendingUp, Clock } from 'lucide-react';
 
 interface DashboardStats {
   totalSubmissions: number;
@@ -218,15 +219,7 @@ export default function Admin() {
         {/* Navigation Cards */}
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Gestisci Piattaforma</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/statistics')}>
-              <CardContent className="p-6 text-center">
-                <BarChart3 className="h-12 w-12 text-[#245C4F] mx-auto mb-3" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Statistiche</h3>
-                <p className="text-sm text-gray-600">Visualizza analytics e metriche dettagliate</p>
-              </CardContent>
-            </Card>
-
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/notifications')}>
               <CardContent className="p-6 text-center">
                 <Bell className="h-12 w-12 text-[#245C4F] mx-auto mb-3" />
@@ -266,14 +259,8 @@ export default function Admin() {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Azioni Rapide</h3>
           <div className="flex flex-wrap gap-3">
             <Button 
-              onClick={() => navigate('/admin/statistics')}
-              className="bg-[#245C4F] hover:bg-[#1e4f44]"
-            >
-              Visualizza Statistiche
-            </Button>
-            <Button 
               onClick={() => navigate('/admin/leads')}
-              variant="outline"
+              className="bg-[#245C4F] hover:bg-[#1e4f44]"
             >
               Visualizza Tutti i Leads
             </Button>
