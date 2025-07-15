@@ -177,7 +177,7 @@ Deno.serve(async (req) => {
     try {
       const { data: whatsappResult, error: whatsappError } = await supabase.functions.invoke('send-aisensy-message', {
         body: {
-          campaignName: consulting ? 'welcome1si' : 'welcome1no',
+          campaignName: consulting ? 'welcome3si' : 'welcome3no',
           destination: formattedPhone,
           userName: firstName,
           source: 'form-completion',
