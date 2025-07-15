@@ -250,6 +250,115 @@ export type Database = {
         }
         Relationships: []
       }
+      lead_interactions: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          interaction_type: string
+          lead_id: string
+          next_action: string | null
+          outcome: string | null
+          scheduled_at: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description: string
+          id?: string
+          interaction_type: string
+          lead_id: string
+          next_action?: string | null
+          outcome?: string | null
+          scheduled_at?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          interaction_type?: string
+          lead_id?: string
+          next_action?: string | null
+          outcome?: string | null
+          scheduled_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_interactions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          created_at: string
+          email: string | null
+          first_name: string | null
+          form_submission_id: string | null
+          id: string
+          last_contact_date: string | null
+          last_name: string | null
+          lead_status: Database["public"]["Enums"]["lead_status"]
+          mediatore: string | null
+          next_contact_date: string | null
+          notes: string | null
+          phone_number: string | null
+          priority: number | null
+          source: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          first_name?: string | null
+          form_submission_id?: string | null
+          id?: string
+          last_contact_date?: string | null
+          last_name?: string | null
+          lead_status?: Database["public"]["Enums"]["lead_status"]
+          mediatore?: string | null
+          next_contact_date?: string | null
+          notes?: string | null
+          phone_number?: string | null
+          priority?: number | null
+          source?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          first_name?: string | null
+          form_submission_id?: string | null
+          id?: string
+          last_contact_date?: string | null
+          last_name?: string | null
+          lead_status?: Database["public"]["Enums"]["lead_status"]
+          mediatore?: string | null
+          next_contact_date?: string | null
+          notes?: string | null
+          phone_number?: string | null
+          priority?: number | null
+          source?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_form_submission_id_fkey"
+            columns: ["form_submission_id"]
+            isOneToOne: false
+            referencedRelation: "form_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       linked_forms: {
         Row: {
           created_at: string
@@ -424,6 +533,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
         }
         Returns: boolean
+      }
+      migrate_leads_from_submissions: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
     }
     Enums: {
