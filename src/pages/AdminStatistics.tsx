@@ -2,10 +2,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, TrendingUp, Database, FileText, Users, Percent, Target } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { PeriodSelector } from '@/components/admin/statistics/PeriodSelector';
-import { StatisticsCard } from '@/components/admin/statistics/StatisticsCard';
+import { FunnelCard } from '@/components/admin/statistics/FunnelCard';
 import { StatisticsChart } from '@/components/admin/statistics/StatisticsChart';
 import { useStatistics, StatisticsPeriod, DailyData } from '@/hooks/useStatistics';
 
@@ -50,6 +49,19 @@ export default function AdminStatistics() {
     );
   }
 
+  const formatPeriodLabel = (period: StatisticsPeriod) => {
+    switch (period) {
+      case 'lifetime': return 'Lifetime';
+      case '60d': return 'Ultimi 60 giorni';
+      case '30d': return 'Ultimi 30 giorni';
+      case '14d': return 'Ultimi 14 giorni';
+      case '7d': return 'Ultimi 7 giorni';
+      case '3d': return 'Ultimi 3 giorni';
+      case 'yesterday': return 'Ieri';
+      case 'today': return 'Oggi';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#f8f5f1]">
       {/* Header */}
@@ -65,8 +77,10 @@ export default function AdminStatistics() {
               Torna al Dashboard
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-[#245C4F]">Statistiche</h1>
-              <p className="text-gray-600">Analytics e metriche della piattaforma</p>
+              <h1 className="text-2xl font-bold text-[#245C4F]">Statistiche - Funnel di Conversione</h1>
+              <p className="text-gray-600">
+                Analisi del percorso: Simulazione → Submission → Contatto ({formatPeriodLabel(period)})
+              </p>
             </div>
           </div>
           <PeriodSelector value={period} onValueChange={setPeriod} />
@@ -75,99 +89,32 @@ export default function AdminStatistics() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Main Statistics */}
+        {/* Total Funnel */}
         <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Statistiche Principali</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            <StatisticsCard
-              title="Simulazioni Salvate"
-              value={data?.totalSimulations || 0}
-              previousValue={data?.previousPeriod.totalSimulations}
-              onClick={() => openChart('Simulazioni Salvate nel Tempo', 'simulations', 'bar')}
-            />
-            
-            <StatisticsCard
-              title="Submissions"
-              value={data?.totalSubmissions || 0}
-              previousValue={data?.previousPeriod.totalSubmissions}
-              onClick={() => openChart('Submissions nel Tempo', 'submissions', 'bar')}
-            />
-            
-            <StatisticsCard
-              title="% Submissions / Simulazioni"
-              value={data?.submissionsPercentage || 0}
-              previousValue={data?.previousPeriod.submissionsPercentage}
-              format="percentage"
-              onClick={() => openChart('Tasso di Conversione nel Tempo', 'submissions', 'line')}
-            />
-            
-            <StatisticsCard
-              title="% Submissions con Contatti"
-              value={data?.submissionsWithContactPercentage || 0}
-              previousValue={data?.previousPeriod.submissionsWithContactPercentage}
-              format="percentage"
-              onClick={() => openChart('Submissions con Contatti nel Tempo', 'submissionsWithContact', 'line')}
-            />
-            
-            <StatisticsCard
-              title="% Contatti / Simulazioni"
-              value={data?.submissionsWithContactOverSimulationsPercentage || 0}
-              previousValue={data?.previousPeriod.submissionsWithContactOverSimulationsPercentage}
-              format="percentage"
-              onClick={() => openChart('Tasso Contatti su Simulazioni nel Tempo', 'submissionsWithContact', 'line')}
-            />
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Funnel Totale</h2>
+          <div className="max-w-2xl">
+            {data && (
+              <FunnelCard
+                title="Conversione Globale"
+                funnel={data.totalFunnel}
+                onClick={() => openChart('Funnel di Conversione nel Tempo', 'simulations', 'line')}
+              />
+            )}
           </div>
         </div>
 
         {/* Form Breakdown */}
-        {data?.formBreakdown && Object.keys(data.formBreakdown).length > 0 && (
+        {data?.formBreakdown && data.formBreakdown.length > 0 && (
           <div>
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Breakdown per Form</h2>
-            <div className="space-y-6">
-              {Object.entries(data.formBreakdown).map(([formSlug, breakdown]) => (
-                <Card key={formSlug}>
-                  <CardHeader>
-                    <CardTitle className="text-lg text-[#245C4F]">
-                      Form: {formSlug}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                      <StatisticsCard
-                        title="Simulazioni"
-                        value={breakdown.simulations}
-                        description={`Form: ${formSlug}`}
-                      />
-                      
-                      <StatisticsCard
-                        title="Submissions"
-                        value={breakdown.submissions}
-                        description={`Form: ${formSlug}`}
-                      />
-                      
-                      <StatisticsCard
-                        title="% Conversione"
-                        value={breakdown.submissionsPercentage}
-                        format="percentage"
-                        description={`Submissions / Simulazioni`}
-                      />
-                      
-                      <StatisticsCard
-                        title="% Con Contatti"
-                        value={breakdown.submissionsWithContactPercentage}
-                        format="percentage"
-                        description={`Su submissions`}
-                      />
-                      
-                      <StatisticsCard
-                        title="% Contatti/Sim"
-                        value={breakdown.submissionsWithContactOverSimulationsPercentage}
-                        format="percentage"
-                        description={`Contatti / Simulazioni`}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {data.formBreakdown.map((formData) => (
+                <FunnelCard
+                  key={formData.formSlug}
+                  title={`Form: ${formData.formSlug}`}
+                  funnel={formData.funnel}
+                  onClick={() => openChart(`Funnel ${formData.formSlug} nel Tempo`, 'simulations', 'line')}
+                />
               ))}
             </div>
           </div>

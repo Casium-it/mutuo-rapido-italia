@@ -4,28 +4,27 @@ import { supabase } from '@/integrations/supabase/client';
 
 export type StatisticsPeriod = 'lifetime' | '60d' | '30d' | '14d' | '7d' | '3d' | 'yesterday' | 'today';
 
+export interface FunnelStep {
+  label: string;
+  value: number;
+  previousValue: number;
+  lossFromPrevious?: number; // percentage lost from previous step
+  conversionFromTotal: number; // percentage from total simulations
+}
+
+export interface FormFunnelData {
+  formSlug: string;
+  funnel: FunnelStep[];
+}
+
 export interface StatisticsData {
-  totalSimulations: number;
-  totalSubmissions: number;
-  submissionsPercentage: number;
-  submissionsWithContactPercentage: number;
-  submissionsWithContactOverSimulationsPercentage: number;
-  formBreakdown: {
-    [formSlug: string]: {
-      simulations: number;
-      submissions: number;
-      submissionsPercentage: number;
-      submissionsWithContactPercentage: number;
-      submissionsWithContactOverSimulationsPercentage: number;
-    };
-  };
-  previousPeriod: {
-    totalSimulations: number;
-    totalSubmissions: number;
-    submissionsPercentage: number;
-    submissionsWithContactPercentage: number;
-    submissionsWithContactOverSimulationsPercentage: number;
-  };
+  totalFunnel: FunnelStep[];
+  formBreakdown: FormFunnelData[];
+  period: StatisticsPeriod;
+  startDate: string;
+  endDate: string;
+  previousStartDate: string;
+  previousEndDate: string;
 }
 
 export interface DailyData {
@@ -92,6 +91,52 @@ const getPreviousPeriodDates = (period: StatisticsPeriod, startDate: Date, endDa
   return { startDate: previousStartDate, endDate: previousEndDate };
 };
 
+const calculateFunnel = (
+  simulations: number,
+  submissions: number,
+  submissionsWithContact: number,
+  prevSimulations: number,
+  prevSubmissions: number,
+  prevSubmissionsWithContact: number
+): FunnelStep[] => {
+  const steps: FunnelStep[] = [
+    {
+      label: 'Simulazioni',
+      value: simulations,
+      previousValue: prevSimulations,
+      conversionFromTotal: 100
+    },
+    {
+      label: 'Submissions',
+      value: submissions,
+      previousValue: prevSubmissions,
+      lossFromPrevious: simulations > 0 ? Math.round(((simulations - submissions) / simulations) * 100) : 0,
+      conversionFromTotal: simulations > 0 ? Math.round((submissions / simulations) * 100) : 0
+    },
+    {
+      label: 'Submissions con Contatti',
+      value: submissionsWithContact,
+      previousValue: prevSubmissionsWithContact,
+      lossFromPrevious: submissions > 0 ? Math.round(((submissions - submissionsWithContact) / submissions) * 100) : 0,
+      conversionFromTotal: simulations > 0 ? Math.round((submissionsWithContact / simulations) * 100) : 0
+    }
+  ];
+
+  return steps;
+};
+
+const getMinimumGraphPeriod = (period: StatisticsPeriod, startDate: Date, endDate: Date) => {
+  const periodDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
+  
+  if (periodDays < 14) {
+    // Extend to 14 days minimum
+    const newStartDate = new Date(endDate.getTime() - 14 * 24 * 60 * 60 * 1000);
+    return { startDate: newStartDate, endDate };
+  }
+  
+  return { startDate, endDate };
+};
+
 export const useStatistics = (period: StatisticsPeriod) => {
   const [data, setData] = useState<StatisticsData | null>(null);
   const [dailyData, setDailyData] = useState<DailyData[]>([]);
@@ -107,8 +152,11 @@ export const useStatistics = (period: StatisticsPeriod) => {
         const { startDate, endDate } = getPeriodDates(period);
         const { startDate: prevStartDate, endDate: prevEndDate } = getPreviousPeriodDates(period, startDate, endDate);
 
+        // Get minimum 14 days for graph data
+        const { startDate: graphStartDate, endDate: graphEndDate } = getMinimumGraphPeriod(period, startDate, endDate);
+
         // Fetch current period data
-        const [simulationsResult, submissionsResult, submissionsWithContactResult] = await Promise.all([
+        const [simulationsResult, submissionsResult, formsResult] = await Promise.all([
           // Simulations
           supabase
             .from('saved_simulations')
@@ -131,8 +179,9 @@ export const useStatistics = (period: StatisticsPeriod) => {
 
         if (simulationsResult.error) throw simulationsResult.error;
         if (submissionsResult.error) throw submissionsResult.error;
+        if (formsResult.error) throw formsResult.error;
 
-        const forms = submissionsWithContactResult.data || [];
+        const forms = formsResult.data || [];
         const formIdToSlug = forms.reduce((acc, form) => {
           acc[form.id] = form.slug;
           return acc;
@@ -162,34 +211,70 @@ export const useStatistics = (period: StatisticsPeriod) => {
         const prevSubmissions = prevSubmissionsResult.data || [];
         const prevSubmissionsWithContact = prevSubmissions.filter(s => s.phone_number);
 
+        // Calculate total funnel
+        const totalFunnel = calculateFunnel(
+          simulations.length,
+          submissions.length,
+          submissionsWithContact.length,
+          prevSimulations.length,
+          prevSubmissions.length,
+          prevSubmissionsWithContact.length
+        );
+
         // Calculate form breakdown
-        const formBreakdown: StatisticsData['formBreakdown'] = {};
-        
-        // Get all form slugs
         const allFormSlugs = new Set([
           ...simulations.map(s => s.form_slug),
           ...submissions.map(s => formIdToSlug[s.form_id]).filter(Boolean)
         ]);
 
-        allFormSlugs.forEach(formSlug => {
+        const formBreakdown: FormFunnelData[] = Array.from(allFormSlugs).map(formSlug => {
           const formSimulations = simulations.filter(s => s.form_slug === formSlug).length;
           const formSubmissions = submissions.filter(s => formIdToSlug[s.form_id] === formSlug).length;
           const formSubmissionsWithContact = submissionsWithContact.filter(s => formIdToSlug[s.form_id] === formSlug).length;
 
-          formBreakdown[formSlug] = {
-            simulations: formSimulations,
-            submissions: formSubmissions,
-            submissionsPercentage: formSimulations > 0 ? Math.round((formSubmissions / formSimulations) * 100) : 0,
-            submissionsWithContactPercentage: formSubmissions > 0 ? Math.round((formSubmissionsWithContact / formSubmissions) * 100) : 0,
-            submissionsWithContactOverSimulationsPercentage: formSimulations > 0 ? Math.round((formSubmissionsWithContact / formSimulations) * 100) : 0,
+          const prevFormSimulations = prevSimulations.filter(s => s.form_slug === formSlug).length;
+          const prevFormSubmissions = prevSubmissions.filter(s => formIdToSlug[s.form_id] === formSlug).length;
+          const prevFormSubmissionsWithContact = prevSubmissionsWithContact.filter(s => formIdToSlug[s.form_id] === formSlug).length;
+
+          const funnel = calculateFunnel(
+            formSimulations,
+            formSubmissions,
+            formSubmissionsWithContact,
+            prevFormSimulations,
+            prevFormSubmissions,
+            prevFormSubmissionsWithContact
+          );
+
+          return {
+            formSlug,
+            funnel
           };
         });
 
-        // Generate daily data for charts
+        // Fetch graph data for minimum 14 days
+        const [graphSimulationsResult, graphSubmissionsResult] = await Promise.all([
+          supabase
+            .from('saved_simulations')
+            .select('form_slug, created_at')
+            .gte('created_at', graphStartDate.toISOString())
+            .lt('created_at', graphEndDate.toISOString()),
+          
+          supabase
+            .from('form_submissions')
+            .select('form_id, phone_number, created_at')
+            .gte('created_at', graphStartDate.toISOString())
+            .lt('created_at', graphEndDate.toISOString())
+        ]);
+
+        const graphSimulations = graphSimulationsResult.data || [];
+        const graphSubmissions = graphSubmissionsResult.data || [];
+        const graphSubmissionsWithContact = graphSubmissions.filter(s => s.phone_number);
+
+        // Generate daily data for charts (minimum 14 days)
         const dailyDataMap = new Map<string, DailyData>();
-        const currentDate = new Date(startDate);
+        const currentDate = new Date(graphStartDate);
         
-        while (currentDate < endDate) {
+        while (currentDate < graphEndDate) {
           const dateStr = currentDate.toISOString().split('T')[0];
           dailyDataMap.set(dateStr, {
             date: dateStr,
@@ -201,7 +286,7 @@ export const useStatistics = (period: StatisticsPeriod) => {
         }
 
         // Populate daily data
-        simulations.forEach(sim => {
+        graphSimulations.forEach(sim => {
           const date = sim.created_at.split('T')[0];
           const dayData = dailyDataMap.get(date);
           if (dayData) {
@@ -209,7 +294,7 @@ export const useStatistics = (period: StatisticsPeriod) => {
           }
         });
 
-        submissions.forEach(sub => {
+        graphSubmissions.forEach(sub => {
           const date = sub.created_at.split('T')[0];
           const dayData = dailyDataMap.get(date);
           if (dayData) {
@@ -222,29 +307,14 @@ export const useStatistics = (period: StatisticsPeriod) => {
 
         setDailyData(Array.from(dailyDataMap.values()).sort((a, b) => a.date.localeCompare(b.date)));
 
-        // Calculate main statistics
-        const totalSimulations = simulations.length;
-        const totalSubmissions = submissions.length;
-        const totalSubmissionsWithContact = submissionsWithContact.length;
-
-        const prevTotalSimulations = prevSimulations.length;
-        const prevTotalSubmissions = prevSubmissions.length;
-        const prevTotalSubmissionsWithContact = prevSubmissionsWithContact.length;
-
         setData({
-          totalSimulations,
-          totalSubmissions,
-          submissionsPercentage: totalSimulations > 0 ? Math.round((totalSubmissions / totalSimulations) * 100) : 0,
-          submissionsWithContactPercentage: totalSubmissions > 0 ? Math.round((totalSubmissionsWithContact / totalSubmissions) * 100) : 0,
-          submissionsWithContactOverSimulationsPercentage: totalSimulations > 0 ? Math.round((totalSubmissionsWithContact / totalSimulations) * 100) : 0,
+          totalFunnel,
           formBreakdown,
-          previousPeriod: {
-            totalSimulations: prevTotalSimulations,
-            totalSubmissions: prevTotalSubmissions,
-            submissionsPercentage: prevTotalSimulations > 0 ? Math.round((prevTotalSubmissions / prevTotalSimulations) * 100) : 0,
-            submissionsWithContactPercentage: prevTotalSubmissions > 0 ? Math.round((prevTotalSubmissionsWithContact / prevTotalSubmissions) * 100) : 0,
-            submissionsWithContactOverSimulationsPercentage: prevTotalSimulations > 0 ? Math.round((prevTotalSubmissionsWithContact / prevTotalSimulations) * 100) : 0,
-          }
+          period,
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+          previousStartDate: prevStartDate.toISOString(),
+          previousEndDate: prevEndDate.toISOString()
         });
 
       } catch (err) {
