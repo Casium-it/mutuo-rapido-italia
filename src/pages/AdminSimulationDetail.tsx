@@ -116,13 +116,15 @@ export default function AdminSimulationDetail() {
         const questionInfo = questionMap.get(questionId);
         if (!questionInfo) return;
 
-        // Create one response per question with all placeholder values
-        responses.push({
-          id: questionId,
-          question_id: questionId,
-          question_text: questionInfo.question.question_text,
-          block_id: questionInfo.block_id,
-          response_value: placeholderResponses // Pass the complete placeholder object
+        // For each placeholder response in this question
+        Object.entries(placeholderResponses).forEach(([placeholderKey, responseValue]: [string, any]) => {
+          responses.push({
+            id: `${questionId}_${placeholderKey}`,
+            question_id: questionId,
+            question_text: questionInfo.question.question_text,
+            block_id: questionInfo.block_id,
+            response_value: responseValue
+          });
         });
       });
 

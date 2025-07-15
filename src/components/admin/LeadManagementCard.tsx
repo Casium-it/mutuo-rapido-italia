@@ -15,11 +15,6 @@ interface LeadManagementCardProps {
     notes: string | null;
     lead_status: LeadStatus;
     mediatore: string | null;
-    phone_number?: string | null;
-    source?: string | null;
-    priority?: number | null;
-    next_contact_date?: string | null;
-    last_contact_date?: string | null;
   };
   onUpdate: (field: string, value: string) => Promise<void>;
 }

@@ -11,32 +11,21 @@ import { generateSubmissionPDF, PDFSubmissionData } from '@/utils/pdfUtils';
 import { LeadManagementCard } from '@/components/admin/LeadManagementCard';
 import { LeadStatus } from '@/types/leadStatus';
 
-interface Lead {
+interface FormSubmission {
   id: string;
   created_at: string;
-  form_submission_id: string | null;
+  form_id: string | null;
   phone_number: string | null;
+  consulting: boolean | null;
+  user_identifier: string | null;
+  metadata: any;
   first_name: string | null;
   last_name: string | null;
   email: string | null;
   notes: string | null;
   lead_status: LeadStatus;
   mediatore: string | null;
-  source: string | null;
-  priority: number | null;
-  next_contact_date: string | null;
-  last_contact_date: string | null;
-  updated_at: string;
-  form_submissions?: {
-    consulting: boolean | null;
-    user_identifier: string | null;
-    metadata: any;
-    created_at: string;
-    forms?: {
-      title: string;
-      slug: string;
-    };
-  };
+  form_title?: string;
 }
 
 interface FormResponse {
@@ -51,40 +40,34 @@ interface FormResponse {
 export default function AdminLeadDetail() {
   const { leadId } = useParams<{ leadId: string }>();
   const navigate = useNavigate();
-  const [lead, setLead] = useState<Lead | null>(null);
+  const [submission, setSubmission] = useState<FormSubmission | null>(null);
   const [responses, setResponses] = useState<FormResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [pdfLoading, setPdfLoading] = useState(false);
 
   useEffect(() => {
     if (leadId) {
-      fetchLeadDetails();
+      fetchSubmissionDetails();
     }
   }, [leadId]);
 
-  const fetchLeadDetails = async () => {
+  const fetchSubmissionDetails = async () => {
     try {
-      // Fetch lead with form submission data
-      const { data: leadData, error: leadError } = await supabase
-        .from('leads')
+      // Fetch submission with form title
+      const { data: submissionData, error: submissionError } = await supabase
+        .from('form_submissions')
         .select(`
           *,
-          form_submissions (
-            consulting,
-            user_identifier,
-            metadata,
-            created_at,
-            forms (
-              title,
-              slug
-            )
+          forms!inner(
+            title,
+            slug
           )
         `)
         .eq('id', leadId)
         .single();
 
-      if (leadError) {
-        console.error('Error fetching lead:', leadError);
+      if (submissionError) {
+        console.error('Error fetching submission:', submissionError);
         toast({
           title: "Errore",
           description: "Lead non trovato",
@@ -94,29 +77,30 @@ export default function AdminLeadDetail() {
         return;
       }
 
-      // Fetch responses using form_submission_id
-      let responsesData = [];
-      if (leadData.form_submission_id) {
-        const { data: responseResults, error: responsesError } = await supabase
-          .from('form_responses')
-          .select('*')
-          .eq('submission_id', leadData.form_submission_id)
-          .order('created_at', { ascending: true });
+      // Fetch responses
+      const { data: responsesData, error: responsesError } = await supabase
+        .from('form_responses')
+        .select('*')
+        .eq('submission_id', leadId)
+        .order('created_at', { ascending: true });
 
-        if (responsesError) {
-          console.error('Error fetching responses:', responsesError);
-          toast({
-            title: "Errore",
-            description: "Errore nel caricamento delle risposte",
-            variant: "destructive"
-          });
-        } else {
-          responsesData = responseResults || [];
-        }
+      if (responsesError) {
+        console.error('Error fetching responses:', responsesError);
+        toast({
+          title: "Errore",
+          description: "Errore nel caricamento delle risposte",
+          variant: "destructive"
+        });
       }
 
-      setLead(leadData);
-      setResponses(responsesData);
+      // Add form title to submission
+      const submissionWithTitle = {
+        ...submissionData,
+        form_title: submissionData.forms?.title || 'Form sconosciuto'
+      };
+
+      setSubmission(submissionWithTitle);
+      setResponses(responsesData || []);
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -130,13 +114,13 @@ export default function AdminLeadDetail() {
   };
 
   const handleLeadUpdate = async (field: string, value: string) => {
-    if (!lead) return;
+    if (!submission) return;
 
     try {
       const { error } = await supabase
-        .from('leads')
+        .from('form_submissions')
         .update({ [field]: value })
-        .eq('id', lead.id);
+        .eq('id', submission.id);
 
       if (error) {
         console.error('Error updating lead:', error);
@@ -149,7 +133,7 @@ export default function AdminLeadDetail() {
       }
 
       // Update local state
-      setLead(prev => prev ? { ...prev, [field]: value } : null);
+      setSubmission(prev => prev ? { ...prev, [field]: value } : null);
       
       toast({
         title: "Successo",
@@ -177,7 +161,7 @@ export default function AdminLeadDetail() {
   };
 
   const handleDownloadPDF = async () => {
-    if (!lead || !responses) {
+    if (!submission || !responses) {
       toast({
         title: "Errore",
         description: "Dati del lead non disponibili",
@@ -189,19 +173,19 @@ export default function AdminLeadDetail() {
     setPdfLoading(true);
     try {
       const pdfData: PDFSubmissionData = {
-        id: lead.form_submission_id || lead.id,
-        created_at: lead.form_submissions?.created_at || lead.created_at,
-        form_title: lead.form_submissions?.forms?.title || 'Form sconosciuto',
-        phone_number: lead.phone_number,
-        consulting: lead.form_submissions?.consulting,
-        user_identifier: lead.form_submissions?.user_identifier,
-        metadata: lead.form_submissions?.metadata,
-        first_name: lead.first_name,
-        last_name: lead.last_name,
-        email: lead.email,
-        notes: lead.notes,
-        lead_status: lead.lead_status,
-        mediatore: lead.mediatore,
+        id: submission.id,
+        created_at: submission.created_at,
+        form_title: submission.form_title || 'Form sconosciuto',
+        phone_number: submission.phone_number,
+        consulting: submission.consulting,
+        user_identifier: submission.user_identifier,
+        metadata: submission.metadata,
+        first_name: submission.first_name,
+        last_name: submission.last_name,
+        email: submission.email,
+        notes: submission.notes,
+        lead_status: submission.lead_status,
+        mediatore: submission.mediatore,
         responses: responses
       };
 
@@ -267,7 +251,7 @@ export default function AdminLeadDetail() {
     );
   }
 
-  if (!lead) {
+  if (!submission) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f8f5f1]">
         <div className="text-center">
@@ -293,7 +277,7 @@ export default function AdminLeadDetail() {
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-[#245C4F]">Dettagli Lead</h1>
-            <p className="text-gray-600">ID: {lead.id}</p>
+            <p className="text-gray-600">ID: {submission.id}</p>
           </div>
         </div>
       </header>
@@ -305,16 +289,11 @@ export default function AdminLeadDetail() {
               <span>Informazioni Generali</span>
               <div className="flex gap-2">
                 <Badge variant="secondary">
-                  {lead.form_submissions?.forms?.title || 'Form sconosciuto'}
+                  {submission.form_title}
                 </Badge>
-                {lead.form_submissions?.consulting && (
+                {submission.consulting && (
                   <Badge className="bg-green-100 text-green-800">
                     Consulenza richiesta
-                  </Badge>
-                )}
-                {lead.source && (
-                  <Badge variant="outline">
-                    {lead.source}
                   </Badge>
                 )}
               </div>
@@ -325,27 +304,27 @@ export default function AdminLeadDetail() {
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-gray-500" />
                 <div>
-                  <p className="text-sm text-gray-600">Data Creazione</p>
-                  <p className="font-medium">{formatDate(lead.created_at)}</p>
+                  <p className="text-sm text-gray-600">Data Invio</p>
+                  <p className="font-medium">{formatDate(submission.created_at)}</p>
                 </div>
               </div>
               
-              {lead.phone_number && (
+              {submission.phone_number && (
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4 text-gray-500" />
                   <div>
                     <p className="text-sm text-gray-600">Telefono</p>
-                    <p className="font-medium">{lead.phone_number}</p>
+                    <p className="font-medium">{submission.phone_number}</p>
                   </div>
                 </div>
               )}
               
-              {lead.form_submissions?.user_identifier && (
+              {submission.user_identifier && (
                 <div className="flex items-center gap-2">
                   <FileText className="h-4 w-4 text-gray-500" />
                   <div>
                     <p className="text-sm text-gray-600">ID Utente</p>
-                    <p className="font-medium">{lead.form_submissions.user_identifier}</p>
+                    <p className="font-medium">{submission.user_identifier}</p>
                   </div>
                 </div>
               )}
@@ -364,63 +343,33 @@ export default function AdminLeadDetail() {
               </div>
             </div>
             
-            {lead.form_submissions?.metadata && (
+            {submission.metadata && (
               <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-medium mb-2">Metadata Form</h4>
+                <h4 className="font-medium mb-2">Metadata</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                   <div>
-                    <span className="text-gray-600">Blocchi attivi:</span> {lead.form_submissions.metadata.blocks?.length || 0}
+                    <span className="text-gray-600">Blocchi attivi:</span> {submission.metadata.blocks?.length || 0}
                   </div>
                   <div>
-                    <span className="text-gray-600">Blocchi completati:</span> {lead.form_submissions.metadata.completedBlocks?.length || 0}
+                    <span className="text-gray-600">Blocchi completati:</span> {submission.metadata.completedBlocks?.length || 0}
                   </div>
                   <div>
-                    <span className="text-gray-600">Blocchi dinamici:</span> {lead.form_submissions.metadata.dynamicBlocks || 0}
+                    <span className="text-gray-600">Blocchi dinamici:</span> {submission.metadata.dynamicBlocks || 0}
                   </div>
-                  {lead.form_submissions.metadata.slug && (
+                  {submission.metadata.slug && (
                     <div className="col-span-full">
-                      <span className="text-gray-600">Slug:</span> {lead.form_submissions.metadata.slug}
+                      <span className="text-gray-600">Slug:</span> {submission.metadata.slug}
                     </div>
                   )}
                 </div>
               </div>
             )}
-
-            {/* Lead specific metadata */}
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-              <h4 className="font-medium mb-2">Informazioni Lead</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                {lead.priority && (
-                  <div>
-                    <span className="text-gray-600">Priorità:</span> {lead.priority}
-                  </div>
-                )}
-                {lead.source && (
-                  <div>
-                    <span className="text-gray-600">Fonte:</span> {lead.source}
-                  </div>
-                )}
-                {lead.next_contact_date && (
-                  <div>
-                    <span className="text-gray-600">Prossimo contatto:</span> {formatDate(lead.next_contact_date)}
-                  </div>
-                )}
-                {lead.last_contact_date && (
-                  <div>
-                    <span className="text-gray-600">Ultimo contatto:</span> {formatDate(lead.last_contact_date)}
-                  </div>
-                )}
-                <div>
-                  <span className="text-gray-600">Ultimo aggiornamento:</span> {formatDate(lead.updated_at)}
-                </div>
-              </div>
-            </div>
           </CardContent>
         </Card>
 
         <div className="mb-6">
           <LeadManagementCard
-            submission={lead}
+            submission={submission}
             onUpdate={handleLeadUpdate}
           />
         </div>
