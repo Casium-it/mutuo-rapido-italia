@@ -36,6 +36,7 @@ interface FormSubmission {
   last_name: string | null;
   email: string | null;
   notes: string | null;
+  mediatore: string | null;
   lead_status: LeadStatus;
   form_title: string;
   forms?: {
@@ -446,7 +447,14 @@ export default function AdminLeads() {
                       <User className="h-4 w-4 text-gray-500" />
                       <span className="text-sm text-gray-600">Status Lead:</span>
                     </div>
-                    <LeadStatusBadge status={submission.lead_status} />
+                    <div className="flex items-center gap-2">
+                      <LeadStatusBadge status={submission.lead_status} />
+                      {submission.mediatore && (
+                        <span className="text-sm text-gray-600">
+                          → {submission.mediatore}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Notes */}
