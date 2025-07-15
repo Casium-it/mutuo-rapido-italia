@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -29,11 +30,11 @@ import AdminLeads from "./pages/AdminLeads";
 import AdminSimulations from "./pages/AdminSimulations";
 import AdminBlocks from "./pages/AdminBlocks";
 import AdminBlockDetail from "./pages/AdminBlockDetail";
-
 import AdminSimulationDetail from "./pages/AdminSimulationDetail";
 import AdminLeadDetail from "./pages/AdminLeadDetail";
 import AdminNotifications from "./pages/AdminNotifications";
 import AdminForms from "./pages/AdminForms";
+import AdminStatistics from "./pages/AdminStatistics";
 
 const queryClient = new QueryClient();
 
@@ -80,6 +81,11 @@ const AppWithTracking = () => {
       <Route path="/admin" element={
         <ProtectedRoute requireAdmin>
           <Admin />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/statistics" element={
+        <ProtectedRoute requireAdmin>
+          <AdminStatistics />
         </ProtectedRoute>
       } />
       <Route path="/admin/leads" element={

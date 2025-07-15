@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -220,6 +219,14 @@ export default function Admin() {
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Gestisci Piattaforma</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/statistics')}>
+              <CardContent className="p-6 text-center">
+                <TrendingUp className="h-12 w-12 text-[#245C4F] mx-auto mb-3" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Statistiche</h3>
+                <p className="text-sm text-gray-600">Visualizza statistiche dettagliate e analisi delle performance</p>
+              </CardContent>
+            </Card>
+
             <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/notifications')}>
               <CardContent className="p-6 text-center">
                 <Bell className="h-12 w-12 text-[#245C4F] mx-auto mb-3" />
@@ -258,6 +265,12 @@ export default function Admin() {
         <div>
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Azioni Rapide</h3>
           <div className="flex flex-wrap gap-3">
+            <Button 
+              onClick={() => navigate('/admin/statistics')}
+              className="bg-[#245C4F] hover:bg-[#1e4f44]"
+            >
+              Visualizza Statistiche
+            </Button>
             <Button 
               onClick={() => navigate('/admin/leads')}
               className="bg-[#245C4F] hover:bg-[#1e4f44]"
