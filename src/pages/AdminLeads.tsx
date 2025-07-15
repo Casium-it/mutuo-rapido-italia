@@ -38,6 +38,10 @@ interface FormSubmission {
   notes: string | null;
   lead_status: LeadStatus;
   form_title: string;
+  forms?: {
+    slug: string;
+    title: string;
+  };
 }
 
 interface FormInfo {
@@ -52,14 +56,16 @@ export default function AdminLeads() {
   const [forms, setForms] = useState<FormInfo[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [phoneFilter, setPhoneFilter] = useState<'all' | 'with' | 'without'>('all');
+  const [formFilter, setFormFilter] = useState<string>('all');
   const { user } = useAuth();
   const navigate = useNavigate();
 
   // Session Storage helpers
-  const saveFiltersToSession = (status: string, phone: 'all' | 'with' | 'without') => {
+  const saveFiltersToSession = (status: string, phone: 'all' | 'with' | 'without', form: string) => {
     try {
       sessionStorage.setItem('adminLeads_statusFilter', status);
       sessionStorage.setItem('adminLeads_phoneFilter', phone);
+      sessionStorage.setItem('adminLeads_formFilter', form);
     } catch (error) {
       console.warn('Could not save filters to session storage:', error);
     }
@@ -69,10 +75,15 @@ export default function AdminLeads() {
     try {
       const savedStatus = sessionStorage.getItem('adminLeads_statusFilter') || 'all';
       const savedPhone = sessionStorage.getItem('adminLeads_phoneFilter') || 'all';
-      return { status: savedStatus, phone: savedPhone as 'all' | 'with' | 'without' };
+      const savedForm = sessionStorage.getItem('adminLeads_formFilter') || 'all';
+      return { 
+        status: savedStatus, 
+        phone: savedPhone as 'all' | 'with' | 'without',
+        form: savedForm
+      };
     } catch (error) {
       console.warn('Could not load filters from session storage:', error);
-      return { status: 'all', phone: 'all' as const };
+      return { status: 'all', phone: 'all' as const, form: 'all' };
     }
   };
 
@@ -98,9 +109,10 @@ export default function AdminLeads() {
 
   // Initialize filters from session storage
   useEffect(() => {
-    const { status, phone } = loadFiltersFromSession();
+    const { status, phone, form } = loadFiltersFromSession();
     setStatusFilter(status);
     setPhoneFilter(phone);
+    setFormFilter(form);
   }, []);
 
   // Restore scroll position after component mounts and DOM is ready
@@ -146,6 +158,23 @@ export default function AdminLeads() {
       }));
       
       setSubmissions(mappedData);
+
+      // Extract unique forms for the filter
+      const uniqueForms = Array.from(
+        new Map(
+          mappedData
+            .filter(submission => submission.forms)
+            .map(submission => [
+              submission.forms.slug,
+              {
+                slug: submission.forms.slug,
+                title: submission.forms.title
+              }
+            ])
+        ).values()
+      );
+      
+      setForms(uniqueForms);
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -219,13 +248,14 @@ export default function AdminLeads() {
     });
   };
 
-  // Filter submissions based on status and phone
+  // Filter submissions based on status, phone and form
   const filteredSubmissions = submissions.filter(submission => {
     const statusMatch = statusFilter === 'all' || submission.lead_status === statusFilter;
     const phoneMatch = phoneFilter === 'all' || 
       (phoneFilter === 'with' && submission.phone_number) ||
       (phoneFilter === 'without' && !submission.phone_number);
-    return statusMatch && phoneMatch;
+    const formMatch = formFilter === 'all' || submission.forms?.slug === formFilter;
+    return statusMatch && phoneMatch && formMatch;
   });
 
   if (loading) {
@@ -274,7 +304,7 @@ export default function AdminLeads() {
               <Filter className="h-4 w-4 text-gray-500" />
               <Select value={statusFilter} onValueChange={(value) => {
                 setStatusFilter(value);
-                saveFiltersToSession(value, phoneFilter);
+                saveFiltersToSession(value, phoneFilter, formFilter);
               }}>
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="Filtra per status" />
@@ -302,7 +332,7 @@ export default function AdminLeads() {
               <Label htmlFor="phone-filter" className="text-sm text-gray-600">Telefono:</Label>
               <Select value={phoneFilter} onValueChange={(value: 'all' | 'with' | 'without') => {
                 setPhoneFilter(value);
-                saveFiltersToSession(statusFilter, value);
+                saveFiltersToSession(statusFilter, value, formFilter);
               }}>
                 <SelectTrigger className="w-32">
                   <SelectValue />
@@ -311,6 +341,27 @@ export default function AdminLeads() {
                   <SelectItem value="all">Tutti</SelectItem>
                   <SelectItem value="with">Sì</SelectItem>
                   <SelectItem value="without">No</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-2 border-l pl-4">
+              <FileText className="h-4 w-4 text-gray-500" />
+              <Label htmlFor="form-filter" className="text-sm text-gray-600">Form:</Label>
+              <Select value={formFilter} onValueChange={(value) => {
+                setFormFilter(value);
+                saveFiltersToSession(statusFilter, phoneFilter, value);
+              }}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Filtra per form" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutti i form</SelectItem>
+                  {forms.map((form) => (
+                    <SelectItem key={form.slug} value={form.slug}>
+                      {form.title}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
