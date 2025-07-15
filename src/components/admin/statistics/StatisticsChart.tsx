@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { DailyData, ConversionType } from '@/hooks/useGraphData';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -83,7 +83,7 @@ export function StatisticsChart({ data, conversionType, metricType }: Statistics
   return (
     <div className="w-full h-80">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+        <ComposedChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
           <XAxis 
             dataKey="date" 
@@ -107,30 +107,27 @@ export function StatisticsChart({ data, conversionType, metricType }: Statistics
           />
           <Tooltip content={<CustomTooltip />} />
           
-          {/* Main metric line */}
-          <Line
+          {/* Main metric bars */}
+          <Bar
             yAxisId="left"
-            type="monotone"
             dataKey={metricType}
-            stroke="#245C4F"
-            strokeWidth={2}
-            dot={{ fill: '#245C4F', strokeWidth: 2, r: 4 }}
+            fill="#245C4F"
             name={getMetricLabel()}
-            connectNulls={false}
           />
           
-          {/* Conversion rate line */}
+          {/* Conversion rate line (semi-transparent) */}
           <Line
             yAxisId="right"
             type="monotone"
             dataKey={conversionKey}
             stroke="#00853E"
             strokeWidth={2}
-            dot={{ fill: '#00853E', strokeWidth: 2, r: 4 }}
+            strokeOpacity={0.5}
+            dot={{ fill: '#00853E', strokeWidth: 2, r: 4, fillOpacity: 0.5 }}
             name={getConversionLabel()}
             connectNulls={false}
           />
-        </LineChart>
+        </ComposedChart>
       </ResponsiveContainer>
     </div>
   );

@@ -6,7 +6,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useGraphData, GraphPeriod, ConversionType } from '@/hooks/useGraphData';
 import { StatisticsChart } from './StatisticsChart';
 
@@ -72,9 +78,9 @@ export function StatisticsGraphDialog({
   ];
 
   const conversionOptions = [
-    { value: 'completion' as ConversionType, label: '% Submissions/Simulazioni' },
-    { value: 'contact' as ConversionType, label: '% Sub. con Contatto/Submissions' },
-    { value: 'funnel' as ConversionType, label: '% Sub. con Contatto/Simulazioni' }
+    { value: 'completion' as ConversionType, label: 'Completamento simulazione' },
+    { value: 'contact' as ConversionType, label: 'Lascio di contatto' },
+    { value: 'funnel' as ConversionType, label: 'Funnel completo' }
   ];
 
   const currentValues = getCurrentValues();
@@ -92,23 +98,22 @@ export function StatisticsGraphDialog({
           {/* Controls */}
           <div className="flex flex-col sm:flex-row gap-4">
             {/* Period Selection */}
-            <div>
+            <div className="min-w-32">
               <label className="text-sm font-medium text-gray-700 mb-2 block">
                 Periodo
               </label>
-              <div className="flex gap-1">
-                {periodOptions.map((option) => (
-                  <Button
-                    key={option.value}
-                    variant={period === option.value ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setPeriod(option.value)}
-                    className={period === option.value ? "bg-[#245C4F] hover:bg-[#1e4f44]" : ""}
-                  >
-                    {option.label}
-                  </Button>
-                ))}
-              </div>
+              <Select value={period} onValueChange={(value: GraphPeriod) => setPeriod(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {periodOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Conversion Type Selection */}
@@ -116,19 +121,18 @@ export function StatisticsGraphDialog({
               <label className="text-sm font-medium text-gray-700 mb-2 block">
                 Tipo di Conversione
               </label>
-              <div className="flex flex-wrap gap-1">
-                {conversionOptions.map((option) => (
-                  <Button
-                    key={option.value}
-                    variant={conversionType === option.value ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setConversionType(option.value)}
-                    className={conversionType === option.value ? "bg-[#245C4F] hover:bg-[#1e4f44]" : ""}
-                  >
-                    {option.label}
-                  </Button>
-                ))}
-              </div>
+              <Select value={conversionType} onValueChange={(value: ConversionType) => setConversionType(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {conversionOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
