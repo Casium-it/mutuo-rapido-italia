@@ -140,7 +140,7 @@ export function LeadManagementCard({ submission, onUpdate }: LeadManagementCardP
                 value={submission.assigned_to || 'unassigned'} 
                 onValueChange={(value) => {
                   const newValue = value === 'unassigned' ? null : value;
-                  onUpdate('assigned_to', newValue || '');
+                  onUpdate('assigned_to', newValue);
                   
                   // If unassigning and reminder is enabled, disable it
                   if (!newValue && submission.reminder) {
