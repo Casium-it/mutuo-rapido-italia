@@ -120,6 +120,24 @@ serve(async (req) => {
     const { formData, blocks } = formResult;
     const formId = formData.id;
 
+    // Find matching saved simulation by simulationId
+    let savedSimulationId = null;
+    if (formState.simulationId) {
+      console.log('🔍 Looking for saved simulation with simulationId:', formState.simulationId);
+      const { data: savedSimulation } = await supabase
+        .from('saved_simulations')
+        .select('id')
+        .eq('simulation_id', formState.simulationId)
+        .maybeSingle();
+      
+      if (savedSimulation) {
+        savedSimulationId = savedSimulation.id;
+        console.log('✅ Found matching saved simulation:', savedSimulationId);
+      } else {
+        console.log('ℹ️ No saved simulation found for simulationId:', formState.simulationId);
+      }
+    }
+
     console.log('📋 Form submission details:', {
       formSlug,
       formId,
@@ -127,7 +145,8 @@ serve(async (req) => {
       activeBlocks: formState.activeBlocks?.length || 0,
       completedBlocks: formState.completedBlocks?.length || 0,
       dynamicBlocks: formState.dynamicBlocks?.length || 0,
-      availableBlocks: blocks.length
+      availableBlocks: blocks.length,
+      savedSimulationId
     });
 
     // Get referral parameter from the request if provided
@@ -145,6 +164,7 @@ serve(async (req) => {
         user_identifier: referralId,
         form_id: formId,
         expires_at: expiresAt.toISOString(),
+        saved_simulation_id: savedSimulationId,
         metadata: { 
           blocks: formState.activeBlocks,
           completedBlocks: formState.completedBlocks,

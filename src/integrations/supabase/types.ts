@@ -129,6 +129,7 @@ export type Database = {
           metadata: Json | null
           notes: string | null
           phone_number: string | null
+          saved_simulation_id: string | null
           user_identifier: string | null
         }
         Insert: {
@@ -145,6 +146,7 @@ export type Database = {
           metadata?: Json | null
           notes?: string | null
           phone_number?: string | null
+          saved_simulation_id?: string | null
           user_identifier?: string | null
         }
         Update: {
@@ -161,6 +163,7 @@ export type Database = {
           metadata?: Json | null
           notes?: string | null
           phone_number?: string | null
+          saved_simulation_id?: string | null
           user_identifier?: string | null
         }
         Relationships: [
@@ -169,6 +172,13 @@ export type Database = {
             columns: ["form_id"]
             isOneToOne: false
             referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_submissions_saved_simulation_id_fkey"
+            columns: ["saved_simulation_id"]
+            isOneToOne: false
+            referencedRelation: "saved_simulations"
             referencedColumns: ["id"]
           },
         ]
