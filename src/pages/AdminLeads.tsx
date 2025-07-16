@@ -37,6 +37,8 @@ interface FormSubmission {
   email: string | null;
   notes: string | null;
   mediatore: string | null;
+  ultimo_contatto: string | null;
+  prossimo_contatto: string | null;
   lead_status: LeadStatus;
   form_title: string;
   forms?: {
@@ -454,6 +456,28 @@ export default function AdminLeads() {
                           → {submission.mediatore}
                         </span>
                       )}
+                    </div>
+                    
+                    {/* Contact Dates */}
+                    <div className="flex items-center gap-6 mt-2 text-sm text-gray-600">
+                      <div className="flex items-center gap-1">
+                        <span>Ultimo contatto:</span>
+                        <span className="font-medium">
+                          {submission.ultimo_contatto 
+                            ? formatDate(submission.ultimo_contatto)
+                            : '(nessuno)'
+                          }
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span>Prossimo contatto:</span>
+                        <span className="font-medium">
+                          {submission.prossimo_contatto 
+                            ? formatDate(submission.prossimo_contatto)
+                            : '(non in programma)'
+                          }
+                        </span>
+                      </div>
                     </div>
                   </div>
 
