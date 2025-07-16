@@ -15,8 +15,10 @@ interface Lead {
   consulting: boolean;
   prossimo_contatto: string;
   assigned_to: string;
-  admin_name: string;
-  admin_phone: string;
+  admin_notification_settings: {
+    admin_name: string;
+    phone_number: string;
+  };
 }
 
 serve(async (req) => {
@@ -54,7 +56,7 @@ serve(async (req) => {
         assigned_to,
         admin_notification_settings!inner(
           admin_name,
-          phone_number:admin_phone
+          phone_number
         )
       `)
       .eq('reminder', true)
@@ -126,7 +128,7 @@ serve(async (req) => {
           },
           body: JSON.stringify({
             campaignName: 'reminderadmin1',
-            destination: adminData.admin_phone,
+            destination: adminData.phone_number,
             userName: 'GoMutui',
             templateParams: messageParams,
             source: 'new-api',
