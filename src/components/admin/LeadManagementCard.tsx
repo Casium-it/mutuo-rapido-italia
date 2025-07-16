@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { User } from 'lucide-react';
 import { LeadStatus } from '@/types/leadStatus';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 interface AdminNotification {
   id: string;
@@ -107,29 +108,22 @@ export function LeadManagementCard({ submission, onUpdate }: LeadManagementCardP
                     checked={submission.reminder}
                     onCheckedChange={(checked) => {
                       if (checked && !submission.assigned_to) {
-                        return; // Don't allow enabling if no one is assigned
+                        toast({
+                          title: "Errore",
+                          description: "Devi assegnare il lead prima di abilitare il reminder",
+                          variant: "destructive"
+                        });
+                        return;
                       }
                       onUpdate('reminder', checked);
                     }}
-                    disabled={!submission.assigned_to}
                   />
                   <Label htmlFor="reminder" className="text-sm font-medium whitespace-nowrap">
                     Reminder
                   </Label>
                 </div>
-                {!submission.assigned_to && submission.reminder && (
-                  <p className="text-xs text-red-500 text-center">
-                    Assegna prima il lead
-                  </p>
-                )}
               </div>
             </div>
-            
-            {!submission.assigned_to && (
-              <p className="text-xs text-red-500 mt-1">
-                Devi assegnare il lead per abilitare il reminder
-              </p>
-            )}
           </div>
           
           <div className="space-y-4">
@@ -144,7 +138,15 @@ export function LeadManagementCard({ submission, onUpdate }: LeadManagementCardP
               </Label>
               <Select 
                 value={submission.assigned_to || 'unassigned'} 
-                onValueChange={(value) => onUpdate('assigned_to', value === 'unassigned' ? '' : value)}
+                onValueChange={(value) => {
+                  const newValue = value === 'unassigned' ? null : value;
+                  onUpdate('assigned_to', newValue || '');
+                  
+                  // If unassigning and reminder is enabled, disable it
+                  if (!newValue && submission.reminder) {
+                    onUpdate('reminder', false);
+                  }
+                }}
               >
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Seleziona admin" />
