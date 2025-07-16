@@ -30,12 +30,10 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const aisensyApiKey = Deno.env.get('AISENSY_API_KEY')!;
     
     console.log('Environment check:');
     console.log(`Supabase URL: ${supabaseUrl ? 'Present' : 'Missing'}`);
     console.log(`Supabase Service Key: ${supabaseServiceKey ? 'Present' : 'Missing'}`);
-    console.log(`AiSensy API Key: ${aisensyApiKey ? `Present (${aisensyApiKey.length} chars)` : 'Missing'}`);
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -124,56 +122,41 @@ serve(async (req) => {
 
         console.log(`Sending reminder for lead ${leadData.id} to admin ${adminData.admin_name}`);
         
-        // Prepare AiSensy payload
+        // Prepare payload for send-aisensy-message edge function
         const aisensyPayload = {
           campaignName: 'reminderadmin1',
           destination: adminData.phone_number,
           userName: 'GoMutui',
           templateParams: messageParams,
-          source: 'new-api',
-          media: {},
-          buttons: {},
-          carouselCards: [],
-          location: {},
-          paramsFallbackValue: {
-            FirstName: leadName
-          }
+          source: 'new-api'
         };
 
-        console.log(`AiSensy payload for lead ${leadData.id}:`, JSON.stringify(aisensyPayload, null, 2));
-        console.log(`Using API key (masked): ${aisensyApiKey?.substring(0, 8)}...${aisensyApiKey?.substring(-4)}`);
-        console.log(`Template params:`, messageParams);
+        console.log(`Calling send-aisensy-message edge function for lead ${leadData.id}:`, JSON.stringify(aisensyPayload, null, 2));
 
-        // Send AiSensy message
-        const aisensyResponse = await fetch('https://backend.aisensy.com/campaign/t1/api/v2', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-AiSensy-API-Key': aisensyApiKey,
-          },
-          body: JSON.stringify(aisensyPayload),
+        // Call the send-aisensy-message edge function
+        const { data, error } = await supabase.functions.invoke('send-aisensy-message', {
+          body: aisensyPayload
         });
 
-        console.log(`AiSensy response status: ${aisensyResponse.status} ${aisensyResponse.statusText}`);
-        console.log(`AiSensy response headers:`, Object.fromEntries(aisensyResponse.headers.entries()));
-
-        if (!aisensyResponse.ok) {
-          const errorText = await aisensyResponse.text();
-          console.error(`AiSensy API error for lead ${leadData.id}:`, {
-            status: aisensyResponse.status,
-            statusText: aisensyResponse.statusText,
-            errorBody: errorText,
-            requestPayload: aisensyPayload
-          });
+        if (error) {
+          console.error(`Edge function error for lead ${leadData.id}:`, error);
           failedReminders.push({
             leadId: leadData.id,
-            error: `AiSensy API error: ${aisensyResponse.status} - ${errorText}`
+            error: `Edge function error: ${error.message}`
           });
           continue;
         }
 
-        const aisensyResult = await aisensyResponse.json();
-        console.log(`AiSensy response for lead ${leadData.id}:`, aisensyResult);
+        if (!data?.success) {
+          console.error(`AiSensy message failed for lead ${leadData.id}:`, data);
+          failedReminders.push({
+            leadId: leadData.id,
+            error: `AiSensy error: ${data?.error || 'Unknown error'}`
+          });
+          continue;
+        }
+
+        console.log(`Successfully sent reminder for lead ${leadData.id}:`, data);
 
         // Mark reminder as sent
         const { error: updateError } = await supabase
