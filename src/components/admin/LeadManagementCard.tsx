@@ -55,18 +55,18 @@ export function LeadManagementCard({ submission, onUpdate }: LeadManagementCardP
               placeholder="Inserisci l'email"
             />
 
-            <EditableField
-              label="Mediatore"
-              value={submission.mediatore || ''}
-              onSave={(value) => onUpdate('mediatore', value)}
-              placeholder="Inserisci il nome del mediatore"
-            />
-
             <DateTimePicker
               label="Ultimo Contatto"
               value={submission.ultimo_contatto}
               onChange={(value) => onUpdate('ultimo_contatto', value || '')}
               placeholder="Seleziona data ultimo contatto"
+            />
+
+            <DateTimePicker
+              label="Prossimo Contatto"
+              value={submission.prossimo_contatto}
+              onChange={(value) => onUpdate('prossimo_contatto', value || '')}
+              placeholder="Seleziona data prossimo contatto"
             />
           </div>
           
@@ -76,11 +76,11 @@ export function LeadManagementCard({ submission, onUpdate }: LeadManagementCardP
               onValueChange={(value) => onUpdate('lead_status', value)}
             />
 
-            <DateTimePicker
-              label="Prossimo Contatto"
-              value={submission.prossimo_contatto}
-              onChange={(value) => onUpdate('prossimo_contatto', value || '')}
-              placeholder="Seleziona data prossimo contatto"
+            <EditableField
+              label="Mediatore"
+              value={submission.mediatore || ''}
+              onSave={(value) => onUpdate('mediatore', value)}
+              placeholder="Inserisci il nome del mediatore"
             />
             
             <EditableField
