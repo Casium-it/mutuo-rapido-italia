@@ -405,6 +405,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      generate_simulation_id: {
+        Args: { created_date?: string }
+        Returns: string
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]
@@ -424,6 +428,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
         }
         Returns: boolean
+      }
+      reconstruct_form_state: {
+        Args: { submission_id_param: string }
+        Returns: Json
       }
     }
     Enums: {
