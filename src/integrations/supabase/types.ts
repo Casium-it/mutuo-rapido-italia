@@ -250,6 +250,57 @@ export type Database = {
         }
         Relationships: []
       }
+      leads: {
+        Row: {
+          consulting: boolean | null
+          created_at: string
+          email: string | null
+          first_name: string | null
+          form_id: string | null
+          id: string
+          last_name: string | null
+          lead_status: Database["public"]["Enums"]["lead_status"] | null
+          mediatore: string | null
+          notes: string | null
+          phone_number: string | null
+          source_id: string
+          source_type: Database["public"]["Enums"]["lead_source_type"]
+          updated_at: string
+        }
+        Insert: {
+          consulting?: boolean | null
+          created_at?: string
+          email?: string | null
+          first_name?: string | null
+          form_id?: string | null
+          id?: string
+          last_name?: string | null
+          lead_status?: Database["public"]["Enums"]["lead_status"] | null
+          mediatore?: string | null
+          notes?: string | null
+          phone_number?: string | null
+          source_id: string
+          source_type: Database["public"]["Enums"]["lead_source_type"]
+          updated_at?: string
+        }
+        Update: {
+          consulting?: boolean | null
+          created_at?: string
+          email?: string | null
+          first_name?: string | null
+          form_id?: string | null
+          id?: string
+          last_name?: string | null
+          lead_status?: Database["public"]["Enums"]["lead_status"] | null
+          mediatore?: string | null
+          notes?: string | null
+          phone_number?: string | null
+          source_id?: string
+          source_type?: Database["public"]["Enums"]["lead_source_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       linked_forms: {
         Row: {
           created_at: string
@@ -429,6 +480,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "customer" | "broker"
       completion_behavior_type: "form-completed" | "form-completed-redirect"
+      lead_source_type: "form_submission" | "saved_simulation"
       lead_status:
         | "not_contacted"
         | "first_contact"
@@ -573,6 +625,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "customer", "broker"],
       completion_behavior_type: ["form-completed", "form-completed-redirect"],
+      lead_source_type: ["form_submission", "saved_simulation"],
       lead_status: [
         "not_contacted",
         "first_contact",
