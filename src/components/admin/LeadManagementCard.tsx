@@ -96,7 +96,14 @@ export function LeadManagementCard({ submission, onUpdate }: LeadManagementCardP
                 <DateTimePicker
                   label="Prossimo Contatto"
                   value={submission.prossimo_contatto}
-                  onChange={(value) => onUpdate('prossimo_contatto', value || '')}
+                  onChange={(value) => {
+                    const newValue = value || '';
+                    onUpdate('prossimo_contatto', newValue);
+                    // Reset reminder_sent when prossimo_contatto changes
+                    if (newValue) {
+                      onUpdate('reminder_sent', false);
+                    }
+                  }}
                   placeholder="Seleziona data prossimo contatto"
                 />
               </div>
