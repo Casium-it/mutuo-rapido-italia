@@ -32,6 +32,11 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const aisensyApiKey = Deno.env.get('AISENSY_API_KEY')!;
     
+    console.log('Environment check:');
+    console.log(`Supabase URL: ${supabaseUrl ? 'Present' : 'Missing'}`);
+    console.log(`Supabase Service Key: ${supabaseServiceKey ? 'Present' : 'Missing'}`);
+    console.log(`AiSensy API Key: ${aisensyApiKey ? `Present (${aisensyApiKey.length} chars)` : 'Missing'}`);
+    
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     console.log('Starting 5-minute auto run check...');
@@ -118,6 +123,26 @@ serve(async (req) => {
         ];
 
         console.log(`Sending reminder for lead ${leadData.id} to admin ${adminData.admin_name}`);
+        
+        // Prepare AiSensy payload
+        const aisensyPayload = {
+          campaignName: 'reminderadmin1',
+          destination: adminData.phone_number,
+          userName: 'GoMutui',
+          templateParams: messageParams,
+          source: 'new-api',
+          media: {},
+          buttons: {},
+          carouselCards: [],
+          location: {},
+          paramsFallbackValue: {
+            FirstName: leadName
+          }
+        };
+
+        console.log(`AiSensy payload for lead ${leadData.id}:`, JSON.stringify(aisensyPayload, null, 2));
+        console.log(`Using API key (masked): ${aisensyApiKey?.substring(0, 8)}...${aisensyApiKey?.substring(-4)}`);
+        console.log(`Template params:`, messageParams);
 
         // Send AiSensy message
         const aisensyResponse = await fetch('https://backend.aisensy.com/campaign/t1/api/v2', {
@@ -126,28 +151,23 @@ serve(async (req) => {
             'Content-Type': 'application/json',
             'X-AiSensy-API-Key': aisensyApiKey,
           },
-          body: JSON.stringify({
-            campaignName: 'reminderadmin1',
-            destination: adminData.phone_number,
-            userName: 'GoMutui',
-            templateParams: messageParams,
-            source: 'new-api',
-            media: {},
-            buttons: {},
-            carouselCards: [],
-            location: {},
-            paramsFallbackValue: {
-              FirstName: leadName
-            }
-          }),
+          body: JSON.stringify(aisensyPayload),
         });
+
+        console.log(`AiSensy response status: ${aisensyResponse.status} ${aisensyResponse.statusText}`);
+        console.log(`AiSensy response headers:`, Object.fromEntries(aisensyResponse.headers.entries()));
 
         if (!aisensyResponse.ok) {
           const errorText = await aisensyResponse.text();
-          console.error(`AiSensy API error for lead ${leadData.id}:`, errorText);
+          console.error(`AiSensy API error for lead ${leadData.id}:`, {
+            status: aisensyResponse.status,
+            statusText: aisensyResponse.statusText,
+            errorBody: errorText,
+            requestPayload: aisensyPayload
+          });
           failedReminders.push({
             leadId: leadData.id,
-            error: `AiSensy API error: ${aisensyResponse.status}`
+            error: `AiSensy API error: ${aisensyResponse.status} - ${errorText}`
           });
           continue;
         }
