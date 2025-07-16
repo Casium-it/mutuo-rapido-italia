@@ -105,10 +105,10 @@ serve(async (req) => {
 
         // Prepare AiSensy message parameters
         const consultingText = leadData.consulting ? 'Si ✅' : 'No ❌';
-        const leadName = `${leadData.first_name || ''} ${leadData.last_name || ''}`.trim();
-        const leadPhone = leadData.phone_number?.startsWith('+39') 
-          ? leadData.phone_number 
-          : `+39${leadData.phone_number}`;
+        const leadName = `${leadData.first_name || ''} ${leadData.last_name || ''}`.trim() || 'N/A';
+        const leadPhone = leadData.phone_number 
+          ? (leadData.phone_number.startsWith('+39') ? leadData.phone_number : `+39${leadData.phone_number}`)
+          : 'N/A';
 
         const messageParams = [
           adminData.admin_name,           // 1 - admin name
