@@ -60,6 +60,7 @@ export default function AdminLeads() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [phoneFilter, setPhoneFilter] = useState<'all' | 'with' | 'without'>('all');
   const [formFilter, setFormFilter] = useState<string>('all');
+  const [prossimoContattoFilter, setProssimoContattoFilter] = useState<boolean>(false);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -251,15 +252,24 @@ export default function AdminLeads() {
     });
   };
 
-  // Filter submissions based on status, phone and form
-  const filteredSubmissions = submissions.filter(submission => {
+  // Filter submissions based on status, phone, form and prossimo contatto
+  let filteredSubmissions = submissions.filter(submission => {
     const statusMatch = statusFilter === 'all' || submission.lead_status === statusFilter;
     const phoneMatch = phoneFilter === 'all' || 
       (phoneFilter === 'with' && submission.phone_number) ||
       (phoneFilter === 'without' && !submission.phone_number);
     const formMatch = formFilter === 'all' || submission.forms?.slug === formFilter;
-    return statusMatch && phoneMatch && formMatch;
+    const prossimoContattoMatch = !prossimoContattoFilter || submission.prossimo_contatto;
+    return statusMatch && phoneMatch && formMatch && prossimoContattoMatch;
   });
+
+  // Sort by prossimo_contatto when filter is active (oldest first)
+  if (prossimoContattoFilter) {
+    filteredSubmissions = filteredSubmissions.sort((a, b) => {
+      if (!a.prossimo_contatto || !b.prossimo_contatto) return 0;
+      return new Date(a.prossimo_contatto).getTime() - new Date(b.prossimo_contatto).getTime();
+    });
+  }
 
   if (loading) {
     return (
@@ -369,6 +379,17 @@ export default function AdminLeads() {
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="flex items-center gap-2 border-l pl-4">
+              <Button
+                onClick={() => setProssimoContattoFilter(!prossimoContattoFilter)}
+                variant={prossimoContattoFilter ? "default" : "outline"}
+                className={prossimoContattoFilter ? "bg-[#245C4F] hover:bg-[#1e4f44]" : ""}
+              >
+                <Calendar className="h-4 w-4 mr-2" />
+                Prossimo Contatto
+              </Button>
+            </div>
             
             <Button onClick={fetchSubmissions} variant="outline">
               Aggiorna
@@ -469,15 +490,19 @@ export default function AdminLeads() {
                           }
                         </span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <span>Prossimo contatto:</span>
-                        <span className="font-medium">
-                          {submission.prossimo_contatto 
-                            ? formatDate(submission.prossimo_contatto)
-                            : '(non in programma)'
-                          }
-                        </span>
-                      </div>
+                       <div className="flex items-center gap-1">
+                         <span>Prossimo contatto:</span>
+                         <span className={`font-medium ${
+                           submission.prossimo_contatto && new Date(submission.prossimo_contatto) < new Date()
+                             ? 'text-red-600 font-bold'
+                             : ''
+                         }`}>
+                           {submission.prossimo_contatto 
+                             ? formatDate(submission.prossimo_contatto)
+                             : '(non in programma)'
+                           }
+                         </span>
+                       </div>
                     </div>
                   </div>
 
