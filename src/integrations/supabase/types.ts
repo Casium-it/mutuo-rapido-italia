@@ -84,7 +84,6 @@ export type Database = {
           question_id: string
           question_text: string
           response_value: Json
-          saved_simulation_id: string | null
           submission_id: string
         }
         Insert: {
@@ -94,7 +93,6 @@ export type Database = {
           question_id: string
           question_text: string
           response_value: Json
-          saved_simulation_id?: string | null
           submission_id: string
         }
         Update: {
@@ -104,17 +102,9 @@ export type Database = {
           question_id?: string
           question_text?: string
           response_value?: Json
-          saved_simulation_id?: string | null
           submission_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "form_responses_saved_simulation_id_fkey"
-            columns: ["saved_simulation_id"]
-            isOneToOne: false
-            referencedRelation: "saved_simulations"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "form_responses_submission_id_fkey"
             columns: ["submission_id"]
@@ -259,65 +249,6 @@ export type Database = {
           version?: number
         }
         Relationships: []
-      }
-      leads: {
-        Row: {
-          consulting: boolean | null
-          created_at: string
-          email: string | null
-          first_name: string | null
-          form_id: string | null
-          id: string
-          last_name: string | null
-          lead_status: Database["public"]["Enums"]["lead_status"] | null
-          mediatore: string | null
-          notes: string | null
-          phone_number: string | null
-          source_id: string
-          source_type: Database["public"]["Enums"]["lead_source_type"]
-          updated_at: string
-        }
-        Insert: {
-          consulting?: boolean | null
-          created_at?: string
-          email?: string | null
-          first_name?: string | null
-          form_id?: string | null
-          id?: string
-          last_name?: string | null
-          lead_status?: Database["public"]["Enums"]["lead_status"] | null
-          mediatore?: string | null
-          notes?: string | null
-          phone_number?: string | null
-          source_id: string
-          source_type: Database["public"]["Enums"]["lead_source_type"]
-          updated_at?: string
-        }
-        Update: {
-          consulting?: boolean | null
-          created_at?: string
-          email?: string | null
-          first_name?: string | null
-          form_id?: string | null
-          id?: string
-          last_name?: string | null
-          lead_status?: Database["public"]["Enums"]["lead_status"] | null
-          mediatore?: string | null
-          notes?: string | null
-          phone_number?: string | null
-          source_id?: string
-          source_type?: Database["public"]["Enums"]["lead_source_type"]
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_leads_form_id"
-            columns: ["form_id"]
-            isOneToOne: false
-            referencedRelation: "forms"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       linked_forms: {
         Row: {
@@ -474,10 +405,6 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
-      generate_simulation_id: {
-        Args: { created_date?: string }
-        Returns: string
-      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]
@@ -498,15 +425,10 @@ export type Database = {
         }
         Returns: boolean
       }
-      reconstruct_form_state: {
-        Args: { submission_id_param: string }
-        Returns: Json
-      }
     }
     Enums: {
       app_role: "admin" | "customer" | "broker"
       completion_behavior_type: "form-completed" | "form-completed-redirect"
-      lead_source_type: "form_submission" | "saved_simulation"
       lead_status:
         | "not_contacted"
         | "first_contact"
@@ -651,7 +573,6 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "customer", "broker"],
       completion_behavior_type: ["form-completed", "form-completed-redirect"],
-      lead_source_type: ["form_submission", "saved_simulation"],
       lead_status: [
         "not_contacted",
         "first_contact",
