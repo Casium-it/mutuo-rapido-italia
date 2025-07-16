@@ -16,8 +16,18 @@ interface DateTimePickerProps {
 }
 
 export function DateTimePicker({ value, onChange, placeholder = "Seleziona data e ora", label }: DateTimePickerProps) {
-  const [date, setDate] = useState<Date | undefined>(value ? new Date(value) : undefined);
-  const [time, setTime] = useState(value ? format(new Date(value), 'HH:mm') : '09:00');
+  // Helper function to safely parse date
+  const parseDate = (dateValue: string | null): Date | undefined => {
+    if (!dateValue) return undefined;
+    const parsedDate = new Date(dateValue);
+    return isNaN(parsedDate.getTime()) ? undefined : parsedDate;
+  };
+
+  const [date, setDate] = useState<Date | undefined>(parseDate(value));
+  const [time, setTime] = useState(() => {
+    const parsedDate = parseDate(value);
+    return parsedDate ? format(parsedDate, 'HH:mm') : '09:00';
+  });
   const [isOpen, setIsOpen] = useState(false);
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
@@ -51,7 +61,8 @@ export function DateTimePicker({ value, onChange, placeholder = "Seleziona data 
     setIsOpen(false);
   };
 
-  const formatDateTime = (dateValue: Date) => {
+  const formatDateTime = (dateValue: Date | undefined) => {
+    if (!dateValue || isNaN(dateValue.getTime())) return placeholder;
     return format(dateValue, "dd/MM/yyyy 'alle' HH:mm", { locale: it });
   };
 
