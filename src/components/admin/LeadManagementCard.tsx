@@ -109,14 +109,14 @@ export function LeadManagementCard({ submission, onUpdate }: LeadManagementCardP
                 Assegnato a
               </Label>
               <Select 
-                value={submission.assigned_to || ''} 
-                onValueChange={(value) => onUpdate('assigned_to', value || '')}
+                value={submission.assigned_to || 'unassigned'} 
+                onValueChange={(value) => onUpdate('assigned_to', value === 'unassigned' ? '' : value)}
               >
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Seleziona admin" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nessuno</SelectItem>
+                  <SelectItem value="unassigned">Nessuno</SelectItem>
                   {adminNotifications.map((admin) => (
                     <SelectItem key={admin.id} value={admin.id}>
                       {admin.admin_name}
