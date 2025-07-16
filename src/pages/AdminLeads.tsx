@@ -459,7 +459,7 @@ export default function AdminLeads() {
                     </div>
                     
                     {/* Contact Dates */}
-                    <div className="flex items-center gap-6 mt-2 text-sm text-gray-600">
+                    <div className="space-y-1 mt-2 text-sm text-gray-600">
                       <div className="flex items-center gap-1">
                         <span>Ultimo contatto:</span>
                         <span className="font-medium">
