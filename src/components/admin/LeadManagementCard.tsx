@@ -90,12 +90,46 @@ export function LeadManagementCard({ submission, onUpdate }: LeadManagementCardP
               placeholder="Seleziona data ultimo contatto"
             />
 
-            <DateTimePicker
-              label="Prossimo Contatto"
-              value={submission.prossimo_contatto}
-              onChange={(value) => onUpdate('prossimo_contatto', value || '')}
-              placeholder="Seleziona data prossimo contatto"
-            />
+            <div className="flex items-end gap-3">
+              <div className="flex-1">
+                <DateTimePicker
+                  label="Prossimo Contatto"
+                  value={submission.prossimo_contatto}
+                  onChange={(value) => onUpdate('prossimo_contatto', value || '')}
+                  placeholder="Seleziona data prossimo contatto"
+                />
+              </div>
+              
+              <div className="flex flex-col items-center gap-1 pb-1">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="reminder"
+                    checked={submission.reminder}
+                    onCheckedChange={(checked) => {
+                      if (checked && !submission.assigned_to) {
+                        return; // Don't allow enabling if no one is assigned
+                      }
+                      onUpdate('reminder', checked);
+                    }}
+                    disabled={!submission.assigned_to}
+                  />
+                  <Label htmlFor="reminder" className="text-sm font-medium whitespace-nowrap">
+                    Reminder
+                  </Label>
+                </div>
+                {!submission.assigned_to && submission.reminder && (
+                  <p className="text-xs text-red-500 text-center">
+                    Assegna prima il lead
+                  </p>
+                )}
+              </div>
+            </div>
+            
+            {!submission.assigned_to && (
+              <p className="text-xs text-red-500 mt-1">
+                Devi assegnare il lead per abilitare il reminder
+              </p>
+            )}
           </div>
           
           <div className="space-y-4">
@@ -126,16 +160,6 @@ export function LeadManagementCard({ submission, onUpdate }: LeadManagementCardP
               </Select>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="reminder"
-                checked={submission.reminder}
-                onCheckedChange={(checked) => onUpdate('reminder', checked)}
-              />
-              <Label htmlFor="reminder" className="text-sm font-medium">
-                Reminder
-              </Label>
-            </div>
 
             <EditableField
               label="Mediatore"
