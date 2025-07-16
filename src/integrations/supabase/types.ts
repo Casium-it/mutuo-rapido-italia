@@ -132,6 +132,7 @@ export type Database = {
           phone_number: string | null
           prossimo_contatto: string | null
           reminder: boolean
+          reminder_sent: boolean
           saved_simulation_id: string | null
           ultimo_contatto: string | null
           user_identifier: string | null
@@ -153,6 +154,7 @@ export type Database = {
           phone_number?: string | null
           prossimo_contatto?: string | null
           reminder?: boolean
+          reminder_sent?: boolean
           saved_simulation_id?: string | null
           ultimo_contatto?: string | null
           user_identifier?: string | null
@@ -174,6 +176,7 @@ export type Database = {
           phone_number?: string | null
           prossimo_contatto?: string | null
           reminder?: boolean
+          reminder_sent?: boolean
           saved_simulation_id?: string | null
           ultimo_contatto?: string | null
           user_identifier?: string | null

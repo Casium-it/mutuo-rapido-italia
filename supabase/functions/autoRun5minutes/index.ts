@@ -54,7 +54,7 @@ serve(async (req) => {
         assigned_to,
         admin_notification_settings!inner(
           admin_name,
-          phone_number as admin_phone
+          phone_number:admin_phone
         )
       `)
       .eq('reminder', true)

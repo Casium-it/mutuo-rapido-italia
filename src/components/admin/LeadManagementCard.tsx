@@ -30,6 +30,7 @@ interface LeadManagementCardProps {
     prossimo_contatto: string | null;
     assigned_to: string | null;
     reminder: boolean;
+    reminder_sent?: boolean;
   };
   onUpdate: (field: string, value: string | boolean) => Promise<void>;
 }
