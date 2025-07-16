@@ -116,6 +116,7 @@ export type Database = {
       }
       form_submissions: {
         Row: {
+          assigned_to: string | null
           consulting: boolean | null
           created_at: string
           email: string | null
@@ -130,11 +131,13 @@ export type Database = {
           notes: string | null
           phone_number: string | null
           prossimo_contatto: string | null
+          reminder: boolean
           saved_simulation_id: string | null
           ultimo_contatto: string | null
           user_identifier: string | null
         }
         Insert: {
+          assigned_to?: string | null
           consulting?: boolean | null
           created_at?: string
           email?: string | null
@@ -149,11 +152,13 @@ export type Database = {
           notes?: string | null
           phone_number?: string | null
           prossimo_contatto?: string | null
+          reminder?: boolean
           saved_simulation_id?: string | null
           ultimo_contatto?: string | null
           user_identifier?: string | null
         }
         Update: {
+          assigned_to?: string | null
           consulting?: boolean | null
           created_at?: string
           email?: string | null
@@ -168,11 +173,19 @@ export type Database = {
           notes?: string | null
           phone_number?: string | null
           prossimo_contatto?: string | null
+          reminder?: boolean
           saved_simulation_id?: string | null
           ultimo_contatto?: string | null
           user_identifier?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "form_submissions_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "admin_notification_settings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "form_submissions_form_id_fkey"
             columns: ["form_id"]

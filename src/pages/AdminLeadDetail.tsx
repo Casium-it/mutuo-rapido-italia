@@ -27,6 +27,8 @@ interface FormSubmission {
   mediatore: string | null;
   ultimo_contatto: string | null;
   prossimo_contatto: string | null;
+  assigned_to: string | null;
+  reminder: boolean;
   form_title?: string;
 }
 
@@ -115,7 +117,7 @@ export default function AdminLeadDetail() {
     }
   };
 
-  const handleLeadUpdate = async (field: string, value: string) => {
+  const handleLeadUpdate = async (field: string, value: string | boolean) => {
     if (!submission) return;
 
     try {
