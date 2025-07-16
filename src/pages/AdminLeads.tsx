@@ -42,6 +42,7 @@ interface FormSubmission {
   lead_status: LeadStatus;
   form_title: string;
   assigned_to: string | null;
+  assigned_admin_name: string | null;
   forms?: {
     slug: string;
     title: string;
@@ -142,6 +143,9 @@ export default function AdminLeads() {
           forms (
             title,
             slug
+          ),
+          admin_notification_settings!assigned_to (
+            admin_name
           )
         `)
         .order('created_at', { ascending: false });
@@ -159,7 +163,8 @@ export default function AdminLeads() {
       // Map the data to include form_title from the joined form
       const mappedData = (submissionsData || []).map(submission => ({
         ...submission,
-        form_title: submission.forms?.title || 'Form non trovato'
+        form_title: submission.forms?.title || 'Form non trovato',
+        assigned_admin_name: submission.admin_notification_settings?.admin_name || null
       }));
       
       setSubmissions(mappedData);
@@ -482,7 +487,7 @@ export default function AdminLeads() {
                     <div className="text-sm text-gray-600">
                       <span>Assegnata a: </span>
                       <span className="font-medium">
-                        {submission.assigned_to || 'nessuno'}
+                        {submission.assigned_admin_name || 'nessuno'}
                       </span>
                     </div>
                     
