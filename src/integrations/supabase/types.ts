@@ -84,6 +84,7 @@ export type Database = {
           question_id: string
           question_text: string
           response_value: Json
+          saved_simulation_id: string | null
           submission_id: string
         }
         Insert: {
@@ -93,6 +94,7 @@ export type Database = {
           question_id: string
           question_text: string
           response_value: Json
+          saved_simulation_id?: string | null
           submission_id: string
         }
         Update: {
@@ -102,9 +104,17 @@ export type Database = {
           question_id?: string
           question_text?: string
           response_value?: Json
+          saved_simulation_id?: string | null
           submission_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "form_responses_saved_simulation_id_fkey"
+            columns: ["saved_simulation_id"]
+            isOneToOne: false
+            referencedRelation: "saved_simulations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "form_responses_submission_id_fkey"
             columns: ["submission_id"]
