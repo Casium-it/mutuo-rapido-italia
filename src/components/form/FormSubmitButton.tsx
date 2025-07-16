@@ -5,6 +5,25 @@ import { Button } from "@/components/ui/button";
 import { useForm } from "@/contexts/FormContext";
 import { completedSave } from "@/services/smartSaveService";
 
+/**
+ * SECONDARY FORM SUBMISSION PATH
+ * 
+ * This component is used ONLY for specific placeholder options that need direct form submission.
+ * 
+ * ⚠️ WARNING: This is NOT the primary submission path!
+ * The PRIMARY submission path is in QuestionView.tsx (handleSubmitForm function)
+ * which handles forms with endOfForm: true questions.
+ * 
+ * When making changes to form submission logic, ALWAYS update BOTH:
+ * 1. QuestionView.tsx (PRIMARY - most form submissions go through here)
+ * 2. FormSubmitButton.tsx (SECONDARY - this file)
+ * 
+ * Both paths must maintain identical:
+ * - formData structure
+ * - simulationId handling
+ * - navigation logic
+ * - error handling
+ */
 export function FormSubmitButton() {
   const { state, blocks, formSlug } = useForm();
   const [isNavigating, setIsNavigating] = useState(false);

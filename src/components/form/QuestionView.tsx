@@ -82,6 +82,21 @@ export function QuestionView() {
   const isEndOfFormQuestion = activeQuestion?.endOfForm === true;
   
   // Handle form submission - Navigate immediately to loading page
+  /**
+   * PRIMARY FORM SUBMISSION PATH
+   * 
+   * This function handles the MAIN form submission flow for forms with endOfForm: true questions.
+   * Most form submissions in the application go through this path.
+   * 
+   * ⚠️ IMPORTANT: When updating this submission logic, also update FormSubmitButton.tsx
+   * to maintain consistency between both submission paths.
+   * 
+   * Both paths must have identical:
+   * - formData structure (including simulationId)
+   * - navigation logic
+   * - error handling
+   * - completedSave calls
+   */
   const handleSubmitForm = async () => {
     if (!allBlocksCompleted) {
       return;
