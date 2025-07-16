@@ -25,6 +25,8 @@ interface FormSubmission {
   notes: string | null;
   lead_status: LeadStatus;
   mediatore: string | null;
+  ultimo_contatto: string | null;
+  prossimo_contatto: string | null;
   form_title?: string;
 }
 

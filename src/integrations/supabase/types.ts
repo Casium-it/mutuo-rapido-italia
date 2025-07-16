@@ -129,7 +129,9 @@ export type Database = {
           metadata: Json | null
           notes: string | null
           phone_number: string | null
+          prossimo_contatto: string | null
           saved_simulation_id: string | null
+          ultimo_contatto: string | null
           user_identifier: string | null
         }
         Insert: {
@@ -146,7 +148,9 @@ export type Database = {
           metadata?: Json | null
           notes?: string | null
           phone_number?: string | null
+          prossimo_contatto?: string | null
           saved_simulation_id?: string | null
+          ultimo_contatto?: string | null
           user_identifier?: string | null
         }
         Update: {
@@ -163,7 +167,9 @@ export type Database = {
           metadata?: Json | null
           notes?: string | null
           phone_number?: string | null
+          prossimo_contatto?: string | null
           saved_simulation_id?: string | null
+          ultimo_contatto?: string | null
           user_identifier?: string | null
         }
         Relationships: [

@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EditableField } from './EditableField';
 import { StatusSelector } from './StatusSelector';
+import { DateTimePicker } from './DateTimePicker';
 import { User } from 'lucide-react';
 import { LeadStatus } from '@/types/leadStatus';
 
@@ -15,6 +16,8 @@ interface LeadManagementCardProps {
     notes: string | null;
     lead_status: LeadStatus;
     mediatore: string | null;
+    ultimo_contatto: string | null;
+    prossimo_contatto: string | null;
   };
   onUpdate: (field: string, value: string) => Promise<void>;
 }
@@ -58,12 +61,26 @@ export function LeadManagementCard({ submission, onUpdate }: LeadManagementCardP
               onSave={(value) => onUpdate('mediatore', value)}
               placeholder="Inserisci il nome del mediatore"
             />
+
+            <DateTimePicker
+              label="Ultimo Contatto"
+              value={submission.ultimo_contatto}
+              onChange={(value) => onUpdate('ultimo_contatto', value || '')}
+              placeholder="Seleziona data ultimo contatto"
+            />
           </div>
           
           <div className="space-y-4">
             <StatusSelector
               value={submission.lead_status}
               onValueChange={(value) => onUpdate('lead_status', value)}
+            />
+
+            <DateTimePicker
+              label="Prossimo Contatto"
+              value={submission.prossimo_contatto}
+              onChange={(value) => onUpdate('prossimo_contatto', value || '')}
+              placeholder="Seleziona data prossimo contatto"
             />
             
             <EditableField
