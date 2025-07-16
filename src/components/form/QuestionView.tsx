@@ -118,7 +118,8 @@ export function QuestionView() {
             activeBlocks: state.activeBlocks,
             completedBlocks: state.completedBlocks,
             dynamicBlocks: state.dynamicBlocks,
-            formSlug: formSlug
+            formSlug: formSlug,
+            simulationId: state.simulationId
           }
         }
       });
@@ -132,7 +133,8 @@ export function QuestionView() {
             activeBlocks: state.activeBlocks,
             completedBlocks: state.completedBlocks,
             dynamicBlocks: state.dynamicBlocks,
-            formSlug: formSlug
+            formSlug: formSlug,
+            simulationId: state.simulationId
           }
         }
       });
