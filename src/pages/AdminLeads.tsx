@@ -39,10 +39,8 @@ interface FormSubmission {
   mediatore: string | null;
   ultimo_contatto: string | null;
   prossimo_contatto: string | null;
-  assigned_to: string | null;
   lead_status: LeadStatus;
   form_title: string;
-  admin_name?: string;
   forms?: {
     slug: string;
     title: string;
@@ -135,7 +133,7 @@ export default function AdminLeads() {
 
   const fetchSubmissions = async () => {
     try {
-      // Get submissions with joined form data and admin info
+      // Get submissions with joined form data
       const { data: submissionsData, error: submissionsError } = await supabase
         .from('form_submissions')
         .select(`
@@ -143,9 +141,6 @@ export default function AdminLeads() {
           forms (
             title,
             slug
-          ),
-          admin_notification_settings!form_submissions_assigned_to_fkey (
-            admin_name
           )
         `)
         .order('created_at', { ascending: false });
@@ -160,11 +155,10 @@ export default function AdminLeads() {
         return;
       }
 
-      // Map the data to include form_title and admin_name from the joined data
+      // Map the data to include form_title from the joined form
       const mappedData = (submissionsData || []).map(submission => ({
         ...submission,
-        form_title: submission.forms?.title || 'Form non trovato',
-        admin_name: submission.admin_notification_settings?.admin_name || null
+        form_title: submission.forms?.title || 'Form non trovato'
       }));
       
       setSubmissions(mappedData);
@@ -457,11 +451,6 @@ export default function AdminLeads() {
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Phone className="h-4 w-4" />
                         {submission.phone_number}
-                        {submission.admin_name && (
-                          <span className="ml-4">
-                            Assigned to: {submission.admin_name}
-                          </span>
-                        )}
                       </div>
                     )}
                     {submission.email && (
@@ -479,10 +468,12 @@ export default function AdminLeads() {
 
                   {/* Lead Status */}
                   <div className="mb-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-600">Status Lead:</span>
-                      <LeadStatusBadge status={submission.lead_status} />
+                    <div className="flex items-center gap-2 mb-2">
                       <User className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm text-gray-600">Status Lead:</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <LeadStatusBadge status={submission.lead_status} />
                       {submission.mediatore && (
                         <span className="text-sm text-gray-600">
                           → {submission.mediatore}
