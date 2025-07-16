@@ -41,6 +41,7 @@ interface FormSubmission {
   prossimo_contatto: string | null;
   lead_status: LeadStatus;
   form_title: string;
+  assigned_to: string | null;
   forms?: {
     slug: string;
     title: string;
@@ -471,14 +472,18 @@ export default function AdminLeads() {
                     <div className="flex items-center gap-2 mb-2">
                       <User className="h-4 w-4 text-gray-500" />
                       <span className="text-sm text-gray-600">Status Lead:</span>
-                    </div>
-                    <div className="flex items-center gap-2">
                       <LeadStatusBadge status={submission.lead_status} />
                       {submission.mediatore && (
                         <span className="text-sm text-gray-600">
                           → {submission.mediatore}
                         </span>
                       )}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      <span>Assegnata a: </span>
+                      <span className="font-medium">
+                        {submission.assigned_to || 'nessuno'}
+                      </span>
                     </div>
                     
                     {/* Contact Dates */}
