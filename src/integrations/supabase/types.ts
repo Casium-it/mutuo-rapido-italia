@@ -299,7 +299,15 @@ export type Database = {
           source_type?: Database["public"]["Enums"]["lead_source_type"]
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_leads_form_id"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       linked_forms: {
         Row: {
