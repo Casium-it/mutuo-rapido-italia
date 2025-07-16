@@ -307,12 +307,14 @@ export default function AdminLeads() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">Form Submissions</h2>
-            <p className="text-gray-600">Totale: {filteredSubmissions.length} submissions</p>
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">Form Submissions</h2>
+              <p className="text-gray-600">Totale: {filteredSubmissions.length} submissions</p>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-gray-500" />
               <Select value={statusFilter} onValueChange={(value) => {
