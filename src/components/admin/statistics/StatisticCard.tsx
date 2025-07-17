@@ -63,8 +63,8 @@ export function StatisticCard({ title, metric, icon, showConversion = false }: S
 
             {/* Previous period comparison */}
             <div className="text-xs text-gray-500">
-              era {formatNumber(metric.previous)} → <span className={`${Math.abs(metric.change) >= 10 ? (metric.change >= 10 ? 'text-green-600' : 'text-red-600') : 'text-gray-500'}`}>
-                {metric.change >= 0 ? '+' : ''}{metric.change.toFixed(1)}%
+              era {formatNumber(metric.previous)} → <span className={`${Math.abs(metric.changePercent) >= 10 ? (metric.changePercent >= 10 ? 'text-green-600' : 'text-red-600') : 'text-gray-500'}`}>
+                {metric.changePercent >= 0 ? '+' : ''}{metric.changePercent.toFixed(1)}%
               </span>
             </div>
 
