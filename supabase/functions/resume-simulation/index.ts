@@ -119,9 +119,71 @@ Deno.serve(async (req) => {
 
     console.log('✅ Simulation found successfully');
 
+    // Get the form state
+    let formState = simulation.form_state;
+
+    // Check if activeQuestion is empty and implement fallback logic
+    if (!formState.activeQuestion?.block_id || !formState.activeQuestion?.question_id) {
+      console.log('🔧 Active question is empty, implementing fallback logic');
+      
+      try {
+        // Find the form by slug
+        const { data: form, error: formError } = await supabaseServiceRole
+          .from('forms')
+          .select('id')
+          .eq('slug', simulation.form_slug)
+          .eq('is_active', true)
+          .single();
+
+        if (formError || !form) {
+          console.error('❌ Could not find form for slug:', simulation.form_slug);
+        } else {
+          // Get the first block (ordered by sort_order)
+          const { data: firstBlock, error: blockError } = await supabaseServiceRole
+            .from('form_blocks')
+            .select('block_data')
+            .eq('form_id', form.id)
+            .order('sort_order', { ascending: true })
+            .limit(1)
+            .single();
+
+          if (blockError || !firstBlock) {
+            console.error('❌ Could not find first block for form:', form.id);
+          } else {
+            // Extract the block_id and first question from block_data
+            const blockData = firstBlock.block_data;
+            const blockId = blockData.id;
+            const questions = blockData.questions || [];
+            
+            if (questions.length > 0) {
+              const firstQuestion = questions[0];
+              const questionId = firstQuestion.id;
+              
+              // Update formState with fallback values
+              formState = {
+                ...formState,
+                activeQuestion: {
+                  block_id: blockId,
+                  question_id: questionId
+                },
+                activeBlocks: formState.activeBlocks?.length > 0 ? formState.activeBlocks : [blockId]
+              };
+              
+              console.log(`✅ Applied fallback: activeQuestion set to ${blockId}/${questionId}`);
+            } else {
+              console.error('❌ No questions found in first block');
+            }
+          }
+        }
+      } catch (fallbackError) {
+        console.error('❌ Error in fallback logic:', fallbackError);
+        // Continue with original formState if fallback fails
+      }
+    }
+
     // Prepare response data
     const responseData = {
-      formState: simulation.form_state,
+      formState: formState,
       formSlug: simulation.form_slug,
       simulationId: simulation.simulation_id, // Include simulation ID for session tracking
       contactInfo: {
