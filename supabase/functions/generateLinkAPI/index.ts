@@ -9,6 +9,17 @@ interface GenerateLinkRequest {
   'form-slug': string;
 }
 
+/**
+ * Generates a unique simulation ID
+ * Format: SIM-{timestamp}-{random}
+ * Example: SIM-1752760545361-5FWQPZJ2
+ */
+function generateSimulationId(): string {
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 10).toUpperCase();
+  return `SIM-${timestamp}-${random}`;
+}
+
 Deno.serve(async (req) => {
   console.log('🚀 Edge function triggered - generateLinkAPI invoked');
   
@@ -137,8 +148,13 @@ Deno.serve(async (req) => {
     // Step 2: Create saved simulation (inline logic from create-saved-simulation-linked)
     console.log('🔗 Creating saved simulation');
 
-    // Create initial empty form state
+    // Generate simulation ID
+    const simulationId = generateSimulationId();
+    console.log('🆔 Generated simulation ID:', simulationId);
+
+    // Create initial empty form state with simulation ID
     const initialFormState = {
+      simulationId,
       activeBlocks: [],
       activeQuestion: {
         block_id: '',
@@ -171,7 +187,8 @@ Deno.serve(async (req) => {
         form_slug: formSlug,
         linked_form_id: linkedFormId,
         expires_at: expiresAt.toISOString(),
-        save_method: 'manual-save'
+        save_method: 'manual-save',
+        simulation_id: simulationId
       })
       .select('resume_code')
       .single();
