@@ -103,6 +103,7 @@ export function StatisticsChart({ data, conversionType, metricType }: Statistics
             orientation="right"
             stroke="#00853E"
             fontSize={12}
+            domain={[0, 100]}
             tickFormatter={(value) => `${value}%`}
           />
           <Tooltip content={<CustomTooltip />} />
