@@ -116,11 +116,11 @@ export function FormBreakdownTable({ formStats }: FormBreakdownTableProps) {
                         <div className="text-lg font-bold text-[#245C4F]">
                           {formatNumber(form.simulations.current)}
                         </div>
-                        <div className="text-xs text-gray-500">
-                          era {formatNumber(form.simulations.previous)} → <span className={`${Math.abs(form.simulations.change) >= 10 ? (form.simulations.change >= 10 ? 'text-green-600' : 'text-red-600') : 'text-gray-500'}`}>
-                            {form.simulations.change >= 0 ? '+' : ''}{formatNumber(form.simulations.change)}%
-                          </span>
-                        </div>
+                         <div className="text-xs text-gray-500">
+                           era {formatNumber(form.simulations.previous)} → <span className={`${Math.abs(form.simulations.change) >= 10 ? (form.simulations.change >= 10 ? 'text-green-600' : 'text-red-600') : 'text-gray-500'}`}>
+                             {form.simulations.change >= 0 ? '+' : ''}{form.simulations.change.toFixed(1)}%
+                           </span>
+                         </div>
                         <div className="w-8 h-px bg-gray-300 mx-auto my-1"></div>
                         <div className="text-xs font-medium text-[#245C4F]">
                           - conv.
@@ -144,11 +144,11 @@ export function FormBreakdownTable({ formStats }: FormBreakdownTableProps) {
                         <div className="text-lg font-bold text-[#245C4F]">
                           {formatNumber(form.submissions.current)}
                         </div>
-                        <div className="text-xs text-gray-500">
-                          era {formatNumber(form.submissions.previous)} → <span className={`${Math.abs(form.submissions.change) >= 10 ? (form.submissions.change >= 10 ? 'text-green-600' : 'text-red-600') : 'text-gray-500'}`}>
-                            {form.submissions.change >= 0 ? '+' : ''}{formatNumber(form.submissions.change)}%
-                          </span>
-                        </div>
+                         <div className="text-xs text-gray-500">
+                           era {formatNumber(form.submissions.previous)} → <span className={`${Math.abs(form.submissions.change) >= 10 ? (form.submissions.change >= 10 ? 'text-green-600' : 'text-red-600') : 'text-gray-500'}`}>
+                             {form.submissions.change >= 0 ? '+' : ''}{form.submissions.change.toFixed(1)}%
+                           </span>
+                         </div>
                         <div className="w-8 h-px bg-gray-300 mx-auto my-1"></div>
                         <div className="text-xs font-medium text-[#245C4F]">
                           conv. al {form.submissions.conversionRate !== undefined ? formatPercent(form.submissions.conversionRate) : '0%'}
@@ -172,11 +172,11 @@ export function FormBreakdownTable({ formStats }: FormBreakdownTableProps) {
                         <div className="text-lg font-bold text-[#245C4F]">
                           {formatNumber(form.submissionsWithContact.current)}
                         </div>
-                        <div className="text-xs text-gray-500">
-                          era {formatNumber(form.submissionsWithContact.previous)} → <span className={`${Math.abs(form.submissionsWithContact.change) >= 10 ? (form.submissionsWithContact.change >= 10 ? 'text-green-600' : 'text-red-600') : 'text-gray-500'}`}>
-                            {form.submissionsWithContact.change >= 0 ? '+' : ''}{formatNumber(form.submissionsWithContact.change)}%
-                          </span>
-                        </div>
+                         <div className="text-xs text-gray-500">
+                           era {formatNumber(form.submissionsWithContact.previous)} → <span className={`${Math.abs(form.submissionsWithContact.change) >= 10 ? (form.submissionsWithContact.change >= 10 ? 'text-green-600' : 'text-red-600') : 'text-gray-500'}`}>
+                             {form.submissionsWithContact.change >= 0 ? '+' : ''}{form.submissionsWithContact.change.toFixed(1)}%
+                           </span>
+                         </div>
                         <div className="w-8 h-px bg-gray-300 mx-auto my-1"></div>
                         <div className="text-xs font-medium text-[#245C4F]">
                           conv. al {form.submissionsWithContact.conversionRate !== undefined ? formatPercent(form.submissionsWithContact.conversionRate) : '0%'}
