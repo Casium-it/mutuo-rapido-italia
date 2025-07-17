@@ -170,7 +170,8 @@ Deno.serve(async (req) => {
         form_state: initialFormState,
         form_slug: formSlug,
         linked_form_id: linkedFormId,
-        expires_at: expiresAt.toISOString()
+        expires_at: expiresAt.toISOString(),
+        save_method: 'manual-save'
       })
       .select('resume_code')
       .single();
