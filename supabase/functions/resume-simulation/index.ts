@@ -157,7 +157,7 @@ Deno.serve(async (req) => {
             
             if (questions.length > 0) {
               const firstQuestion = questions[0];
-              const questionId = firstQuestion.id;
+              const questionId = firstQuestion.question_id;
               
               // Update formState with fallback values
               formState = {

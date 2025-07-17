@@ -209,7 +209,7 @@ Deno.serve(async (req) => {
           firstActiveBlock = blockData.block_id;
           const questions = blockData.questions || [];
           if (questions.length > 0) {
-            firstQuestion = questions[0].id;
+            firstQuestion = questions[0].question_id;
           }
         }
       }
