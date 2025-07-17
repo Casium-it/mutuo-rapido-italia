@@ -152,7 +152,7 @@ Deno.serve(async (req) => {
           } else {
             // Extract the block_id and first question from block_data
             const blockData = firstBlock.block_data;
-            const blockId = blockData.id;
+            const blockId = blockData.block_id;
             const questions = blockData.questions || [];
             
             if (questions.length > 0) {

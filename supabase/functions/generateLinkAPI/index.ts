@@ -152,13 +152,82 @@ Deno.serve(async (req) => {
     const simulationId = generateSimulationId();
     console.log('🆔 Generated simulation ID:', simulationId);
 
-    // Create initial empty form state with simulation ID
+    // Get form blocks to initialize form state properly
+    console.log('📋 Querying form blocks to initialize state');
+    const { data: form, error: formError } = await supabase
+      .from('forms')
+      .select('id')
+      .eq('slug', formSlug)
+      .eq('is_active', true)
+      .single();
+
+    if (formError || !form) {
+      console.error('❌ Could not find form for slug:', formSlug);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: `Form not found: ${formSlug}` 
+        }),
+        { 
+          status: 404, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Get all form blocks
+    const { data: formBlocks, error: blocksError } = await supabase
+      .from('form_blocks')
+      .select('block_data')
+      .eq('form_id', form.id)
+      .order('sort_order', { ascending: true });
+
+    if (blocksError || !formBlocks) {
+      console.error('❌ Could not load form blocks:', blocksError);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Could not load form structure' 
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Find all default active blocks and determine first question
+    const activeBlocks: string[] = [];
+    let firstActiveBlock = null;
+    let firstQuestion = null;
+
+    for (const block of formBlocks) {
+      const blockData = block.block_data;
+      if (blockData.default_active === true) {
+        activeBlocks.push(blockData.block_id);
+        if (!firstActiveBlock) {
+          firstActiveBlock = blockData.block_id;
+          const questions = blockData.questions || [];
+          if (questions.length > 0) {
+            firstQuestion = questions[0].id;
+          }
+        }
+      }
+    }
+
+    console.log('✅ Initialized form state:', { 
+      activeBlocks, 
+      firstActiveBlock, 
+      firstQuestion 
+    });
+
+    // Create initial form state with proper initialization
     const initialFormState = {
       simulationId,
-      activeBlocks: [],
+      activeBlocks,
       activeQuestion: {
-        block_id: '',
-        question_id: ''
+        block_id: firstActiveBlock || '',
+        question_id: firstQuestion || ''
       },
       responses: {},
       answeredQuestions: [],
