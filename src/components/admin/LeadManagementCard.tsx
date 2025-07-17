@@ -88,7 +88,7 @@ export function LeadManagementCard({ submission, onUpdate }: LeadManagementCardP
             <DateTimePicker
               label="Ultimo Contatto"
               value={submission.ultimo_contatto}
-              onChange={(value) => onUpdate('ultimo_contatto', value || '')}
+              onChange={(value) => onUpdate('ultimo_contatto', value)}
               placeholder="Seleziona data ultimo contatto"
             />
 
@@ -98,10 +98,9 @@ export function LeadManagementCard({ submission, onUpdate }: LeadManagementCardP
                   label="Prossimo Contatto"
                   value={submission.prossimo_contatto}
                   onChange={(value) => {
-                    const newValue = value || '';
-                    onUpdate('prossimo_contatto', newValue);
+                    onUpdate('prossimo_contatto', value);
                     // Reset reminder_sent when prossimo_contatto changes
-                    if (newValue) {
+                    if (value) {
                       onUpdate('reminder_sent', false);
                     }
                   }}
