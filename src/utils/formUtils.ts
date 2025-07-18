@@ -356,6 +356,7 @@ export const getQuestionTextWithStyledResponses = (
     
     // Try to get the response value for this placeholder
     if (responseValue && typeof responseValue === 'object') {
+      // Check if we have a direct placeholder key match in the response object
       const responseForPlaceholder = responseValue[placeholderKey];
       
       if (responseForPlaceholder !== undefined && responseForPlaceholder !== null) {

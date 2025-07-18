@@ -49,6 +49,7 @@ export default function AdminSimulationDetail() {
   const [simulation, setSimulation] = useState<SavedSimulation | null>(null);
   const [processedResponses, setProcessedResponses] = useState<ProcessedResponse[]>([]);
   const [missingBlocks, setMissingBlocks] = useState<BlockStatus[]>([]);
+  const [questionMap, setQuestionMap] = useState<Map<string, { question: Question; block_id: string }>>(new Map());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -103,28 +104,27 @@ export default function AdminSimulationDetail() {
       const blocks: Block[] = cachedForm?.blocks || [];
 
       // Create a map of questions for quick lookup
-      const questionMap = new Map<string, { question: Question; block_id: string }>();
+      const newQuestionMap = new Map<string, { question: Question; block_id: string }>();
       blocks.forEach(block => {
         block.questions.forEach(question => {
-          questionMap.set(question.question_id, { question, block_id: block.block_id });
+          newQuestionMap.set(question.question_id, { question, block_id: block.block_id });
         });
       });
+      setQuestionMap(newQuestionMap);
 
       // Process responses from form_state
       const responses: ProcessedResponse[] = [];
       Object.entries(formState.responses).forEach(([questionId, placeholderResponses]: [string, any]) => {
-        const questionInfo = questionMap.get(questionId);
+        const questionInfo = newQuestionMap.get(questionId);
         if (!questionInfo) return;
 
-        // For each placeholder response in this question
-        Object.entries(placeholderResponses).forEach(([placeholderKey, responseValue]: [string, any]) => {
-          responses.push({
-            id: `${questionId}_${placeholderKey}`,
-            question_id: questionId,
-            question_text: questionInfo.question.question_text,
-            block_id: questionInfo.block_id,
-            response_value: responseValue
-          });
+        // Create ONE entry per question with the complete placeholder responses
+        responses.push({
+          id: questionId,
+          question_id: questionId,
+          question_text: questionInfo.question.question_text,
+          block_id: questionInfo.block_id,
+          response_value: placeholderResponses // Pass the complete object with all placeholder values
         });
       });
 
@@ -198,12 +198,13 @@ export default function AdminSimulationDetail() {
     return !!(simulation.name || simulation.phone || simulation.email);
   };
 
-  const StyledQuestionText = ({ questionText, questionId, responseValue }: {
+  const StyledQuestionText = ({ questionText, questionId, responseValue, question }: {
     questionText: string;
     questionId: string;
     responseValue: any;
+    question?: Question;
   }) => {
-    const { parts } = getQuestionTextWithStyledResponses(questionText, questionId, responseValue);
+    const { parts } = getQuestionTextWithStyledResponses(questionText, questionId, responseValue, question?.placeholders);
     
     return (
       <div className="mb-2">
@@ -464,18 +465,22 @@ export default function AdminSimulationDetail() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {blockResponses.map((response) => (
-                      <div key={response.id} className="border-l-4 border-[#245C4F] pl-4">
-                        <div className="mb-2">
-                          <StyledQuestionText 
-                            questionText={response.question_text}
-                            questionId={response.question_id}
-                            responseValue={response.response_value}
-                          />
-                          <p className="text-xs text-gray-500">ID: {response.question_id}</p>
+                    {blockResponses.map((response) => {
+                      const questionInfo = questionMap.get(response.question_id);
+                      return (
+                        <div key={response.id} className="border-l-4 border-[#245C4F] pl-4">
+                          <div className="mb-2">
+                            <StyledQuestionText 
+                              questionText={response.question_text}
+                              questionId={response.question_id}
+                              responseValue={response.response_value}
+                              question={questionInfo?.question}
+                            />
+                            <p className="text-xs text-gray-500">ID: {response.question_id}</p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>
