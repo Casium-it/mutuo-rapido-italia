@@ -338,6 +338,7 @@ export default function AdminLeads() {
                   <SelectItem value="non_risponde_x3">Non Risponde x3</SelectItem>
                   <SelectItem value="non_interessato">Non Interessato</SelectItem>
                   <SelectItem value="da_risentire">Da Risentire</SelectItem>
+                  <SelectItem value="da_assegnare">Da Assegnare</SelectItem>
                   <SelectItem value="prenotata_consulenza">Prenotata Consulenza</SelectItem>
                   <SelectItem value="pratica_bocciata">Pratica Bocciata</SelectItem>
                   <SelectItem value="converted">Convertito</SelectItem>
