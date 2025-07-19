@@ -140,16 +140,39 @@ async function handleManualSave(
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 60); // Extended expiry for manual saves
 
-  // Generate resume code for new manual saves
-  const { data: resumeCodeData, error: resumeCodeError } = await supabase
-    .rpc('generate_resume_code');
+  // Check if simulation already exists to preserve existing resume code
+  const { data: existingSimulation, error: queryError } = await supabase
+    .from('saved_simulations')
+    .select('resume_code, save_method')
+    .eq('simulation_id', data.simulationId)
+    .single();
 
-  if (resumeCodeError) {
-    console.error('❌ Failed to generate resume code:', resumeCodeError);
-    return { success: false, error: 'Failed to generate resume code' };
+  if (queryError && queryError.code !== 'PGRST116') { // PGRST116 = no rows found
+    console.error('❌ Failed to query existing simulation:', queryError);
+    return { success: false, error: 'Failed to check existing simulation' };
   }
 
-  const resumeCode = resumeCodeData;
+  let resumeCode: string;
+  let isNewSave = false;
+
+  // Preserve existing resume code if simulation exists with one, otherwise generate new
+  if (existingSimulation?.resume_code) {
+    resumeCode = existingSimulation.resume_code;
+    console.log('🔄 Preserving existing resume code:', resumeCode);
+  } else {
+    // Generate new resume code for truly new simulations
+    const { data: resumeCodeData, error: resumeCodeError } = await supabase
+      .rpc('generate_resume_code');
+
+    if (resumeCodeError) {
+      console.error('❌ Failed to generate resume code:', resumeCodeError);
+      return { success: false, error: 'Failed to generate resume code' };
+    }
+
+    resumeCode = resumeCodeData;
+    isNewSave = true;
+    console.log('🆕 Generated new resume code:', resumeCode);
+  }
 
   const upsertData = {
     simulation_id: data.simulationId,
@@ -177,8 +200,13 @@ async function handleManualSave(
     return { success: false, error: `Database operation failed: ${error.message}` };
   }
 
-  // Send WhatsApp notification
-  await sendWhatsAppNotification(supabase, data.contactData, resumeCode, expiresAt, data.percentage);
+  // Send WhatsApp notification only for new saves to avoid spam
+  if (isNewSave) {
+    await sendWhatsAppNotification(supabase, data.contactData, resumeCode, expiresAt, data.percentage);
+    console.log('📱 WhatsApp notification sent for new save');
+  } else {
+    console.log('📱 Skipping WhatsApp notification for existing simulation update');
+  }
 
   console.log('✅ Manual save completed for simulation:', data.simulationId);
   return { success: true, resumeCode };
