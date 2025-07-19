@@ -68,7 +68,7 @@ const Simulazioni = () => {
     highlight: "98%"
   }, {
     icon: User,
-    text: "opzione di consulenza gratuita"
+    text: "Simulazione analizzata da un esperto"
   }];
   const handlePathSelect = (path: string) => {
     navigate(path);
