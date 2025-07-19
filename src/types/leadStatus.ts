@@ -5,6 +5,7 @@ export type LeadStatus =
   | 'non_risponde_x3' 
   | 'non_interessato' 
   | 'da_risentire' 
+  | 'da_assegnare'
   | 'prenotata_consulenza' 
   | 'pratica_bocciata' 
   | 'converted'

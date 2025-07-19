@@ -38,6 +38,11 @@ const statusConfig = {
     variant: 'default' as const,
     className: 'bg-yellow-100 text-yellow-800'
   },
+  da_assegnare: {
+    label: 'Da Assegnare',
+    variant: 'default' as const,
+    className: 'bg-yellow-100 text-yellow-800'
+  },
   prenotata_consulenza: {
     label: 'Prenotata Consulenza',
     variant: 'default' as const,

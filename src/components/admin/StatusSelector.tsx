@@ -16,6 +16,7 @@ const statusOptions: { value: LeadStatus; label: string }[] = [
   { value: 'non_risponde_x3', label: 'Non Risponde x3' },
   { value: 'non_interessato', label: 'Non Interessato' },
   { value: 'da_risentire', label: 'Da Risentire' },
+  { value: 'da_assegnare', label: 'Da Assegnare' },
   { value: 'prenotata_consulenza', label: 'Prenotata Consulenza' },
   { value: 'pratica_bocciata', label: 'Pratica Bocciata' },
   { value: 'converted', label: 'Convertito' },
