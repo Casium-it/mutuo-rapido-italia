@@ -1,7 +1,7 @@
 import React from "react";
 import { Logo } from "@/components/Logo";
 import { PathOption } from "@/components/PathOption";
-import { Clock, Percent, Building2, Calculator, Check } from "lucide-react";
+import { Clock, Percent, Building2, Calculator, Check, User } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
 const Simulazioni = () => {
@@ -53,6 +53,9 @@ const Simulazioni = () => {
     icon: Percent,
     text: "di precisione",
     highlight: "68%"
+  }, {
+    icon: User,
+    text: "opzione di consulenza gratuita"
   }];
   
   const advancedKeyPoints = [{
@@ -63,6 +66,9 @@ const Simulazioni = () => {
     icon: Percent,
     text: "di precisione (il migliore in Italia!)",
     highlight: "98%"
+  }, {
+    icon: User,
+    text: "opzione di consulenza gratuita"
   }];
   const handlePathSelect = (path: string) => {
     navigate(path);
