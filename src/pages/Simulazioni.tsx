@@ -55,7 +55,7 @@ const Simulazioni = () => {
     highlight: "68%"
   }, {
     icon: User,
-    text: "opzione di consulenza gratuita"
+    text: "Simulazione analizzata da un esperto"
   }];
   
   const advancedKeyPoints = [{
