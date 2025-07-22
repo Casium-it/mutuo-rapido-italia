@@ -378,10 +378,24 @@ export const EditableFlowChart: React.FC<EditableFlowChartProps> = ({
         
       </div>
 
-      {questionEditDialog.open && getSelectedQuestion() && <QuestionEditDialog open={questionEditDialog.open} question={getSelectedQuestion()!} onClose={() => setQuestionEditDialog({
-      open: false,
-      questionId: null
-    })} />}
+      {questionEditDialog.open && getSelectedQuestion() && (
+        <QuestionEditDialog 
+          open={questionEditDialog.open} 
+          question={getSelectedQuestion()!} 
+          onClose={() => setQuestionEditDialog({
+            open: false,
+            questionId: null
+          })}
+          onDuplicate={async (question) => {
+            // Note: This would need to be implemented to work with the current block editing context
+            console.log('Duplicate question:', question);
+          }}
+          onDelete={async (questionId) => {
+            // Note: This would need to be implemented to work with the current block editing context
+            console.log('Delete question:', questionId);
+          }}
+        />
+      )}
 
       {placeholderEditDialog.open && getSelectedPlaceholder() && <PlaceholderEditDialog open={placeholderEditDialog.open} placeholder={getSelectedPlaceholder()!} placeholderKey={placeholderEditDialog.placeholderKey!} questionId={placeholderEditDialog.questionId!} onClose={() => setPlaceholderEditDialog({
       open: false,

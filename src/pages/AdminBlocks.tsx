@@ -17,7 +17,7 @@ export default function AdminBlocks() {
   const [searchParams] = useSearchParams();
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
-  const { blocks, forms, loading, error, getFilteredBlocks, getStats, updateBlock, duplicateBlock, refetch } = useAdminBlocks();
+  const { blocks, forms, loading, error, getFilteredBlocks, getStats, updateBlock, duplicateBlock, deleteBlock, refetch } = useAdminBlocks();
 
   // Auto-set form filter from URL parameter
   useEffect(() => {
@@ -399,6 +399,7 @@ export default function AdminBlocks() {
                             availableForms={forms.map(f => ({ id: f.id, title: f.title, slug: f.slug }))}
                             onUpdate={updateBlock}
                             onDuplicate={duplicateBlock}
+                            onDelete={deleteBlock}
                           />
                         </div>
                       </div>

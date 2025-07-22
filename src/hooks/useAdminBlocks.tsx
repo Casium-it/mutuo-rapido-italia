@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Block } from '@/types/form';
+import { Block, Question } from '@/types/form';
 
 interface AdminBlock extends Block {
   id: string;
@@ -198,6 +198,112 @@ export function useAdminBlocks() {
     }
   };
 
+  // Delete block function
+  const deleteBlock = async (blockId: string): Promise<void> => {
+    try {
+      // Find the block to delete by block_id
+      const blockToDelete = blocks.find(b => b.block_id === blockId);
+      if (!blockToDelete) {
+        throw new Error('Block not found');
+      }
+
+      const { error } = await supabase
+        .from('form_blocks')
+        .delete()
+        .eq('id', blockToDelete.id);
+
+      if (error) throw error;
+
+      // Reload blocks after deletion
+      await loadBlocksFromDatabase();
+    } catch (error) {
+      console.error('Error deleting block:', error);
+      throw error;
+    }
+  };
+
+  // Delete question function (removes question from block's JSON data)
+  const deleteQuestion = async (questionId: string): Promise<void> => {
+    try {
+      // Find the block containing this question
+      const blockWithQuestion = blocks.find(block => 
+        block.questions.some(q => q.question_id === questionId)
+      );
+      
+      if (!blockWithQuestion) {
+        throw new Error('Question not found in any block');
+      }
+
+      // Remove the question from the block's questions array
+      const updatedBlock = {
+        ...blockWithQuestion,
+        questions: blockWithQuestion.questions.filter(q => q.question_id !== questionId)
+      };
+
+      const { error } = await supabase
+        .from('form_blocks')
+        .update({
+          block_data: updatedBlock,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', blockWithQuestion.id);
+
+      if (error) throw error;
+
+      // Reload blocks after deletion
+      await loadBlocksFromDatabase();
+    } catch (error) {
+      console.error('Error deleting question:', error);
+      throw error;
+    }
+  };
+
+  // Duplicate question function (adds duplicate question to the same block)
+  const duplicateQuestion = async (question: Question): Promise<void> => {
+    try {
+      // Find the block containing this question
+      const blockWithQuestion = blocks.find(block => 
+        block.questions.some(q => q.question_id === question.question_id)
+      );
+      
+      if (!blockWithQuestion) {
+        throw new Error('Question not found in any block');
+      }
+
+      // Generate new question ID
+      const newQuestionId = `${question.question_id}_copy_${Date.now()}`;
+      
+      // Create new question with modified ID
+      const newQuestion: Question = {
+        ...question,
+        question_id: newQuestionId,
+        question_text: `${question.question_text} (Copia)`,
+      };
+
+      // Add the new question to the block's questions array
+      const updatedBlock = {
+        ...blockWithQuestion,
+        questions: [...blockWithQuestion.questions, newQuestion]
+      };
+
+      const { error } = await supabase
+        .from('form_blocks')
+        .update({
+          block_data: updatedBlock,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', blockWithQuestion.id);
+
+      if (error) throw error;
+
+      // Reload blocks after duplication
+      await loadBlocksFromDatabase();
+    } catch (error) {
+      console.error('Error duplicating question:', error);
+      throw error;
+    }
+  };
+
   return {
     blocks,
     forms,
@@ -209,6 +315,9 @@ export function useAdminBlocks() {
     getTotalQuestions,
     updateBlock,
     duplicateBlock,
+    deleteBlock,
+    deleteQuestion,
+    duplicateQuestion,
     refetch: loadBlocksFromDatabase,
   };
 }
