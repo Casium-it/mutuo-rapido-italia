@@ -1,10 +1,14 @@
+
 import React, { useEffect, useState } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
 import { FormQuestion } from "./FormQuestion";
+import { CompletionStatus } from "./CompletionStatus";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, AlertCircle } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { completedSave } from "@/services/smartSaveService";
+
 export function QuestionView() {
   const {
     state,
@@ -13,7 +17,8 @@ export function QuestionView() {
     isBlockCompleted,
     markBlockAsCompleted,
     getIncompleteBlocks,
-    formSlug
+    formSlug,
+    getPreviousQuestion
   } = useFormExtended();
   const location = useLocation();
   const navigate = useNavigate();
@@ -72,6 +77,16 @@ export function QuestionView() {
 
   // Check if there are any dynamic blocks that are not completed
   const isEndOfFormQuestion = activeQuestion?.endOfForm === true;
+
+  // Get previous question for back navigation
+  const previousQuestion = getPreviousQuestion(state.activeQuestion.block_id, state.activeQuestion.question_id);
+
+  // Handle back navigation
+  const handleBackNavigation = () => {
+    if (previousQuestion) {
+      goToQuestion(previousQuestion.block_id, previousQuestion.question_id);
+    }
+  };
 
   // Handle form submission - Navigate immediately to loading page
   /**
@@ -140,13 +155,19 @@ export function QuestionView() {
       });
     }
   };
+
   if (!activeBlock || !activeQuestion) {
-    return <div className="text-center py-8">
+    return (
+      <div className="text-center py-8">
         <p className="text-gray-500">Domanda non trovata.</p>
-      </div>;
+      </div>
+    );
   }
-  return <div className="max-w-2xl">
-      {showStopFlow && <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-md shadow-sm animate-fade-in">
+
+  return (
+    <div className="max-w-2xl">
+      {showStopFlow && (
+        <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-md shadow-sm animate-fade-in">
           <p className="text-red-600 font-medium mb-2">
             Attualmente non supportiamo questo caso particolare, ma ci stiamo lavorando.
           </p>
@@ -157,58 +178,74 @@ export function QuestionView() {
             </a>
           </p>
           <div className="flex flex-wrap gap-3 mt-2">
-            <button onClick={() => setShowStopFlow(false)} className="px-3 py-1.5 text-[#245C4F] bg-white border border-[#245C4F] rounded-md text-sm font-medium hover:bg-[#f8f8f8]">
+            <button 
+              onClick={() => setShowStopFlow(false)} 
+              className="px-3 py-1.5 text-[#245C4F] bg-white border border-[#245C4F] rounded-md text-sm font-medium hover:bg-[#f8f8f8]"
+            >
               Continua con un'altra selezione
             </button>
           </div>
-        </div>}
+        </div>
+      )}
 
-      {/* Special End of Form UI */}
-      {isEndOfFormQuestion ? <div className="space-y-6">
-          <div className="p-6 bg-[#F8F4EF] border border-[#BEB8AE] rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900">Riepilogo</h2>
-            
-            {allBlocksCompleted ? <div className="flex items-start space-x-3 p-4 bg-green-50 border border-green-200 rounded-md">
-                <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="font-medium text-green-700">Domande completate</p>
-                  <p className="mt-1 text-sm text-green-600">Non ci sono risposte mancanti</p>
-                </div>
-              </div> : <div className="space-y-4">
-                <div className="flex items-start space-x-3 p-4 bg-red-50 border border-red-200 rounded-md">
-                  <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-red-700">Ci sono sezioni da completare</p>
-                    <p className="mt-1 text-sm text-red-600">
-                      Completa tutte le sezioni prima di inviare la richiesta.
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="pl-4 border-l-2 border-red-200">
-                  <h3 className="font-medium text-red-900 mb-2">Sezioni da completare:</h3>
-                  <ul className="space-y-2">
-                    {incompleteBlocks.map(block => <li key={block?.block_id} className="flex items-center">
-                        <AlertCircle className="h-4 w-4 text-red-500 mr-2" />
-                        <span className="text-gray-700">{block?.title}</span>
-                        <Button type="button" size="sm" variant="link" className="ml-2 text-[#245C4F] p-0 h-auto" onClick={() => {
-                  if (block && block.questions.length > 0) {
-                    goToQuestion(block.block_id, block.questions[0].question_id);
-                  }
-                }}>
-                          Vai alla sezione
-                        </Button>
-                      </li>)}
-                  </ul>
-                </div>
-              </div>}
-            
-            <div className="mt-6 flex justify-center">
-              <Button onClick={handleSubmitForm} disabled={!allBlocksCompleted} className={`${!allBlocksCompleted ? "bg-[#a0c3be] cursor-not-allowed" : "bg-[#245C4F] hover:bg-[#1e4f44]"} text-white px-8 py-3 rounded-[10px] text-[16px] font-medium ${!allBlocksCompleted ? "shadow-[0_3px_0_0_#8daca7]" : "shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37]"} w-full sm:w-auto transition-all`}>Avanti</Button>
+      {/* Standard form container for both regular and EndOfForm questions */}
+      <div className="max-w-xl animate-fade-in">
+        {isEndOfFormQuestion ? (
+          <>
+            {/* Dynamic question text based on completion status */}
+            <div className="mb-6">
+              <h1 className="text-2xl font-semibold text-gray-900 mb-2">
+                {allBlocksCompleted ? "Tutte le domande completate" : "Ci sono sezioni da completare"}
+              </h1>
             </div>
+
+            <Separator className="h-[1px] bg-[#F0EAE0] mb-5" />
+
+            {/* Completion status in main content area */}
+            <div className="mb-8">
+              <CompletionStatus 
+                allBlocksCompleted={allBlocksCompleted}
+                incompleteBlocks={incompleteBlocks}
+                onNavigateToBlock={goToQuestion}
+              />
+            </div>
+
+            {/* Standard navigation buttons */}
+            <div className="mt-8 flex items-center gap-4">
+              {/* Back button */}
+              {previousQuestion && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleBackNavigation}
+                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Indietro
+                </Button>
+              )}
+
+              {/* Submit button styled as "Avanti" */}
+              <Button
+                onClick={handleSubmitForm}
+                disabled={!allBlocksCompleted}
+                className={`flex items-center gap-2 px-6 py-3 rounded-[10px] text-[16px] font-medium transition-all ${
+                  !allBlocksCompleted 
+                    ? "bg-[#a0c3be] cursor-not-allowed shadow-[0_3px_0_0_#8daca7]" 
+                    : "bg-[#245C4F] hover:bg-[#1e4f44] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37]"
+                } text-white`}
+              >
+                Avanti
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </>
+        ) : (
+          <div className="space-y-4">
+            <FormQuestion question={activeQuestion} />
           </div>
-        </div> : <div className="space-y-4">
-          <FormQuestion question={activeQuestion} />
-        </div>}
-    </div>;
+        )}
+      </div>
+    </div>
+  );
 }
