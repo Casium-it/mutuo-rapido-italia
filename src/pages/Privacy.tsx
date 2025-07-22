@@ -1,24 +1,16 @@
-
 import React from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-
 const Privacy = () => {
   const navigate = useNavigate();
-
-  return (
-    <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
+  return <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
       {/* Header */}
       <header className="container mx-auto py-6 px-4 flex justify-between items-center">
         <div className="cursor-pointer" onClick={() => navigate("/")}>
           <Logo />
         </div>
-        <Button 
-          variant="ghost" 
-          onClick={() => navigate("/")}
-          className="text-gray-700 hover:text-[#245C4F] font-medium transition-colors"
-        >
+        <Button variant="ghost" onClick={() => navigate("/")} className="text-gray-700 hover:text-[#245C4F] font-medium transition-colors">
           Torna alla Home
         </Button>
       </header>
@@ -203,9 +195,9 @@ const Privacy = () => {
               </p>
               <div className="bg-[#F8F4EF] p-4 rounded-lg mt-3">
                 <p><strong>Email:</strong> privacy@gomutuo.it</p>
-                <p><strong>Telefono:</strong> +39 055 1234567</p>
-                <p><strong>Indirizzo:</strong> Viale dei Mille 142, Firenze, 50131, Italia</p>
-                <p><strong>PEC:</strong> gomutuo@pec.it</p>
+                
+                
+                
               </div>
             </section>
           </div>
@@ -217,10 +209,7 @@ const Privacy = () => {
         <div className="flex justify-between items-center mb-4">
           <p className="text-sm text-gray-600">© 2025 GoMutuo.it - Tutti i diritti riservati</p>
           <div className="flex gap-4">
-            <button 
-              onClick={() => navigate("/privacy")}
-              className="text-sm text-gray-600 hover:text-[#245C4F]"
-            >
+            <button onClick={() => navigate("/privacy")} className="text-sm text-gray-600 hover:text-[#245C4F]">
               Privacy
             </button>
             <a href="#" className="text-sm text-gray-600 hover:text-[#245C4F]">Termini</a>
@@ -238,8 +227,6 @@ const Privacy = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default Privacy;
