@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.3";
 
@@ -95,12 +96,13 @@ serve(async (req) => {
         const leadData = lead as any;
         const adminData = leadData.admin_notification_settings;
         
-        // Format the scheduled time as HH:MM
+        // Format the scheduled time as HH:MM in Italy timezone (Europe/Rome)
         const scheduledTime = new Date(leadData.prossimo_contatto);
         const timeFormatted = scheduledTime.toLocaleTimeString('it-IT', { 
           hour: '2-digit', 
           minute: '2-digit',
-          hour12: false 
+          hour12: false,
+          timeZone: 'Europe/Rome'
         });
 
         // Prepare AiSensy message parameters
