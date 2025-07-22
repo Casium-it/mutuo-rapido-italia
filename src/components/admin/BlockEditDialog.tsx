@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Settings, Copy, AlertTriangle } from "lucide-react";
+import { Settings, Copy, AlertTriangle, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -34,6 +34,7 @@ interface BlockEditDialogProps {
   availableForms: Array<{ id: string; title: string; slug: string }>;
   onUpdate: (blockId: string, updatedBlock: Block, newFormId?: string) => Promise<void>;
   onDuplicate: (block: Block, targetFormId: string) => Promise<void>;
+  onDelete?: (blockId: string) => Promise<void>;
 }
 
 export function BlockEditDialog({
@@ -42,11 +43,14 @@ export function BlockEditDialog({
   formTitle,
   availableForms,
   onUpdate,
-  onDuplicate
+  onDuplicate,
+  onDelete
 }: BlockEditDialogProps) {
   const [open, setOpen] = useState(false);
   const [confirmationOpen, setConfirmationOpen] = useState(false);
   const [duplicateOpen, setDuplicateOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -169,6 +173,33 @@ export function BlockEditDialog({
       toast({
         title: "Errore",
         description: "Errore durante la duplicazione del blocco",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!onDelete) return;
+
+    setLoading(true);
+    try {
+      await onDelete(block.block_id);
+      
+      toast({
+        title: "Blocco eliminato",
+        description: "Il blocco è stato eliminato con successo",
+      });
+
+      setDeleteConfirmOpen(false);
+      setDeleteOpen(false);
+      setOpen(false);
+    } catch (error) {
+      console.error('Error deleting block:', error);
+      toast({
+        title: "Errore",
+        description: "Errore durante l'eliminazione del blocco",
         variant: "destructive",
       });
     } finally {
@@ -354,14 +385,26 @@ export function BlockEditDialog({
 
             {/* Action Buttons */}
             <div className="flex justify-between pt-4">
-              <Button
-                variant="outline"
-                onClick={() => setDuplicateOpen(true)}
-                className="flex items-center gap-2"
-              >
-                <Copy className="h-4 w-4" />
-                Duplica
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setDuplicateOpen(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Copy className="h-4 w-4" />
+                  Duplica
+                </Button>
+                {onDelete && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setDeleteOpen(true)}
+                    className="flex items-center gap-2 text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Elimina
+                  </Button>
+                )}
+              </div>
 
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setOpen(false)}>
@@ -439,6 +482,85 @@ export function BlockEditDialog({
             </AlertDialogCancel>
             <AlertDialogAction onClick={handleDuplicate} disabled={loading || !duplicateFormId}>
               {loading ? 'Duplicando...' : 'Duplica'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Elimina Blocco
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Sei sicuro di voler eliminare il blocco <strong>"{block.title}"</strong>?
+              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded">
+                <p className="text-sm text-red-800">
+                  <strong>Attenzione:</strong> Questa azione eliminerà:
+                </p>
+                <ul className="text-sm text-red-700 mt-2 list-disc list-inside">
+                  <li>{block.questions.length} domande</li>
+                  <li>Tutti i placeholder associati</li>
+                  <li>Tutti i collegamenti da altri blocchi</li>
+                </ul>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => setDeleteConfirmOpen(true)}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Continua
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Final Delete Confirmation */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Conferma Eliminazione
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <div className="space-y-3">
+                <p>Questa è l'ultima conferma prima dell'eliminazione definitiva.</p>
+                <div className="p-3 bg-red-50 border border-red-200 rounded">
+                  <p className="text-sm text-red-800 font-semibold">
+                    L'eliminazione del blocco "{block.title}" è irreversibile.
+                  </p>
+                </div>
+                <p className="text-sm">
+                  Scrivi "ELIMINA" per confermare l'eliminazione:
+                </p>
+                <Input
+                  placeholder="Scrivi ELIMINA per confermare"
+                  onChange={(e) => {
+                    const button = document.querySelector('[data-delete-confirm]') as HTMLButtonElement;
+                    if (button) {
+                      button.disabled = e.target.value !== 'ELIMINA' || loading;
+                    }
+                  }}
+                />
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction 
+              data-delete-confirm
+              onClick={handleDelete}
+              disabled={loading}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {loading ? 'Eliminando...' : 'Elimina Definitivamente'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

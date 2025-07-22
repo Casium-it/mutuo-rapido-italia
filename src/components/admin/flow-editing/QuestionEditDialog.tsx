@@ -11,7 +11,9 @@ import { Badge } from '@/components/ui/badge';
 import { Question, Placeholder } from '@/types/form';
 import { useFlowEdit } from '@/contexts/FlowEditContext';
 import { useAdminBlocks } from '@/hooks/useAdminBlocks';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Copy, AlertTriangle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { CreatePlaceholderDialog } from './CreatePlaceholderDialog';
 import { QuestionIdChangeConfirmDialog } from './QuestionIdChangeConfirmDialog';
 
@@ -19,19 +21,27 @@ interface QuestionEditDialogProps {
   open: boolean;
   question: Question;
   onClose: () => void;
+  onDuplicate?: (question: Question) => Promise<void>;
+  onDelete?: (questionId: string) => Promise<void>;
 }
 
 export const QuestionEditDialog: React.FC<QuestionEditDialogProps> = ({
   open,
   question,
-  onClose
+  onClose,
+  onDuplicate,
+  onDelete
 }) => {
   const { state, updateBlockData } = useFlowEdit();
   const { blocks } = useAdminBlocks();
+  const { toast } = useToast();
   const [createPlaceholderDialog, setCreatePlaceholderDialog] = useState(false);
   const [confirmIdChange, setConfirmIdChange] = useState(false);
   const [pendingQuestionId, setPendingQuestionId] = useState('');
   const [questionIdError, setQuestionIdError] = useState('');
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     question_id: question.question_id,
     question_text: question.question_text,
@@ -175,6 +185,58 @@ export const QuestionEditDialog: React.FC<QuestionEditDialogProps> = ({
     });
 
     updateBlockData({ questions: updatedQuestions });
+  };
+
+  const handleDuplicateQuestion = async () => {
+    if (!onDuplicate) return;
+
+    setLoading(true);
+    try {
+      await onDuplicate(question);
+      
+      toast({
+        title: "Domanda duplicata",
+        description: "La domanda è stata duplicata con successo",
+      });
+
+      onClose();
+    } catch (error) {
+      console.error('Error duplicating question:', error);
+      toast({
+        title: "Errore",
+        description: "Errore durante la duplicazione della domanda",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteQuestion = async () => {
+    if (!onDelete) return;
+
+    setLoading(true);
+    try {
+      await onDelete(question.question_id);
+      
+      toast({
+        title: "Domanda eliminata",
+        description: "La domanda è stata eliminata con successo",
+      });
+
+      setDeleteConfirmOpen(false);
+      setDeleteOpen(false);
+      onClose();
+    } catch (error) {
+      console.error('Error deleting question:', error);
+      toast({
+        title: "Errore",
+        description: "Errore durante l'eliminazione della domanda",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const placeholderOptions = Object.keys(question.placeholders || {});
@@ -326,12 +388,39 @@ export const QuestionEditDialog: React.FC<QuestionEditDialogProps> = ({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Annulla
-          </Button>
-          <Button onClick={handleSave} className="bg-[#245C4F] hover:bg-[#1e4f44]">
-            Salva Modifiche
-          </Button>
+          <div className="flex w-full justify-between">
+            <div className="flex gap-2">
+              {onDuplicate && (
+                <Button
+                  variant="outline"
+                  onClick={handleDuplicateQuestion}
+                  disabled={loading}
+                  className="flex items-center gap-2"
+                >
+                  <Copy className="h-4 w-4" />
+                  Duplica
+                </Button>
+              )}
+              {onDelete && (
+                <Button
+                  variant="outline"
+                  onClick={() => setDeleteOpen(true)}
+                  className="flex items-center gap-2 text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Elimina
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={onClose}>
+                Annulla
+              </Button>
+              <Button onClick={handleSave} className="bg-[#245C4F] hover:bg-[#1e4f44]">
+                Salva Modifiche
+              </Button>
+            </div>
+          </div>
         </DialogFooter>
 
         {createPlaceholderDialog && (
@@ -353,6 +442,85 @@ export const QuestionEditDialog: React.FC<QuestionEditDialogProps> = ({
           newQuestionId={pendingQuestionId}
           referenceCount={countReferences(question.question_id)}
         />
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-amber-500" />
+                Elimina Domanda
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Sei sicuro di voler eliminare la domanda <strong>"{question.question_text}"</strong>?
+                <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded">
+                  <p className="text-sm text-red-800">
+                    <strong>Attenzione:</strong> Questa azione eliminerà:
+                  </p>
+                  <ul className="text-sm text-red-700 mt-2 list-disc list-inside">
+                    <li>La domanda e tutto il suo contenuto</li>
+                    <li>Tutti i {Object.keys(question.placeholders || {}).length} placeholder associati</li>
+                    <li>Tutti i collegamenti da altri blocchi/domande</li>
+                  </ul>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annulla</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={() => setDeleteConfirmOpen(true)}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Continua
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Final Delete Confirmation */}
+        <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-red-500" />
+                Conferma Eliminazione
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                <div className="space-y-3">
+                  <p>Questa è l'ultima conferma prima dell'eliminazione definitiva.</p>
+                  <div className="p-3 bg-red-50 border border-red-200 rounded">
+                    <p className="text-sm text-red-800 font-semibold">
+                      L'eliminazione della domanda "{question.question_text}" è irreversibile.
+                    </p>
+                  </div>
+                  <p className="text-sm">
+                    Scrivi "ELIMINA" per confermare l'eliminazione:
+                  </p>
+                  <Input
+                    placeholder="Scrivi ELIMINA per confermare"
+                    onChange={(e) => {
+                      const button = document.querySelector('[data-question-delete-confirm]') as HTMLButtonElement;
+                      if (button) {
+                        button.disabled = e.target.value !== 'ELIMINA' || loading;
+                      }
+                    }}
+                  />
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annulla</AlertDialogCancel>
+              <AlertDialogAction 
+                data-question-delete-confirm
+                onClick={handleDeleteQuestion}
+                disabled={loading}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {loading ? 'Eliminando...' : 'Elimina Definitivamente'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );
