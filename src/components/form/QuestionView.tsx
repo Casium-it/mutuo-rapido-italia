@@ -204,9 +204,7 @@ export function QuestionView() {
               </div>}
             
             <div className="mt-6 flex justify-center">
-              <Button onClick={handleSubmitForm} disabled={!allBlocksCompleted} className={`${!allBlocksCompleted ? "bg-[#a0c3be] cursor-not-allowed" : "bg-[#245C4F] hover:bg-[#1e4f44]"} text-white px-8 py-3 rounded-[10px] text-[16px] font-medium ${!allBlocksCompleted ? "shadow-[0_3px_0_0_#8daca7]" : "shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37]"} w-full sm:w-auto transition-all`}>
-                Invia Form
-              </Button>
+              <Button onClick={handleSubmitForm} disabled={!allBlocksCompleted} className={`${!allBlocksCompleted ? "bg-[#a0c3be] cursor-not-allowed" : "bg-[#245C4F] hover:bg-[#1e4f44]"} text-white px-8 py-3 rounded-[10px] text-[16px] font-medium ${!allBlocksCompleted ? "shadow-[0_3px_0_0_#8daca7]" : "shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37]"} w-full sm:w-auto transition-all`}>Avanti</Button>
             </div>
           </div>
         </div> : <div className="space-y-4">
