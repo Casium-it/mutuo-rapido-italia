@@ -71,7 +71,7 @@ const HomePage = () => {
     title: "Esperti su tutta Italia",
     description: "Rete di 90+ mediatori partner esperti su tutta Italia, pronti ad aiutarti"
   }, {
-    title: "Mutuo per tutti",
+    title: "Mutui per ogni esigenza",
     description: "Mutuo difficile? Partita IVA? Segnalazioni? Ci pensiamo noi, siamo esperti in questo"
   }];
   const handleWhatsAppContact = () => {
