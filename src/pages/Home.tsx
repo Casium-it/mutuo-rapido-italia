@@ -118,7 +118,7 @@ const HomePage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center mb-12 md:mb-16">
           {/* Left side - Text content */}
           <div className="text-center lg:text-left animate-[fade-in_0.6s_ease-out_0.3s_both] opacity-0">
-            <h1 className="text-4xl md:text-5xl font-bold mb-8 animate-[fade-in_0.6s_ease-out_0.4s_both] opacity-0">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 animate-[fade-in_0.6s_ease-out_0.4s_both] opacity-0">
               Cerchi un <span className="relative">
                 <span className="gradient-text">mutuo?</span>
                 <div className="absolute -bottom-1 left-0 right-0 h-1 md:h-3 bg-[#d3f54f] rounded-full opacity-80 animate-[expand-line_1.2s_ease-out_0.8s_both] scale-x-0 origin-left"></div>
