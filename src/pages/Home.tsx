@@ -106,7 +106,7 @@ const HomePage = () => {
         
         {/* CTA Button */}
         <div>
-          <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-full px-6" onClick={() => handleSimulationClick('header')}>
+          <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-[12px] px-6" onClick={() => handleSimulationClick('header')}>
             Simulazione
           </Button>
         </div>
