@@ -12,7 +12,7 @@ export function Logo({ onClick }: LogoProps) {
       onClick={onClick}
     >
         <img 
-          src="/lovable-uploads/fc4caaa9-75d9-4960-92f3-7afba05a26e9.png"
+          src="/lovable-uploads/f8bbfaf2-359b-44d7-ad1c-d0c6c30ff620.png"
           alt="GoMutuo Logo"
           height="40"
           className="h-10"
