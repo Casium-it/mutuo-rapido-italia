@@ -90,22 +90,22 @@ const HomePage = () => {
       {/* Header */}
       <header className="py-6 px-4 md:px-6 relative flex items-center justify-between z-10 animate-[fade-in_0.6s_ease-out_0.1s_both] opacity-0">
         {/* Logo */}
-        <div className="cursor-pointer" onClick={() => navigate("/")}>
+        <div className="cursor-pointer flex items-center" onClick={() => navigate("/")}>
           <Logo />
         </div>
         
         {/* Desktop only navigation - centered */}
         {!isMobile && <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-4">
-            <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]" onClick={() => handleSimulationClick('header_nav')}>
+            <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E] flex items-center" onClick={() => handleSimulationClick('header_nav')}>
               Simulazioni
             </Button>
-            <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]" onClick={handleWhatsAppContact}>
+            <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E] flex items-center" onClick={handleWhatsAppContact}>
               Contattaci
             </Button>
           </div>}
         
         {/* CTA Button */}
-        <div>
+        <div className="flex items-center">
           <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-[12px] px-6 shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all" onClick={() => handleSimulationClick('header')}>
             Simulazione
           </Button>
