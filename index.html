@@ -9,7 +9,7 @@
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-NCEGV2W1YP"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
+      function gtag(){dataLayer.push(arguments);} 
       gtag('js', new Date());
 
       gtag('config', 'G-NCEGV2W1YP');
@@ -34,25 +34,73 @@
     <meta name="description" content="Simulazioni avanzate ed approfondite per il tuo mutuo. Troviamo soluzioni per ogni situazione, anche le più complesse. GoMutuo ti accompagna dall'inizio alla fine." />
     <meta name="author" content="GoMutuo" />
     <meta name="keywords" content="mutuo, simulazione mutuo, mutuo online, prestito casa, finanziamento immobiliare" />
+    <meta name="theme-color" content="#245C4F" />
 
     <meta property="og:title" content="GoMutuo - Simula il tuo mutuo online" />
     <meta property="og:description" content="Simulazioni avanzate ed approfondite per il tuo mutuo. Troviamo soluzioni per ogni situazione, anche le più complesse. GoMutuo ti accompagna dall'inizio alla fine." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://gomutuo.it" />
-    <meta property="og:image" content="/lovable-uploads/173cb557-9ae4-40df-a6a9-79a356b8218f.png" />
+    <meta property="og:image" content="https://gomutuo.it/lovable-uploads/173cb557-9ae4-40df-a6a9-79a356b8218f.png" />
     <meta property="og:site_name" content="GoMutuo" />
+    <meta property="og:locale" content="it_IT" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="GoMutuo - Simula il tuo mutuo online" />
     <meta name="twitter:description" content="Simulazioni avanzate ed approfondite per il tuo mutuo. Troviamo soluzioni per ogni situazione, anche le più complesse. GoMutuo ti accompagna dall'inizio alla fine." />
-    <meta name="twitter:image" content="/lovable-uploads/173cb557-9ae4-40df-a6a9-79a356b8218f.png" />
+    <meta name="twitter:image" content="https://gomutuo.it/lovable-uploads/173cb557-9ae4-40df-a6a9-79a356b8218f.png" />
 
     <link rel="canonical" href="https://gomutuo.it" />
+    <!-- Guard per canonical duplicati non autorizzati -->
+    <script>
+      (function(){
+        var allowed = ['https://gomutuo.it','https://www.gomutuo.it'];
+        var preferred = 'https://gomutuo.it';
+        function cleanCanonicals(){
+          try {
+            var links = Array.prototype.slice.call(document.querySelectorAll('link[rel="canonical"]'));
+            if(!links.length) return;
+            links.forEach(function(lnk, idx){
+              var href = lnk.getAttribute('href') || '';
+              var ok = allowed.some(function(a){ return href.indexOf(a) === 0; });
+              if(idx === 0){
+                if(!ok){ lnk.setAttribute('href', preferred); }
+              } else {
+                if(!ok && lnk.parentNode){ lnk.parentNode.removeChild(lnk); }
+              }
+            });
+          } catch(e){}
+        }
+        document.addEventListener('DOMContentLoaded', cleanCanonicals);
+        new MutationObserver(cleanCanonicals).observe(document.head || document.documentElement, {childList:true,subtree:true});
+      })();
+    </script>
+
+    <!-- Favicons -->
     <link rel="icon" href="/lovable-uploads/d933f041-3173-4d94-ae36-0af3acd0fee4.png?v=3" type="image/png" sizes="16x16" />
     <link rel="icon" href="/lovable-uploads/d933f041-3173-4d94-ae36-0af3acd0fee4.png?v=3" type="image/png" sizes="32x32" />
     <link rel="icon" href="/lovable-uploads/d933f041-3173-4d94-ae36-0af3acd0fee4.png?v=3" type="image/png" sizes="48x48" />
     <link rel="apple-touch-icon" href="/lovable-uploads/d933f041-3173-4d94-ae36-0af3acd0fee4.png?v=3" sizes="180x180" />
     <link rel="shortcut icon" href="/lovable-uploads/d933f041-3173-4d94-ae36-0af3acd0fee4.png?v=3" type="image/png" />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "GoMutuo",
+        "url": "https://gomutuo.it",
+        "logo": "https://gomutuo.it/lovable-uploads/d933f041-3173-4d94-ae36-0af3acd0fee4.png"
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "GoMutuo",
+        "url": "https://gomutuo.it",
+        "inLanguage": "it-IT"
+      }
+    </script>
   </head>
 
   <body>
