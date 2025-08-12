@@ -8,9 +8,6 @@ import { trackWhatsAppContact, trackSimulationCTA } from "@/utils/analytics";
 import { useTimeTracking } from "@/hooks/useTimeTracking";
 import { LoginButton } from "@/components/LoginButton";
 import ThreeFeatureCards from "@/components/ThreeFeatureCards";
-import featureCard1 from "@/assets/gomutuo-feature-1.svg";
-import featureCard2 from "@/assets/gomutuo-feature-2.svg";
-import featureCard3 from "@/assets/gomutuo-feature-3.svg";
 const HomePage = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
@@ -117,9 +114,9 @@ const HomePage = () => {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 px-4 md:px-10 py-8 md:py-8 max-w-5xl mx-auto w-full flex flex-col justify-center relative z-10">
+      <main className="flex-1 px-4 md:px-6 py-8 md:py-12 max-w-5xl mx-auto w-full flex flex-col justify-center relative z-10">
         {/* Hero Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center py-8 md:py-12 mb-12 md:mb-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center py-8 md:py-16 mb-12 md:mb-16">
           {/* Left side - Text content */}
           <div className="text-center lg:text-left animate-[fade-in_0.6s_ease-out_0.3s_both] opacity-0">
             <h1 className="text-4xl md:text-5xl font-bold mb-4 animate-[fade-in_0.6s_ease-out_0.4s_both] opacity-0">
@@ -131,7 +128,7 @@ const HomePage = () => {
             <p className="text-gray-600 mb-4 max-w-3xl mx-auto lg:mx-0 leading-relaxed text-lg md:text-lg animate-[fade-in_0.6s_ease-out_0.6s_both] opacity-0 py-[5px]">Soluzioni concrete per ogni situazione, anche per le più complesse. GoMutuo ti accompagna dall'inizio alla fine.</p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start items-center mb-6 mt-6 animate-[fade-in_0.6s_ease-out_0.9s_both] opacity-0">
-              <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-8 py-4 text-lg rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all relative overflow-hidden group" onClick={() => handleSimulationClick('hero')}>
+              <Button onClick={() => handleSimulationClick('hero')} className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-8 py-4 rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all relative overflow-hidden group text-base">
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
                 Simula il tuo mutuo
               </Button>
@@ -184,38 +181,26 @@ const HomePage = () => {
           </div>
         </div>
 
+      {/* Vantaggi - 3 Card */}
+      <div className="mb-16 animate-[fade-in_0.8s_ease-out_1.8s_both] opacity-0">
+  <ThreeFeatureCards items={[{
+          title: "Il miglior Mutuo",
+          description: "Confrontiamo e parliamo con più di 100 banche senza che tu debba andare in filiale",
+          imgSrc: "/lovable-uploads/f7625ead-1f5e-4c4f-a7b7-4531140cc6ac.png",
+          alt: "Illustrazione smartphone con conferma"
+        }, {
+          title: "Trasparenza",
+          description: "La trasparenza è al primo posto, niente termini incomprensibili",
+          imgSrc: "/lovable-uploads/5478f73b-2a9b-433b-9a10-58e28010b20f.png",
+          alt: "Illustrazione stretta di mano"
+        }, {
+          title: "Esperti su tutta Italia",
+          description: "Rete di 90+ mediatori partner esperti su tutta Italia, pronti ad aiutarti",
+          imgSrc: "/lovable-uploads/1cb657d7-9997-4b5b-b882-a8fe25b193fc.png",
+          alt: "Illustrazione consulenza con cuffie"
+        }]} />
+      </div>
       </main>
-
-      {/* Sezione Vantaggi a larghezza piena con sfondo bianco */}
-      <section className="w-full bg-white py-12 md:py-12">
-        <div className="max-w-5xl mx-auto w-full px-4 md:px-10">
-          <ThreeFeatureCards
-            items={[
-              {
-                title: "Il miglior Mutuo",
-                description:
-                  "Confrontiamo e parliamo con più di 100 banche senza che tu debba andare in filiale",
-                imgSrc: featureCard1,
-                alt: "Illustrazione smartphone con conferma",
-              },
-              {
-                title: "Trasparenza",
-                description:
-                  "La trasparenza è al primo posto, niente termini incomprensibili",
-                imgSrc: featureCard2,
-                alt: "Illustrazione stretta di mano",
-              },
-              {
-                title: "Esperti su tutta Italia",
-                description:
-                  "Rete di 90+ mediatori partner esperti su tutta Italia, pronti ad aiutarti",
-                imgSrc: featureCard3,
-                alt: "Illustrazione consulenza con cuffie",
-              },
-            ]}
-          />
-        </div>
-      </section>
 
       {/* Footer */}
       <footer className="py-6 px-4 border-t border-[#BEB8AE] relative z-10 animate-[fade-in_0.6s_ease-out_2.1s_both] opacity-0">
