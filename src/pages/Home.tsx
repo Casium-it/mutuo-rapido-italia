@@ -181,35 +181,38 @@ const HomePage = () => {
           </div>
         </div>
 
-{/* Vantaggi - 3 Card */}
-<div className="mb-16 animate-[fade-in_0.8s_ease-out_1.8s_both] opacity-0">
-  <ThreeFeatureCards
-    items={[
-      {
-        title: "Il miglior Mutuo",
-        description:
-          "Confrontiamo e parliamo con più di 100 banche senza che tu debba andare in filiale",
-        imgSrc: "/lovable-uploads/f7625ead-1f5e-4c4f-a7b7-4531140cc6ac.png",
-        alt: "Illustrazione smartphone con conferma"
-      },
-      {
-        title: "Trasparenza",
-        description:
-          "La trasparenza è al primo posto, niente termini incomprensibili",
-        imgSrc: "/lovable-uploads/5478f73b-2a9b-433b-9a10-58e28010b20f.png",
-        alt: "Illustrazione stretta di mano"
-      },
-      {
-        title: "Esperti su tutta Italia",
-        description:
-          "Rete di 90+ mediatori partner esperti su tutta Italia, pronti ad aiutarti",
-        imgSrc: "/lovable-uploads/1cb657d7-9997-4b5b-b882-a8fe25b193fc.png",
-        alt: "Illustrazione consulenza con cuffie"
-      },
-    ]}
-  />
-</div>
       </main>
+
+      {/* Sezione Vantaggi a larghezza piena con sfondo bianco */}
+      <section className="w-full bg-white py-12 md:py-20">
+        <div className="max-w-5xl mx-auto w-full px-4 md:px-10">
+          <ThreeFeatureCards
+            items={[
+              {
+                title: "Il miglior Mutuo",
+                description:
+                  "Confrontiamo e parliamo con più di 100 banche senza che tu debba andare in filiale",
+                imgSrc: "/lovable-uploads/f7625ead-1f5e-4c4f-a7b7-4531140cc6ac.png",
+                alt: "Illustrazione smartphone con conferma",
+              },
+              {
+                title: "Trasparenza",
+                description:
+                  "La trasparenza è al primo posto, niente termini incomprensibili",
+                imgSrc: "/lovable-uploads/5478f73b-2a9b-433b-9a10-58e28010b20f.png",
+                alt: "Illustrazione stretta di mano",
+              },
+              {
+                title: "Esperti su tutta Italia",
+                description:
+                  "Rete di 90+ mediatori partner esperti su tutta Italia, pronti ad aiutarti",
+                imgSrc: "/lovable-uploads/1cb657d7-9997-4b5b-b882-a8fe25b193fc.png",
+                alt: "Illustrazione consulenza con cuffie",
+              },
+            ]}
+          />
+        </div>
+      </section>
 
       {/* Footer */}
       <footer className="py-6 px-4 border-t border-[#BEB8AE] relative z-10 animate-[fade-in_0.6s_ease-out_2.1s_both] opacity-0">
