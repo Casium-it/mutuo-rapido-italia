@@ -17,7 +17,7 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
 }) => {
   return <section aria-labelledby="vantaggi-title" className="mt-8 md:mt-12">
       <header className="mb-6 md:mb-8 text-center">
-        <h2 id="vantaggi-title" className="text-2xl font-bold tracking-tight text-[hsl(var(--form-green))] md:text-4xl">
+        <h2 id="vantaggi-title" className="text-2xl font-bold tracking-tight text-[hsl(var(--form-green))] text-black md:text-4xl">
           Perché scegliere <span className="gradient-text">GoMutuo</span>
         </h2>
       </header>
