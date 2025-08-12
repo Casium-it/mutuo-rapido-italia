@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { trackWhatsAppContact, trackSimulationCTA } from "@/utils/analytics";
 import { useTimeTracking } from "@/hooks/useTimeTracking";
 import { LoginButton } from "@/components/LoginButton";
+import ThreeFeatureCards from "@/components/ThreeFeatureCards";
 const HomePage = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
@@ -180,12 +181,28 @@ const HomePage = () => {
           </div>
         </div>
 
-        {/* Benefits Section */}
-        <div className="mb-16 bg-gradient-to-b from-[#f8f5f1] to-[#f0ede8] rounded-2xl py-12 px-6 animate-[fade-in_0.8s_ease-out_1.8s_both] opacity-0">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {benefits.map((benefit, index) => <BenefitCard key={index} title={benefit.title} description={benefit.description} />)}
-          </div>
-        </div>
+{/* Vantaggi - 3 Card */}
+<div className="mb-16 animate-[fade-in_0.8s_ease-out_1.8s_both] opacity-0">
+  <ThreeFeatureCards
+    items={[
+      {
+        title: "Il miglior Mutuo",
+        description:
+          "Confrontiamo e parliamo con più di 100 banche senza che tu debba andare in filiale",
+      },
+      {
+        title: "Trasparenza",
+        description:
+          "La trasparenza è al primo posto, niente termini incomprensibili",
+      },
+      {
+        title: "Esperti su tutta Italia",
+        description:
+          "Rete di 90+ mediatori partner esperti su tutta Italia, pronti ad aiutarti",
+      },
+    ]}
+  />
+</div>
       </main>
 
       {/* Footer */}
