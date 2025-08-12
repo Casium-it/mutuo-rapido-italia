@@ -90,7 +90,7 @@ const HomePage = () => {
     trackCustomExit('simulation_navigation');
     navigate("/simulazioni");
   };
-  return <div className="min-h-screen flex flex-col bg-[#fff7f0]">
+  return <div className="min-h-screen flex flex-col bg-[#f7f5f2]">
       {/* Header */}
       <header className="py-6 px-4 md:px-6 relative flex items-center justify-between z-10 animate-[fade-in_0.6s_ease-out_0.1s_both] opacity-0">
         {/* Logo */}

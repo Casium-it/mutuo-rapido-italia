@@ -73,7 +73,7 @@ const Simulazioni = () => {
   const handlePathSelect = (path: string) => {
     navigate(path);
   };
-  return <div className="min-h-screen flex flex-col bg-[fff7f0] bg-[#fff7f0]">
+  return <div className="min-h-screen flex flex-col bg-[#f7f5f2]">
       {/* Header */}
       <header className="container mx-auto py-6 px-4 flex justify-between items-center">
         <div className="cursor-pointer" onClick={() => navigate("/")}>
