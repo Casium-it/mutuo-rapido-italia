@@ -30,49 +30,51 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({ items }) => {
         {/* Linea curva connettiva - mobile (centro 50%) */}
         <svg
           className="absolute inset-0 md:hidden pointer-events-none z-0"
-          viewBox="0 0 390 720"
+          viewBox="0 0 100 100"
           preserveAspectRatio="none"
           aria-hidden
         >
           <path
-            d="M 195 120 C 220 160, 170 210, 195 260 S 220 360, 195 420 S 170 510, 195 580"
+            d="M 50 12 C 56 24, 44 34, 50 46 S 56 68, 50 82"
             fill="none"
             stroke="hsl(var(--form-green))"
-            strokeWidth="14"
+            strokeWidth="12"
             strokeLinecap="round"
+            vectorEffect="non-scaling-stroke"
           />
         </svg>
 
         {/* Linea curva connettiva - desktop: passa sotto i centri x ≈ 33% → 66% → 33% */}
         <svg
           className="pointer-events-none absolute inset-0 hidden md:block z-0"
-          viewBox="0 0 1200 560"
+          viewBox="0 0 100 100"
           preserveAspectRatio="none"
           aria-hidden
         >
           <path
-            d="M 396 110 C 650 110, 830 160, 960 210 S 1080 300, 800 340 S 510 410, 380 450"
+            d="M 33 18 C 48 18, 60 28, 66 36 S 72 54, 66 62 S 52 78, 33 84"
             fill="none"
             stroke="hsl(var(--form-green))"
-            strokeWidth="14"
+            strokeWidth="12"
             strokeLinecap="round"
+            vectorEffect="non-scaling-stroke"
           />
         </svg>
 
         {/* Blocchi - spazio verticale uniforme */}
-        <div className="space-y-8 md:space-y-12 relative z-10">
+        <div className="space-y-5 md:space-y-8 relative z-10">
           {items.slice(0, 3).map((item, idx) => {
             const isLeft = idx !== 1; // 1° e 3° a sinistra, 2° a destra
 
             return (
               <div
                 key={idx}
-                className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 items-center"
+                className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 items-center"
               >
                 {/* Placeholder illustrazione a sinistra (solo per card a destra) */}
                 {!isLeft && (
                   <div className="hidden md:block md:col-span-4">
-                    <div className="w-full h-48 lg:h-64" aria-hidden>
+                    <div className="w-full h-40 lg:h-56" aria-hidden>
                       {item.imgSrc ? (
                         <img
                           src={item.imgSrc}
@@ -104,7 +106,7 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({ items }) => {
                 {/* Placeholder illustrazione a destra (solo per card a sinistra) */}
                 {isLeft && (
                   <div className="hidden md:block md:col-span-4">
-                    <div className="w-full h-48 lg:h-64" aria-hidden>
+                    <div className="w-full h-40 lg:h-56" aria-hidden>
                       {item.imgSrc ? (
                         <img
                           src={item.imgSrc}
