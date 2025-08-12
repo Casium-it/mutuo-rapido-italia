@@ -11,9 +11,9 @@ interface ThreeFeatureCardsProps {
   items: FeatureCardItem[];
 }
 
-// Layout mobile-first a 3 card, con allineamento 1 e 3 a sinistra, 2 a destra
-// Spazi identici tra i blocchi e grande linea curva verde che li connette (desktop)
-// Usa DM Sans (font di default) e ombra 3D coerente con i bottoni
+// Layout mobile-first a 3 card: 1 e 3 a sinistra, 2 a destra.
+// Spazi verticali identici, testi compatti (DM Sans), ombra 3D coerente.
+// Linea curva verde (hsl(--form-green)) completamente opaca che connette i blocchi al loro centro orizzontale.
 const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({ items }) => {
   return (
     <section aria-labelledby="vantaggi-title" className="mt-8 md:mt-12">
@@ -27,20 +27,35 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({ items }) => {
       </header>
 
       <div className="relative">
-        {/* Linea curva connettiva (solo desktop) */}
+        {/* Linea curva connettiva - mobile (centro 50%) */}
         <svg
-          className="pointer-events-none absolute inset-0 hidden md:block"
-          viewBox="0 0 1200 540"
+          className="absolute inset-0 md:hidden pointer-events-none z-0"
+          viewBox="0 0 390 720"
           preserveAspectRatio="none"
           aria-hidden
         >
           <path
-            d="M 180 110 C 520 110, 760 150, 980 190 S 1080 270, 820 310 S 420 370, 220 410"
+            d="M 195 120 C 220 160, 170 210, 195 260 S 220 360, 195 420 S 170 510, 195 580"
             fill="none"
             stroke="hsl(var(--form-green))"
             strokeWidth="14"
             strokeLinecap="round"
-            opacity="0.25"
+          />
+        </svg>
+
+        {/* Linea curva connettiva - desktop: passa sotto i centri x ≈ 33% → 66% → 33% */}
+        <svg
+          className="pointer-events-none absolute inset-0 hidden md:block z-0"
+          viewBox="0 0 1200 560"
+          preserveAspectRatio="none"
+          aria-hidden
+        >
+          <path
+            d="M 396 110 C 650 110, 830 160, 960 210 S 1080 300, 800 340 S 510 410, 380 450"
+            fill="none"
+            stroke="hsl(var(--form-green))"
+            strokeWidth="14"
+            strokeLinecap="round"
           />
         </svg>
 
@@ -76,9 +91,9 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({ items }) => {
                     isLeft
                       ? "md:col-span-8 md:col-start-1"
                       : "md:col-span-8 md:col-start-5"
-                  } bg-white rounded-2xl border border-[hsl(var(--form-border))] p-5 md:p-6 shadow-[0_3px_0_0_hsl(var(--form-shadow))] hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)] transition-all hover:-translate-y-0.5`}
+                  } bg-white rounded-xl md:rounded-2xl border border-[hsl(var(--form-border))] p-4 md:p-6 shadow-[0_3px_0_0_hsl(var(--form-shadow))] hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)] transition-all hover:-translate-y-0.5`}
                 >
-                  <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5">
+                  <h3 className="text-base md:text-lg font-semibold text-foreground mb-1.5">
                     {item.title}
                   </h3>
                   <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
