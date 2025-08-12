@@ -26,7 +26,7 @@
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 56 93% 66%; /* Yellow Fluo */
+    --accent: 74 85% 71%; /* #ddf574 */
     --accent-foreground: 222.2 47.4% 11.2%;
 
     --destructive: 0 84.2% 60.2%;
@@ -65,7 +65,7 @@
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 56 93% 66%;
+    --accent: 74 85% 71%; /* #ddf574 */
     --accent-foreground: 222.2 47.4% 11.2%;
 
     --destructive: 0 62.8% 30.6%;
@@ -192,7 +192,7 @@
     left: 0;
     right: 0;
     bottom: -2px; /* vicinissima al testo */
-    height: 6px; /* sottile ma visibile */
+    height: 4px; /* sottile ma visibile */
     background-color: hsl(var(--accent));
     border-radius: 9999px;
   }

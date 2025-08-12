@@ -117,7 +117,7 @@ const HomePage = () => {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 px-4 md:px-10 py-8 md:py-8 max-w-5xl mx-auto w-full flex flex-col justify-center relative z-10">
+      <main className="flex-1 px-4 md:px-10 py-8 md:py-8 max-w-7xl mx-auto w-full flex flex-col justify-center relative z-10">
         {/* Hero Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center py-8 md:py-12 mb-12 md:mb-10">
           {/* Left side - Text content */}
@@ -125,7 +125,7 @@ const HomePage = () => {
             <h1 className="text-4xl md:text-5xl font-bold mb-4 animate-[fade-in_0.6s_ease-out_0.4s_both] opacity-0">
               Cerchi un <span className="relative">
                 <span className="gradient-text">mutuo?</span>
-                <div className="absolute -bottom-1 left-0 right-0 h-1 md:h-3 bg-[#d3f54f] rounded-full opacity-80 animate-[expand-line_1.2s_ease-out_0.8s_both] scale-x-0 origin-left"></div>
+                <div className="absolute -bottom-1 left-0 right-0 h-1 md:h-3 bg-[#ddf574] rounded-full opacity-80 animate-[expand-line_1.2s_ease-out_0.8s_both] scale-x-0 origin-left"></div>
               </span>
             </h1>
             <p className="text-gray-600 mb-4 max-w-3xl mx-auto lg:mx-0 leading-relaxed text-lg md:text-lg animate-[fade-in_0.6s_ease-out_0.6s_both] opacity-0 py-[5px]">Soluzioni concrete per ogni situazione, anche per le più complesse. GoMutuo ti accompagna dall'inizio alla fine.</p>
