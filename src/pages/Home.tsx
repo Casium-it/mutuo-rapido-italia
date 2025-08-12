@@ -9,6 +9,8 @@ import { useTimeTracking } from "@/hooks/useTimeTracking";
 import { LoginButton } from "@/components/LoginButton";
 import ThreeFeatureCards from "@/components/ThreeFeatureCards";
 import featureCard1 from "@/assets/gomutuo-feature-1.svg";
+import featureCard2 from "@/assets/gomutuo-feature-2.svg";
+import featureCard3 from "@/assets/gomutuo-feature-3.svg";
 const HomePage = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
@@ -200,14 +202,14 @@ const HomePage = () => {
                 title: "Trasparenza",
                 description:
                   "La trasparenza è al primo posto, niente termini incomprensibili",
-                imgSrc: "/lovable-uploads/5478f73b-2a9b-433b-9a10-58e28010b20f.png",
+                imgSrc: featureCard2,
                 alt: "Illustrazione stretta di mano",
               },
               {
                 title: "Esperti su tutta Italia",
                 description:
                   "Rete di 90+ mediatori partner esperti su tutta Italia, pronti ad aiutarti",
-                imgSrc: "/lovable-uploads/1cb657d7-9997-4b5b-b882-a8fe25b193fc.png",
+                imgSrc: featureCard3,
                 alt: "Illustrazione consulenza con cuffie",
               },
             ]}
