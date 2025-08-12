@@ -167,4 +167,20 @@
     0% { background-position: 0% center; }
     100% { background-position: 200% center; }
   }
+
+  /* Feature cards (Why GoMutuo) */
+  .feature-card {
+    @apply bg-white rounded-2xl;
+    box-shadow: 0 18px 40px -12px hsl(var(--form-shadow) / 0.35);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  .feature-card:hover {
+    box-shadow: 0 22px 56px -12px hsl(var(--form-shadow) / 0.4);
+    transform: translateY(-2px);
+  }
+
+  /* Underline for card titles using accent color */
+  .title-underline {
+    background-color: hsl(var(--accent));
+  }
 }

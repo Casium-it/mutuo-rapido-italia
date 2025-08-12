@@ -16,7 +16,7 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
   items
 }) => {
   return <section aria-labelledby="vantaggi-title" className="mt-8 md:mt-12 bg-white">
-      <header className="mb-6 md:mb-8 text-center">
+      <header className="mb-10 md:mb-14 text-center">
         <h2 id="vantaggi-title" className="text-2xl font-bold tracking-tight text-[hsl(var(--form-green))] text-black md:text-4xl">
           Perché scegliere <span className="gradient-text">GoMutuo?</span>
         </h2>
@@ -29,7 +29,7 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
 
         {/* Blocchi - griglia: mobile impilate, desktop in una riga */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-5 relative z-10">
-          {items.slice(0, 3).map((item, idx) => <article key={idx} className="bg-white rounded-xl md:rounded-2xl p-5 md:p-7 transition-all hover:-translate-y-0.5 min-h-[160px] md:min-h-[200px] h-full">
+          {items.slice(0, 3).map((item, idx) => <article key={idx} className="feature-card p-6 md:p-8 min-h-[200px] md:min-h-[220px] h-full">
               <div className="flex flex-col items-center text-center gap-3 md:gap-4 h-full">
                 <div className="w-24 h-24 md:w-28 md:h-28 flex-shrink-0 mx-auto" aria-hidden={!!!item.imgSrc}>
                   {item.imgSrc ? (
@@ -45,10 +45,11 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
                   ) : null}
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-foreground mb-1.5 md:text-2xl">
+                  <h3 className="text-lg md:text-2xl font-semibold text-foreground mb-2">
                     {item.title}
                   </h3>
-                  <p className="text-base text-muted-foreground leading-relaxed md:text-base">
+                  <span className="title-underline block h-1.5 w-16 md:w-20 rounded-full mx-auto mb-2" aria-hidden="true"></span>
+                  <p className="text-base text-muted-foreground leading-relaxed">
                     {item.description}
                   </p>
                 </div>
