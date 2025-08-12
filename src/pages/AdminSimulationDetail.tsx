@@ -225,7 +225,7 @@ export default function AdminSimulationDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f8f5f1]">
+      <div className="min-h-screen flex items-center justify-center bg-[#f7f5f2]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#245C4F] mx-auto"></div>
           <p className="mt-2 text-gray-600">Caricamento dettagli simulazione...</p>
@@ -236,7 +236,7 @@ export default function AdminSimulationDetail() {
 
   if (!simulation) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f8f5f1]">
+      <div className="min-h-screen flex items-center justify-center bg-[#f7f5f2]">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-red-600 mb-2">Simulazione non trovata</h1>
           <Button onClick={() => navigate('/admin/simulations')}>Torna alle Simulazioni</Button>
@@ -254,7 +254,7 @@ export default function AdminSimulationDetail() {
   }, {} as Record<string, ProcessedResponse[]>);
 
   return (
-    <div className="min-h-screen bg-[#f8f5f1]">
+    <div className="min-h-screen bg-[#f7f5f2]">
       <header className="bg-white border-b border-[#BEB8AE] px-4 py-4">
         <div className="max-w-7xl mx-auto flex items-center gap-4">
           <Button 

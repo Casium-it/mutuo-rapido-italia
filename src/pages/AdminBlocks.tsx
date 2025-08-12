@@ -188,7 +188,7 @@ export default function AdminBlocks() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f8f5f1] flex items-center justify-center">
+      <div className="min-h-screen bg-[#f7f5f2] flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-[#245C4F] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Caricamento blocchi...</p>
@@ -199,7 +199,7 @@ export default function AdminBlocks() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#f8f5f1] flex items-center justify-center">
+      <div className="min-h-screen bg-[#f7f5f2] flex items-center justify-center">
         <Card className="max-w-md">
           <CardContent className="text-center py-12">
             <Database className="h-12 w-12 text-red-400 mx-auto mb-4" />
@@ -216,7 +216,7 @@ export default function AdminBlocks() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f5f1]">
+    <div className="min-h-screen bg-[#f7f5f2]">
       {/* Header */}
       <header className="bg-white border-b border-[#BEB8AE] px-4 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">

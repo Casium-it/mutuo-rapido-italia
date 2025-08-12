@@ -314,7 +314,7 @@ export default function AdminNotifications() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f8f5f1]">
+      <div className="min-h-screen flex items-center justify-center bg-[#f7f5f2]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#245C4F] mx-auto"></div>
           <p className="mt-2 text-gray-600">Caricamento impostazioni...</p>
@@ -324,7 +324,7 @@ export default function AdminNotifications() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f5f1]">
+    <div className="min-h-screen bg-[#f7f5f2]">
       {/* Header */}
       <header className="bg-white border-b border-[#BEB8AE] px-4 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">

@@ -21,7 +21,7 @@ export function PrivacyPolicyDialog({ open, onOpenChange }: PrivacyPolicyDialogP
         className="w-[calc(100vw-2rem)] max-w-4xl max-h-[80vh] overflow-hidden p-0 gap-0 flex flex-col"
         hideCloseButton={true}
       >
-        <DialogHeader className="px-6 py-4 border-b bg-[#f8f5f1] sticky top-0 z-10 relative">
+        <DialogHeader className="px-6 py-4 border-b bg-[#f7f5f2] sticky top-0 z-10 relative">
           <DialogTitle className="text-xl font-bold text-[#245C4F]">
             Privacy Policy - GoMutuo
           </DialogTitle>

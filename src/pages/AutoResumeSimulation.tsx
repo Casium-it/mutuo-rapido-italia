@@ -88,7 +88,7 @@ export default function AutoResumeSimulation() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
+      <div className="min-h-screen flex flex-col bg-[#f7f5f2]">
         <header className="py-6 px-4 md:px-6">
           <Logo onClick={handleGoHome} />
         </header>
@@ -109,7 +109,7 @@ export default function AutoResumeSimulation() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
+    <div className="min-h-screen flex flex-col bg-[#f7f5f2]">
       <header className="py-6 px-4 md:px-6">
         <Logo onClick={handleGoHome} />
       </header>

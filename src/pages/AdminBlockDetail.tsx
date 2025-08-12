@@ -399,7 +399,7 @@ function AdminBlockDetailContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f8f5f1] flex items-center justify-center">
+      <div className="min-h-screen bg-[#f7f5f2] flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-[#245C4F] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Caricamento blocco...</p>
@@ -410,7 +410,7 @@ function AdminBlockDetailContent() {
 
   if (error || !currentBlock) {
     return (
-      <div className="min-h-screen bg-[#f8f5f1] flex items-center justify-center">
+      <div className="min-h-screen bg-[#f7f5f2] flex items-center justify-center">
         <Card className="max-w-md">
           <CardContent className="text-center py-12">
             <Database className="h-12 w-12 text-red-400 mx-auto mb-4" />
@@ -436,7 +436,7 @@ function AdminBlockDetailContent() {
   // Don't render validation or other complex components until all data is loaded
   if (!allBlocks.length) {
     return (
-      <div className="min-h-screen bg-[#f8f5f1] flex items-center justify-center">
+      <div className="min-h-screen bg-[#f7f5f2] flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-[#245C4F] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Caricamento dati di validazione...</p>

@@ -81,7 +81,7 @@ export default function ResumeSimulation() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f8f5f1]">
+    <div className="min-h-screen flex flex-col bg-[#f7f5f2]">
       {/* Header */}
       <header className="py-6 px-4 md:px-6 flex justify-between items-center">
         <Logo onClick={() => navigate("/")} />
