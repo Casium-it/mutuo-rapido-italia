@@ -117,7 +117,7 @@ const HomePage = () => {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 px-4 md:px-10 py-8 md:py-8 max-w-7xl mx-auto w-full flex flex-col justify-center relative z-10">
+      <main className="flex-1 px-4 md:px-10 py-8 md:py-8 max-w-6xl mx-auto w-full flex flex-col justify-center relative z-10">
         {/* Hero Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center py-8 md:py-12 mb-12 md:mb-10">
           {/* Left side - Text content */}
