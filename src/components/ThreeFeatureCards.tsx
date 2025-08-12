@@ -45,10 +45,9 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
                   ) : null}
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg md:text-2xl font-semibold text-foreground mb-2">
+                  <h3 className="feature-title text-lg md:text-2xl font-semibold text-foreground mb-3">
                     {item.title}
                   </h3>
-                  <span className="title-underline block h-1.5 w-16 md:w-20 rounded-full mx-auto mb-2" aria-hidden="true"></span>
                   <p className="text-base text-muted-foreground leading-relaxed">
                     {item.description}
                   </p>
