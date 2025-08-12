@@ -38,9 +38,9 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({ items }) => {
               key={idx}
               className="bg-white rounded-xl md:rounded-2xl border border-[hsl(var(--form-border))] p-5 md:p-7 shadow-[0_3px_0_0_hsl(var(--form-shadow))] hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)] transition-all hover:-translate-y-0.5 min-h-[160px] md:min-h-[200px] h-full"
             >
-              <div className="flex items-center gap-4 md:gap-6 h-full">
+              <div className="flex flex-col items-center text-center gap-3 md:gap-4 h-full">
                 <div
-                  className="w-20 h-20 md:w-24 md:h-24 flex-shrink-0"
+                  className="w-24 h-24 md:w-28 md:h-28 flex-shrink-0 mx-auto"
                   aria-hidden={!(!!item.imgSrc)}
                 >
                   {item.imgSrc ? (
