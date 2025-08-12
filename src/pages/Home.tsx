@@ -114,9 +114,9 @@ const HomePage = () => {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 px-4 md:px-10 py-8 md:py-12 max-w-5xl mx-auto w-full flex flex-col justify-center relative z-10">
+      <main className="flex-1 px-4 md:px-10 py-8 md:py-8 max-w-5xl mx-auto w-full flex flex-col justify-center relative z-10">
         {/* Hero Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center py-8 md:py-24 mb-12 md:mb-16">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center py-8 md:py-12 mb-12 md:mb-10">
           {/* Left side - Text content */}
           <div className="text-center lg:text-left animate-[fade-in_0.6s_ease-out_0.3s_both] opacity-0">
             <h1 className="text-4xl md:text-5xl font-bold mb-4 animate-[fade-in_0.6s_ease-out_0.4s_both] opacity-0">
@@ -184,7 +184,7 @@ const HomePage = () => {
       </main>
 
       {/* Sezione Vantaggi a larghezza piena con sfondo bianco */}
-      <section className="w-full bg-white py-12 md:py-20">
+      <section className="w-full bg-white py-12 md:py-12">
         <div className="max-w-5xl mx-auto w-full px-4 md:px-10">
           <ThreeFeatureCards
             items={[
