@@ -15,7 +15,7 @@ interface ThreeFeatureCardsProps {
 const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
   items
 }) => {
-  return <section aria-labelledby="vantaggi-title" className="mt-8 md:mt-12">
+  return <section aria-labelledby="vantaggi-title" className="mt-8 md:mt-12 bg-white">
       <header className="mb-6 md:mb-8 text-center">
         <h2 id="vantaggi-title" className="text-2xl font-bold tracking-tight text-[hsl(var(--form-green))] text-black md:text-4xl">
           Perché scegliere <span className="gradient-text">GoMutuo?</span>
@@ -29,7 +29,7 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
 
         {/* Blocchi - griglia: mobile impilate, desktop in una riga */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-5 relative z-10">
-          {items.slice(0, 3).map((item, idx) => <article key={idx} className="bg-white rounded-xl md:rounded-2xl border border-[hsl(var(--form-border))] p-5 md:p-7 shadow-[0_3px_0_0_hsl(var(--form-shadow))] hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)] transition-all hover:-translate-y-0.5 min-h-[160px] md:min-h-[200px] h-full">
+          {items.slice(0, 3).map((item, idx) => <article key={idx} className="bg-white rounded-xl md:rounded-2xl p-5 md:p-7 transition-all hover:-translate-y-0.5 min-h-[160px] md:min-h-[200px] h-full">
               <div className="flex flex-col items-center text-center gap-3 md:gap-4 h-full">
                 <div className="w-20 h-20 md:w-24 md:h-24 flex-shrink-0 mx-auto" aria-hidden={!!!item.imgSrc}>
                   {item.imgSrc ? <img src={item.imgSrc} alt={item.alt || item.title} className="w-full h-full object-contain" loading="lazy" /> : null}
