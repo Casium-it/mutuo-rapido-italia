@@ -7,7 +7,6 @@ import { useNavigate } from "react-router-dom";
 import { trackWhatsAppContact, trackSimulationCTA } from "@/utils/analytics";
 import { useTimeTracking } from "@/hooks/useTimeTracking";
 import { LoginButton } from "@/components/LoginButton";
-import { BenefitsSection } from "@/components/BenefitsSection";
 const HomePage = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
@@ -62,6 +61,19 @@ const HomePage = () => {
       clearInterval(intervalId);
     };
   }, [isVisible, currentNotification, notifications.length]);
+  const benefits = [{
+    title: "Il miglior Mutuo",
+    description: "Confrontiamo e parliamo con più di 100 banche senza che tu debba andare in filiale"
+  }, {
+    title: "Trasparenza",
+    description: "La trasparenza è al primo posto, niente termini incomprensibili"
+  }, {
+    title: "Esperti su tutta Italia",
+    description: "Rete di 90+ mediatori partner esperti su tutta Italia, pronti ad aiutarti"
+  }, {
+    title: "Mutui per ogni esigenza",
+    description: "Mutuo difficile? Partita IVA? Segnalazioni? Ci pensiamo noi, siamo esperti in questo"
+  }];
   const handleWhatsAppContact = () => {
     trackWhatsAppContact('home_page');
     // Track custom exit since user is leaving for WhatsApp
@@ -168,8 +180,12 @@ const HomePage = () => {
           </div>
         </div>
 
-        {/* Sezione Benefici */}
-        <BenefitsSection onCtaClick={() => handleSimulationClick('benefits')} />
+        {/* Benefits Section */}
+        <div className="mb-16 bg-gradient-to-b from-[#f8f5f1] to-[#f0ede8] rounded-2xl py-12 px-6 animate-[fade-in_0.8s_ease-out_1.8s_both] opacity-0">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {benefits.map((benefit, index) => <BenefitCard key={index} title={benefit.title} description={benefit.description} />)}
+          </div>
+        </div>
       </main>
 
       {/* Footer */}
@@ -189,4 +205,21 @@ const HomePage = () => {
     </div>;
 };
 
+// Componente per le card dei benefici
+interface BenefitCardProps {
+  title: string;
+  description: string;
+}
+const BenefitCard = ({
+  title,
+  description
+}: BenefitCardProps) => {
+  return <div className="text-center p-4">
+      <div className="bg-[#245C4F] rounded-full p-2 w-8 h-8 mx-auto mb-4 flex items-center justify-center">
+        <Check className="w-4 h-4 text-white font-bold stroke-[3]" />
+      </div>
+      <h3 className="text-lg font-bold font-['Inter'] text-gray-900 mb-2">{title}</h3>
+      <p className="text-sm text-gray-600 leading-relaxed">{description}</p>
+    </div>;
+};
 export default HomePage;
