@@ -189,16 +189,22 @@ const HomePage = () => {
         title: "Il miglior Mutuo",
         description:
           "Confrontiamo e parliamo con più di 100 banche senza che tu debba andare in filiale",
+        imgSrc: "/lovable-uploads/f7625ead-1f5e-4c4f-a7b7-4531140cc6ac.png",
+        alt: "Illustrazione smartphone con conferma"
       },
       {
         title: "Trasparenza",
         description:
           "La trasparenza è al primo posto, niente termini incomprensibili",
+        imgSrc: "/lovable-uploads/5478f73b-2a9b-433b-9a10-58e28010b20f.png",
+        alt: "Illustrazione stretta di mano"
       },
       {
         title: "Esperti su tutta Italia",
         description:
           "Rete di 90+ mediatori partner esperti su tutta Italia, pronti ad aiutarti",
+        imgSrc: "/lovable-uploads/1cb657d7-9997-4b5b-b882-a8fe25b193fc.png",
+        alt: "Illustrazione consulenza con cuffie"
       },
     ]}
   />

@@ -31,16 +31,16 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({ items }) => {
 
         {/* Linea curva connettiva - desktop: passa sotto i centri x ≈ 33% → 66% → 33% */}
 
-        {/* Blocchi - spazio verticale uniforme */}
-        <div className="space-y-3 md:space-y-5 relative z-10">
+        {/* Blocchi - griglia: mobile impilate, desktop in una riga */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-5 relative z-10">
           {items.slice(0, 3).map((item, idx) => (
             <article
               key={idx}
-              className="bg-white rounded-xl md:rounded-2xl border border-[hsl(var(--form-border))] p-5 md:p-7 shadow-[0_3px_0_0_hsl(var(--form-shadow))] hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)] transition-all hover:-translate-y-0.5 min-h-[120px] md:min-h-[160px]"
+              className="bg-white rounded-xl md:rounded-2xl border border-[hsl(var(--form-border))] p-5 md:p-7 shadow-[0_3px_0_0_hsl(var(--form-shadow))] hover:shadow-[0_3px_4px_rgba(175,168,159,0.25)] transition-all hover:-translate-y-0.5 min-h-[160px] md:min-h-[200px] h-full"
             >
-              <div className="flex items-center gap-4 md:gap-6">
+              <div className="flex items-center gap-4 md:gap-6 h-full">
                 <div
-                  className="w-16 h-16 md:w-24 md:h-24 flex-shrink-0"
+                  className="w-20 h-20 md:w-24 md:h-24 flex-shrink-0"
                   aria-hidden={!(!!item.imgSrc)}
                 >
                   {item.imgSrc ? (
