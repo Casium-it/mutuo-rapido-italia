@@ -40,7 +40,7 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({ items }) => {
             >
               <div className="flex flex-col items-center text-center gap-3 md:gap-4 h-full">
                 <div
-                  className="w-24 h-24 md:w-28 md:h-28 flex-shrink-0 mx-auto"
+                  className="w-20 h-20 md:w-24 md:h-24 flex-shrink-0 mx-auto"
                   aria-hidden={!(!!item.imgSrc)}
                 >
                   {item.imgSrc ? (
@@ -53,10 +53,10 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({ items }) => {
                   ) : null}
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-base md:text-lg font-semibold text-foreground mb-1.5">
+                  <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5">
                     {item.title}
                   </h3>
-                  <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+                  <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
                     {item.description}
                   </p>
                 </div>
