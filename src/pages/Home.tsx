@@ -8,6 +8,7 @@ import { trackWhatsAppContact, trackSimulationCTA } from "@/utils/analytics";
 import { useTimeTracking } from "@/hooks/useTimeTracking";
 import { LoginButton } from "@/components/LoginButton";
 import ThreeFeatureCards from "@/components/ThreeFeatureCards";
+import featureCard1 from "@/assets/gomutuo-feature-1.svg";
 const HomePage = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
@@ -192,7 +193,7 @@ const HomePage = () => {
                 title: "Il miglior Mutuo",
                 description:
                   "Confrontiamo e parliamo con più di 100 banche senza che tu debba andare in filiale",
-                imgSrc: "/lovable-uploads/f7625ead-1f5e-4c4f-a7b7-4531140cc6ac.png",
+                imgSrc: featureCard1,
                 alt: "Illustrazione smartphone con conferma",
               },
               {
