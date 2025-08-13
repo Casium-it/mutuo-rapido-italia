@@ -5,10 +5,10 @@ import { Building2, TrendingUp, Shield } from "lucide-react";
 const SimulatorMockup: React.FC = () => {
   return (
     <div className="w-[400px] h-[400px] flex items-center justify-center flex-shrink-0">
-      <div className="bg-white rounded-xl shadow-lg p-8 w-full h-full border border-[#BEB8AE] relative overflow-hidden">
+      <div className="bg-white rounded-xl shadow-lg p-8 w-full h-full relative overflow-hidden flex flex-col justify-center">
         
         {/* 3 Indicatori Principali */}
-        <div className="space-y-6 mb-8 mt-4">
+        <div className="space-y-6 mb-8">
           
           {/* 1. Difficoltà di ottenimento */}
           <div className="flex items-center justify-between">
@@ -58,17 +58,10 @@ const SimulatorMockup: React.FC = () => {
         </div>
 
         {/* Risultato Prominente */}
-        <div className="bg-[#245C4F]/5 rounded-lg p-4 text-center mb-6">
+        <div className="bg-[#245C4F]/5 rounded-lg p-4 text-center">
           <div className="text-sm text-gray-600 mb-1">Importo massimo</div>
           <div className="text-2xl font-bold text-[#245C4F]">€ 280.000</div>
           <div className="text-xs text-green-600 mt-1">✓ Mutuo fattibile</div>
-        </div>
-
-        {/* CTA */}
-        <div className="text-center">
-          <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-8 py-2 rounded-lg font-semibold w-full">
-            Inizia Simulazione
-          </Button>
         </div>
 
       </div>
