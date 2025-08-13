@@ -5,16 +5,10 @@ import { Building2, TrendingUp, Shield } from "lucide-react";
 const SimulatorMockup: React.FC = () => {
   return (
     <div className="w-[400px] h-[400px] flex items-center justify-center flex-shrink-0">
-      <div className="bg-white rounded-xl shadow-lg p-8 w-full h-full border border-gray-100 relative overflow-hidden">
+      <div className="bg-white rounded-xl shadow-lg p-8 w-full h-full border border-[#BEB8AE] relative overflow-hidden">
         
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h2 className="text-lg font-bold text-[#245C4F] mb-2">Simulazione Intelligente</h2>
-          <p className="text-sm text-gray-600">La prima vera simulazione in Italia</p>
-        </div>
-
         {/* 3 Indicatori Principali */}
-        <div className="space-y-6 mb-8">
+        <div className="space-y-6 mb-8 mt-4">
           
           {/* 1. Difficoltà di ottenimento */}
           <div className="flex items-center justify-between">
