@@ -8,6 +8,7 @@ import { trackWhatsAppContact, trackSimulationCTA } from "@/utils/analytics";
 import { useTimeTracking } from "@/hooks/useTimeTracking";
 import { LoginButton } from "@/components/LoginButton";
 import ThreeFeatureCards from "@/components/ThreeFeatureCards";
+import SimulatorCarousel from "@/components/SimulatorCarousel";
 import featureCard1 from "@/assets/gomutuo-feature-1.svg";
 import featureCard2 from "@/assets/gomutuo-feature-2.svg";
 import featureCard3 from "@/assets/gomutuo-feature-3.svg";
@@ -214,6 +215,9 @@ const HomePage = () => {
           ]}
         />
       </section>
+
+      {/* Simulator Carousel Section */}
+      <SimulatorCarousel />
 
       {/* Footer */}
       <footer className="py-6 px-4 border-t border-[#BEB8AE] relative z-10 animate-[fade-in_0.6s_ease-out_2.1s_both] opacity-0">
