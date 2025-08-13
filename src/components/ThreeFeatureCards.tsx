@@ -18,7 +18,7 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
 }) => {
   return <section aria-labelledby="vantaggi-title" className="mt-8 md:mt-12 bg-white">
       <header className="mb-10 md:mb-14 text-center">
-        <h2 id="vantaggi-title" className="text-3xl font-bold italic text-black md:text-5xl flex items-center justify-center gap-2 flex-wrap">
+        <h2 id="vantaggi-title" className="text-2xl font-bold italic text-black md:text-3xl flex items-center justify-center gap-2 flex-wrap">
           Se è rapido e su misura, è un <Logo size="lg" />
         </h2>
       </header>
