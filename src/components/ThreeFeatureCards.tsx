@@ -1,4 +1,5 @@
 import React from "react";
+import { Logo } from "./Logo";
 export type FeatureCardItem = {
   title: string;
   description: string;
@@ -17,8 +18,8 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
 }) => {
   return <section aria-labelledby="vantaggi-title" className="mt-8 md:mt-12 bg-white">
       <header className="mb-10 md:mb-14 text-center">
-        <h2 id="vantaggi-title" className="text-2xl font-bold tracking-tight text-[hsl(var(--form-green))] text-black md:text-4xl">
-          Perché scegliere <span className="gradient-text text-4xl">Se è rapido e su misura, è un</span>
+        <h2 id="vantaggi-title" className="text-3xl font-bold italic text-black md:text-5xl flex items-center justify-center gap-2 flex-wrap">
+          Se è rapido e su misura, è un <Logo size="lg" />
         </h2>
       </header>
 
