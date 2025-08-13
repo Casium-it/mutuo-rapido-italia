@@ -187,7 +187,7 @@ const HomePage = () => {
       </main>
 
       {/* Sezione Vantaggi a larghezza piena con sfondo bianco */}
-      <section className="w-full bg-white py-12 md:py-12">
+      <section className="w-full bg-white py-8 md:py-10">
         <div className="max-w-7xl mx-auto w-full px-4 md:px-10">
           <ThreeFeatureCards
             items={[
