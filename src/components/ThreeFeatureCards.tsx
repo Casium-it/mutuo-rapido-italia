@@ -49,7 +49,7 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
                     {idx === 0 ? "Simulazioni vere" : idx === 1 ? "Consulenti in tutta Italia" : "Mutui difficili"}
                   </h3>
                   <p className="text-base text-muted-foreground leading-relaxed">
-                    {item.description}
+                    {idx === 0 ? "Analisi approfondita della tua situazione per capire se il mutuo si può fare, davvero." : idx === 1 ? "Prima consulenza gratuita con consulenti esperti in tutta Italia" : "Mutui 95% e 100%, anche per le situazioni più complesse"}
                   </p>
                 </div>
               </div>
