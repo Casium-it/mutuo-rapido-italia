@@ -30,7 +30,7 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
         {/* Blocchi - griglia: mobile impilate, desktop in una riga */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-5 relative z-10">
           {items.slice(0, 3).map((item, idx) => <article key={idx} className="feature-card p-7 md:p-9 min-h-[200px] md:min-h-[220px] h-full">
-              <div className="flex flex-col items-center text-center gap-4 md:gap-6 h-full">
+              <div className="flex flex-col items-center text-center gap-5 md:gap-7 h-full">
                 <div className="w-24 h-24 md:w-28 md:h-28 flex-shrink-0 mx-auto" aria-hidden={!!!item.imgSrc}>
                   {item.imgSrc ? (
                     <img
@@ -49,7 +49,7 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
                     {idx === 0 ? "Simulazioni vere" : idx === 1 ? "Consulenti esperti" : "Mutui difficili"}
                   </h3>
                   <p className="text-lg text-muted-foreground leading-relaxed">
-                    {idx === 0 ? "Analisi approfondita della tua situazione per capire se il mutuo si può fare, davvero." : idx === 1 ? "Prima consulenza gratuita con consulenti esperti in tutta Italia." : "Mutui 95% e 100%, anche per le situazioni più complesse."}
+                    {idx === 0 ? "Analisi approfondita per capire se il mutuo si può fare, davvero." : idx === 1 ? "Prima consulenza gratuita con consulenti esperti in tutta Italia." : "Mutui 95% e 100%, anche per le situazioni più complesse."}
                   </p>
                 </div>
               </div>
