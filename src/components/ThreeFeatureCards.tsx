@@ -18,7 +18,7 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
 }) => {
   return <section aria-labelledby="vantaggi-title" className="mt-8 md:mt-12 bg-white">
       <header className="mb-10 md:mb-14 text-center">
-        <h2 id="vantaggi-title" className="text-2xl font-bold tracking-tight text-[hsl(var(--form-green))] text-black md:text-4xl flex items-center justify-center gap-2 md:gap-3 italic">
+        <h2 id="vantaggi-title" className="text-2xl font-bold tracking-tight text-[hsl(var(--form-green))] text-black md:text-4xl flex items-center justify-center gap-2 md:gap-3">
           Se è rapido e su misura, è <Logo />
         </h2>
       </header>
@@ -46,10 +46,10 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
                   ) : null}
                 </div>
                 <div className="flex-1 mt-2 md:mt-3">
-                  <h3 className="feature-title text-xl md:text-3xl font-semibold text-foreground mb-3 italic">
+                  <h3 className="feature-title text-xl md:text-3xl font-semibold text-foreground mb-3">
                     {idx === 0 ? "Simulazioni vere" : idx === 1 ? "Consulenti esperti" : "Mutui difficili"}
                   </h3>
-                  <p className="text-lg text-muted-foreground leading-relaxed italic">
+                  <p className="text-lg text-muted-foreground leading-relaxed">
                     {idx === 0 ? "Analisi approfondita per capire se il mutuo si può fare, davvero." : idx === 1 ? "Prima consulenza gratuita con consulenti esperti in tutta Italia." : "Mutui 95% e 100%, anche per le situazioni più complesse."}
                   </p>
                 </div>
