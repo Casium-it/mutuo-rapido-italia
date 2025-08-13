@@ -1,4 +1,5 @@
 import React from "react";
+import { Logo } from "./Logo";
 export type FeatureCardItem = {
   title: string;
   description: string;
@@ -17,8 +18,8 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
 }) => {
   return <section aria-labelledby="vantaggi-title" className="mt-8 md:mt-12 bg-white">
       <header className="mb-10 md:mb-14 text-center">
-        <h2 id="vantaggi-title" className="text-2xl font-bold tracking-tight text-[hsl(var(--form-green))] text-black md:text-4xl">
-          Perché scegliere <span className="gradient-text">GoMutuo?</span>
+        <h2 id="vantaggi-title" className="text-2xl font-bold tracking-tight text-[hsl(var(--form-green))] text-black md:text-4xl flex items-center justify-center gap-2 md:gap-3">
+          Se è rapido e su misura, è <Logo />
         </h2>
       </header>
 
