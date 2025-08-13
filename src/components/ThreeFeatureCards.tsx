@@ -16,15 +16,15 @@ interface ThreeFeatureCardsProps {
 const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
   items
 }) => {
-  return <section aria-labelledby="vantaggi-title" className="mt-8 md:mt-12 bg-white py-12 md:py-16 flex flex-col justify-center min-h-[70vh]">
+  return <section aria-labelledby="vantaggi-title" className="mt-8 md:mt-12 bg-white py-8 md:py-12 flex flex-col justify-center">
       <div className="flex-1 flex flex-col justify-center">
-        <header className="mb-10 md:mb-14 text-center">
+        <header className="mb-8 md:mb-10 text-center">
           <h2 id="vantaggi-title" className="text-3xl font-bold italic text-black md:text-4xl flex items-center justify-center gap-2 flex-wrap">
             Se è rapido e su misura, è un <Logo size="lg" />
           </h2>
         </header>
 
-        <div className="relative">
+        <div className="relative mb-8 md:mb-10">
           {/* Linea curva connettiva - mobile (centro 50%) */}
 
           {/* Linea curva connettiva - desktop: passa sotto i centri x ≈ 33% → 66% → 33% */}
@@ -47,14 +47,6 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
                 </div>
               </article>)}
           </div>
-        </div>
-
-        {/* CTA Button */}
-        <div className="text-center mt-10 md:mt-14">
-          <button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-8 py-4 text-lg rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all relative overflow-hidden group" onClick={() => window.location.href = '/simulazioni'}>
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-            Simula ora
-          </button>
         </div>
       </div>
     </section>;
