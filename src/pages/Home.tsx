@@ -188,33 +188,31 @@ const HomePage = () => {
 
       {/* Sezione Vantaggi a larghezza piena con sfondo bianco */}
       <section className="w-full bg-white py-8 md:py-10">
-        <div className="max-w-7xl mx-auto w-full px-4 md:px-10">
-          <ThreeFeatureCards
-            items={[
-              {
-                title: "Il miglior Mutuo",
-                description:
-                  "Confrontiamo e parliamo con più di 100 banche senza che tu debba andare in filiale",
-                imgSrc: featureCard1,
-                alt: "Illustrazione smartphone con conferma",
-              },
-              {
-                title: "Trasparenza",
-                description:
-                  "La trasparenza è al primo posto, niente termini incomprensibili",
-                imgSrc: featureCard2,
-                alt: "Illustrazione stretta di mano",
-              },
-              {
-                title: "Esperti su tutta Italia",
-                description:
-                  "Rete di 90+ mediatori partner esperti su tutta Italia, pronti ad aiutarti",
-                imgSrc: featureCard3,
-                alt: "Illustrazione consulenza con cuffie",
-              },
-            ]}
-          />
-        </div>
+        <ThreeFeatureCards
+          items={[
+            {
+              title: "Il miglior Mutuo",
+              description:
+                "Confrontiamo e parliamo con più di 100 banche senza che tu debba andare in filiale",
+              imgSrc: featureCard1,
+              alt: "Illustrazione smartphone con conferma",
+            },
+            {
+              title: "Trasparenza",
+              description:
+                "La trasparenza è al primo posto, niente termini incomprensibili",
+              imgSrc: featureCard2,
+              alt: "Illustrazione stretta di mano",
+            },
+            {
+              title: "Esperti su tutta Italia",
+              description:
+                "Rete di 90+ mediatori partner esperti su tutta Italia, pronti ad aiutarti",
+              imgSrc: featureCard3,
+              alt: "Illustrazione consulenza con cuffie",
+            },
+          ]}
+        />
       </section>
 
       {/* Footer */}
