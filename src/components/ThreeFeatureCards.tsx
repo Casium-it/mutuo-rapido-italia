@@ -44,7 +44,7 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
                     />
                   ) : null}
                 </div>
-                <div className="flex-1 mt-4 md:mt-6">
+                <div className="flex-1 mt-2 md:mt-3">
                   <h3 className="feature-title text-xl md:text-3xl font-semibold text-foreground mb-3">
                     {idx === 0 ? "Simulazioni vere" : idx === 1 ? "Consulenti esperti" : "Mutui difficili"}
                   </h3>
