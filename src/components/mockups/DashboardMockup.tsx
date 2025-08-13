@@ -1,108 +1,77 @@
 import React from "react";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Calendar, FileText, Check } from "lucide-react";
 
 const DashboardMockup: React.FC = () => {
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6 min-h-[400px]">
-      {/* Header */}
-      <div className="mb-6">
-        <h2 className="text-xl font-bold text-foreground mb-2">Ciao Marco!</h2>
-      </div>
+    <div className="w-full h-full flex items-center justify-center">
+      <div className="bg-white rounded-xl shadow-lg p-6 max-w-md w-full border border-gray-100">
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Ciao Marco!</h3>
+          <p className="text-gray-600 text-sm">Ecco lo stato del tuo dossier mutuo</p>
+        </div>
 
-      {/* Progress Section */}
-      <div className="mb-6">
-        <h3 className="font-semibold text-foreground mb-3">Stato del tuo dossier</h3>
-        
-        <div className="bg-green-50 rounded-lg p-4 mb-4">
-          <Badge className="bg-green-600 text-white mb-2">Completato</Badge>
+        {/* Progress Section */}
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm font-medium">Progresso Dossier</span>
+            <span className="text-sm text-primary font-semibold">75%</span>
+          </div>
+          <Progress value={75} className="mb-3" />
+          <div className="flex gap-2">
+            <Badge className="bg-primary/10 text-primary text-xs">Completato</Badge>
+            <Badge variant="outline" className="text-xs">In corso</Badge>
+          </div>
+        </div>
+
+        {/* Appointments */}
+        <div className="mb-6">
+          <h4 className="font-semibold mb-3 flex items-center gap-2">
+            <Calendar className="w-4 h-4" />
+            Appuntamenti
+          </h4>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+              <div>
+                <p className="text-sm font-medium">Consulenza iniziale</p>
+                <p className="text-xs text-gray-500">15 Gen, 14:30</p>
+              </div>
+              <Badge variant="outline" className="text-xs">Completato</Badge>
+            </div>
+            <div className="flex justify-between items-center p-3 bg-primary/5 rounded-lg border border-primary/20">
+              <div>
+                <p className="text-sm font-medium">Revisione documenti</p>
+                <p className="text-xs text-gray-500">22 Gen, 10:00</p>
+              </div>
+              <Badge className="bg-primary/10 text-primary text-xs">Prossimo</Badge>
+            </div>
+          </div>
+        </div>
+
+        {/* Documents */}
+        <div>
+          <h4 className="font-semibold mb-3 flex items-center gap-2">
+            <FileText className="w-4 h-4" />
+            Documenti
+          </h4>
           <div className="space-y-2">
-            <div className="w-32 h-3 bg-gray-200 rounded"></div>
-            <Progress value={100} className="w-full" />
-          </div>
-        </div>
-
-        <div className="bg-blue-50 rounded-lg p-4">
-          <Badge variant="outline" className="border-blue-600 text-blue-600 mb-2">In corso</Badge>
-          <div className="space-y-2">
-            <div className="w-40 h-3 bg-gray-200 rounded"></div>
-            <Progress value={60} className="w-full" />
-          </div>
-        </div>
-      </div>
-
-      {/* Appointments Section */}
-      <div className="mb-6">
-        <h3 className="font-semibold text-foreground mb-3">I tuoi appuntamenti</h3>
-        
-        <div className="space-y-3">
-          {/* Appointment 1 */}
-          <div className="flex items-center gap-3 p-3 border border-border rounded-lg">
-            <div className="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">B</span>
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Busta paga</span>
+              <Check className="w-4 h-4 text-primary" />
             </div>
-            <div className="flex-1">
-              <div className="w-24 h-3 bg-gray-200 rounded mb-1"></div>
-              <div className="w-32 h-3 bg-gray-200 rounded"></div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Estratto conto</span>
+              <Check className="w-4 h-4 text-primary" />
             </div>
-            <div className="text-right">
-              <Badge className="bg-green-600 text-white">✓</Badge>
-              <div className="w-16 h-2 bg-gray-200 rounded mt-1"></div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Documento identità</span>
+              <div className="w-4 h-4 border border-gray-300 rounded"></div>
             </div>
-          </div>
-
-          {/* Appointment 2 */}
-          <div className="flex items-center gap-3 p-3 border border-border rounded-lg">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">N</span>
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Certificato residenza</span>
+              <div className="w-4 h-4 border border-gray-300 rounded"></div>
             </div>
-            <div className="flex-1">
-              <div className="w-28 h-3 bg-gray-200 rounded mb-1"></div>
-              <div className="w-36 h-3 bg-gray-200 rounded"></div>
-            </div>
-            <div className="text-right">
-              <Badge className="bg-green-600 text-white">✓</Badge>
-              <div className="w-16 h-2 bg-gray-200 rounded mt-1"></div>
-            </div>
-          </div>
-
-          {/* Future Appointment */}
-          <div className="flex items-center gap-3 p-3 border border-dashed border-gray-300 rounded-lg opacity-60">
-            <div className="w-10 h-10 bg-gray-300 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">?</span>
-            </div>
-            <div className="flex-1">
-              <div className="w-20 h-3 bg-gray-200 rounded mb-1"></div>
-              <div className="w-24 h-3 bg-gray-200 rounded"></div>
-            </div>
-            <div className="text-right">
-              <Badge variant="outline" className="text-gray-400">Prossimo appuntamento</Badge>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Documents Section */}
-      <div>
-        <h3 className="font-semibold text-foreground mb-3">I tuoi documenti</h3>
-        <div className="grid grid-cols-3 gap-3">
-          <div className="flex flex-col items-center p-3 border border-border rounded-lg">
-            <div className="w-8 h-8 bg-green-100 rounded mb-2 flex items-center justify-center">
-              <span className="text-green-600 text-xs">✓</span>
-            </div>
-            <div className="w-16 h-2 bg-gray-200 rounded"></div>
-          </div>
-          <div className="flex flex-col items-center p-3 border border-border rounded-lg">
-            <div className="w-8 h-8 bg-green-100 rounded mb-2 flex items-center justify-center">
-              <span className="text-green-600 text-xs">✓</span>
-            </div>
-            <div className="w-16 h-2 bg-gray-200 rounded"></div>
-          </div>
-          <div className="flex flex-col items-center p-3 border border-dashed border-gray-300 rounded-lg opacity-60">
-            <div className="w-8 h-8 bg-gray-100 rounded mb-2 flex items-center justify-center">
-              <span className="text-gray-400 text-xs">○</span>
-            </div>
-            <div className="w-16 h-2 bg-gray-200 rounded"></div>
           </div>
         </div>
       </div>

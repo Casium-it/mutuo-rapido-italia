@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 
 const SimulatorMockup: React.FC = () => {
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6 min-h-[400px] relative overflow-hidden">
+    <div className="w-full h-full flex items-center justify-center">
+      <div className="bg-white rounded-xl shadow-lg p-6 max-w-md w-full border border-gray-100 relative overflow-hidden">
       {/* Header */}
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-foreground mb-2">Congratulazioni!</h2>
@@ -76,6 +77,7 @@ const SimulatorMockup: React.FC = () => {
         <div className="w-32 h-3 bg-gray-200 rounded"></div>
         <div className="w-26 h-3 bg-gray-200 rounded"></div>
         <div className="w-36 h-8 bg-primary/10 rounded"></div>
+      </div>
       </div>
     </div>
   );

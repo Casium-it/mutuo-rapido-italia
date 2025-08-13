@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import SimulatorMockup from "@/components/mockups/SimulatorMockup";
@@ -35,20 +35,85 @@ const slides: CarouselSlide[] = [
 
 const SimulatorCarousel: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const progressRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const SLIDE_DURATION = 6000; // 6 secondi per slide
+  const PROGRESS_INTERVAL = 50; // Aggiorna il progresso ogni 50ms
+
+  const resetTimer = () => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (progressRef.current) clearInterval(progressRef.current);
+    setProgress(0);
+  };
+
+  const startTimer = () => {
+    if (!isPlaying) return;
+    
+    resetTimer();
+    
+    // Timer per il progresso
+    progressRef.current = setInterval(() => {
+      setProgress((prev) => {
+        const newProgress = prev + (PROGRESS_INTERVAL / SLIDE_DURATION) * 100;
+        if (newProgress >= 100) {
+          setCurrentSlide((currentSlide) => (currentSlide + 1) % slides.length);
+          return 0;
+        }
+        return newProgress;
+      });
+    }, PROGRESS_INTERVAL);
+  };
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % slides.length);
+    resetTimer();
+    if (isPlaying) startTimer();
   };
 
   const prevSlide = () => {
     setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+    resetTimer();
+    if (isPlaying) startTimer();
   };
+
+  const goToSlide = (index: number) => {
+    setCurrentSlide(index);
+    resetTimer();
+    if (isPlaying) startTimer();
+  };
+
+  // Auto-advance logic
+  useEffect(() => {
+    if (isPlaying) {
+      startTimer();
+    } else {
+      resetTimer();
+    }
+
+    return () => {
+      resetTimer();
+    };
+  }, [currentSlide, isPlaying]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      resetTimer();
+    };
+  }, []);
 
   const currentSlideData = slides[currentSlide];
   const CurrentComponent = currentSlideData.component;
 
   return (
-    <section className="bg-[#f7f5f2] py-12 md:py-16">
+    <section 
+      className="bg-[#f7f5f2] py-12 md:py-16"
+      onMouseEnter={() => setIsPlaying(false)}
+      onMouseLeave={() => setIsPlaying(true)}
+    >
       <div className="max-w-6xl mx-auto px-4 md:px-6">
         
         {/* Content Grid */}
@@ -67,50 +132,55 @@ const SimulatorCarousel: React.FC = () => {
 
             {/* Navigation Controls */}
             <div className="flex items-center gap-4">
-              {/* Slide indicators */}
+              {/* Progress indicators - righette */}
               <div className="flex gap-2">
                 {slides.map((_, index) => (
                   <button
                     key={index}
-                    onClick={() => setCurrentSlide(index)}
-                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                      index === currentSlide 
-                        ? 'bg-primary' 
-                        : 'bg-gray-300 hover:bg-gray-400'
-                    }`}
+                    onClick={() => goToSlide(index)}
+                    className="relative w-8 h-1 bg-gray-300 rounded-full overflow-hidden transition-all duration-300 hover:bg-gray-400"
                     aria-label={`Vai al slide ${index + 1}`}
-                  />
+                  >
+                    <div 
+                      className={`absolute top-0 left-0 h-full bg-primary transition-all duration-300 rounded-full ${
+                        index === currentSlide ? '' : 'w-0'
+                      }`}
+                      style={{
+                        width: index === currentSlide ? `${progress}%` : index < currentSlide ? '100%' : '0%'
+                      }}
+                    />
+                  </button>
                 ))}
               </div>
 
-              {/* Arrow buttons */}
+              {/* Arrow buttons - stile come "Simula il tuo mutuo" */}
               <div className="flex gap-2 ml-4">
                 <Button
-                  variant="outline"
                   size="icon"
                   onClick={prevSlide}
-                  className="h-10 w-10 rounded-lg border-2 hover:bg-white/50 transition-all duration-300"
+                  className="h-10 w-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-[12px] shadow-[0_3px_0_0_hsl(var(--form-green))] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_hsl(var(--form-green))] transition-all duration-200"
                   aria-label="Slide precedente"
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-5 w-5 stroke-[2.5]" />
                 </Button>
                 <Button
-                  variant="outline"  
                   size="icon"
                   onClick={nextSlide}
-                  className="h-10 w-10 rounded-lg border-2 hover:bg-white/50 transition-all duration-300"
+                  className="h-10 w-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-[12px] shadow-[0_3px_0_0_hsl(var(--form-green))] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_hsl(var(--form-green))] transition-all duration-200"
                   aria-label="Slide successivo"
                 >
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-5 w-5 stroke-[2.5]" />
                 </Button>
               </div>
             </div>
           </div>
 
-          {/* Right - Mockup Component */}
+          {/* Right - Mockup Component - Dimensioni costanti */}
           <div className="lg:order-2">
-            <div className="transform transition-all duration-500 ease-in-out animate-fade-in">
-              <CurrentComponent />
+            <div className="w-full h-[500px] min-h-[500px] max-h-[500px] flex items-center justify-center transform transition-all duration-500 ease-in-out">
+              <div className="w-full h-full">
+                <CurrentComponent />
+              </div>
             </div>
           </div>
 
