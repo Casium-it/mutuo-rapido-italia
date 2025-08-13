@@ -46,7 +46,7 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
                 </div>
                 <div className="flex-1">
                   <h3 className="feature-title text-lg md:text-2xl font-semibold text-foreground mb-3">
-                    {item.title}
+                    Simulazioni vere
                   </h3>
                   <p className="text-base text-muted-foreground leading-relaxed">
                     {item.description}
