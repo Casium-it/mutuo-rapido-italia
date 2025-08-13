@@ -138,11 +138,11 @@ const SimulatorCarousel: React.FC = () => {
                   <button
                     key={index}
                     onClick={() => goToSlide(index)}
-                    className="relative w-8 h-1 bg-gray-300 rounded-full overflow-hidden transition-all duration-300 hover:bg-gray-400"
+                    className="relative w-8 h-1 bg-gray-300 overflow-hidden transition-all duration-300 hover:bg-gray-400"
                     aria-label={`Vai al slide ${index + 1}`}
                   >
                     <div 
-                      className={`absolute top-0 left-0 h-full bg-primary transition-all duration-300 rounded-full ${
+                      className={`absolute top-0 left-0 h-full bg-[#245C4F] transition-all duration-300 ${
                         index === currentSlide ? '' : 'w-0'
                       }`}
                       style={{
@@ -158,18 +158,20 @@ const SimulatorCarousel: React.FC = () => {
                 <Button
                   size="icon"
                   onClick={prevSlide}
-                  className="h-10 w-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-[12px] shadow-[0_3px_0_0_hsl(var(--form-green))] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_hsl(var(--form-green))] transition-all duration-200"
+                  className="h-10 w-10 bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all duration-200 relative overflow-hidden group"
                   aria-label="Slide precedente"
                 >
-                  <ChevronLeft className="h-5 w-5 stroke-[2.5]" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                  <ChevronLeft className="h-5 w-5 stroke-[2.5] relative z-10" />
                 </Button>
                 <Button
                   size="icon"
                   onClick={nextSlide}
-                  className="h-10 w-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-[12px] shadow-[0_3px_0_0_hsl(var(--form-green))] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_hsl(var(--form-green))] transition-all duration-200"
+                  className="h-10 w-10 bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all duration-200 relative overflow-hidden group"
                   aria-label="Slide successivo"
                 >
-                  <ChevronRight className="h-5 w-5 stroke-[2.5]" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                  <ChevronRight className="h-5 w-5 stroke-[2.5] relative z-10" />
                 </Button>
               </div>
             </div>
@@ -177,10 +179,8 @@ const SimulatorCarousel: React.FC = () => {
 
           {/* Right - Mockup Component - Dimensioni costanti */}
           <div className="lg:order-2">
-            <div className="w-full h-[500px] min-h-[500px] max-h-[500px] flex items-center justify-center transform transition-all duration-500 ease-in-out">
-              <div className="w-full h-full">
-                <CurrentComponent />
-              </div>
+            <div className="w-[400px] h-[400px] flex-shrink-0 flex items-center justify-center transform transition-all duration-500 ease-in-out overflow-hidden mx-auto">
+              <CurrentComponent />
             </div>
           </div>
 

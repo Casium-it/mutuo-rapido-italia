@@ -6,12 +6,12 @@ import { Input } from "@/components/ui/input";
 
 const SimulatorMockup: React.FC = () => {
   return (
-    <div className="w-full h-full flex items-center justify-center">
-      <div className="bg-white rounded-xl shadow-lg p-6 max-w-md w-full border border-gray-100 relative overflow-hidden">
+    <div className="w-[400px] h-[400px] flex items-center justify-center flex-shrink-0">
+      <div className="bg-white rounded-xl shadow-lg p-6 w-full h-full border border-gray-100 relative overflow-hidden">
       {/* Header */}
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-foreground mb-2">Congratulazioni!</h2>
-        <div className="bg-primary text-primary-foreground px-4 py-2 rounded-lg inline-block text-xl font-semibold">
+        <div className="bg-[#245C4F] text-white px-4 py-2 rounded-lg inline-block text-xl font-semibold">
           240.000 €
         </div>
       </div>
@@ -54,7 +54,7 @@ const SimulatorMockup: React.FC = () => {
           <div className="grid grid-cols-3 gap-3 mt-4">
             <Input placeholder="Età" className="text-sm" />
             <Input placeholder="Reddito" className="text-sm" />
-            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
+            <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white">
               Calcola
             </Button>
           </div>
@@ -62,7 +62,7 @@ const SimulatorMockup: React.FC = () => {
 
         {/* Action Button */}
         <div className="absolute bottom-6 right-6">
-          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 rounded-lg font-semibold">
+          <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-6 py-2 rounded-lg font-semibold">
             Continua →
           </Button>
         </div>
@@ -73,10 +73,10 @@ const SimulatorMockup: React.FC = () => {
         <div className="w-32 h-3 bg-gray-200 rounded"></div>
         <div className="w-24 h-3 bg-gray-200 rounded"></div>
         <div className="w-28 h-3 bg-gray-200 rounded"></div>
-        <div className="w-20 h-3 bg-primary/20 rounded"></div>
+        <div className="w-20 h-3 bg-[#245C4F]/20 rounded"></div>
         <div className="w-32 h-3 bg-gray-200 rounded"></div>
         <div className="w-26 h-3 bg-gray-200 rounded"></div>
-        <div className="w-36 h-8 bg-primary/10 rounded"></div>
+        <div className="w-36 h-8 bg-[#245C4F]/10 rounded"></div>
       </div>
       </div>
     </div>
