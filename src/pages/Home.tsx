@@ -165,12 +165,12 @@ const HomePage = () => {
           </div>
 
           {/* Right side - Image with notification */}
-          <div className="flex justify-center lg:justify-start animate-[fade-in_0.6s_ease-out_0.5s_both] opacity-0 lg:-ml-8">
+          <div className="flex justify-center lg:justify-start animate-[fade-in_0.6s_ease-out_0.5s_both] opacity-0 lg:-ml-4">
             <div className="relative">
               <img src="/lovable-uploads/3fc7bd9a-e8ce-4850-b0a8-a704f2af6b9d.png" alt="Coppia felice che usa il laptop per simulare il mutuo" className="w-[400px] lg:w-[500px] h-[250px] lg:h-[280px] object-cover object-left rounded-2xl shadow-lg" />
               
               {/* Success notification popup with cycling notifications */}
-              <div className={`absolute bottom-4 right-4 bg-[#245C4F]/90 backdrop-blur-sm rounded-lg p-3 text-white shadow-lg transition-opacity duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+              <div className={`absolute bottom-4 right-0 lg:right-8 bg-[#245C4F]/90 backdrop-blur-sm rounded-lg p-3 text-white shadow-lg transition-opacity duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
                 <div className="flex items-center gap-2">
                   <div className="bg-green-500 rounded-full p-1 flex-shrink-0">
                     <Check className="w-3 h-3 text-white" />
