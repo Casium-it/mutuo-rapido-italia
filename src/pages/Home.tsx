@@ -123,7 +123,7 @@ const HomePage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start py-8 md:py-12 mb-12 md:mb-10">
           {/* Left side - Text content */}
           <div className="text-center lg:text-left animate-[fade-in_0.6s_ease-out_0.3s_both] opacity-0">
-            <h1 className="text-4xl md:text-6xl font-bold mb-4 animate-[fade-in_0.6s_ease-out_0.4s_both] opacity-0">
+            <h1 className="text-4xl font-bold mb-4 animate-[fade-in_0.6s_ease-out_0.4s_both] opacity-0 md:text-5xl">
               Cerchi un <span className="relative">
                 <span className="gradient-text">mutuo?</span>
                 <div className="absolute -bottom-1 left-0 right-0 h-1 md:h-3 bg-[#ddf574] rounded-full opacity-80 animate-[expand-line_1.2s_ease-out_0.8s_both] scale-x-0 origin-left"></div>
@@ -189,31 +189,22 @@ const HomePage = () => {
 
       {/* Sezione Vantaggi a larghezza piena con sfondo bianco */}
       <section className="w-full bg-white py-8 md:py-10">
-        <ThreeFeatureCards
-          items={[
-            {
-              title: "Il miglior Mutuo",
-              description:
-                "Confrontiamo e parliamo con più di 100 banche senza che tu debba andare in filiale",
-              imgSrc: featureCard1,
-              alt: "Illustrazione smartphone con conferma",
-            },
-            {
-              title: "Trasparenza",
-              description:
-                "La trasparenza è al primo posto, niente termini incomprensibili",
-              imgSrc: featureCard2,
-              alt: "Illustrazione stretta di mano",
-            },
-            {
-              title: "Esperti su tutta Italia",
-              description:
-                "Rete di 90+ mediatori partner esperti su tutta Italia, pronti ad aiutarti",
-              imgSrc: featureCard3,
-              alt: "Illustrazione consulenza con cuffie",
-            },
-          ]}
-        />
+        <ThreeFeatureCards items={[{
+        title: "Il miglior Mutuo",
+        description: "Confrontiamo e parliamo con più di 100 banche senza che tu debba andare in filiale",
+        imgSrc: featureCard1,
+        alt: "Illustrazione smartphone con conferma"
+      }, {
+        title: "Trasparenza",
+        description: "La trasparenza è al primo posto, niente termini incomprensibili",
+        imgSrc: featureCard2,
+        alt: "Illustrazione stretta di mano"
+      }, {
+        title: "Esperti su tutta Italia",
+        description: "Rete di 90+ mediatori partner esperti su tutta Italia, pronti ad aiutarti",
+        imgSrc: featureCard3,
+        alt: "Illustrazione consulenza con cuffie"
+      }]} />
       </section>
 
       {/* Simulator Carousel Section */}
