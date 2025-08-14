@@ -166,8 +166,8 @@ const HomePage = () => {
 
           {/* Right side - Image with notification */}
           <div className="flex justify-center lg:justify-end animate-[fade-in_0.6s_ease-out_0.5s_both] opacity-0">
-            <div className="relative overflow-hidden">
-              <img src="/lovable-uploads/3fc7bd9a-e8ce-4850-b0a8-a704f2af6b9d.png" alt="Coppia felice che usa il laptop per simulare il mutuo" className="w-[130%] h-[250px] lg:h-[280px] object-cover object-top rounded-2xl shadow-lg transform -translate-x-[15%]" />
+            <div className="relative">
+              <img src="/lovable-uploads/3fc7bd9a-e8ce-4850-b0a8-a704f2af6b9d.png" alt="Coppia felice che usa il laptop per simulare il mutuo" className="w-[400px] lg:w-[450px] h-[250px] lg:h-[280px] object-cover object-left rounded-2xl shadow-lg" />
               
               {/* Success notification popup with cycling notifications */}
               <div className={`absolute bottom-4 right-4 bg-[#245C4F]/90 backdrop-blur-sm rounded-lg p-3 text-white shadow-lg transition-opacity duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
