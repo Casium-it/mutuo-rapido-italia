@@ -16,13 +16,7 @@ interface ThreeFeatureCardsProps {
 const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
   items
 }) => {
-  return <section aria-labelledby="vantaggi-title" className="mt-4 md:mt-6 bg-white py-6 md:py-8 flex flex-col justify-center max-w-7xl mx-auto w-full px-4 md:px-10">
-        <header className="mb-4 md:mb-6 text-center">
-          <h2 id="vantaggi-title" className="text-3xl font-bold italic text-black md:text-4xl flex items-center justify-center gap-2 flex-wrap">
-            Se è rapido e su misura, è un <Logo size="lg" />
-          </h2>
-        </header>
-
+  return <section className="mt-4 md:mt-6 bg-white py-6 md:py-8 flex flex-col justify-center max-w-7xl mx-auto w-full px-4 md:px-10">
         <div className="relative mb-4 md:mb-6">
           {/* Linea curva connettiva - mobile (centro 50%) */}
 
