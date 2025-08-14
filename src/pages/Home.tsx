@@ -123,7 +123,7 @@ const HomePage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start py-8 md:py-12 mb-12 md:mb-10">
           {/* Left side - Text content */}
           <div className="text-center lg:text-left animate-[fade-in_0.6s_ease-out_0.3s_both] opacity-0">
-            <h1 className="text-4xl md:text-6xl font-bold mb-4 animate-[fade-in_0.6s_ease-out_0.4s_both] opacity-0">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 animate-[fade-in_0.6s_ease-out_0.4s_both] opacity-0">
               Cerchi un <span className="relative">
                 <span className="gradient-text">mutuo?</span>
                 <div className="absolute -bottom-1 left-0 right-0 h-1 md:h-3 bg-[#ddf574] rounded-full opacity-80 animate-[expand-line_1.2s_ease-out_0.8s_both] scale-x-0 origin-left"></div>
@@ -167,7 +167,7 @@ const HomePage = () => {
           {/* Right side - Image with notification */}
           <div className="flex justify-center lg:justify-end animate-[fade-in_0.6s_ease-out_0.5s_both] opacity-0">
             <div className="relative">
-              <img src="/lovable-uploads/3fc7bd9a-e8ce-4850-b0a8-a704f2af6b9d.png" alt="Coppia felice che usa il laptop per simulare il mutuo" className="w-full max-w-md lg:max-w-lg rounded-2xl shadow-lg" />
+              <img src="/lovable-uploads/3fc7bd9a-e8ce-4850-b0a8-a704f2af6b9d.png" alt="Coppia felice che usa il laptop per simulare il mutuo" className="w-full max-w-md lg:max-w-lg rounded-2xl shadow-lg object-cover h-64 md:h-80" />
               
               {/* Success notification popup with cycling notifications */}
               <div className={`absolute bottom-4 right-4 bg-[#245C4F]/90 backdrop-blur-sm rounded-lg p-3 text-white shadow-lg transition-opacity duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>

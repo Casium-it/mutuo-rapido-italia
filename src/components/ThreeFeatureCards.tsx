@@ -16,7 +16,7 @@ interface ThreeFeatureCardsProps {
 const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
   items
 }) => {
-  return <section className="mt-4 md:mt-6 bg-white py-4 md:py-6 flex flex-col justify-center max-w-7xl mx-auto w-full px-4 md:px-8">
+  return <section className="mt-4 md:mt-6 bg-white py-3 md:py-4 flex flex-col justify-center max-w-7xl mx-auto w-full px-4 md:px-8">
         <div className="relative mb-4 md:mb-6">
           {/* Linea curva connettiva - mobile (centro 50%) */}
 
