@@ -16,7 +16,7 @@ interface ThreeFeatureCardsProps {
 const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
   items
 }) => {
-  return <section className="mt-4 md:mt-6 bg-white py-6 md:py-8 flex flex-col justify-center max-w-7xl mx-auto w-full px-4 md:px-10">
+  return <section className="mt-4 md:mt-6 bg-white py-4 md:py-6 flex flex-col justify-center max-w-7xl mx-auto w-full px-4 md:px-8">
         <div className="relative mb-4 md:mb-6">
           {/* Linea curva connettiva - mobile (centro 50%) */}
 
@@ -24,7 +24,7 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
 
           {/* Blocchi - griglia: mobile impilate, desktop in una riga */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-5 relative z-10">
-            {items.slice(0, 3).map((item, idx) => <article key={idx} className="feature-card p-7 md:p-9 min-h-[200px] md:min-h-[220px] h-full">
+            {items.slice(0, 3).map((item, idx) => <article key={idx} className="feature-card p-5 md:p-7 min-h-[180px] md:min-h-[200px] h-full">
                 <div className="flex flex-col items-center text-center gap-5 md:gap-7 h-full">
                   <div className="w-24 h-24 md:w-28 md:h-28 flex-shrink-0 mx-auto" aria-hidden={!!!item.imgSrc}>
                     {item.imgSrc ? <img src={item.imgSrc} alt={item.alt || item.title} className="w-full h-full object-contain" loading="lazy" width={112} height={112} decoding="async" /> : null}
