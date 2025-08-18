@@ -5,7 +5,7 @@ import { Building2, TrendingUp, Shield } from "lucide-react";
 const SimulatorMockup: React.FC = () => {
   return (
     <div className="w-[400px] h-[400px] flex items-center justify-center flex-shrink-0">
-      <div className="bg-white rounded-xl shadow-lg p-10 w-full h-full relative overflow-hidden flex flex-col justify-center">
+      <div className="bg-white rounded-xl p-10 w-full h-full relative overflow-hidden flex flex-col justify-center" style={{ boxShadow: '0 8px 32px rgba(190, 184, 174, 0.4)' }}>
         
         {/* 3 Indicatori Principali */}
         <div className="space-y-7 mb-8">
@@ -58,7 +58,7 @@ const SimulatorMockup: React.FC = () => {
         </div>
 
         {/* Risultato Prominente - Ridotto */}
-        <div className="bg-gradient-to-br from-[#245C4F]/8 to-[#245C4F]/12 rounded-lg p-4 text-center border border-[#245C4F]/20">
+        <div className="bg-gradient-to-br from-[#245C4F]/8 to-[#245C4F]/12 rounded-lg p-4 text-center">
           <div className="text-xs text-gray-600 mb-1 font-medium">Importo massimo</div>
           <div className="text-xl font-bold text-[#245C4F]">€ 280.000</div>
         </div>
