@@ -188,7 +188,7 @@ const HomePage = () => {
       </main>
 
       {/* Full width green border */}
-      <div className="w-full border-b-4 border-[#245C4F]"></div>
+      <div className="w-full border-b-2 border-[#245C4F]"></div>
 
       {/* Sezione Vantaggi a larghezza piena con sfondo bianco */}
       <section className="w-full bg-white py-8 md:py-10">
@@ -211,7 +211,7 @@ const HomePage = () => {
       </section>
 
       {/* Full width green border */}
-      <div className="w-full border-b-4 border-[#245C4F]"></div>
+      <div className="w-full border-b-2 border-[#245C4F]"></div>
 
       {/* Simulator Carousel Section */}
       <SimulatorCarousel />
