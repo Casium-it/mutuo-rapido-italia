@@ -60,8 +60,7 @@ const SimulatorMockup: React.FC = () => {
         {/* Risultato Prominente - Ridotto */}
         <div className="bg-gradient-to-br from-[#245C4F]/8 to-[#245C4F]/12 rounded-lg p-4 text-center border border-[#245C4F]/20">
           <div className="text-xs text-gray-600 mb-1 font-medium">Importo massimo</div>
-          <div className="text-xl font-bold text-[#245C4F] mb-1">€ 280.000</div>
-          <div className="text-xs text-green-600 font-semibold">✓ Mutuo fattibile</div>
+          <div className="text-xl font-bold text-[#245C4F]">€ 280.000</div>
         </div>
 
       </div>
