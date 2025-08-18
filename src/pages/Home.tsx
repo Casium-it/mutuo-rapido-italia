@@ -210,6 +210,9 @@ const HomePage = () => {
       }]} />
       </section>
 
+      {/* Full width green border */}
+      <div className="w-full border-b-4 border-[#245C4F]"></div>
+
       {/* Simulator Carousel Section */}
       <SimulatorCarousel />
 
