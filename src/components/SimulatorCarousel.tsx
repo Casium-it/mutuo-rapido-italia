@@ -177,9 +177,9 @@ const SimulatorCarousel: React.FC = () => {
             </div>
           </div>
 
-          {/* Right - Mockup Component - Dimensioni costanti */}
+          {/* Right - Mockup Component - Dimensioni responsive */}
           <div className="lg:order-2">
-            <div className="w-[400px] h-[400px] flex-shrink-0 flex items-center justify-center transform transition-all duration-500 ease-in-out overflow-hidden mx-auto">
+            <div className="w-[280px] h-[280px] md:w-[320px] md:h-[320px] lg:w-[360px] lg:h-[360px] flex-shrink-0 flex items-center justify-center transform transition-all duration-500 ease-in-out overflow-hidden mx-auto">
               <CurrentComponent />
             </div>
           </div>
