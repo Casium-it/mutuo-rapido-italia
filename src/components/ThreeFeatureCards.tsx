@@ -30,7 +30,7 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
                     {item.imgSrc ? <img src={item.imgSrc} alt={item.alt || item.title} className="w-full h-full object-contain" loading="lazy" width={112} height={112} decoding="async" /> : null}
                   </div>
                   <div className="flex-1 mt-2 md:mt-3">
-                    <h3 className="feature-title text-lg md:text-2xl font-semibold gradient-text mb-3">
+                    <h3 className="feature-title text-xl md:text-2xl font-semibold text-black mb-3">
                       {idx === 0 ? "Simulazioni vere" : idx === 1 ? "Consulenti esperti" : "Mutui difficili"}
                     </h3>
                     <p className="text-lg text-muted-foreground leading-relaxed">
