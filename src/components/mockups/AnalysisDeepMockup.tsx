@@ -3,74 +3,84 @@ import { Home, Briefcase, Clock, Users } from "lucide-react";
 
 const AnalysisDeepMockup: React.FC = () => {
   return (
-    <div className="w-full h-full bg-white rounded-lg shadow-lg border border-gray-200 p-4 md:p-6 flex flex-col">
-      {/* Header */}
-      <div className="border-b border-gray-100 pb-3 mb-4">
-        <h3 className="text-lg md:text-xl font-semibold text-gray-900">
+    <div className="w-full h-full flex items-center justify-center flex-shrink-0">
+      <div className="bg-white rounded-xl shadow-lg p-4 md:p-5 lg:p-6 w-full h-full border border-gray-100 overflow-y-auto">
+        <h3 className="text-lg md:text-lg font-semibold mb-3 md:mb-4 text-gray-900">
           Analisi della tua situazione
         </h3>
-      </div>
-
-      {/* Parametri chiave */}
-      <div className="flex-1 space-y-3">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        
+        {/* Parametri chiave */}
+        <div className="space-y-2 md:space-y-3">
           {/* Mutuo richiesto */}
-          <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-            <div className="flex-shrink-0 w-8 h-8 bg-[#2C967F] bg-opacity-10 rounded-full flex items-center justify-center">
-              <Home className="w-4 h-4 text-[#2C967F]" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs md:text-sm font-medium text-gray-900">Mutuo richiesto</p>
-              <p className="text-xs md:text-sm text-gray-600">85% del valore immobile</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3 md:space-x-4">
+              <div className="p-2 md:p-3 bg-[#245C4F]/10 rounded-xl">
+                <Home className="w-5 h-5 md:w-6 md:h-6 text-[#245C4F]" />
+              </div>
+              <div>
+                <div className="text-base md:text-base font-semibold text-gray-900">Mutuo richiesto</div>
+                <div className="text-sm md:text-sm text-gray-600">85% del valore immobile</div>
+              </div>
             </div>
           </div>
 
           {/* Categoria lavorativa */}
-          <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-            <div className="flex-shrink-0 w-8 h-8 bg-[#7019E1] bg-opacity-10 rounded-full flex items-center justify-center">
-              <Briefcase className="w-4 h-4 text-[#7019E1]" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs md:text-sm font-medium text-gray-900">Categoria lavorativa</p>
-              <p className="text-xs md:text-sm text-gray-600">P.IVA – libero professionista ristorazione</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3 md:space-x-4">
+              <div className="p-2 md:p-3 bg-[#7019E1]/10 rounded-xl">
+                <Briefcase className="w-5 h-5 md:w-6 md:h-6 text-[#7019E1]" />
+              </div>
+              <div>
+                <div className="text-base md:text-base font-semibold text-gray-900">Categoria lavorativa</div>
+                <div className="text-sm md:text-sm text-gray-600">P.IVA – libero professionista</div>
+              </div>
             </div>
           </div>
 
           {/* Tempo ottenimento */}
-          <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-            <div className="flex-shrink-0 w-8 h-8 bg-[#2C967F] bg-opacity-10 rounded-full flex items-center justify-center">
-              <Clock className="w-4 h-4 text-[#2C967F]" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3 md:space-x-4">
+              <div className="p-2 md:p-3 bg-[#245C4F]/10 rounded-xl">
+                <Clock className="w-5 h-5 md:w-6 md:h-6 text-[#245C4F]" />
+              </div>
+              <div>
+                <div className="text-base md:text-base font-semibold text-gray-900">Tempo ottenimento</div>
+                <div className="text-sm md:text-sm text-gray-600">45 giorni stimati</div>
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs md:text-sm font-medium text-gray-900">Tempo ottenimento stimato</p>
-              <p className="text-xs md:text-sm text-gray-600">45 giorni</p>
-            </div>
+            <div className="text-2xl md:text-2xl font-bold text-[#245C4F]">45gg</div>
           </div>
 
           {/* Figli a carico */}
-          <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-            <div className="flex-shrink-0 w-8 h-8 bg-[#7019E1] bg-opacity-10 rounded-full flex items-center justify-center">
-              <Users className="w-4 h-4 text-[#7019E1]" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3 md:space-x-4">
+              <div className="p-2 md:p-3 bg-[#7019E1]/10 rounded-xl">
+                <Users className="w-5 h-5 md:w-6 md:h-6 text-[#7019E1]" />
+              </div>
+              <div>
+                <div className="text-base md:text-base font-semibold text-gray-900">Figli a carico</div>
+                <div className="text-sm md:text-sm text-gray-600">Nucleo familiare</div>
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs md:text-sm font-medium text-gray-900">Figli a carico</p>
-              <p className="text-xs md:text-sm text-gray-600">2</p>
-            </div>
+            <div className="text-2xl md:text-2xl font-bold text-[#7019E1]">2</div>
           </div>
         </div>
 
         {/* Sezione evidenziata */}
-        <div className="bg-[#ADEE67] bg-opacity-20 border border-[#ADEE67] border-opacity-40 rounded-lg p-3 mt-4">
-          <p className="text-sm font-medium text-gray-900 text-center">
+        <div className="bg-[#245C4F]/5 border border-[#245C4F]/20 rounded-lg p-3 md:p-4 mt-4 md:mt-6">
+          <p className="text-sm md:text-sm font-medium text-gray-900 text-center">
             Analisi approfondita dei fattori → ottenibilità reale
           </p>
         </div>
 
-        {/* Pulsante CTA */}
-        <div className="flex justify-end pt-2">
-          <button className="px-4 py-2 bg-[#2C967F] text-white text-sm font-medium rounded-lg shadow-sm hover:bg-[#245C4F] transition-colors">
-            Prosegui con un mediatore
-          </button>
+        {/* Action Section */}
+        <div className="mt-3 md:mt-4 pt-3 md:pt-4 border-t">
+          <div className="text-center">
+            <p className="text-xs md:text-sm text-gray-600 mb-2">Prosegui con la consulenza specializzata</p>
+            <div className="w-full h-7 md:h-8 bg-[#245C4F]/10 rounded-lg flex items-center justify-center">
+              <span className="text-[#245C4F] font-medium text-xs md:text-sm">Contatta un mediatore</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
