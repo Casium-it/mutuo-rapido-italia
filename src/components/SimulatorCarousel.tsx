@@ -122,7 +122,7 @@ const SimulatorCarousel: React.FC = () => {
           {/* Left - Text Content */}
           <div className="space-y-6 lg:order-1">
             <div className="space-y-4">
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+              <h2 className="text-2xl md:text-3xl font-bold text-[#245C4F]">
                 {currentSlideData.title}
               </h2>
               <p className="text-lg text-muted-foreground leading-relaxed">
