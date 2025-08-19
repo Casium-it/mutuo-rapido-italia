@@ -18,8 +18,8 @@ const slides: CarouselSlide[] = [{
   component: AnalysisDeepMockup
 }, {
   id: 2,
-  title: "Il nostro simulatore",
-  description: "La soluzione giusta al momento giusto: il nostro simulatore dotato di algoritmi potenti confronta in profondità le offerte delle banche e identifica la migliore per te.",
+  title: "La tua situazione",
+  description: "Il nostro sistema di simulazione analizza oltre 100 parametri per fornirti una valutazione precisa della difficoltà di ottenimento, del numero di banche disponibili e del tasso di interesse più conveniente.",
   component: SimulatorMockup
 }, {
   id: 3,

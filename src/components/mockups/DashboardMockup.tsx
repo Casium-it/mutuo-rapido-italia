@@ -7,9 +7,21 @@ const DashboardMockup: React.FC = () => {
   return (
     <div className="w-full h-full flex items-center justify-center flex-shrink-0">
       <div className="bg-white rounded-xl shadow-lg p-4 md:p-5 lg:p-6 w-full h-full border border-gray-100 overflow-y-auto">
+        {/* Platform header */}
+        <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <h3 className="text-base md:text-lg font-medium text-gray-900">Dashboard Mutuo</h3>
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">2</div>
+            <button className="text-xs text-gray-500 hover:text-gray-700">⋮</button>
+          </div>
+        </div>
+        
         <div className="mb-4 md:mb-6">
-          <h3 className="text-lg md:text-lg font-semibold text-gray-900 mb-2">Ciao Marco!</h3>
-          <p className="text-gray-600 text-sm md:text-sm">Ecco lo stato del tuo dossier mutuo</p>
+          <h4 className="text-sm font-medium text-gray-900 mb-1">Ciao Marco!</h4>
+          <p className="text-gray-600 text-xs">Ecco lo stato del tuo dossier mutuo</p>
         </div>
 
         {/* Progress Section */}
