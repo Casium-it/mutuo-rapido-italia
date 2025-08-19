@@ -4,8 +4,11 @@ import { Check } from "lucide-react";
 const AnalysisDeepMockup: React.FC = () => {
   return (
     <div className="w-full h-full flex items-center justify-center flex-shrink-0">
-      <div className="bg-white rounded-xl shadow-lg p-6 md:p-8 lg:p-10 w-full h-full border border-gray-100">
-        <h3 className="text-lg md:text-xl lg:text-2xl font-semibold mb-4 md:mb-6 lg:mb-8 text-gray-900">
+      <div className="bg-white rounded-xl shadow-lg p-6 md:p-8 lg:p-10 w-full h-full border border-gray-100 flex flex-col justify-center">
+        <h2 className="text-xl md:text-2xl lg:text-3xl font-bold mb-2 md:mb-3 text-[#245C4F]">
+          Il tuo mutuo
+        </h2>
+        <h3 className="text-lg md:text-xl font-semibold mb-4 md:mb-6 lg:mb-8 text-[#245C4F]">
           La tua situazione
         </h3>
         
