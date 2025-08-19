@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import AnalysisDeepMockup from "@/components/mockups/AnalysisDeepMockup";
 import SimulatorMockup from "@/components/mockups/SimulatorMockup";
 import BankComparisonMockup from "@/components/mockups/BankComparisonMockup";
 import DashboardMockup from "@/components/mockups/DashboardMockup";
@@ -12,16 +13,21 @@ interface CarouselSlide {
 }
 const slides: CarouselSlide[] = [{
   id: 1,
+  title: "Analisi approfondita della tua situazione",
+  description: "I mediatori partner analizzano in profondità tutti i fattori rilevanti per valutare la reale ottenibilità del mutuo, senza fermarsi alle sole condizioni economiche.",
+  component: AnalysisDeepMockup
+}, {
+  id: 2,
   title: "Il nostro simulatore",
   description: "La soluzione giusta al momento giusto: il nostro simulatore dotato di algoritmi potenti confronta in profondità le offerte delle banche e identifica la migliore per te.",
   component: SimulatorMockup
 }, {
-  id: 2,
+  id: 3,
   title: "Definisci la tua strategia bancaria",
   description: "I nostri consulenti condividono i loro strumenti di lavoro e scelgono al tuo fianco un'offerta di prestito e assicurazione su misura, secondo 12 criteri.",
   component: BankComparisonMockup
 }, {
-  id: 3,
+  id: 4,
   title: "Segui il tuo dossier in tempo reale",
   description: "Ti affidiamo il tuo progetto, devi sapere dove è. Accordo di principio, redazione dell'offerta... Beneficia di uno spazio online sicuro per seguire l'avanzamento del tuo dossier in completa autonomia.",
   component: DashboardMockup
