@@ -17,8 +17,8 @@ const SimulatorMockup: React.FC = () => {
                 <Shield className="w-5 h-5 md:w-6 md:h-6 text-[#245C4F]" />
               </div>
               <div>
-                <div className="text-sm md:text-base font-semibold text-gray-900">Difficoltà</div>
-                <div className="text-xs md:text-sm text-gray-600">Media</div>
+                <div className="text-base md:text-base font-semibold text-gray-900">Difficoltà</div>
+                <div className="text-sm md:text-sm text-gray-600">Media</div>
               </div>
             </div>
             <div className="flex items-center space-x-3">
@@ -35,11 +35,11 @@ const SimulatorMockup: React.FC = () => {
                 <Building2 className="w-5 h-5 md:w-6 md:h-6 text-[#245C4F]" />
               </div>
               <div>
-                <div className="text-sm md:text-base font-semibold text-gray-900">Banche</div>
-                <div className="text-xs md:text-sm text-gray-600">Disponibili</div>
+                <div className="text-base md:text-base font-semibold text-gray-900">Banche</div>
+                <div className="text-sm md:text-sm text-gray-600">Disponibili</div>
               </div>
             </div>
-            <div className="text-xl md:text-2xl font-bold text-[#245C4F]">4</div>
+            <div className="text-2xl md:text-2xl font-bold text-[#245C4F]">4</div>
           </div>
 
           {/* 3. Tasso stimato */}
@@ -49,11 +49,11 @@ const SimulatorMockup: React.FC = () => {
                 <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-[#245C4F]" />
               </div>
               <div>
-                <div className="text-sm md:text-base font-semibold text-gray-900">Tasso</div>
-                <div className="text-xs md:text-sm text-gray-600">Migliore</div>
+                <div className="text-base md:text-base font-semibold text-gray-900">Tasso</div>
+                <div className="text-sm md:text-sm text-gray-600">Migliore</div>
               </div>
             </div>
-            <div className="text-xl md:text-2xl font-bold text-[#245C4F]">3.2%</div>
+            <div className="text-2xl md:text-2xl font-bold text-[#245C4F]">3.2%</div>
           </div>
         </div>
 

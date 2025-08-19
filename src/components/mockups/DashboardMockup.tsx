@@ -8,8 +8,8 @@ const DashboardMockup: React.FC = () => {
     <div className="w-full h-full flex items-center justify-center flex-shrink-0">
       <div className="bg-white rounded-xl shadow-lg p-4 md:p-5 lg:p-6 w-full h-full border border-gray-100 overflow-y-auto">
         <div className="mb-4 md:mb-6">
-          <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-2">Ciao Marco!</h3>
-          <p className="text-gray-600 text-xs md:text-sm">Ecco lo stato del tuo dossier mutuo</p>
+          <h3 className="text-lg md:text-lg font-semibold text-gray-900 mb-2">Ciao Marco!</h3>
+          <p className="text-gray-600 text-sm md:text-sm">Ecco lo stato del tuo dossier mutuo</p>
         </div>
 
         {/* Progress Section */}
@@ -27,21 +27,21 @@ const DashboardMockup: React.FC = () => {
 
         {/* Appointments */}
         <div className="mb-4 md:mb-6">
-          <h4 className="text-sm md:text-base font-semibold mb-2 md:mb-3 flex items-center gap-2">
-            <Calendar className="w-3 h-3 md:w-4 md:h-4" />
+          <h4 className="text-base md:text-base font-semibold mb-2 md:mb-3 flex items-center gap-2">
+            <Calendar className="w-4 h-4 md:w-4 md:h-4" />
             Appuntamenti
           </h4>
           <div className="space-y-2 md:space-y-3">
             <div className="flex justify-between items-center p-2 md:p-3 bg-gray-50 rounded-lg">
               <div>
-                <p className="text-xs md:text-sm font-medium">Consulenza iniziale</p>
+                <p className="text-sm md:text-sm font-medium">Consulenza iniziale</p>
                 <p className="text-xs text-gray-500">15 Gen, 14:30</p>
               </div>
               <Badge variant="outline" className="text-xs">Completato</Badge>
             </div>
             <div className="flex justify-between items-center p-2 md:p-3 bg-[#245C4F]/5 rounded-lg border border-[#245C4F]/20">
               <div>
-                <p className="text-xs md:text-sm font-medium">Revisione documenti</p>
+                <p className="text-sm md:text-sm font-medium">Revisione documenti</p>
                 <p className="text-xs text-gray-500">22 Gen, 10:00</p>
               </div>
               <Badge className="bg-[#245C4F]/10 text-[#245C4F] text-xs">Prossimo</Badge>
@@ -51,25 +51,25 @@ const DashboardMockup: React.FC = () => {
 
         {/* Documents */}
         <div>
-          <h4 className="text-sm md:text-base font-semibold mb-2 md:mb-3 flex items-center gap-2">
-            <FileText className="w-3 h-3 md:w-4 md:h-4" />
+          <h4 className="text-base md:text-base font-semibold mb-2 md:mb-3 flex items-center gap-2">
+            <FileText className="w-4 h-4 md:w-4 md:h-4" />
             Documenti
           </h4>
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <span className="text-sm">Busta paga</span>
+              <span className="text-sm md:text-sm">Busta paga</span>
               <Check className="w-4 h-4 text-[#245C4F]" />
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm">Estratto conto</span>
+              <span className="text-sm md:text-sm">Estratto conto</span>
               <Check className="w-4 h-4 text-[#245C4F]" />
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm">Documento identità</span>
+              <span className="text-sm md:text-sm">Documento identità</span>
               <div className="w-4 h-4 border border-gray-300 rounded"></div>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm">Certificato residenza</span>
+              <span className="text-sm md:text-sm">Certificato residenza</span>
               <div className="w-4 h-4 border border-gray-300 rounded"></div>
             </div>
           </div>
