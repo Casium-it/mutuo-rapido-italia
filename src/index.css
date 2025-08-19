@@ -17,8 +17,12 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 142 72% 29%; /* #00853E */
+    --primary: 158 50% 25%; /* #245C4F - Verde principale del progetto */
     --primary-foreground: 210 40% 98%;
+    
+    /* Verde principale del design system */
+    --primary-green: 158 50% 25%;        /* #245C4F - Colore principale */
+    --primary-green-dark: 158 55% 22%;   /* #1e4f44 - Variante scura */
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -89,15 +93,15 @@
 
 @layer components {
   .gradient-text {
-    @apply bg-gradient-to-r from-[#245C4F] to-[#1e4f44] bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-[hsl(var(--primary-green))] to-[hsl(var(--primary-green-dark))] bg-clip-text text-transparent;
   }
   
   .gradient-bg {
-    @apply bg-gradient-to-r from-[#245C4F] to-[#1e4f44] text-white;
+    @apply bg-gradient-to-r from-[hsl(var(--primary-green))] to-[hsl(var(--primary-green-dark))] text-white;
   }
   
   .gradient-bg-alt {
-    @apply bg-gradient-to-r from-[#1e4f44] to-[#245C4F] text-white;
+    @apply bg-gradient-to-r from-[hsl(var(--primary-green-dark))] to-[hsl(var(--primary-green))] text-white;
   }
 
   .hover-lift {
