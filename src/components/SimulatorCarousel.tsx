@@ -14,7 +14,7 @@ interface CarouselSlide {
 const slides: CarouselSlide[] = [{
   id: 1,
   title: "Analisi approfondita della tua situazione",
-  description: "I mediatori partner analizzano in profondità tutti i fattori rilevanti per valutare la reale ottenibilità del mutuo, senza fermarsi alle sole condizioni economiche.",
+  description: "I mediatori partner analizzano in profondità tutti i fattori rilevanti per valutare la reale ottenibilità del mutuo, trovando soluzioni anche per le situazioni più complesse, senza fermarsi alle sole condizioni economiche.",
   component: AnalysisDeepMockup
 }, {
   id: 2,
