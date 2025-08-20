@@ -92,22 +92,30 @@ const HomePage = () => {
     navigate("/simulazioni");
   };
   return <div className="min-h-screen flex flex-col bg-[#f7f5f2]">
-      {/* Header */}
-      <header className="py-6 px-4 md:px-6 relative flex items-center justify-between z-10 animate-[fade-in_0.6s_ease-out_0.1s_both] opacity-0">
+      {/* Header fisso */}
+      <header className="fixed top-0 left-0 right-0 bg-[#f7f5f2]/95 backdrop-blur-sm z-50 py-6 px-4 md:px-6 flex items-center justify-between shadow-sm animate-[fade-in_0.6s_ease-out_0.1s_both] opacity-0">
         {/* Logo */}
         <div className="cursor-pointer flex items-center" onClick={() => navigate("/")}>
           <Logo />
         </div>
         
         {/* Desktop only navigation - centered */}
-        {!isMobile && <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-4">
-            <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E] flex items-center" onClick={() => handleSimulationClick('header_nav')}>
-              Simulazioni
+        {!isMobile && (
+          <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-4">
+            <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]" onClick={() => handleSimulationClick('header_nav')}>
+              Simulazione
             </Button>
-            <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E] flex items-center" onClick={handleWhatsAppContact}>
-              Contattaci
+            <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]" onClick={() => navigate('/blog')}>
+              Blog
             </Button>
-          </div>}
+            <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]" onClick={() => navigate('/chi-siamo')}>
+              Chi Siamo
+            </Button>
+            <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]" onClick={handleWhatsAppContact}>
+              Contatti
+            </Button>
+          </div>
+        )}
         
         {/* CTA Button */}
         <div className="flex items-center">
@@ -116,6 +124,9 @@ const HomePage = () => {
           </Button>
         </div>
       </header>
+
+      {/* Spacer per compensare l'header fisso */}
+      <div className="h-24"></div>
 
       {/* Main content */}
       <main className="flex-1 px-4 md:px-8 py-8 md:py-8 max-w-7xl mx-auto w-full flex flex-col justify-center relative z-10">

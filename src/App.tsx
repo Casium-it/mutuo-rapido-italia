@@ -24,6 +24,8 @@ import NotFound from "./pages/NotFound";
 import Privacy from "./pages/Privacy";
 import Simulazioni from "./pages/Simulazioni";
 import Home from "./pages/Home";
+import Blog from "./pages/Blog";
+import ChiSiamo from "./pages/ChiSiamo";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import AdminLeads from "./pages/AdminLeads";
@@ -64,6 +66,8 @@ const AppWithTracking = () => {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
+      <Route path="/blog" element={<Blog />} />
+      <Route path="/chi-siamo" element={<ChiSiamo />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/simulazione-avanzata" element={<SimulazioneAvanzata />} />
       <Route path="/simulazione-avanzata/:slug" element={<SimulazioneAvanzata />} />
