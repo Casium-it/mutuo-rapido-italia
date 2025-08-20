@@ -20,10 +20,7 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
         <div className="relative mb-4 md:mb-6">
           {/* Titolo principale */}
           <div className="mb-6 md:mb-8">
-            <h2 className="text-4xl font-bold relative inline-block">
-              <span className="gradient-text">L'esperienza GoMutuo</span>
-              <div className="absolute left-0 right-0 h-1 md:h-3 bg-[#ddf574] rounded-full opacity-80" style={{bottom: '-0.75rem'}}></div>
-            </h2>
+            
           </div>
 
           {/* Blocchi - griglia: mobile impilate, desktop in una riga */}
@@ -43,17 +40,6 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
                   </div>
                 </div>
               </article>)}
-          </div>
-
-          {/* CTA Button dopo le feature cards */}
-          <div className="text-center mt-8 md:mt-12">
-            <button 
-              onClick={() => window.location.href = '/simulazioni'}
-              className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-8 py-4 text-lg rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all relative overflow-hidden group"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-              Simula ora
-            </button>
           </div>
         </div>
     </section>;
