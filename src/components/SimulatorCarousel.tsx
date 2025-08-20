@@ -4,13 +4,14 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import AnalysisDeepMockup from "@/components/mockups/AnalysisDeepMockup";
 import SimulatorMockup from "@/components/mockups/SimulatorMockup";
 import BankComparisonMockup from "@/components/mockups/BankComparisonMockup";
-import DashboardMockup from "@/components/mockups/DashboardMockup";
+
 interface CarouselSlide {
   id: number;
   title: string;
   description: string;
   component: React.ComponentType;
 }
+
 const slides: CarouselSlide[] = [{
   id: 1,
   title: "Analisi approfondita",
@@ -26,11 +27,6 @@ const slides: CarouselSlide[] = [{
   title: "Definisci la tua strategia bancaria",
   description: "I nostri consulenti condividono i loro strumenti di lavoro e scelgono al tuo fianco un'offerta di prestito e assicurazione su misura, secondo 12 criteri.",
   component: BankComparisonMockup
-}, {
-  id: 4,
-  title: "Segui il tuo dossier in tempo reale",
-  description: "Ti affidiamo il tuo progetto, devi sapere dove è. Accordo di principio, redazione dell'offerta... Beneficia di uno spazio online sicuro per seguire l'avanzamento del tuo dossier in completa autonomia.",
-  component: DashboardMockup
 }];
 const SimulatorCarousel: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
