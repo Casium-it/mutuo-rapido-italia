@@ -134,7 +134,7 @@ const HomePage = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start items-center mb-6 animate-[fade-in_0.6s_ease-out_0.9s_both] opacity-0">
               <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-8 py-4 text-lg rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all relative overflow-hidden group" onClick={() => handleSimulationClick('hero')}>
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-                Simula il tuo mutuo
+                Simula ora
               </Button>
               <Button variant="ghost" className="text-[#245C4F] hover:bg-[#F8F4EF] px-8 py-4 text-lg rounded-[12px] border border-[#245C4F] hover:border-[#1e4f44] transition-all backdrop-blur-sm" onClick={handleWhatsAppContact}>
                 Parla con noi
