@@ -20,8 +20,9 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
         <div className="relative mb-4 md:mb-6">
           {/* Titolo principale */}
           <div className="mb-6 md:mb-8">
-            <h2 className="text-4xl font-bold text-white bg-[#245C4F] px-6 py-3 rounded-[12px] inline-block">
-              L'esperienza GoMutuo
+            <h2 className="text-4xl font-bold relative inline-block">
+              <span className="gradient-text">L'esperienza GoMutuo</span>
+              <div className="absolute -bottom-1 left-0 right-0 h-1 md:h-3 bg-[#ddf574] rounded-full opacity-80"></div>
             </h2>
           </div>
 
