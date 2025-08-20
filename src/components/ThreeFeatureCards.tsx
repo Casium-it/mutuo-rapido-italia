@@ -18,9 +18,12 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
 }) => {
   return <section className="mt-4 md:mt-6 bg-white py-2 md:py-4 flex flex-col justify-center max-w-7xl mx-auto w-full px-4 md:px-8">
         <div className="relative mb-4 md:mb-6">
-          {/* Linea curva connettiva - mobile (centro 50%) */}
-
-          {/* Linea curva connettiva - desktop: passa sotto i centri x ≈ 33% → 66% → 33% */}
+          {/* Titolo principale */}
+          <div className="mb-6 md:mb-8">
+            <h2 className="text-4xl font-bold text-white bg-[#245C4F] px-6 py-3 rounded-[12px] inline-block">
+              L'esperienza GoMutuo
+            </h2>
+          </div>
 
           {/* Blocchi - griglia: mobile impilate, desktop in una riga */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-5 relative z-10">
