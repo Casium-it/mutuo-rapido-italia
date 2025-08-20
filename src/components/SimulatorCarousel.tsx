@@ -14,18 +14,18 @@ interface CarouselSlide {
 
 const slides: CarouselSlide[] = [{
   id: 1,
-  title: "Analisi approfondita",
-  description: "I mediatori partner analizzano in profondità tutti i fattori rilevanti per valutare la reale ottenibilità del mutuo, trovando soluzioni anche per le situazioni più complesse, senza fermarsi alle sole condizioni economiche.",
+  title: "Analisi della tua richiesta",
+  description: "I mediatori partner analizzano in profondità tutti i fattori rilevanti per valutare la reale ottenibilità del mutuo, trovando soluzioni anche per le situazioni più complesse.",
   component: AnalysisDeepMockup
 }, {
   id: 2,
-  title: "La tua situazione",
-  description: "Il nostro sistema di simulazione analizza oltre 100 parametri per fornirti una valutazione precisa della difficoltà di ottenimento, del numero di banche disponibili e del tasso di interesse più conveniente.",
+  title: "Simulazione approfondita",
+  description: "I nostri consulenti partner ti forniscono una valutazione precisa della difficoltà di ottenimento, del numero di banche disponibili e del prodotto di mutuo più conveniente.",
   component: SimulatorMockup
 }, {
   id: 3,
-  title: "Definisci la tua strategia bancaria",
-  description: "I nostri consulenti condividono i loro strumenti di lavoro e scelgono al tuo fianco un'offerta di prestito e assicurazione su misura, secondo 12 criteri.",
+  title: "Consulente al tuo fianco",
+  description: "I nostri consulenti partner ti accompagnano lungo tutto il percorso di ottenimento del mutuo, facendoti risparmiare soldi e tempo",
   component: BankComparisonMockup
 }];
 const SimulatorCarousel: React.FC = () => {
