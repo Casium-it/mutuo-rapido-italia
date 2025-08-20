@@ -120,7 +120,7 @@ const HomePage = () => {
         {/* CTA Button */}
         <div className="flex items-center">
           <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-[12px] px-6 shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all" onClick={() => handleSimulationClick('header')}>
-            Simulazione
+            Simula Ora
           </Button>
         </div>
       </header>
