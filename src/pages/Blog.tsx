@@ -159,7 +159,7 @@ const Blog = () => {
       </header>
 
       {/* Main Content */}
-      <div className="pt-24 pb-16 flex-grow bg-[#fff7f0]">
+      <div className="pt-24 pb-16 flex-grow bg-[#f7f5f2]">
         <div className="container mx-auto px-4">
           {/* Header Section */}
           <div className="mb-10 text-center">
