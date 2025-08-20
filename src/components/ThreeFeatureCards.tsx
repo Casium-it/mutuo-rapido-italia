@@ -22,7 +22,7 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
           <div className="mb-6 md:mb-8">
             <h2 className="text-4xl font-bold relative inline-block">
               <span className="gradient-text">L'esperienza GoMutuo</span>
-              <div className="absolute -bottom-1 left-0 right-0 h-1 md:h-3 bg-[#ddf574] rounded-full opacity-80" style={{bottom: '-0.5rem'}}></div>
+              <div className="absolute left-0 right-0 h-0.5 md:h-1 bg-[#ddf574] rounded-full opacity-80" style={{bottom: '-0.75rem'}}></div>
             </h2>
           </div>
 
