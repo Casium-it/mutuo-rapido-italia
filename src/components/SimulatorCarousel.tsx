@@ -102,16 +102,7 @@ const SimulatorCarousel: React.FC = () => {
           
           {/* Left - Text Content */}
           <div className="space-y-6 lg:order-1">
-            <div className="space-y-4">
-              <h2 className="text-2xl md:text-3xl font-bold text-[#010101]">
-                {currentSlideData.title}
-              </h2>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                {currentSlideData.description}
-              </p>
-            </div>
-
-            {/* Navigation Controls */}
+            {/* Navigation Controls - spostati sopra il titolo */}
             <div className="flex items-center gap-4">
               {/* Progress indicators - righette */}
               <div className="flex gap-2">
@@ -134,6 +125,26 @@ const SimulatorCarousel: React.FC = () => {
                 </Button>
               </div>
             </div>
+
+            <div className="space-y-4">
+              <h2 className="text-2xl md:text-3xl font-bold text-[#010101]">
+                {currentSlideData.title}
+              </h2>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                {currentSlideData.description}
+              </p>
+            </div>
+
+            {/* CTA Button spostato qui */}
+            <div className="pt-2">
+              <button 
+                onClick={() => window.location.href = '/simulazioni'}
+                className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-8 py-4 text-lg rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all relative overflow-hidden group"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                Simula ora
+              </button>
+            </div>
           </div>
 
           {/* Right - Mockup Component - Dimensioni responsive più ampie */}
@@ -143,17 +154,6 @@ const SimulatorCarousel: React.FC = () => {
             </div>
           </div>
 
-        </div>
-
-        {/* CTA Button dopo il carousel */}
-        <div className="text-center mt-8 md:mt-12">
-          <button 
-            onClick={() => window.location.href = '/simulazioni'}
-            className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-8 py-4 text-lg rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all relative overflow-hidden group"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-            Simula ora
-          </button>
         </div>
       </div>
     </section>;
