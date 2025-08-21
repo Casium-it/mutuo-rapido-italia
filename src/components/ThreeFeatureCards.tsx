@@ -16,13 +16,8 @@ interface ThreeFeatureCardsProps {
 const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
   items
 }) => {
-  return <section className="mt-4 md:mt-6 bg-white py-2 md:py-4 flex flex-col justify-center max-w-7xl mx-auto w-full px-4 md:px-8">
-        <div className="relative mb-4 md:mb-6">
-          {/* Titolo principale */}
-          <div className="mb-6 md:mb-8">
-            
-          </div>
-
+  return <section className="mt-4 md:mt-6 bg-white py-1 flex flex-col justify-center items-center max-w-7xl mx-auto w-full px-4 md:px-8">
+        <div className="relative w-full">
           {/* Blocchi - griglia: mobile impilate, desktop in una riga */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-5 relative z-10">
             {items.slice(0, 3).map((item, idx) => <article key={idx} className="feature-card bg-white border border-gray-100 shadow-lg hover:translate-y-[1px] hover:shadow-xl transition-all duration-200 rounded-[12px] cursor-pointer p-5 md:p-7 min-h-[180px] md:min-h-[200px] h-full">

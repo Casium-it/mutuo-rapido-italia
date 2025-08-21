@@ -113,13 +113,13 @@ const SimulatorCarousel: React.FC = () => {
                   </button>)}
               </div>
 
-              {/* Arrow buttons - stile come "Simula il tuo mutuo" */}
+              {/* Arrow buttons - stile nero senza verde */}
               <div className="flex gap-2 ml-4">
-                <Button size="icon" onClick={prevSlide} className="h-10 w-10 bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all duration-200 relative overflow-hidden group" aria-label="Slide precedente">
+                <Button size="icon" onClick={prevSlide} className="h-10 w-10 bg-black hover:bg-gray-800 text-white rounded-[12px] shadow-[0_3px_0_0_#374151] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#374151] transition-all duration-200 relative overflow-hidden group" aria-label="Slide precedente">
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
                   <ChevronLeft className="h-5 w-5 stroke-[2.5] relative z-10" />
                 </Button>
-                <Button size="icon" onClick={nextSlide} className="h-10 w-10 bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all duration-200 relative overflow-hidden group" aria-label="Slide successivo">
+                <Button size="icon" onClick={nextSlide} className="h-10 w-10 bg-black hover:bg-gray-800 text-white rounded-[12px] shadow-[0_3px_0_0_#374151] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#374151] transition-all duration-200 relative overflow-hidden group" aria-label="Slide successivo">
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
                   <ChevronRight className="h-5 w-5 stroke-[2.5] relative z-10" />
                 </Button>
