@@ -50,7 +50,7 @@ async function sendWhatsAppNotification(
     
     console.log('📱 Sending WhatsApp notification to:', contactData.phone);
     
-    const { data, error } = await supabase.functions.invoke('send-aisensy-message', {
+    const { data, error } = await supabase.functions.invoke('send-ycloud-message', {
       body: {
         campaignName: 'link_simulazione_salvata2',
         destination: contactData.phone,

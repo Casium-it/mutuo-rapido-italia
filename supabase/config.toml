@@ -12,3 +12,6 @@ verify_jwt = false
 
 [functions.save-simulation]
 verify_jwt = false
+
+[functions.send-ycloud-message]
+verify_jwt = false

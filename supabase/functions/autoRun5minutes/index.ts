@@ -133,10 +133,10 @@ serve(async (req) => {
           source: 'new-api'
         };
 
-        console.log(`Calling send-aisensy-message edge function for lead ${leadData.id}:`, JSON.stringify(aisensyPayload, null, 2));
+        console.log(`Calling send-ycloud-message edge function for lead ${leadData.id}:`, JSON.stringify(aisensyPayload, null, 2));
 
-        // Call the send-aisensy-message edge function
-        const { data, error } = await supabase.functions.invoke('send-aisensy-message', {
+        // Call the send-ycloud-message edge function
+        const { data, error } = await supabase.functions.invoke('send-ycloud-message', {
           body: aisensyPayload
         });
 
@@ -150,10 +150,10 @@ serve(async (req) => {
         }
 
         if (!data?.success) {
-          console.error(`AiSensy message failed for lead ${leadData.id}:`, data);
+          console.error(`YCloud message failed for lead ${leadData.id}:`, data);
           failedReminders.push({
             leadId: leadData.id,
-            error: `AiSensy error: ${data?.error || 'Unknown error'}`
+            error: `YCloud error: ${data?.error || 'Unknown error'}`
           });
           continue;
         }

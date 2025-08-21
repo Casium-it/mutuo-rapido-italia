@@ -175,7 +175,7 @@ Deno.serve(async (req) => {
     console.log(`[${requestId}] Step 4: Sending WhatsApp message...`)
     
     try {
-      const { data: whatsappResult, error: whatsappError } = await supabase.functions.invoke('send-aisensy-message', {
+      const { data: whatsappResult, error: whatsappError } = await supabase.functions.invoke('send-ycloud-message', {
         body: {
           campaignName: consulting ? 'welcome3si' : 'welcome3no',
           destination: formattedPhone,

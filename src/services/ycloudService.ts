@@ -1,73 +1,72 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
-// Type definitions for AiSensy API
-export type AisensyMedia = {
+// Type definitions for YCloud API
+export type YCloudMedia = {
   url: string;
   filename: string;
 };
 
-export type AisensyMessageParams = {
+export type YCloudMessageParams = {
   campaignName: string;
   destination: string;
   userName: string;
   source?: string;
-  media?: AisensyMedia;
+  media?: YCloudMedia;
   templateParams?: string[];
   tags?: string[];
   attributes?: Record<string, string>;
   location?: string;
 };
 
-export type AisensyMessageResult = {
+export type YCloudMessageResult = {
   success: boolean;
   error?: string;
   message?: string;
-  aisensyResponse?: any;
+  ycloudResponse?: any;
 };
 
 /**
- * Generic function to send any AiSensy message
- * @param params - Complete AiSensy message parameters
+ * Generic function to send any YCloud message
+ * @param params - Complete YCloud message parameters
  * @returns Result of the operation
  */
-export async function sendCustomAisensyMessage(
-  params: AisensyMessageParams
-): Promise<AisensyMessageResult> {
+export async function sendCustomYCloudMessage(
+  params: YCloudMessageParams
+): Promise<YCloudMessageResult> {
   try {
-    console.log("Sending custom AiSensy message...", {
+    console.log("Sending custom YCloud message...", {
       campaignName: params.campaignName,
       destination: params.destination,
       userName: params.userName,
       source: params.source
     });
     
-    const { data, error } = await supabase.functions.invoke('send-aisensy-message', {
+    const { data, error } = await supabase.functions.invoke('send-ycloud-message', {
       body: params
     });
 
     if (error) {
-      console.error("Error in AiSensy function call:", error);
+      console.error("Error in YCloud function call:", error);
       throw error;
     }
 
     if (!data.success) {
-      console.error("Error from AiSensy function:", data.error);
+      console.error("Error from YCloud function:", data.error);
       return {
         success: false,
-        error: data.error || "Unknown error from AiSensy"
+        error: data.error || "Unknown error from YCloud"
       };
     }
 
-    console.log("Custom AiSensy message sent successfully");
+    console.log("Custom YCloud message sent successfully");
     return {
       success: true,
-      message: "WhatsApp message sent successfully",
-      aisensyResponse: data.aisensyResponse
+      message: "WhatsApp message sent successfully via YCloud",
+      ycloudResponse: data.ycloudResponse
     };
     
   } catch (error) {
-    console.error("Error sending custom AiSensy message:", error);
+    console.error("Error sending custom YCloud message:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unexpected error sending message"
@@ -76,7 +75,7 @@ export async function sendCustomAisensyMessage(
 }
 
 /**
- * Send form completion message with new welcome3 campaign
+ * Send form completion message with new simulation_c_* templates
  * @param firstName - User's first name
  * @param phoneNumber - Phone number in format +390000000000
  * @param consultationRequest - Whether user requested consultation
@@ -86,8 +85,8 @@ export async function sendFormCompletionMessage(
   firstName: string,
   phoneNumber: string,
   consultationRequest: boolean = false
-): Promise<AisensyMessageResult> {
-  return sendCustomAisensyMessage({
+): Promise<YCloudMessageResult> {
+  return sendCustomYCloudMessage({
     campaignName: consultationRequest ? 'welcome3si' : 'welcome3no',
     destination: phoneNumber,
     userName: firstName,
@@ -103,7 +102,7 @@ export async function sendFormCompletionMessage(
 }
 
 /**
- * Send simulation saved message with link_simulazione_salvata campaign
+ * Send simulation saved message with simulation_save template
  * @param firstName - User's first name
  * @param phoneNumber - Phone number in format +390000000000
  * @param resumeCode - The simulation resume code
@@ -115,8 +114,8 @@ export async function sendSimulationSavedMessage(
   phoneNumber: string,
   resumeCode: string,
   expirationDate: string
-): Promise<AisensyMessageResult> {
-  return sendCustomAisensyMessage({
+): Promise<YCloudMessageResult> {
+  return sendCustomYCloudMessage({
     campaignName: 'link_simulazione_salvata',
     destination: phoneNumber,
     userName: firstName,
@@ -151,8 +150,8 @@ export async function sendNotificationMessage(
     tags?: string[];
     attributes?: Record<string, string>;
   }
-): Promise<AisensyMessageResult> {
-  return sendCustomAisensyMessage({
+): Promise<YCloudMessageResult> {
+  return sendCustomYCloudMessage({
     campaignName,
     destination: phoneNumber,
     userName: firstName,
@@ -177,13 +176,13 @@ export async function sendPromotionalMessage(
   phoneNumber: string,
   options?: {
     source?: string;
-    media?: AisensyMedia;
+    media?: YCloudMedia;
     templateParams?: string[];
     tags?: string[];
     attributes?: Record<string, string>;
   }
-): Promise<AisensyMessageResult> {
-  return sendCustomAisensyMessage({
+): Promise<YCloudMessageResult> {
+  return sendCustomYCloudMessage({
     campaignName,
     destination: phoneNumber,
     userName: firstName,
@@ -215,8 +214,8 @@ export async function sendLocationMessage(
     tags?: string[];
     attributes?: Record<string, string>;
   }
-): Promise<AisensyMessageResult> {
-  return sendCustomAisensyMessage({
+): Promise<YCloudMessageResult> {
+  return sendCustomYCloudMessage({
     campaignName,
     destination: phoneNumber,
     userName: firstName,
@@ -232,10 +231,10 @@ export async function sendLocationMessage(
  * Backward compatibility function - uses the new form completion method
  * @deprecated Use sendFormCompletionMessage instead
  */
-export async function sendAisensyMessage(
+export async function sendYCloudMessage(
   firstName: string,
   phoneNumber: string
-): Promise<AisensyMessageResult> {
-  console.warn("sendAisensyMessage is deprecated, use sendFormCompletionMessage instead");
+): Promise<YCloudMessageResult> {
+  console.warn("sendYCloudMessage is deprecated, use sendFormCompletionMessage instead");
   return sendFormCompletionMessage(firstName, phoneNumber);
 }
