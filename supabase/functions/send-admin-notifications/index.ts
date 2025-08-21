@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
         
         const { data: result, error } = await supabase.functions.invoke('send-ycloud-message', {
           body: {
-            campaignName: 'avvisoadmin1',
+            templateName: 'admin_notification_new_simulation',
             destination: admin.phone_full,
             userName: admin.admin_display_name,
             source: 'admin-notification',

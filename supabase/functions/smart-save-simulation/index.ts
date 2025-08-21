@@ -52,7 +52,7 @@ async function sendWhatsAppNotification(
     
     const { data, error } = await supabase.functions.invoke('send-ycloud-message', {
       body: {
-        campaignName: 'link_simulazione_salvata2',
+        templateName: 'simulation_save',
         destination: contactData.phone,
         userName: firstName,
         source: 'simulation-saved',

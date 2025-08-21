@@ -105,7 +105,7 @@ serve(async (req) => {
           timeZone: 'Europe/Rome'
         });
 
-        // Prepare AiSensy message parameters
+        // Prepare YCloud template message parameters
         const consultingText = leadData.consulting ? 'Si ✅' : 'No ❌';
         const leadName = `${leadData.first_name || ''} ${leadData.last_name || ''}`.trim() || 'N/A';
         const leadPhone = leadData.phone_number 
@@ -124,20 +124,20 @@ serve(async (req) => {
 
         console.log(`Sending reminder for lead ${leadData.id} to admin ${adminData.admin_name}`);
         
-        // Prepare payload for send-aisensy-message edge function
-        const aisensyPayload = {
-          campaignName: 'reminderadmin1',
+        // Prepare payload for send-ycloud-message edge function
+        const ycloudPayload = {
+          templateName: 'admin_notification_reminder',
           destination: adminData.phone_number,
           userName: 'GoMutui',
           templateParams: messageParams,
-          source: 'new-api'
+          source: 'reminder-api'
         };
 
-        console.log(`Calling send-ycloud-message edge function for lead ${leadData.id}:`, JSON.stringify(aisensyPayload, null, 2));
+        console.log(`Calling send-ycloud-message edge function for lead ${leadData.id}:`, JSON.stringify(ycloudPayload, null, 2));
 
         // Call the send-ycloud-message edge function
         const { data, error } = await supabase.functions.invoke('send-ycloud-message', {
-          body: aisensyPayload
+          body: ycloudPayload
         });
 
         if (error) {

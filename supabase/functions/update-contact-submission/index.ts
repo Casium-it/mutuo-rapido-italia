@@ -177,7 +177,7 @@ Deno.serve(async (req) => {
     try {
       const { data: whatsappResult, error: whatsappError } = await supabase.functions.invoke('send-ycloud-message', {
         body: {
-          campaignName: consulting ? 'welcome3si' : 'welcome3no',
+          templateName: consulting ? 'simulation_c_yes' : 'simulation_c_no',
           destination: formattedPhone,
           userName: firstName,
           source: 'form-completion',

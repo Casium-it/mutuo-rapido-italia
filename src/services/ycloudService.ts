@@ -7,7 +7,7 @@ export type YCloudMedia = {
 };
 
 export type YCloudMessageParams = {
-  campaignName: string;
+  templateName: string;
   destination: string;
   userName: string;
   source?: string;
@@ -26,7 +26,7 @@ export type YCloudMessageResult = {
 };
 
 /**
- * Generic function to send any YCloud message
+ * Generic function to send any YCloud template message
  * @param params - Complete YCloud message parameters
  * @returns Result of the operation
  */
@@ -34,8 +34,8 @@ export async function sendCustomYCloudMessage(
   params: YCloudMessageParams
 ): Promise<YCloudMessageResult> {
   try {
-    console.log("Sending custom YCloud message...", {
-      campaignName: params.campaignName,
+    console.log("Sending custom YCloud template message...", {
+      templateName: params.templateName,
       destination: params.destination,
       userName: params.userName,
       source: params.source
@@ -87,7 +87,7 @@ export async function sendFormCompletionMessage(
   consultationRequest: boolean = false
 ): Promise<YCloudMessageResult> {
   return sendCustomYCloudMessage({
-    campaignName: consultationRequest ? 'welcome3si' : 'welcome3no',
+    templateName: consultationRequest ? 'simulation_c_yes' : 'simulation_c_no',
     destination: phoneNumber,
     userName: firstName,
     source: 'form-completion',
@@ -116,7 +116,7 @@ export async function sendSimulationSavedMessage(
   expirationDate: string
 ): Promise<YCloudMessageResult> {
   return sendCustomYCloudMessage({
-    campaignName: 'link_simulazione_salvata',
+    templateName: 'simulation_save',
     destination: phoneNumber,
     userName: firstName,
     source: 'simulation-saved',
@@ -134,14 +134,14 @@ export async function sendSimulationSavedMessage(
 
 /**
  * Send notification message
- * @param campaignName - Name of the notification campaign
+ * @param templateName - Name of the YCloud template
  * @param firstName - User's first name
  * @param phoneNumber - Phone number in format +390000000000
  * @param options - Additional options for the message
  * @returns Result of the operation
  */
 export async function sendNotificationMessage(
-  campaignName: string,
+  templateName: string,
   firstName: string,
   phoneNumber: string,
   options?: {
@@ -152,7 +152,7 @@ export async function sendNotificationMessage(
   }
 ): Promise<YCloudMessageResult> {
   return sendCustomYCloudMessage({
-    campaignName,
+    templateName,
     destination: phoneNumber,
     userName: firstName,
     source: options?.source || 'notification',
@@ -164,14 +164,14 @@ export async function sendNotificationMessage(
 
 /**
  * Send promotional message with media support
- * @param campaignName - Name of the promotional campaign
+ * @param templateName - Name of the YCloud template
  * @param firstName - User's first name
  * @param phoneNumber - Phone number in format +390000000000
  * @param options - Additional options for the promotional message
  * @returns Result of the operation
  */
 export async function sendPromotionalMessage(
-  campaignName: string,
+  templateName: string,
   firstName: string,
   phoneNumber: string,
   options?: {
@@ -183,7 +183,7 @@ export async function sendPromotionalMessage(
   }
 ): Promise<YCloudMessageResult> {
   return sendCustomYCloudMessage({
-    campaignName,
+    templateName,
     destination: phoneNumber,
     userName: firstName,
     source: options?.source || 'promotional',
@@ -196,7 +196,7 @@ export async function sendPromotionalMessage(
 
 /**
  * Send message with location
- * @param campaignName - Name of the campaign
+ * @param templateName - Name of the YCloud template
  * @param firstName - User's first name
  * @param phoneNumber - Phone number in format +390000000000
  * @param location - Location data (latitude, longitude, name & address)
@@ -204,7 +204,7 @@ export async function sendPromotionalMessage(
  * @returns Result of the operation
  */
 export async function sendLocationMessage(
-  campaignName: string,
+  templateName: string,
   firstName: string,
   phoneNumber: string,
   location: string,
@@ -216,7 +216,7 @@ export async function sendLocationMessage(
   }
 ): Promise<YCloudMessageResult> {
   return sendCustomYCloudMessage({
-    campaignName,
+    templateName,
     destination: phoneNumber,
     userName: firstName,
     location,

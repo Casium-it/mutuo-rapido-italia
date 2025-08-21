@@ -7,7 +7,7 @@ const corsHeaders = {
 
 // YCloud API interface
 interface YCloudRequestBody {
-  campaignName: string;
+  templateName: string;
   destination: string;
   userName: string;
   source?: string;
@@ -21,17 +21,7 @@ interface YCloudRequestBody {
   location?: string;
 }
 
-// Template mapping from old campaigns to new YCloud templates
-const CAMPAIGN_TEMPLATE_MAPPING: Record<string, string> = {
-  'welcome3si': 'simulation_c_yes',
-  'welcome3no': 'simulation_c_no',
-  'link_simulazione_salvata': 'simulation_save',
-  'link_simulazione_salvata2': 'simulation_save',
-  'avvisoadmin1': 'admin_notification_new_simulation',
-  'reminderadmin1': 'admin_notification_reminder'
-};
-
-// Media URL mapping
+// Media URL mapping for YCloud templates
 const TEMPLATE_MEDIA_MAPPING: Record<string, string> = {
   'simulation_c_yes': 'https://i.ibb.co/20RqqT9k/banner.png',
   'simulation_c_no': 'https://i.ibb.co/20RqqT9k/banner.png',
@@ -100,8 +90,8 @@ serve(async (req) => {
     const requestBody: YCloudRequestBody = await req.json();
     
     // Validate required fields
-    if (!requestBody.campaignName) {
-      throw new Error('campaignName is required');
+    if (!requestBody.templateName) {
+      throw new Error('templateName is required');
     }
     if (!requestBody.destination) {
       throw new Error('destination is required');
@@ -110,8 +100,7 @@ serve(async (req) => {
       throw new Error('userName is required');
     }
 
-    // Map old campaign name to new template name
-    const templateName = CAMPAIGN_TEMPLATE_MAPPING[requestBody.campaignName] || requestBody.campaignName;
+    const templateName = requestBody.templateName;
     
     // Normalize the phone number for validation and API call
     const normalizedPhone = normalizePhoneNumber(requestBody.destination);
@@ -126,8 +115,7 @@ serve(async (req) => {
       throw new Error(`destination must be a valid phone number with country code (e.g., +39xxxxxxxxx). Received: "${requestBody.destination}"`);
     }
 
-    console.log('Sending YCloud message with parameters:', {
-      originalCampaign: requestBody.campaignName,
+    console.log('Sending YCloud template message with parameters:', {
       templateName: templateName,
       destination: requestBody.destination,
       normalizedDestination: normalizedPhone,
