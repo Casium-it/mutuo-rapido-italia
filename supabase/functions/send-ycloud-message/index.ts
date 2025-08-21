@@ -27,7 +27,7 @@ const CAMPAIGN_TEMPLATE_MAPPING: Record<string, string> = {
   'welcome3no': 'simulation_c_no',
   'link_simulazione_salvata': 'simulation_save',
   'link_simulazione_salvata2': 'simulation_save',
-  'avvisoadmin1': 'admin_notification_new_lead',
+  'avvisoadmin1': 'admin_notification_new_simulation',
   'reminderadmin1': 'admin_notification_reminder'
 };
 
@@ -36,7 +36,7 @@ const TEMPLATE_MEDIA_MAPPING: Record<string, string> = {
   'simulation_c_yes': 'https://i.ibb.co/20RqqT9k/banner.png',
   'simulation_c_no': 'https://i.ibb.co/20RqqT9k/banner.png',
   'simulation_save': 'https://i.ibb.co/DfWNjp7g/simulazione-salvata.png',
-  'admin_notification_new_lead': '',
+  'admin_notification_new_simulation': '',
   'admin_notification_reminder': ''
 };
 
