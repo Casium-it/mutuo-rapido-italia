@@ -113,16 +113,14 @@ const SimulatorCarousel: React.FC = () => {
                   </button>)}
               </div>
 
-              {/* Arrow buttons - stile nero senza verde */}
-              <div className="flex gap-2 ml-4">
-                <Button size="icon" onClick={prevSlide} className="h-10 w-10 bg-black hover:bg-gray-800 text-white rounded-[12px] shadow-[0_3px_0_0_#374151] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#374151] transition-all duration-200 relative overflow-hidden group" aria-label="Slide precedente">
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                  <ChevronLeft className="h-5 w-5 stroke-[2.5] relative z-10" />
-                </Button>
-                <Button size="icon" onClick={nextSlide} className="h-10 w-10 bg-black hover:bg-gray-800 text-white rounded-[12px] shadow-[0_3px_0_0_#374151] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#374151] transition-all duration-200 relative overflow-hidden group" aria-label="Slide successivo">
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                  <ChevronRight className="h-5 w-5 stroke-[2.5] relative z-10" />
-                </Button>
+              {/* Arrow buttons - frecce semplici nere */}
+              <div className="flex gap-4 ml-4">
+                <button onClick={prevSlide} className="text-black hover:text-gray-700 text-2xl font-bold transition-colors duration-200 cursor-pointer" aria-label="Slide precedente">
+                  &lt;
+                </button>
+                <button onClick={nextSlide} className="text-black hover:text-gray-700 text-2xl font-bold transition-colors duration-200 cursor-pointer" aria-label="Slide successivo">
+                  &gt;
+                </button>
               </div>
             </div>
 
