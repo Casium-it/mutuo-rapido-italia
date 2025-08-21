@@ -4,8 +4,8 @@ const BankComparisonMockup: React.FC = () => {
   return (
     <div className="w-full h-full flex items-center justify-center flex-shrink-0">
       <img 
-        src="/lovable-uploads/54e81cff-4dd5-48f8-a09f-2093c023775f.png" 
-        alt="Il tuo consulente mockup"
+        src="/lovable-uploads/efb4b871-5e27-45bb-a040-67fd1c57bea4.png" 
+        alt="Consulente personale mockup"
         className="w-full h-full object-contain"
       />
     </div>
