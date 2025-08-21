@@ -111,10 +111,10 @@ Deno.serve(async (req) => {
             userName: admin.admin_display_name,
             source: 'admin-notification',
             templateParams: [
+              consultingStatus,
               submitterName,
               ageData,
               provinceData,
-              consultingStatus,
               submitterPhone
             ]
           }
