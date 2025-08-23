@@ -39,9 +39,9 @@ const SimulatorCarousel: React.FC = () => {
   const SLIDE_DURATION = 6000; // 6 secondi per slide
   const PROGRESS_INTERVAL = 50; // Aggiorna il progresso ogni 50ms
 
-  // Fade-in animation quando la sezione diventa visibile al 20%
+  // Fade-in animation quando la sezione diventa visibile al 50%
   const [carouselRef, isCarouselInView] = useIntersectionObserver({
-    threshold: 0.2,
+    threshold: 0.5, // 50% della sezione deve essere visibile
     rootMargin: '0px'
   });
 
@@ -60,7 +60,7 @@ const SimulatorCarousel: React.FC = () => {
     setProgress(0);
   };
   const startTimer = () => {
-    if (!isPlaying) return;
+    if (!isPlaying || !isCarouselInView) return; // Solo se è in playing e visibile al 50%
     resetTimer();
 
     // Timer per il progresso
@@ -93,7 +93,7 @@ const SimulatorCarousel: React.FC = () => {
 
   // Auto-advance logic
   useEffect(() => {
-    if (isPlaying) {
+    if (isPlaying && isCarouselInView) {
       startTimer();
     } else {
       resetTimer();
@@ -101,7 +101,7 @@ const SimulatorCarousel: React.FC = () => {
     return () => {
       resetTimer();
     };
-  }, [currentSlide, isPlaying]);
+  }, [currentSlide, isPlaying, isCarouselInView]);
 
   // Cleanup on unmount
   useEffect(() => {
