@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import AnalysisDeepMockup from "@/components/mockups/AnalysisDeepMockup";
 import SimulatorMockup from "@/components/mockups/SimulatorMockup";
 import BankComparisonMockup from "@/components/mockups/BankComparisonMockup";
+import { useImagePreloader } from "@/hooks/useImagePreloader";
 
 interface CarouselSlide {
   id: number;
@@ -36,6 +37,15 @@ const SimulatorCarousel: React.FC = () => {
   const progressRef = useRef<NodeJS.Timeout | null>(null);
   const SLIDE_DURATION = 6000; // 6 secondi per slide
   const PROGRESS_INTERVAL = 50; // Aggiorna il progresso ogni 50ms
+
+  // Preload delle immagini del carousel per evitare ritardi di caricamento
+  const carouselImages = [
+    "/lovable-uploads/89fbdaf4-4951-4b60-9388-0ddbaa610931.png", // AnalysisDeepMockup
+    "/lovable-uploads/541599e5-f622-495d-987c-43e6cfce8499.png", // SimulatorMockup
+    "/lovable-uploads/efb4b871-5e27-45bb-a040-67fd1c57bea4.png"  // BankComparisonMockup
+  ];
+  
+  useImagePreloader(carouselImages, 1500); // Inizia il preload dopo 1.5 secondi
 
   const resetTimer = () => {
     if (intervalRef.current) clearInterval(intervalRef.current);
@@ -149,6 +159,13 @@ const SimulatorCarousel: React.FC = () => {
             </div>
           </div>
 
+        </div>
+        
+        {/* Immagini nascoste per preload e cache del browser */}
+        <div className="hidden" aria-hidden="true">
+          {carouselImages.map((src, index) => (
+            <img key={index} src={src} alt="" loading="eager" />
+          ))}
         </div>
       </div>
     </section>;
