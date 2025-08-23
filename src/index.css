@@ -199,6 +199,14 @@
     height: 4px; /* sottile ma visibile */
     background-color: hsl(var(--accent));
     border-radius: 9999px;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.7s ease-out;
+    transition-delay: var(--underline-delay, 0ms);
+  }
+  
+  .feature-title.animate-underline::after {
+    transform: scaleX(1);
   }
 
   /* Legacy short underline utility (kept if needed elsewhere) */

@@ -47,20 +47,15 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
                     {item.imgSrc ? <img src={item.imgSrc} alt={item.alt || item.title} className="w-full h-full object-contain" loading="lazy" width={112} height={112} decoding="async" /> : null}
                   </div>
                   <div className="flex-1 mt-2 md:mt-3">
-                    <h3 className={`feature-title text-xl md:text-2xl font-semibold text-black mb-3 relative inline-block transition-all duration-700 ${
-                        isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                    <h3 className={`feature-title text-xl md:text-2xl font-semibold text-black mb-3 transition-all duration-700 ${
+                        isInView ? 'opacity-100 translate-y-0 animate-underline' : 'opacity-0 translate-y-4'
                       }`}
-                      style={{ transitionDelay: `${idx * 200 + 300}ms` }}
+                      style={{ 
+                        transitionDelay: `${idx * 200 + 300}ms`,
+                        '--underline-delay': `${idx * 200 + 600}ms`
+                      } as React.CSSProperties & { '--underline-delay': string }}
                     >
-                      <span className="relative">
-                        {idx === 0 ? "Simulazioni vere" : idx === 1 ? "Consulenti esperti" : "Mutui difficili"}
-                        <span 
-                          className={`absolute bottom-0 left-0 w-full h-0.5 bg-accent origin-left transition-transform duration-700 ${
-                            isInView ? 'scale-x-100' : 'scale-x-0'
-                          }`}
-                          style={{ transitionDelay: `${idx * 200 + 600}ms` }}
-                        />
-                      </span>
+                      {idx === 0 ? "Simulazioni vere" : idx === 1 ? "Consulenti esperti" : "Mutui difficili"}
                     </h3>
                     <p className={`text-lg text-muted-foreground leading-relaxed transition-all duration-700 ${
                         isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
