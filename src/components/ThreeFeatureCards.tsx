@@ -55,7 +55,7 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
                       <span className="relative">
                         {idx === 0 ? "Simulazioni vere" : idx === 1 ? "Consulenti esperti" : "Mutui difficili"}
                         <span 
-                          className={`absolute bottom-0 left-0 w-full h-0.5 bg-[#245C4F] origin-left transition-transform duration-700 ${
+                          className={`absolute bottom-0 left-0 w-full h-0.5 bg-accent origin-left transition-transform duration-700 ${
                             isInView ? 'scale-x-100' : 'scale-x-0'
                           }`}
                           style={{ transitionDelay: `${idx * 200 + 600}ms` }}
