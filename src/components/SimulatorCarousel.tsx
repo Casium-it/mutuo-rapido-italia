@@ -137,13 +137,13 @@ const SimulatorCarousel: React.FC = () => {
                   </button>)}
               </div>
 
-              {/* Arrow buttons - frecce semplici nere */}
-              <div className="flex gap-4 ml-4">
-                <button onClick={prevSlide} className="text-black hover:text-gray-700 text-2xl font-bold transition-colors duration-200 cursor-pointer" aria-label="Slide precedente">
-                  &lt;
+              {/* Arrow buttons - frecce semplici */}
+              <div className="flex gap-2 ml-4">
+                <button onClick={prevSlide} className="text-gray-600 hover:text-gray-800 transition-colors duration-200 cursor-pointer p-1" aria-label="Slide precedente">
+                  <ChevronLeft size={20} strokeWidth={1.5} />
                 </button>
-                <button onClick={nextSlide} className="text-black hover:text-gray-700 text-2xl font-bold transition-colors duration-200 cursor-pointer" aria-label="Slide successivo">
-                  &gt;
+                <button onClick={nextSlide} className="text-gray-600 hover:text-gray-800 transition-colors duration-200 cursor-pointer p-1" aria-label="Slide successivo">
+                  <ChevronRight size={20} strokeWidth={1.5} />
                 </button>
               </div>
             </div>
