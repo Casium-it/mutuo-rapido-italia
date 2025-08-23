@@ -22,45 +22,58 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
     rootMargin: '0px 0px -10% 0px'
   });
 
+  // Delay aggiuntivo di 1 secondo dopo che la sezione è visibile
+  const [shouldAnimate, setShouldAnimate] = React.useState(false);
+  
+  React.useEffect(() => {
+    if (isInView) {
+      const timer = setTimeout(() => {
+        setShouldAnimate(true);
+      }, 1000); // 1 secondo di delay
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isInView]);
+
   return <section ref={sectionRef} className="mt-4 md:mt-6 bg-white py-4 md:py-6 min-h-[200px] md:min-h-[220px] flex items-center justify-center max-w-7xl mx-auto w-full px-4 md:px-8">
         <div className="relative w-full">
           {/* Blocchi - griglia: mobile impilate, desktop in una riga */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-5 relative z-10">
             {items.slice(0, 3).map((item, idx) => <article 
                 key={idx} 
-                className={`feature-card bg-white border border-gray-100 shadow-lg hover:translate-y-[1px] hover:shadow-xl transition-all duration-500 rounded-[12px] cursor-pointer p-5 md:p-7 min-h-[180px] md:min-h-[200px] h-full
-                  ${isInView 
+                className={`feature-card bg-white border border-gray-100 shadow-lg hover:translate-y-[1px] hover:shadow-xl transition-all duration-700 rounded-[12px] cursor-pointer p-5 md:p-7 min-h-[180px] md:min-h-[200px] h-full
+                  ${shouldAnimate 
                     ? 'opacity-100 translate-y-0 animate-fade-in' 
                     : 'opacity-0 translate-y-8'
                   }`}
                 style={{
-                  animationDelay: isInView ? `${idx * 200}ms` : '0ms'
+                  animationDelay: shouldAnimate ? `${idx * 300}ms` : '0ms'
                 }}
               >
                 <div className="flex flex-col items-center text-center gap-5 md:gap-7 h-full">
-                  <div className={`w-24 h-24 md:w-28 md:h-28 flex-shrink-0 mx-auto transition-all duration-700 ${
-                      isInView ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+                  <div className={`w-24 h-24 md:w-28 md:h-28 flex-shrink-0 mx-auto transition-all duration-1000 ${
+                      shouldAnimate ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
                     }`}
-                    style={{ transitionDelay: `${idx * 200 + 100}ms` }}
+                    style={{ transitionDelay: `${idx * 300 + 150}ms` }}
                     aria-hidden={!!!item.imgSrc}
                   >
                     {item.imgSrc ? <img src={item.imgSrc} alt={item.alt || item.title} className="w-full h-full object-contain" loading="lazy" width={112} height={112} decoding="async" /> : null}
                   </div>
                   <div className="flex-1 mt-2 md:mt-3">
-                    <h3 className={`feature-title text-xl md:text-2xl font-semibold text-black mb-3 transition-all duration-700 ${
-                        isInView ? 'opacity-100 translate-y-0 animate-underline' : 'opacity-0 translate-y-4'
+                    <h3 className={`feature-title text-xl md:text-2xl font-semibold text-black mb-3 transition-all duration-1000 ${
+                        shouldAnimate ? 'opacity-100 translate-y-0 animate-underline' : 'opacity-0 translate-y-4'
                       }`}
                       style={{ 
-                        transitionDelay: `${idx * 200 + 300}ms`,
-                        '--underline-delay': `${idx * 200 + 600}ms`
+                        transitionDelay: `${idx * 300 + 450}ms`,
+                        '--underline-delay': `${idx * 300 + 900}ms`
                       } as React.CSSProperties & { '--underline-delay': string }}
                     >
                       {idx === 0 ? "Simulazioni vere" : idx === 1 ? "Consulenti esperti" : "Mutui difficili"}
                     </h3>
-                    <p className={`text-lg text-muted-foreground leading-relaxed transition-all duration-700 ${
-                        isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                    <p className={`text-lg text-muted-foreground leading-relaxed transition-all duration-1000 ${
+                        shouldAnimate ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
                       }`}
-                      style={{ transitionDelay: `${idx * 200 + 400}ms` }}
+                      style={{ transitionDelay: `${idx * 300 + 600}ms` }}
                     >
                       {idx === 0 ? "Analisi approfondita per capire se il mutuo si può fare, davvero." : idx === 1 ? "Prima consulenza gratuita con consulenti esperti in tutta Italia." : "Mutui 95% e 100%, anche per le situazioni più complesse."}
                     </p>

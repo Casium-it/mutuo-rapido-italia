@@ -5,6 +5,7 @@ import AnalysisDeepMockup from "@/components/mockups/AnalysisDeepMockup";
 import SimulatorMockup from "@/components/mockups/SimulatorMockup";
 import BankComparisonMockup from "@/components/mockups/BankComparisonMockup";
 import { useImagePreloader } from "@/hooks/useImagePreloader";
+import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
 
 interface CarouselSlide {
   id: number;
@@ -37,6 +38,12 @@ const SimulatorCarousel: React.FC = () => {
   const progressRef = useRef<NodeJS.Timeout | null>(null);
   const SLIDE_DURATION = 6000; // 6 secondi per slide
   const PROGRESS_INTERVAL = 50; // Aggiorna il progresso ogni 50ms
+
+  // Fade-in animation quando la sezione diventa visibile al 20%
+  const [carouselRef, isCarouselInView] = useIntersectionObserver({
+    threshold: 0.2,
+    rootMargin: '0px'
+  });
 
   // Preload delle immagini del carousel per evitare ritardi di caricamento
   const carouselImages = [
@@ -104,7 +111,14 @@ const SimulatorCarousel: React.FC = () => {
   }, []);
   const currentSlideData = slides[currentSlide];
   const CurrentComponent = currentSlideData.component;
-  return <section className="bg-[#f7f5f2] py-12 md:py-16" onMouseEnter={() => setIsPlaying(false)} onMouseLeave={() => setIsPlaying(true)}>
+  return <section 
+      ref={carouselRef}
+      className={`bg-[#f7f5f2] py-12 md:py-16 transition-opacity duration-1000 ${
+        isCarouselInView ? 'opacity-100 animate-fade-in' : 'opacity-0'
+      }`}
+      onMouseEnter={() => setIsPlaying(false)} 
+      onMouseLeave={() => setIsPlaying(true)}
+    >
       <div className="max-w-6xl mx-auto px-4 md:px-6">
         
         {/* Content Grid */}
