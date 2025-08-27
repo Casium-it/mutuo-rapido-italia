@@ -5,13 +5,10 @@ import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { LoginButton } from "@/components/LoginButton";
 import { Users, Award, MapPin, Heart } from "lucide-react";
-
 const ChiSiamo = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-
-  return (
-    <div className="min-h-screen flex flex-col bg-[#f7f5f2]">
+  return <div className="min-h-screen flex flex-col bg-[#f7f5f2]">
       {/* Header fisso */}
       <header className="fixed top-0 left-0 right-0 bg-[#f7f5f2]/95 backdrop-blur-sm z-50 py-6 px-4 md:px-6 flex items-center justify-between shadow-sm">
         {/* Logo */}
@@ -20,8 +17,7 @@ const ChiSiamo = () => {
         </div>
         
         {/* Desktop only navigation - centered */}
-        {!isMobile && (
-          <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-4">
+        {!isMobile && <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-4">
             <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]" onClick={() => navigate('/simulazioni')}>
               Simulazione
             </Button>
@@ -34,15 +30,11 @@ const ChiSiamo = () => {
             <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]" onClick={() => window.open('https://wa.me/393518681491', '_blank')}>
               Contatti
             </Button>
-          </div>
-        )}
+          </div>}
         
         {/* CTA Button */}
         <div className="flex items-center">
-          <Button 
-            className="bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-[12px] px-6 shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all" 
-            onClick={() => navigate('/simulazioni')}
-          >
+          <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-[12px] px-6 shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all" onClick={() => navigate('/simulazioni')}>
             Simula Ora
           </Button>
         </div>
@@ -71,9 +63,7 @@ const ChiSiamo = () => {
               <p className="text-gray-600 mb-4">
                 Crediamo che ogni persona meriti di realizzare il sogno della casa propria. Per questo lavoriamo ogni giorno per democratizzare l'accesso ai mutui, offrendo consulenza personalizzata e soluzioni innovative.
               </p>
-              <p className="text-gray-600">
-                Con oltre 100 banche partner e una rete di consulenti esperti su tutto il territorio nazionale, siamo in grado di trovare la soluzione migliore per ogni situazione, anche quelle più complesse.
-              </p>
+              <p className="text-gray-600">Con oltre 100 banche nella rete dei nostri partner e una rete di consulenti partner esperti su tutto il territorio nazionale, siamo in grado di trovare la soluzione migliore per ogni situazione, anche quelle più complesse.</p>
             </div>
             <div className="bg-gradient-to-br from-[#245C4F] to-[#1e4f44] rounded-lg h-64 flex items-center justify-center">
               <Heart className="w-16 h-16 text-white" />
@@ -88,9 +78,7 @@ const ChiSiamo = () => {
               <Users className="w-8 h-8 text-white" />
             </div>
             <h3 className="text-xl font-bold mb-3 text-[#245C4F]">Esperienza</h3>
-            <p className="text-gray-600">
-              Oltre 10 anni di esperienza nel settore dei mutui, con migliaia di famiglie aiutate a realizzare i loro sogni abitativi.
-            </p>
+            <p className="text-gray-600">Oltre 10 anni di esperienza nel settore dei mutui con i nostri partner, con migliaia di famiglie aiutate a realizzare i loro sogni abitativi.</p>
           </div>
 
           <div className="bg-white rounded-lg p-6 shadow-md text-center">
@@ -130,18 +118,18 @@ const ChiSiamo = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             <div>
               <div className="text-3xl font-bold mb-2">100+</div>
-              <div className="text-sm opacity-90">Banche Partner</div>
+              <div className="text-sm opacity-90">Banche dei Partner</div>
             </div>
             <div>
               <div className="text-3xl font-bold mb-2">90+</div>
-              <div className="text-sm opacity-90">Consulenti</div>
+              <div className="text-sm opacity-90">Consulenti Partner</div>
             </div>
             <div>
               <div className="text-3xl font-bold mb-2">5000+</div>
-              <div className="text-sm opacity-90">Mutui Erogati</div>
+              <div className="text-sm opacity-90">Mutui Erogati dalla Rete</div>
             </div>
             <div>
-              <div className="text-3xl font-bold mb-2">4.8/5</div>
+              <div className="text-3xl font-bold mb-2">4.9/5</div>
               <div className="text-sm opacity-90">Soddisfazione Clienti</div>
             </div>
           </div>
@@ -151,10 +139,7 @@ const ChiSiamo = () => {
         <div className="text-center bg-white rounded-lg p-8 shadow-md">
           <h3 className="text-2xl font-bold mb-4 text-[#245C4F]">Inizia il tuo percorso verso la casa dei tuoi sogni</h3>
           <p className="text-gray-600 mb-6">Affidati alla nostra esperienza per trovare il mutuo perfetto per te</p>
-          <Button 
-            className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-8 py-4 text-lg rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all"
-            onClick={() => navigate('/simulazioni')}
-          >
+          <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-8 py-4 text-lg rounded-[12px] shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all" onClick={() => navigate('/simulazioni')}>
             Simula il tuo mutuo
           </Button>
         </div>
@@ -174,8 +159,6 @@ const ChiSiamo = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default ChiSiamo;
