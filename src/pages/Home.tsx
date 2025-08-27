@@ -84,7 +84,7 @@ const HomePage = () => {
     trackWhatsAppContact('home_page');
     // Track custom exit since user is leaving for WhatsApp
     trackCustomExit('whatsapp_contact');
-    window.open('https://wa.me/393518681491/?text=Stavo+navigando+sul+vostro+sito+e+avrei+bisogno+di+contattare+il+team+di+supporto+di+GoMutuo+%28assistenza%29.', '_blank');
+    window.open('https://wa.me/393518681491/?text=Richiesta+supporto', '_blank');
   };
   const handleSimulationClick = (position: string) => {
     trackSimulationCTA(position);
