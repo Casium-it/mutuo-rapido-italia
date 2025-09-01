@@ -18,29 +18,29 @@ interface BlogArticle {
   id?: string;
   title: string;
   slug: string;
-  excerpt: string;
+  excerpt: string | null;
   content: string;
-  featured_image_url: string;
-  featured_image_alt: string;
+  featured_image_url: string | null;
+  featured_image_alt: string | null;
   author_name: string;
-  category_id: string;
+  category_id: string | null;
   status: 'draft' | 'published' | 'archived';
-  is_featured: boolean;
-  allow_comments: boolean;
+  is_featured: boolean | null;
+  allow_comments: boolean | null;
   
   // SEO fields
-  meta_title: string;
-  meta_description: string;
-  meta_keywords: string;
-  canonical_url: string;
+  meta_title: string | null;
+  meta_description: string | null;
+  meta_keywords: string | null;
+  canonical_url: string | null;
   
   // Social media
-  og_title: string;
-  og_description: string;
-  og_image_url: string;
-  twitter_title: string;
-  twitter_description: string;
-  twitter_image_url: string;
+  og_title: string | null;
+  og_description: string | null;
+  og_image_url: string | null;
+  twitter_title: string | null;
+  twitter_description: string | null;
+  twitter_image_url: string | null;
 }
 
 interface Category {
@@ -71,29 +71,29 @@ export default function AdminBlogEditor() {
   const [article, setArticle] = useState<BlogArticle>({
     title: '',
     slug: '',
-    excerpt: '',
+    excerpt: null,
     content: '',
-    featured_image_url: '',
-    featured_image_alt: '',
+    featured_image_url: null,
+    featured_image_alt: null,
     author_name: 'GoMutuo Team',
-    category_id: '',
+    category_id: null,
     status: 'draft',
     is_featured: false,
     allow_comments: true,
     
     // SEO fields
-    meta_title: '',
-    meta_description: '',
-    meta_keywords: '',
-    canonical_url: '',
+    meta_title: null,
+    meta_description: null,
+    meta_keywords: null,
+    canonical_url: null,
     
     // Social media
-    og_title: '',
-    og_description: '',
-    og_image_url: '',
-    twitter_title: '',
-    twitter_description: '',
-    twitter_image_url: '',
+    og_title: null,
+    og_description: null,
+    og_image_url: null,
+    twitter_title: null,
+    twitter_description: null,
+    twitter_image_url: null,
   });
 
   useEffect(() => {
@@ -188,19 +188,20 @@ export default function AdminBlogEditor() {
       ...prev,
       title,
       slug: prev.slug || generateSlug(title),
-      meta_title: prev.meta_title || title,
-      og_title: prev.og_title || title,
-      twitter_title: prev.twitter_title || title,
+      meta_title: prev.meta_title || title || null,
+      og_title: prev.og_title || title || null,
+      twitter_title: prev.twitter_title || title || null,
     }));
   };
 
   const handleExcerptChange = (excerpt: string) => {
+    const excerptValue = excerpt.trim() || null;
     setArticle(prev => ({
       ...prev,
-      excerpt,
-      meta_description: prev.meta_description || excerpt.substring(0, 160),
-      og_description: prev.og_description || excerpt,
-      twitter_description: prev.twitter_description || excerpt,
+      excerpt: excerptValue,
+      meta_description: prev.meta_description || (excerpt ? excerpt.substring(0, 160) : null),
+      og_description: prev.og_description || excerptValue,
+      twitter_description: prev.twitter_description || excerptValue,
     }));
   };
 
@@ -236,16 +237,63 @@ export default function AdminBlogEditor() {
     }
   };
 
+  const validateArticle = () => {
+    const errors: string[] = [];
+    
+    if (!article.title.trim()) errors.push("Il titolo è obbligatorio");
+    if (!article.content.trim()) errors.push("Il contenuto è obbligatorio");
+    if (!article.slug.trim()) errors.push("Lo slug è obbligatorio");
+    
+    return errors;
+  };
+
   const saveArticle = async (status?: 'draft' | 'published') => {
     try {
       setSaving(true);
       
+      // Validate required fields
+      const validationErrors = validateArticle();
+      if (validationErrors.length > 0) {
+        toast({
+          title: "Errore di validazione",
+          description: validationErrors.join(', '),
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Prepare article data with proper null handling
       const articleData = {
-        ...article,
+        title: article.title.trim(),
+        slug: article.slug.trim(),
+        excerpt: article.excerpt?.trim() || null,
+        content: article.content.trim(),
+        featured_image_url: article.featured_image_url?.trim() || null,
+        featured_image_alt: article.featured_image_alt?.trim() || null,
+        author_name: article.author_name,
+        category_id: article.category_id || null, // Critical fix: null instead of empty string
         status: status || article.status,
         published_at: status === 'published' && !article.id ? new Date().toISOString() : undefined,
         reading_time_minutes: Math.max(1, Math.ceil(article.content.split(' ').length / 200)),
+        is_featured: article.is_featured || false,
+        allow_comments: article.allow_comments !== false, // Default true
+        
+        // SEO fields
+        meta_title: article.meta_title?.trim() || null,
+        meta_description: article.meta_description?.trim() || null,
+        meta_keywords: article.meta_keywords?.trim() || null,
+        canonical_url: article.canonical_url?.trim() || null,
+        
+        // Social media
+        og_title: article.og_title?.trim() || null,
+        og_description: article.og_description?.trim() || null,
+        og_image_url: article.og_image_url?.trim() || null,
+        twitter_title: article.twitter_title?.trim() || null,
+        twitter_description: article.twitter_description?.trim() || null,
+        twitter_image_url: article.twitter_image_url?.trim() || null,
       };
+
+      console.log('Saving article data:', articleData); // Debug logging
 
       let savedArticle;
       
@@ -257,7 +305,10 @@ export default function AdminBlogEditor() {
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Update error:', error);
+          throw error;
+        }
         savedArticle = data;
       } else {
         const { data, error } = await supabase
@@ -266,7 +317,10 @@ export default function AdminBlogEditor() {
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Insert error:', error);
+          throw error;
+        }
         savedArticle = data;
       }
 
@@ -300,11 +354,24 @@ export default function AdminBlogEditor() {
         navigate(`/admin/articles/${savedArticle.id}/edit`);
       }
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving article:', error);
+      let errorMessage = "Impossibile salvare l'articolo";
+      
+      // Provide more specific error messages
+      if (error.message?.includes('violates foreign key constraint')) {
+        errorMessage = "Categoria non valida selezionata";
+      } else if (error.message?.includes('duplicate key value')) {
+        errorMessage = "Questo slug è già in uso";
+      } else if (error.message?.includes('violates check constraint')) {
+        errorMessage = "Dati non validi inseriti";
+      } else if (error.message) {
+        errorMessage = `Errore: ${error.message}`;
+      }
+      
       toast({
         title: "Errore",
-        description: "Impossibile salvare l'articolo",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -404,17 +471,17 @@ export default function AdminBlogEditor() {
                   </p>
                 </div>
                 
-                <div>
-                  <Label htmlFor="excerpt">Estratto</Label>
-                  <Textarea
-                    id="excerpt"
-                    value={article.excerpt}
-                    onChange={(e) => handleExcerptChange(e.target.value)}
-                    placeholder="Breve descrizione dell'articolo (usata per l'anteprima e SEO)..."
-                    className="mt-1"
-                    rows={3}
-                  />
-                </div>
+                 <div>
+                   <Label htmlFor="excerpt">Estratto</Label>
+                   <Textarea
+                     id="excerpt"
+                     value={article.excerpt || ''}
+                     onChange={(e) => handleExcerptChange(e.target.value)}
+                     placeholder="Breve descrizione dell'articolo (usata per l'anteprima e SEO)..."
+                     className="mt-1"
+                     rows={3}
+                   />
+                 </div>
                 
                 <div>
                   <Label htmlFor="content">Contenuto*</Label>
@@ -451,91 +518,91 @@ export default function AdminBlogEditor() {
                   <TabsContent value="basic" className="space-y-4 mt-4">
                     <div>
                       <Label htmlFor="meta_title">Meta Title</Label>
-                      <Input
-                        id="meta_title"
-                        value={article.meta_title}
-                        onChange={(e) => setArticle(prev => ({ ...prev, meta_title: e.target.value }))}
-                        placeholder="Titolo per i motori di ricerca"
-                        className="mt-1"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        {article.meta_title.length}/60 caratteri
-                      </p>
+                       <Input
+                         id="meta_title"
+                         value={article.meta_title || ''}
+                         onChange={(e) => setArticle(prev => ({ ...prev, meta_title: e.target.value || null }))}
+                         placeholder="Titolo per i motori di ricerca"
+                         className="mt-1"
+                       />
+                       <p className="text-xs text-gray-500 mt-1">
+                         {(article.meta_title || '').length}/60 caratteri
+                       </p>
                     </div>
                     
                     <div>
                       <Label htmlFor="meta_description">Meta Description</Label>
-                      <Textarea
-                        id="meta_description"
-                        value={article.meta_description}
-                        onChange={(e) => setArticle(prev => ({ ...prev, meta_description: e.target.value }))}
-                        placeholder="Descrizione per i risultati di ricerca"
-                        className="mt-1"
-                        rows={3}
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        {article.meta_description.length}/160 caratteri
-                      </p>
+                       <Textarea
+                         id="meta_description"
+                         value={article.meta_description || ''}
+                         onChange={(e) => setArticle(prev => ({ ...prev, meta_description: e.target.value || null }))}
+                         placeholder="Descrizione per i risultati di ricerca"
+                         className="mt-1"
+                         rows={3}
+                       />
+                       <p className="text-xs text-gray-500 mt-1">
+                         {(article.meta_description || '').length}/160 caratteri
+                       </p>
                     </div>
                     
                     <div>
                       <Label htmlFor="meta_keywords">Parole Chiave</Label>
-                      <Input
-                        id="meta_keywords"
-                        value={article.meta_keywords}
-                        onChange={(e) => setArticle(prev => ({ ...prev, meta_keywords: e.target.value }))}
-                        placeholder="mutuo, prima casa, finanziamenti"
-                        className="mt-1"
-                      />
+                       <Input
+                         id="meta_keywords"
+                         value={article.meta_keywords || ''}
+                         onChange={(e) => setArticle(prev => ({ ...prev, meta_keywords: e.target.value || null }))}
+                         placeholder="mutuo, prima casa, finanziamenti"
+                         className="mt-1"
+                       />
                     </div>
                   </TabsContent>
                   
                   <TabsContent value="social" className="space-y-4 mt-4">
                     <div>
                       <Label htmlFor="og_title">Open Graph Title</Label>
-                      <Input
-                        id="og_title"
-                        value={article.og_title}
-                        onChange={(e) => setArticle(prev => ({ ...prev, og_title: e.target.value }))}
-                        placeholder="Titolo per Facebook/LinkedIn"
-                        className="mt-1"
-                      />
+                       <Input
+                         id="og_title"
+                         value={article.og_title || ''}
+                         onChange={(e) => setArticle(prev => ({ ...prev, og_title: e.target.value || null }))}
+                         placeholder="Titolo per Facebook/LinkedIn"
+                         className="mt-1"
+                       />
                     </div>
                     
                     <div>
                       <Label htmlFor="og_description">Open Graph Description</Label>
-                      <Textarea
-                        id="og_description"
-                        value={article.og_description}
-                        onChange={(e) => setArticle(prev => ({ ...prev, og_description: e.target.value }))}
-                        placeholder="Descrizione per Facebook/LinkedIn"
-                        className="mt-1"
-                        rows={2}
-                      />
+                       <Textarea
+                         id="og_description"
+                         value={article.og_description || ''}
+                         onChange={(e) => setArticle(prev => ({ ...prev, og_description: e.target.value || null }))}
+                         placeholder="Descrizione per Facebook/LinkedIn"
+                         className="mt-1"
+                         rows={2}
+                       />
                     </div>
                     
                     <div>
                       <Label htmlFor="twitter_title">Twitter Title</Label>
-                      <Input
-                        id="twitter_title"
-                        value={article.twitter_title}
-                        onChange={(e) => setArticle(prev => ({ ...prev, twitter_title: e.target.value }))}
-                        placeholder="Titolo per Twitter"
-                        className="mt-1"
-                      />
+                       <Input
+                         id="twitter_title"
+                         value={article.twitter_title || ''}
+                         onChange={(e) => setArticle(prev => ({ ...prev, twitter_title: e.target.value || null }))}
+                         placeholder="Titolo per Twitter"
+                         className="mt-1"
+                       />
                     </div>
                   </TabsContent>
                   
                   <TabsContent value="advanced" className="space-y-4 mt-4">
                     <div>
                       <Label htmlFor="canonical_url">URL Canonico</Label>
-                      <Input
-                        id="canonical_url"
-                        value={article.canonical_url}
-                        onChange={(e) => setArticle(prev => ({ ...prev, canonical_url: e.target.value }))}
-                        placeholder="https://gomutuo.it/blog/articolo"
-                        className="mt-1"
-                      />
+                       <Input
+                         id="canonical_url"
+                         value={article.canonical_url || ''}
+                         onChange={(e) => setArticle(prev => ({ ...prev, canonical_url: e.target.value || null }))}
+                         placeholder="https://gomutuo.it/blog/articolo"
+                         className="mt-1"
+                       />
                     </div>
                   </TabsContent>
                 </Tabs>
@@ -608,10 +675,10 @@ export default function AdminBlogEditor() {
                 <CardTitle>Categoria</CardTitle>
               </CardHeader>
               <CardContent>
-                <Select 
-                  value={article.category_id} 
-                  onValueChange={(value) => setArticle(prev => ({ ...prev, category_id: value }))}
-                >
+                 <Select 
+                   value={article.category_id || ''} 
+                   onValueChange={(value) => setArticle(prev => ({ ...prev, category_id: value || null }))}
+                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleziona categoria" />
                   </SelectTrigger>
@@ -711,24 +778,24 @@ export default function AdminBlogEditor() {
               <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="featured_image">URL Immagine</Label>
-                  <Input
-                    id="featured_image"
-                    value={article.featured_image_url}
-                    onChange={(e) => setArticle(prev => ({ ...prev, featured_image_url: e.target.value }))}
-                    placeholder="https://example.com/image.jpg"
-                    className="mt-1"
-                  />
+                   <Input
+                     id="featured_image"
+                     value={article.featured_image_url || ''}
+                     onChange={(e) => setArticle(prev => ({ ...prev, featured_image_url: e.target.value || null }))}
+                     placeholder="https://example.com/image.jpg"
+                     className="mt-1"
+                   />
                 </div>
                 
                 <div>
                   <Label htmlFor="image_alt">Testo Alternativo</Label>
-                  <Input
-                    id="image_alt"
-                    value={article.featured_image_alt}
-                    onChange={(e) => setArticle(prev => ({ ...prev, featured_image_alt: e.target.value }))}
-                    placeholder="Descrizione dell'immagine per accessibilità"
-                    className="mt-1"
-                  />
+                   <Input
+                     id="image_alt"
+                     value={article.featured_image_alt || ''}
+                     onChange={(e) => setArticle(prev => ({ ...prev, featured_image_alt: e.target.value || null }))}
+                     placeholder="Descrizione dell'immagine per accessibilità"
+                     className="mt-1"
+                   />
                 </div>
                 
                 {article.featured_image_url && (
