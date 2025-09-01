@@ -15,6 +15,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import { ImageUploader } from '@/components/admin/ImageUploader';
+import { ContentPreview } from '@/components/admin/ContentPreview';
 
 interface BlogArticle {
   id?: string;
@@ -415,6 +417,7 @@ export default function AdminBlogEditor() {
           </div>
           
           <div className="flex items-center gap-2">
+            <ContentPreview article={article} />
             <Button
               variant="outline"
               onClick={() => saveArticle('draft')}
@@ -568,41 +571,71 @@ export default function AdminBlogEditor() {
                     </div>
                   </TabsContent>
                   
-                  <TabsContent value="social" className="space-y-4 mt-4">
-                    <div>
-                      <Label htmlFor="og_title">Open Graph Title</Label>
-                       <Input
-                         id="og_title"
-                         value={article.og_title || ''}
-                         onChange={(e) => setArticle(prev => ({ ...prev, og_title: e.target.value || null }))}
-                         placeholder="Titolo per Facebook/LinkedIn"
-                         className="mt-1"
+                   <TabsContent value="social" className="space-y-4 mt-4">
+                     <div>
+                       <Label htmlFor="og_title">Open Graph Title</Label>
+                        <Input
+                          id="og_title"
+                          value={article.og_title || ''}
+                          onChange={(e) => setArticle(prev => ({ ...prev, og_title: e.target.value || null }))}
+                          placeholder="Titolo per Facebook/LinkedIn"
+                          className="mt-1"
+                        />
+                     </div>
+                     
+                     <div>
+                       <Label htmlFor="og_description">Open Graph Description</Label>
+                        <Textarea
+                          id="og_description"
+                          value={article.og_description || ''}
+                          onChange={(e) => setArticle(prev => ({ ...prev, og_description: e.target.value || null }))}
+                          placeholder="Descrizione per Facebook/LinkedIn"
+                          className="mt-1"
+                          rows={2}
+                        />
+                     </div>
+
+                     <div>
+                       <ImageUploader
+                         value={article.og_image_url || ''}
+                         onChange={(url) => setArticle(prev => ({ ...prev, og_image_url: url || null }))}
+                         label="Open Graph Image"
+                         placeholder="Immagine per Facebook/LinkedIn..."
                        />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="og_description">Open Graph Description</Label>
-                       <Textarea
-                         id="og_description"
-                         value={article.og_description || ''}
-                         onChange={(e) => setArticle(prev => ({ ...prev, og_description: e.target.value || null }))}
-                         placeholder="Descrizione per Facebook/LinkedIn"
-                         className="mt-1"
-                         rows={2}
+                     </div>
+                     
+                     <div>
+                       <Label htmlFor="twitter_title">Twitter Title</Label>
+                        <Input
+                          id="twitter_title"
+                          value={article.twitter_title || ''}
+                          onChange={(e) => setArticle(prev => ({ ...prev, twitter_title: e.target.value || null }))}
+                          placeholder="Titolo per Twitter"
+                          className="mt-1"
+                        />
+                     </div>
+
+                     <div>
+                       <Label htmlFor="twitter_description">Twitter Description</Label>
+                        <Textarea
+                          id="twitter_description"
+                          value={article.twitter_description || ''}
+                          onChange={(e) => setArticle(prev => ({ ...prev, twitter_description: e.target.value || null }))}
+                          placeholder="Descrizione per Twitter"
+                          className="mt-1"
+                          rows={2}
+                        />
+                     </div>
+
+                     <div>
+                       <ImageUploader
+                         value={article.twitter_image_url || ''}
+                         onChange={(url) => setArticle(prev => ({ ...prev, twitter_image_url: url || null }))}
+                         label="Twitter Image"
+                         placeholder="Immagine per Twitter..."
                        />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="twitter_title">Twitter Title</Label>
-                       <Input
-                         id="twitter_title"
-                         value={article.twitter_title || ''}
-                         onChange={(e) => setArticle(prev => ({ ...prev, twitter_title: e.target.value || null }))}
-                         placeholder="Titolo per Twitter"
-                         className="mt-1"
-                       />
-                    </div>
-                  </TabsContent>
+                     </div>
+                   </TabsContent>
                   
                   <TabsContent value="advanced" className="space-y-4 mt-4">
                     <div>
@@ -778,51 +811,34 @@ export default function AdminBlogEditor() {
               </CardContent>
             </Card>
 
-            {/* Featured Image */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Image className="w-4 h-4" />
-                  Immagine in Evidenza
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="featured_image">URL Immagine</Label>
-                   <Input
-                     id="featured_image"
-                     value={article.featured_image_url || ''}
-                     onChange={(e) => setArticle(prev => ({ ...prev, featured_image_url: e.target.value || null }))}
-                     placeholder="https://example.com/image.jpg"
-                     className="mt-1"
-                   />
-                </div>
-                
-                <div>
-                  <Label htmlFor="image_alt">Testo Alternativo</Label>
-                   <Input
-                     id="image_alt"
-                     value={article.featured_image_alt || ''}
-                     onChange={(e) => setArticle(prev => ({ ...prev, featured_image_alt: e.target.value || null }))}
-                     placeholder="Descrizione dell'immagine per accessibilità"
-                     className="mt-1"
-                   />
-                </div>
-                
-                {article.featured_image_url && (
-                  <div className="mt-2">
-                    <img 
-                      src={article.featured_image_url} 
-                      alt={article.featured_image_alt || 'Anteprima'} 
-                      className="w-full h-32 object-cover rounded-md"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                      }}
+             {/* Featured Image */}
+             <Card>
+               <CardHeader>
+                 <CardTitle className="flex items-center gap-2">
+                   <Image className="w-4 h-4" />
+                   Immagine in Evidenza
+                 </CardTitle>
+               </CardHeader>
+               <CardContent>
+                 <ImageUploader
+                   value={article.featured_image_url || ''}
+                   onChange={(url) => setArticle(prev => ({ ...prev, featured_image_url: url || null }))}
+                   label="Immagine Principale"
+                   placeholder="URL dell'immagine in evidenza..."
+                 />
+                 
+                 <div className="mt-4">
+                   <Label htmlFor="image_alt">Testo Alternativo</Label>
+                    <Input
+                      id="image_alt"
+                      value={article.featured_image_alt || ''}
+                      onChange={(e) => setArticle(prev => ({ ...prev, featured_image_alt: e.target.value || null }))}
+                      placeholder="Descrizione dell'immagine per accessibilità"
+                      className="mt-1"
                     />
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                 </div>
+               </CardContent>
+             </Card>
           </div>
         </div>
       </div>

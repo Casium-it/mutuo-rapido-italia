@@ -91,6 +91,7 @@ export type Database = {
           featured_image_url: string | null
           id: string
           is_featured: boolean | null
+          last_edited_by: string | null
           meta_description: string | null
           meta_keywords: string | null
           meta_title: string | null
@@ -121,6 +122,7 @@ export type Database = {
           featured_image_url?: string | null
           id?: string
           is_featured?: boolean | null
+          last_edited_by?: string | null
           meta_description?: string | null
           meta_keywords?: string | null
           meta_title?: string | null
@@ -151,6 +153,7 @@ export type Database = {
           featured_image_url?: string | null
           id?: string
           is_featured?: boolean | null
+          last_edited_by?: string | null
           meta_description?: string | null
           meta_keywords?: string | null
           meta_title?: string | null
