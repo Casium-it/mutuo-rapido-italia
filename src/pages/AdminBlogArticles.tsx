@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Filter, Eye, Edit, Trash2, MoreHorizontal, FileText, Clock, Users } from 'lucide-react';
+import { Plus, Search, Filter, Eye, Edit, Trash2, MoreHorizontal, FileText, Clock, Users, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -195,6 +195,16 @@ export default function AdminBlogArticles() {
   return (
     <div className="min-h-screen bg-[#f8f5f1] py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Back Button */}
+        <Button
+          variant="outline"
+          onClick={() => navigate('/admin')}
+          className="mb-6"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Torna al Dashboard
+        </Button>
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
