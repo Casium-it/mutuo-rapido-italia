@@ -75,6 +75,7 @@ export default function BlogArticle() {
   const [featuredArticles, setFeaturedArticles] = useState<RelatedArticle[]>([]);
   const [recentArticles, setRecentArticles] = useState<RelatedArticle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [headings, setHeadings] = useState<{id: string, text: string}[]>([]);
 
   useEffect(() => {
     if (slug) {
@@ -166,6 +167,43 @@ export default function BlogArticle() {
       setLoading(false);
     }
   };
+
+  // Extract H2 headings from article content
+  useEffect(() => {
+    if (article?.content) {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = article.content;
+      const h2Elements = tempDiv.querySelectorAll('h2');
+      
+      const extractedHeadings = Array.from(h2Elements).map((h2, index) => {
+        const text = h2.textContent || '';
+        const id = text.toLowerCase()
+          .replace(/[^\w\s-]/g, '') // Remove special characters
+          .replace(/\s+/g, '-') // Replace spaces with hyphens
+          .trim();
+        return { id: `heading-${index}-${id}`, text };
+      });
+      
+      setHeadings(extractedHeadings);
+      
+      // Add IDs to H2 elements in the actual content
+      if (extractedHeadings.length > 0) {
+        let updatedContent = article.content;
+        extractedHeadings.forEach((heading, index) => {
+          const h2Regex = new RegExp(`<h2([^>]*)>(${heading.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})</h2>`, 'i');
+          updatedContent = updatedContent.replace(h2Regex, `<h2$1 id="${heading.id}">$2</h2>`);
+        });
+        
+        // Update the article content with IDs (this won't trigger re-render but will be used in the DOM)
+        setTimeout(() => {
+          const articleElement = document.querySelector('[data-article-content]');
+          if (articleElement) {
+            articleElement.innerHTML = updatedContent;
+          }
+        }, 100);
+      }
+    }
+  }, [article?.content]);
 
   const shareOnSocial = (platform: string) => {
     if (!article) return;
@@ -353,27 +391,25 @@ export default function BlogArticle() {
           <div className="bg-white">
             <div className="max-w-7xl mx-auto">
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-0">
-                {/* Left Sidebar - 1/4 width */}
-                <div className="lg:col-span-1 p-6 border-r border-gray-200">
+                {/* Left Sidebar - 1/4 width - Make it sticky and scrollable */}
+                <div className="lg:col-span-1 p-6 border-r border-gray-200 sticky top-24 h-fit max-h-[calc(100vh-6rem)] overflow-y-auto">
                   {/* Article Index */}
                   <div className="mb-8">
                     <h3 className="text-lg font-semibold text-[#245C4F] mb-4">Indice</h3>
                     <nav className="space-y-2">
-                      <a href="#introduzione" className="block text-sm text-gray-600 hover:text-[#245C4F] py-1 border-l-2 border-transparent hover:border-[#245C4F] pl-3 transition-colors">
-                        Introduzione
-                      </a>
-                      <a href="#step-1" className="block text-sm text-gray-600 hover:text-[#245C4F] py-1 border-l-2 border-transparent hover:border-[#245C4F] pl-3 transition-colors">
-                        Step 1
-                      </a>
-                      <a href="#step-2" className="block text-sm text-gray-600 hover:text-[#245C4F] py-1 border-l-2 border-transparent hover:border-[#245C4F] pl-3 transition-colors">
-                        Step 2
-                      </a>
-                      <a href="#step-3" className="block text-sm text-gray-600 hover:text-[#245C4F] py-1 border-l-2 border-transparent hover:border-[#245C4F] pl-3 transition-colors">
-                        Step 3
-                      </a>
-                      <a href="#conclusione" className="block text-sm text-gray-600 hover:text-[#245C4F] py-1 border-l-2 border-transparent hover:border-[#245C4F] pl-3 transition-colors">
-                        Conclusione
-                      </a>
+                      {headings.length > 0 ? (
+                        headings.map((heading) => (
+                          <a 
+                            key={heading.id}
+                            href={`#${heading.id}`} 
+                            className="block text-sm text-gray-600 hover:text-[#245C4F] py-1 border-l-2 border-transparent hover:border-[#245C4F] pl-3 transition-colors"
+                          >
+                            {heading.text}
+                          </a>
+                        ))
+                      ) : (
+                        <p className="text-sm text-gray-500 italic">Nessun indice disponibile</p>
+                      )}
                     </nav>
                   </div>
 
@@ -449,20 +485,21 @@ export default function BlogArticle() {
                 <div className="lg:col-span-3 p-8">
                   <article>
                     <div 
+                      data-article-content
                       className="prose prose-lg max-w-none 
-                      prose-headings:text-[#245C4F] prose-headings:font-bold
-                      prose-h1:text-4xl prose-h1:mb-8 prose-h1:mt-10 prose-h1:leading-tight
-                      prose-h2:text-3xl prose-h2:mb-6 prose-h2:mt-10 prose-h2:leading-tight prose-h2:font-bold
-                      prose-h3:text-2xl prose-h3:mb-5 prose-h3:mt-8 prose-h3:leading-tight prose-h3:font-bold
-                      prose-h4:text-xl prose-h4:mb-4 prose-h4:mt-6 prose-h4:font-bold
-                      prose-h5:text-lg prose-h5:mb-3 prose-h5:mt-5 prose-h5:font-bold
-                      prose-h6:text-base prose-h6:mb-3 prose-h6:mt-4 prose-h6:font-bold
-                      prose-p:text-gray-800 prose-p:leading-relaxed prose-p:mb-6 prose-p:text-base prose-p:font-normal
-                      prose-a:text-blue-600 prose-a:underline prose-a:font-bold hover:prose-a:text-blue-800 prose-a:transition-colors
-                      prose-strong:text-gray-900 prose-strong:font-bold
-                      prose-ul:text-gray-800 prose-ul:mb-6 prose-ul:mt-0 prose-ul:list-disc prose-ul:pl-6
-                      prose-ol:text-gray-800 prose-ol:mb-6 prose-ol:mt-0 prose-ol:list-decimal prose-ol:pl-6
-                      prose-li:mb-3 prose-li:leading-relaxed prose-li:text-base
+                       prose-headings:text-[#245C4F] prose-headings:font-bold
+                       prose-h1:text-4xl prose-h1:mb-6 prose-h1:mt-8 prose-h1:leading-tight
+                       prose-h2:text-3xl prose-h2:mb-4 prose-h2:mt-8 prose-h2:leading-tight prose-h2:font-bold
+                       prose-h3:text-2xl prose-h3:mb-3 prose-h3:mt-6 prose-h3:leading-tight prose-h3:font-bold
+                       prose-h4:text-xl prose-h4:mb-3 prose-h4:mt-5 prose-h4:font-bold
+                       prose-h5:text-lg prose-h5:mb-2 prose-h5:mt-4 prose-h5:font-bold
+                       prose-h6:text-base prose-h6:mb-2 prose-h6:mt-3 prose-h6:font-bold
+                        prose-p:text-gray-800 prose-p:leading-relaxed prose-p:text-base prose-p:font-normal prose-p:mb-1 prose-p:mt-0
+                        prose-a:text-blue-600 prose-a:underline prose-a:font-bold hover:prose-a:text-blue-800 prose-a:transition-colors 
+                        prose-strong:text-gray-900 prose-strong:font-bold
+                        prose-ul:text-gray-800 prose-ul:list-disc prose-ul:pl-6 prose-ul:mb-1 prose-ul:mt-0
+                        prose-ol:text-gray-800 prose-ol:list-decimal prose-ol:pl-6 prose-ol:mb-1 prose-ol:mt-0
+                       prose-li:mb-0 prose-li:leading-relaxed prose-li:text-base prose-li:-mt-0.5
                       prose-blockquote:border-l-4 prose-blockquote:border-[#245C4F] prose-blockquote:bg-[#f8f5f1] prose-blockquote:p-4 prose-blockquote:italic prose-blockquote:my-6
                       prose-img:rounded-lg prose-img:shadow-md prose-img:mx-auto prose-img:my-8
                       prose-code:bg-gray-100 prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-sm
