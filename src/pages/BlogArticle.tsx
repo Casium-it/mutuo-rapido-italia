@@ -420,7 +420,7 @@ export default function BlogArticle() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => shareOnSocial('facebook')}
+                        onClick={() => shareOnSocial('whatsapp')}
                         className="text-blue-600 hover:bg-blue-50 justify-start"
                       >
                         <Facebook className="w-4 h-4 mr-2" />
@@ -429,7 +429,7 @@ export default function BlogArticle() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => shareOnSocial('twitter')}
+                        onClick={() => shareOnSocial('facebook')}
                         className="text-sky-500 hover:bg-sky-50 justify-start"
                       >
                         <Twitter className="w-4 h-4 mr-2" />
@@ -447,7 +447,7 @@ export default function BlogArticle() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => shareOnSocial('whatsapp')}
+                        onClick={() => shareOnSocial('twitter')}
                         className="text-green-600 hover:bg-green-50 justify-start"
                       >
                         <MessageCircle className="w-4 h-4 mr-2" />
