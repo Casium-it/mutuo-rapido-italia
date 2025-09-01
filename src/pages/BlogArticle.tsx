@@ -494,11 +494,11 @@ export default function BlogArticle() {
                       prose-h4:text-xl prose-h4:mb-3 prose-h4:mt-5 prose-h4:font-bold
                       prose-h5:text-lg prose-h5:mb-2 prose-h5:mt-4 prose-h5:font-bold
                       prose-h6:text-base prose-h6:mb-2 prose-h6:mt-3 prose-h6:font-bold
-                      prose-p:text-gray-800 prose-p:leading-relaxed prose-p:mb-3 prose-p:text-base prose-p:font-normal
-                      prose-a:text-blue-600 prose-a:underline prose-a:font-bold hover:prose-a:text-blue-800 prose-a:transition-colors 
-                      prose-strong:text-gray-900 prose-strong:font-bold
-                      prose-ul:text-gray-800 prose-ul:mb-3 prose-ul:mt-3 prose-ul:list-disc prose-ul:pl-6
-                      prose-ol:text-gray-800 prose-ol:mb-3 prose-ol:mt-3 prose-ol:list-decimal prose-ol:pl-6
+                       prose-p:text-gray-800 prose-p:leading-relaxed prose-p:text-base prose-p:font-normal
+                       prose-a:text-blue-600 prose-a:underline prose-a:font-bold hover:prose-a:text-blue-800 prose-a:transition-colors 
+                       prose-strong:text-gray-900 prose-strong:font-bold
+                       prose-ul:text-gray-800 prose-ul:list-disc prose-ul:pl-6
+                       prose-ol:text-gray-800 prose-ol:list-decimal prose-ol:pl-6
                       prose-li:mb-0 prose-li:leading-relaxed prose-li:text-base
                       prose-blockquote:border-l-4 prose-blockquote:border-[#245C4F] prose-blockquote:bg-[#f8f5f1] prose-blockquote:p-4 prose-blockquote:italic prose-blockquote:my-6
                       prose-img:rounded-lg prose-img:shadow-md prose-img:mx-auto prose-img:my-8
