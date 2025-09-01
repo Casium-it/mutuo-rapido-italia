@@ -387,7 +387,8 @@ export default function AdminBlogArticles() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => navigate(`/admin/articles/${article.id}`)}
+                        onClick={() => navigate(`/blog/${article.slug}`)}
+                        disabled={article.status !== 'published'}
                       >
                         <Eye className="w-4 h-4 mr-2" />
                         Visualizza
