@@ -47,9 +47,9 @@ const SimulatorCarousel: React.FC = () => {
 
   // Preload delle immagini del carousel per evitare ritardi di caricamento
   const carouselImages = [
-    "/lovable-uploads/89fbdaf4-4951-4b60-9388-0ddbaa610931.png", // AnalysisDeepMockup
-    "/lovable-uploads/541599e5-f622-495d-987c-43e6cfce8499.png", // SimulatorMockup
-    "/lovable-uploads/efb4b871-5e27-45bb-a040-67fd1c57bea4.png"  // BankComparisonMockup
+    "/lovable-uploads/89fbdaf4-4951-4b60-9388-0ddbaa610931.webp", // AnalysisDeepMockup (WebP)
+    "/lovable-uploads/541599e5-f622-495d-987c-43e6cfce8499.webp", // SimulatorMockup (WebP)
+    "/lovable-uploads/efb4b871-5e27-45bb-a040-67fd1c57bea4.webp"  // BankComparisonMockup (WebP)
   ];
   
   useImagePreloader(carouselImages, 1500); // Inizia il preload dopo 1.5 secondi
