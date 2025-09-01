@@ -499,7 +499,7 @@ export default function BlogArticle() {
                       prose-strong:text-gray-900 prose-strong:font-bold
                       prose-ul:text-gray-800 prose-ul:mb-3 prose-ul:mt-3 prose-ul:list-disc prose-ul:pl-6
                       prose-ol:text-gray-800 prose-ol:mb-3 prose-ol:mt-3 prose-ol:list-decimal prose-ol:pl-6
-                      prose-li:mb-1 prose-li:leading-relaxed prose-li:text-base
+                      prose-li:mb-0 prose-li:leading-relaxed prose-li:text-base
                       prose-blockquote:border-l-4 prose-blockquote:border-[#245C4F] prose-blockquote:bg-[#f8f5f1] prose-blockquote:p-4 prose-blockquote:italic prose-blockquote:my-6
                       prose-img:rounded-lg prose-img:shadow-md prose-img:mx-auto prose-img:my-8
                       prose-code:bg-gray-100 prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-sm
