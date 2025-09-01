@@ -391,8 +391,8 @@ export default function BlogArticle() {
           <div className="bg-white">
             <div className="max-w-7xl mx-auto">
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-0">
-                {/* Left Sidebar - 1/4 width - Make it sticky */}
-                <div className="lg:col-span-1 p-6 border-r border-gray-200 sticky top-24 h-fit">
+                {/* Left Sidebar - 1/4 width - Make it sticky and scrollable */}
+                <div className="lg:col-span-1 p-6 border-r border-gray-200 sticky top-24 h-fit max-h-[calc(100vh-6rem)] overflow-y-auto">
                   {/* Article Index */}
                   <div className="mb-8">
                     <h3 className="text-lg font-semibold text-[#245C4F] mb-4">Indice</h3>
