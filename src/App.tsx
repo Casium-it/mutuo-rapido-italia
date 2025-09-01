@@ -42,6 +42,7 @@ import AdminLeadDetail from "./pages/AdminLeadDetail";
 import AdminNotifications from "./pages/AdminNotifications";
 import AdminForms from "./pages/AdminForms";
 import AdminStatistics from "./pages/AdminStatistics";
+import SitemapXML from "./pages/SitemapXML";
 
 const queryClient = new QueryClient();
 
@@ -158,6 +159,7 @@ const AppWithTracking = () => {
           <AdminBlogEditor />
         </ProtectedRoute>
       } />
+      <Route path="/sitemap.xml" element={<SitemapXML />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
