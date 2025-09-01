@@ -1,5 +1,0 @@
-# Netlify redirects file
-/sitemap.xml https://jegdbtznkwzpqntzzlvf.supabase.co/functions/v1/sitemap 301
-
-# SPA fallback for React Router
-/*    /index.html   200

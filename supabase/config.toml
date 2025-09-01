@@ -15,6 +15,3 @@ verify_jwt = false
 
 [functions.send-ycloud-message]
 verify_jwt = false
-
-[functions.sitemap]
-verify_jwt = false
