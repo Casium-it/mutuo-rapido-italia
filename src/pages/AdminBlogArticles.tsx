@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Filter, Eye, Edit, Trash2, MoreHorizontal, FileText, Clock, Users, ArrowLeft } from 'lucide-react';
+import { Plus, Search, Filter, Eye, Edit, Trash2, MoreHorizontal, FileText, Clock, Users, ArrowLeft, Copy, Sitemap } from 'lucide-react';
+import { CategoryTagManager } from '@/components/admin/CategoryTagManager';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -211,13 +212,16 @@ export default function AdminBlogArticles() {
             <h1 className="text-3xl font-bold text-[#245C4F]">Gestione Articoli Blog</h1>
             <p className="text-gray-600">Crea, modifica e pubblica articoli per il blog</p>
           </div>
-          <Button 
-            onClick={() => navigate('/admin/articles/new')}
-            className="bg-[#245C4F] hover:bg-[#1e4f44] text-white"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Nuovo Articolo
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <CategoryTagManager />
+            <Button 
+              onClick={() => navigate('/admin/articles/new')}
+              className="bg-[#245C4F] hover:bg-[#1e4f44] text-white"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nuovo Articolo
+            </Button>
+          </div>
         </div>
 
         {/* Stats Cards */}

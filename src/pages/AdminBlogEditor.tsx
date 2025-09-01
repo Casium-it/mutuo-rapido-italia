@@ -13,6 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 interface BlogArticle {
   id?: string;
@@ -484,15 +486,25 @@ export default function AdminBlogEditor() {
                 
                 <div>
                   <Label htmlFor="content">Contenuto*</Label>
-                  <Textarea
-                    id="content"
-                    value={article.content}
-                    onChange={(e) => setArticle(prev => ({ ...prev, content: e.target.value }))}
-                    placeholder="Scrivi qui il contenuto completo dell'articolo..."
-                    className="mt-1 min-h-[400px]"
-                  />
+                  <div className="mt-1">
+                    <ReactQuill
+                      value={article.content}
+                      onChange={(value) => setArticle(prev => ({ ...prev, content: value }))}
+                      placeholder="Scrivi qui il contenuto completo dell'articolo..."
+                      style={{ height: '400px', marginBottom: '50px' }}
+                      modules={{
+                        toolbar: [
+                          [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                          ['bold', 'italic', 'underline', 'strike'],
+                          [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                          ['link', 'image'],
+                          ['clean']
+                        ]
+                      }}
+                    />
+                  </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    Tempo di lettura stimato: {Math.max(1, Math.ceil(article.content.split(' ').length / 200))} minuti
+                    Tempo di lettura stimato: {Math.max(1, Math.ceil(article.content.replace(/<[^>]*>/g, '').split(' ').length / 200))} minuti
                   </p>
                 </div>
               </CardContent>
