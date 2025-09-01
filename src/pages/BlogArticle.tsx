@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, Eye, Calendar, Tag } from 'lucide-react';
+import { ArrowLeft, Clock, Eye, Calendar, Tag, Share2, Facebook, Twitter, Linkedin, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Helmet } from 'react-helmet-async';
+import { Logo } from "@/components/Logo";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { LoginButton } from "@/components/LoginButton";
 
 interface BlogArticle {
   id: string;
@@ -45,22 +48,40 @@ interface Tag {
   slug: string;
 }
 
+interface RelatedArticle {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  featured_image_url: string | null;
+  author_name: string;
+  published_at: string | null;
+  reading_time_minutes: number;
+  category?: {
+    name: string;
+    color: string;
+  };
+}
+
 export default function BlogArticle() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   
   const [article, setArticle] = useState<BlogArticle | null>(null);
   const [tags, setTags] = useState<Tag[]>([]);
+  const [featuredArticles, setFeaturedArticles] = useState<RelatedArticle[]>([]);
+  const [recentArticles, setRecentArticles] = useState<RelatedArticle[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (slug) {
-      fetchArticle();
+      fetchArticleData();
     }
   }, [slug]);
 
-  const fetchArticle = async () => {
+  const fetchArticleData = async () => {
     try {
       setLoading(true);
 
@@ -77,7 +98,6 @@ export default function BlogArticle() {
 
       if (articleError) {
         if (articleError.code === 'PGRST116') {
-          // No rows returned
           navigate('/404');
           return;
         }
@@ -94,8 +114,38 @@ export default function BlogArticle() {
 
       if (tagsError) throw tagsError;
 
+      // Fetch featured articles
+      const { data: featuredData, error: featuredError } = await supabase
+        .from('blog_articles')
+        .select(`
+          id, title, slug, excerpt, featured_image_url, author_name, published_at, reading_time_minutes,
+          category:blog_categories(name, color)
+        `)
+        .eq('status', 'published')
+        .eq('is_featured', true)
+        .neq('id', articleData.id)
+        .limit(3);
+
+      if (featuredError) throw featuredError;
+
+      // Fetch recent articles
+      const { data: recentData, error: recentError } = await supabase
+        .from('blog_articles')
+        .select(`
+          id, title, slug, excerpt, featured_image_url, author_name, published_at, reading_time_minutes,
+          category:blog_categories(name, color)
+        `)
+        .eq('status', 'published')
+        .neq('id', articleData.id)
+        .order('published_at', { ascending: false })
+        .limit(5);
+
+      if (recentError) throw recentError;
+
       setArticle(articleData);
       setTags(tagsData?.map(t => t.tag).filter(Boolean) || []);
+      setFeaturedArticles(featuredData || []);
+      setRecentArticles(recentData || []);
 
       // Increment view count
       await supabase
@@ -116,9 +166,26 @@ export default function BlogArticle() {
     }
   };
 
+  const shareOnSocial = (platform: string) => {
+    if (!article) return;
+    
+    const url = encodeURIComponent(`https://gomutuo.it/blog/${article.slug}`);
+    const title = encodeURIComponent(article.title);
+    const text = encodeURIComponent(article.excerpt || article.title);
+    
+    const shareUrls = {
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}`,
+      twitter: `https://twitter.com/intent/tweet?url=${url}&text=${title}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${url}`,
+      whatsapp: `https://wa.me/?text=${title}%20${url}`
+    };
+    
+    window.open(shareUrls[platform as keyof typeof shareUrls], '_blank', 'width=600,height=400');
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f8f5f1]">
+      <div className="min-h-screen flex items-center justify-center bg-[#f7f5f2]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#245C4F] mx-auto"></div>
           <p className="mt-2 text-gray-600">Caricamento articolo...</p>
@@ -166,119 +233,354 @@ export default function BlogArticle() {
         ))}
       </Helmet>
 
-      <div className="min-h-screen bg-[#f8f5f1]">
-        {/* Hero Section */}
-        {article.featured_image_url && (
-          <div className="w-full h-96 relative">
-            <img 
-              src={article.featured_image_url} 
-              alt={article.featured_image_alt || article.title}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-black bg-opacity-40"></div>
+      <div className="min-h-screen flex flex-col">
+        {/* Header fisso - Same as Blog page */}
+        <header className="fixed top-0 left-0 right-0 bg-[#f7f5f2]/95 backdrop-blur-sm z-50 py-6 px-4 md:px-6 flex items-center justify-between shadow-sm">
+          {/* Logo */}
+          <div className="cursor-pointer flex items-center" onClick={() => navigate("/")}>
+            <Logo />
           </div>
-        )}
+          
+          {/* Desktop only navigation - centered */}
+          {!isMobile && (
+            <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-4">
+              <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]" onClick={() => navigate('/simulazioni')}>
+                Simulazione
+              </Button>
+              <Button variant="ghost" className="text-[#00853E] hover:bg-transparent hover:text-[#00853E]" onClick={() => navigate('/blog')}>
+                Blog
+              </Button>
+              <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]" onClick={() => navigate('/chi-siamo')}>
+                Chi Siamo
+              </Button>
+              <Button variant="ghost" className="text-gray-700 hover:bg-transparent hover:text-[#00853E]" onClick={() => window.open('https://wa.me/393518681491', '_blank')}>
+                Contatti
+              </Button>
+            </div>
+          )}
+          
+          {/* CTA Button */}
+          <div className="flex items-center">
+            <Button 
+              className="bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-[12px] px-6 shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all" 
+              onClick={() => navigate('/simulazioni')}
+            >
+              Simula Ora
+            </Button>
+          </div>
+        </header>
 
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Back Button */}
-          <Button
-            variant="outline"
-            onClick={() => navigate('/blog')}
-            className="mb-6"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Torna al Blog
-          </Button>
-
-          <article>
-            {/* Header */}
-            <header className="mb-8">
-              {/* Category and Tags */}
-              <div className="flex items-center gap-2 mb-4">
-                {article.category && (
-                  <Badge 
-                    variant="outline" 
-                    style={{ borderColor: article.category.color, color: article.category.color }}
-                  >
-                    {article.category.name}
-                  </Badge>
-                )}
-                {tags.map(tag => (
-                  <Badge key={tag.id} variant="secondary">
-                    <Tag className="w-3 h-3 mr-1" />
-                    {tag.name}
-                  </Badge>
-                ))}
-              </div>
-
-              <h1 className="text-4xl md:text-5xl font-bold text-[#245C4F] leading-tight mb-4">
-                {article.title}
-              </h1>
-
-              {article.excerpt && (
-                <p className="text-xl text-gray-600 mb-6 leading-relaxed">
-                  {article.excerpt}
-                </p>
-              )}
-
-              {/* Article Meta */}
-              <div className="flex flex-wrap items-center gap-6 text-gray-500 pb-6 border-b border-gray-200">
-                <span className="font-medium">di {article.author_name}</span>
-                
-                {article.published_at && (
-                  <span className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    {new Date(article.published_at).toLocaleDateString('it-IT', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </span>
-                )}
-                
-                <span className="flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  {article.reading_time_minutes} min di lettura
-                </span>
-                
-                <span className="flex items-center gap-2">
-                  <Eye className="w-4 h-4" />
-                  {article.view_count + 1} visualizzazioni
-                </span>
-              </div>
-            </header>
-
-            {/* Content */}
-            <div className="prose prose-lg max-w-none">
-              <div 
-                className="text-gray-800 leading-relaxed"
-                style={{ whiteSpace: 'pre-wrap' }}
+        {/* Main Content */}
+        <div className="pt-24 pb-16 flex-grow bg-[#f7f5f2]">
+          <div className="container mx-auto px-4">
+            {/* Back Button */}
+            <div className="mb-8">
+              <Button
+                variant="outline"
+                onClick={() => navigate('/blog')}
+                className="bg-white border-[#BEB8AE] hover:bg-[#f8f5f1]"
               >
-                {article.content}
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Torna al Blog
+              </Button>
+            </div>
+
+            {/* Hero Section - Two column layout */}
+            <div className="max-w-6xl mx-auto mb-12">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                {/* Left side - Image */}
+                <div className="w-full">
+                  {article.featured_image_url ? (
+                    <div className="aspect-[4/3] rounded-lg overflow-hidden shadow-lg">
+                      <img 
+                        src={article.featured_image_url} 
+                        alt={article.featured_image_alt || article.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="aspect-[4/3] rounded-lg bg-gradient-to-br from-[#245C4F] to-[#1e4f44] flex items-center justify-center shadow-lg">
+                      <div className="text-white text-center p-8">
+                        <h2 className="text-2xl font-bold opacity-80">GoMutuo</h2>
+                        <p className="opacity-60 mt-2">Blog</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right side - Metadata */}
+                <div className="space-y-6">
+                  {/* Category */}
+                  {article.category && (
+                    <Badge 
+                      variant="outline" 
+                      style={{ borderColor: article.category.color, color: article.category.color }}
+                      className="text-sm font-medium"
+                    >
+                      {article.category.name}
+                    </Badge>
+                  )}
+
+                  {/* Title */}
+                  <h1 className="text-3xl md:text-4xl font-bold text-[#245C4F] leading-tight">
+                    {article.title}
+                  </h1>
+
+                  {/* Author and Date */}
+                  <div className="flex flex-wrap items-center gap-4 text-gray-600">
+                    <span className="font-medium">di {article.author_name}</span>
+                    {article.published_at && (
+                      <span className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        {new Date(article.published_at).toLocaleDateString('it-IT', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Reading time and views */}
+                  <div className="flex items-center gap-6 text-gray-500">
+                    <span className="flex items-center gap-2">
+                      <Clock className="w-4 h-4" />
+                      {article.reading_time_minutes} min di lettura
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <Eye className="w-4 h-4" />
+                      {article.view_count + 1} visualizzazioni
+                    </span>
+                  </div>
+
+                  {/* Excerpt */}
+                  {article.excerpt && (
+                    <p className="text-lg text-gray-700 leading-relaxed">
+                      {article.excerpt}
+                    </p>
+                  )}
+
+                  {/* Tags */}
+                  {tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {tags.map(tag => (
+                        <Badge key={tag.id} variant="secondary" className="bg-[#245C4F]/10 text-[#245C4F] hover:bg-[#245C4F]/20">
+                          <Tag className="w-3 h-3 mr-1" />
+                          {tag.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Share buttons */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600 mr-2">Condividi:</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => shareOnSocial('facebook')}
+                      className="text-blue-600 hover:bg-blue-50"
+                    >
+                      <Facebook className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => shareOnSocial('twitter')}
+                      className="text-sky-500 hover:bg-sky-50"
+                    >
+                      <Twitter className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => shareOnSocial('linkedin')}
+                      className="text-blue-700 hover:bg-blue-50"
+                    >
+                      <Linkedin className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => shareOnSocial('whatsapp')}
+                      className="text-green-600 hover:bg-green-50"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                    </Button>
+                  </div>
+
+                  {/* Small CTA */}
+                  <div className="pt-4 border-t border-gray-200">
+                    <Button 
+                      onClick={() => navigate('/simulazioni')}
+                      className="bg-[#245C4F] hover:bg-[#1e4f44] text-white w-full md:w-auto"
+                    >
+                      Simula il tuo Mutuo
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Footer */}
-            <footer className="mt-12 pt-8 border-t border-gray-200">
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold text-[#245C4F] mb-2">
+            {/* Article Content */}
+            <article className="max-w-4xl mx-auto mb-12">
+              <div className="bg-white rounded-lg shadow-sm p-8">
+                <div 
+                  className="prose prose-lg max-w-none 
+                  prose-headings:text-[#245C4F] prose-headings:font-bold
+                  prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-h4:text-lg
+                  prose-p:text-gray-800 prose-p:leading-relaxed prose-p:mb-6
+                  prose-a:text-[#245C4F] prose-a:underline hover:prose-a:text-[#1e4f44]
+                  prose-strong:text-gray-900 prose-strong:font-semibold
+                  prose-ul:text-gray-800 prose-ol:text-gray-800
+                  prose-li:mb-2 prose-li:leading-relaxed
+                  prose-blockquote:border-l-4 prose-blockquote:border-[#245C4F] prose-blockquote:bg-[#f8f5f1] prose-blockquote:p-4 prose-blockquote:italic
+                  prose-img:rounded-lg prose-img:shadow-md prose-img:mx-auto
+                  prose-code:bg-gray-100 prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-sm
+                  prose-pre:bg-gray-900 prose-pre:text-white prose-pre:p-4 prose-pre:rounded-lg
+                  "
+                  dangerouslySetInnerHTML={{ __html: article.content }}
+                />
+              </div>
+            </article>
+
+            {/* Main CTA Section */}
+            <div className="max-w-4xl mx-auto mb-16">
+              <Card className="bg-gradient-to-r from-[#245C4F] to-[#1e4f44] text-white">
+                <CardContent className="p-8 text-center">
+                  <h3 className="text-2xl font-bold mb-4">
                     Hai bisogno di aiuto con il tuo mutuo?
                   </h3>
-                  <p className="text-gray-600 mb-4">
+                  <p className="text-lg mb-6 opacity-90">
                     I nostri esperti sono qui per guidarti nella scelta del mutuo più adatto alle tue esigenze.
                   </p>
                   <Button 
-                    onClick={() => navigate('/simulazione-avanzata')}
-                    className="bg-[#245C4F] hover:bg-[#1e4f44] text-white"
+                    onClick={() => navigate('/simulazioni')}
+                    size="lg"
+                    className="bg-white text-[#245C4F] hover:bg-gray-100 font-semibold px-8 py-3"
                   >
-                    Simula il tuo Mutuo
+                    Simula il tuo Mutuo Gratuitamente
                   </Button>
                 </CardContent>
               </Card>
-            </footer>
-          </article>
+            </div>
+
+            {/* Featured Articles Section */}
+            {featuredArticles.length > 0 && (
+              <section className="max-w-6xl mx-auto mb-12">
+                <h2 className="text-2xl font-bold mb-8 text-[#245C4F] border-b pb-4">Articoli in Evidenza</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {featuredArticles.map((featuredArticle) => (
+                    <Card key={featuredArticle.id} className="overflow-hidden hover:shadow-lg transition-shadow bg-white h-full flex flex-col">
+                      {featuredArticle.featured_image_url && (
+                        <div className="h-48 overflow-hidden">
+                          <img 
+                            src={featuredArticle.featured_image_url} 
+                            alt={featuredArticle.title}
+                            className="w-full h-full object-cover transition-transform hover:scale-105 duration-300" 
+                          />
+                        </div>
+                      )}
+                      <CardHeader className="flex-grow">
+                        {featuredArticle.category && (
+                          <Badge 
+                            variant="outline"
+                            style={{ borderColor: featuredArticle.category.color, color: featuredArticle.category.color }}
+                            className="mb-2 w-fit"
+                          >
+                            {featuredArticle.category.name}
+                          </Badge>
+                        )}
+                        <CardTitle className="text-lg hover:text-[#245C4F] transition-colors">
+                          <button onClick={() => navigate(`/blog/${featuredArticle.slug}`)}>
+                            {featuredArticle.title}
+                          </button>
+                        </CardTitle>
+                        {featuredArticle.excerpt && (
+                          <CardDescription className="line-clamp-3">
+                            {featuredArticle.excerpt}
+                          </CardDescription>
+                        )}
+                      </CardHeader>
+                      <CardFooter className="border-t pt-4">
+                        <div className="flex justify-between items-center w-full text-sm text-gray-600">
+                          <span>Di {featuredArticle.author_name}</span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {featuredArticle.reading_time_minutes} min
+                          </span>
+                        </div>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Recent Articles Section */}
+            {recentArticles.length > 0 && (
+              <section className="max-w-6xl mx-auto">
+                <h2 className="text-2xl font-bold mb-8 text-[#245C4F] border-b pb-4">Articoli Recenti</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {recentArticles.map((recentArticle) => (
+                    <Card key={recentArticle.id} className="hover:shadow-md transition-shadow bg-white">
+                      <CardContent className="p-6">
+                        <div className="flex gap-4">
+                          {recentArticle.featured_image_url && (
+                            <div className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden">
+                              <img 
+                                src={recentArticle.featured_image_url} 
+                                alt={recentArticle.title}
+                                className="w-full h-full object-cover" 
+                              />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            {recentArticle.category && (
+                              <Badge 
+                                variant="outline"
+                                style={{ borderColor: recentArticle.category.color, color: recentArticle.category.color }}
+                                className="mb-2 text-xs"
+                              >
+                                {recentArticle.category.name}
+                              </Badge>
+                            )}
+                            <h3 className="font-semibold text-gray-900 mb-2 hover:text-[#245C4F] transition-colors cursor-pointer line-clamp-2"
+                                onClick={() => navigate(`/blog/${recentArticle.slug}`)}>
+                              {recentArticle.title}
+                            </h3>
+                            <div className="flex items-center justify-between text-xs text-gray-500">
+                              <span>Di {recentArticle.author_name}</span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {recentArticle.reading_time_minutes} min
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
         </div>
+
+        {/* Footer */}
+        <footer className="py-6 px-4 border-t border-[#BEB8AE] bg-[#f7f5f2]">
+          <div className="max-w-5xl mx-auto flex justify-between items-center">
+            <p className="text-sm text-gray-600">© 2025 GoMutuo - Tutti i diritti riservati</p>
+            <div className="flex gap-4 items-center">
+              <button onClick={() => navigate("/privacy")} className="text-sm text-gray-600 hover:text-[#245C4F]">
+                Privacy
+              </button>
+              <a href="#" className="text-sm text-gray-600 hover:text-[#245C4F]">Termini</a>
+              <a href="#" className="text-sm text-gray-600 hover:text-[#245C4F]">Contatti</a>
+              <LoginButton />
+            </div>
+          </div>
+        </footer>
       </div>
     </>
   );
