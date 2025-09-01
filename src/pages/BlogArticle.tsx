@@ -276,9 +276,9 @@ export default function BlogArticle() {
           {/* Hero Section - Two column layout */}
           <div className="grid grid-cols-1 lg:grid-cols-2">
             {/* Left side - Image */}
-            <div className="w-full">
+            <div className="w-full h-full">
               {article.featured_image_url ? (
-                <div className="w-full h-full overflow-hidden">
+                <div className="w-full h-full min-h-full overflow-hidden">
                   <img 
                     src={article.featured_image_url} 
                     alt={article.featured_image_alt || article.title}
@@ -286,7 +286,7 @@ export default function BlogArticle() {
                   />
                 </div>
               ) : (
-                <div className="aspect-[2/1] bg-gradient-to-br from-[#245C4F] to-[#1e4f44] flex items-center justify-center">
+                <div className="w-full h-full min-h-full bg-gradient-to-br from-[#245C4F] to-[#1e4f44] flex items-center justify-center">
                   <div className="text-white text-center p-8">
                     <h2 className="text-2xl font-bold opacity-80">GoMutuo</h2>
                     <p className="opacity-60 mt-2">Blog</p>
@@ -296,7 +296,7 @@ export default function BlogArticle() {
             </div>
 
             {/* Right side - Metadata with light green background */}
-            <div className="bg-[#245C4F]/5 p-8 space-y-6">
+            <div className="bg-[#245C4F]/5 p-8 space-y-6 flex flex-col justify-center">
               {/* Category */}
               {article.category && (
                 <Badge 
