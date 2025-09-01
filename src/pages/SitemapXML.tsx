@@ -22,15 +22,6 @@ const SitemapXML: React.FC = () => {
           return;
         }
 
-        // Fetch all categories
-        const { data: categories, error: categoriesError } = await supabase
-          .from('blog_categories')
-          .select('slug, updated_at')
-          .order('updated_at', { ascending: false });
-
-        if (categoriesError) {
-          console.error('Error fetching categories:', categoriesError);
-        }
 
         const baseUrl = 'https://gomutuo.it';
         const currentDate = new Date().toISOString();
@@ -96,20 +87,6 @@ const SitemapXML: React.FC = () => {
           });
         }
 
-        // Add blog categories
-        if (categories && categories.length > 0) {
-          sitemap += '\n  \n  <!-- Blog Categories -->';
-          categories.forEach(category => {
-            const lastmod = category.updated_at;
-            sitemap += `
-  <url>
-    <loc>${baseUrl}/blog/categoria/${category.slug}</loc>
-    <lastmod>${new Date(lastmod).toISOString()}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>`;
-          });
-        }
 
         sitemap += '\n</urlset>';
 
