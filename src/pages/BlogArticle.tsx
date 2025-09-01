@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, Eye, Calendar, Tag, Share2, Facebook, Twitter, Linkedin, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Clock, Eye, Calendar, Tag, Share2, Facebook, Twitter, Linkedin, MessageCircle, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -222,6 +222,26 @@ export default function BlogArticle() {
     window.open(shareUrls[platform as keyof typeof shareUrls], '_blank', 'width=600,height=400');
   };
 
+  const copyLink = async () => {
+    if (!article) return;
+    
+    const url = `https://gomutuo.it/blog/${article.slug}`;
+    
+    try {
+      await navigator.clipboard.writeText(url);
+      toast({
+        title: "Link copiato!",
+        description: "Il link dell'articolo è stato copiato negli appunti",
+      });
+    } catch (error) {
+      toast({
+        title: "Errore",
+        description: "Impossibile copiare il link",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f7f5f2]">
@@ -420,20 +440,20 @@ export default function BlogArticle() {
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => shareOnSocial('whatsapp')}
+                        className="text-green-600 hover:bg-green-50 justify-start"
+                      >
+                        <MessageCircle className="w-4 h-4 mr-2" />
+                        WhatsApp
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => shareOnSocial('facebook')}
                         className="text-blue-600 hover:bg-blue-50 justify-start"
                       >
                         <Facebook className="w-4 h-4 mr-2" />
                         Facebook
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => shareOnSocial('twitter')}
-                        className="text-sky-500 hover:bg-sky-50 justify-start"
-                      >
-                        <Twitter className="w-4 h-4 mr-2" />
-                        Twitter
                       </Button>
                       <Button
                         variant="outline"
@@ -447,11 +467,20 @@ export default function BlogArticle() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => shareOnSocial('whatsapp')}
-                        className="text-green-600 hover:bg-green-50 justify-start"
+                        onClick={() => shareOnSocial('twitter')}
+                        className="text-sky-500 hover:bg-sky-50 justify-start"
                       >
-                        <MessageCircle className="w-4 h-4 mr-2" />
-                        WhatsApp
+                        <Twitter className="w-4 h-4 mr-2" />
+                        Twitter
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={copyLink}
+                        className="text-gray-600 hover:bg-gray-50 justify-start"
+                      >
+                        <Copy className="w-4 h-4 mr-2" />
+                        Copia link
                       </Button>
                     </div>
                   </div>
