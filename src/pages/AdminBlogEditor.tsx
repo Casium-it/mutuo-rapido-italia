@@ -195,13 +195,12 @@ export default function AdminBlogEditor() {
   };
 
   const handleExcerptChange = (excerpt: string) => {
-    const excerptValue = excerpt.trim() || null;
     setArticle(prev => ({
       ...prev,
-      excerpt: excerptValue,
+      excerpt: excerpt || null,
       meta_description: prev.meta_description || (excerpt ? excerpt.substring(0, 160) : null),
-      og_description: prev.og_description || excerptValue,
-      twitter_description: prev.twitter_description || excerptValue,
+      og_description: prev.og_description || excerpt || null,
+      twitter_description: prev.twitter_description || excerpt || null,
     }));
   };
 
