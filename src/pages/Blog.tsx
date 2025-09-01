@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { LoginButton } from "@/components/LoginButton";
 import { FileText, Calendar, Search, BookOpen, Tag, Clock, Eye } from "lucide-react";
-import BlogPostSchema from "@/components/BlogPostSchema";
+import BlogArticleSchema from "@/components/BlogPostSchema";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -130,17 +130,31 @@ const Blog = () => {
         <title>Blog | GoMutuo - Articoli e approfondimenti sui mutui</title>
         <meta name="description" content="Articoli, guide e approfondimenti sul mondo dei mutui e del mercato immobiliare. Scopri i nostri consigli per scegliere il mutuo più adatto alle tue esigenze." />
         <meta name="keywords" content="mutuo, mutui, blog mutui, consigli mutuo, tassi mutuo, mercato immobiliare" />
+        {/* Open Graph */}
+        <meta property="og:site_name" content="GoMutuo" />
+        <meta property="og:locale" content="it_IT" />
         <meta property="og:title" content="Blog | GoMutuo" />
         <meta property="og:description" content="Articoli, guide e approfondimenti sul mondo dei mutui e del mercato immobiliare." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://gomutuo.it/blog" />
+        <meta property="og:image" content="https://gomutuo.it/favicon.png" />
+        <meta property="og:image:alt" content="GoMutuo - Piattaforma per mutui" />
+        
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@GoMutuo" />
+        <meta name="twitter:title" content="Blog | GoMutuo" />
+        <meta name="twitter:description" content="Articoli, guide e approfondimenti sul mondo dei mutui e del mercato immobiliare." />
+        <meta name="twitter:image" content="https://gomutuo.it/favicon.png" />
+        <meta name="twitter:image:alt" content="GoMutuo - Piattaforma per mutui" />
         <link rel="canonical" href="https://gomutuo.it/blog" />
       </Helmet>
 
-      <BlogPostSchema 
+      <BlogArticleSchema 
         title="Blog | GoMutuo"
         description="Articoli, guide e approfondimenti sul mondo dei mutui e del mercato immobiliare"
         url="https://gomutuo.it/blog"
+        author="GoMutuo Team"
       />
 
       {/* Header fisso */}

@@ -1,33 +1,80 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 
-interface BlogPostSchemaProps {
+interface BlogArticleSchemaProps {
   title: string;
   description: string;
   url: string;
+  author: string;
+  publishedDate?: string;
+  modifiedDate?: string;
+  featuredImage?: string;
+  category?: string;
+  tags?: string[];
+  readingTime?: number;
 }
 
-const BlogPostSchema: React.FC<BlogPostSchemaProps> = ({ title, description, url }) => {
-  const schema = {
-    "@context": "http://schema.org",
-    "@type": "WebPage",
-    "name": title,
+const BlogArticleSchema: React.FC<BlogArticleSchemaProps> = ({ 
+  title, 
+  description, 
+  url, 
+  author,
+  publishedDate,
+  modifiedDate,
+  featuredImage,
+  category,
+  tags,
+  readingTime 
+}) => {
+  const organizationSchema = {
+    "@type": "Organization",
+    "@id": "https://gomutuo.it/#organization",
+    "name": "GoMutuo",
+    "url": "https://gomutuo.it",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://gomutuo.it/favicon.png"
+    },
+    "description": "Piattaforma per trovare il mutuo giusto in Italia con simulazioni avanzate e processo di richiesta completamente online"
+  };
+
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "@id": url + "#article",
+    "headline": title,
     "description": description,
     "url": url,
-    "publisher": {
-      "@type": "Organization",
-      "name": "GoMutuo",
-      "url": "https://gomutuo.it"
-    }
+    "author": {
+      "@type": "Person",
+      "name": author
+    },
+    "publisher": organizationSchema,
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": url
+    },
+    ...(publishedDate && { "datePublished": publishedDate }),
+    ...(modifiedDate && { "dateModified": modifiedDate }),
+    ...(featuredImage && {
+      "image": {
+        "@type": "ImageObject",
+        "url": featuredImage
+      }
+    }),
+    ...(category && { "articleSection": category }),
+    ...(tags && tags.length > 0 && { "keywords": tags.join(", ") }),
+    ...(readingTime && { "timeRequired": `PT${readingTime}M` }),
+    "inLanguage": "it-IT"
   };
 
   return (
     <Helmet>
       <script type="application/ld+json">
-        {JSON.stringify(schema)}
+        {JSON.stringify([organizationSchema, articleSchema])}
       </script>
     </Helmet>
   );
 };
 
-export default BlogPostSchema;
+export default BlogArticleSchema;

@@ -12,3 +12,6 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /blog/preview/
+
+Sitemap: https://gomutuo.it/sitemap.xml

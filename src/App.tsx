@@ -37,6 +37,7 @@ import AdminBlogArticles from "./pages/AdminBlogArticles";
 import AdminBlogEditor from "./pages/AdminBlogEditor";
 import BlogArticle from "./pages/BlogArticle";
 import BlogArticlePreview from "./pages/BlogArticlePreview";
+import SitemapXML from "./pages/SitemapXML";
 import AdminSimulationDetail from "./pages/AdminSimulationDetail";
 import AdminLeadDetail from "./pages/AdminLeadDetail";
 import AdminNotifications from "./pages/AdminNotifications";
@@ -78,6 +79,7 @@ const AppWithTracking = () => {
         </ProtectedRoute>
       } />
       <Route path="/blog/:slug" element={<BlogArticle />} />
+      <Route path="/sitemap.xml" element={<SitemapXML />} />
       <Route path="/chi-siamo" element={<ChiSiamo />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/simulazione-avanzata" element={<SimulazioneAvanzata />} />

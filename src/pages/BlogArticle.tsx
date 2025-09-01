@@ -10,7 +10,7 @@ import { Helmet } from 'react-helmet-async';
 import { Logo } from "@/components/Logo";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { LoginButton } from "@/components/LoginButton";
-import 'react-quill/dist/quill.snow.css';
+import BlogArticleSchema from '@/components/BlogPostSchema';
 
 interface BlogArticle {
   id: string;
@@ -23,6 +23,7 @@ interface BlogArticle {
   author_name: string;
   status: string;
   published_at: string | null;
+  updated_at: string;
   reading_time_minutes: number;
   view_count: number;
   meta_title: string | null;
@@ -271,17 +272,22 @@ export default function BlogArticle() {
         <link rel="canonical" href={canonicalUrl} />
         
         {/* Open Graph */}
+        <meta property="og:site_name" content="GoMutuo" />
+        <meta property="og:locale" content="it_IT" />
         <meta property="og:title" content={article.og_title || seoTitle} />
         <meta property="og:description" content={article.og_description || seoDescription} />
         <meta property="og:type" content="article" />
         <meta property="og:url" content={canonicalUrl} />
         {seoImage && <meta property="og:image" content={seoImage} />}
+        {seoImage && <meta property="og:image:alt" content={article.featured_image_alt || article.title} />}
         
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@GoMutuo" />
         <meta name="twitter:title" content={article.twitter_title || seoTitle} />
         <meta name="twitter:description" content={article.twitter_description || seoDescription} />
         {article.twitter_image_url && <meta name="twitter:image" content={article.twitter_image_url} />}
+        {article.twitter_image_url && <meta name="twitter:image:alt" content={article.featured_image_alt || article.title} />}
         
         {/* Article specific */}
         <meta property="article:author" content={article.author_name} />
@@ -291,6 +297,19 @@ export default function BlogArticle() {
           <meta key={tag.id} property="article:tag" content={tag.name} />
         ))}
       </Helmet>
+
+      <BlogArticleSchema
+        title={seoTitle}
+        description={seoDescription}
+        url={canonicalUrl}
+        author={article.author_name}
+        publishedDate={article.published_at || undefined}
+        modifiedDate={article.updated_at || undefined}
+        featuredImage={seoImage || undefined}
+        category={article.category?.name}
+        tags={tags.map(tag => tag.name)}
+        readingTime={article.reading_time_minutes}
+      />
 
       <div className="min-h-screen flex flex-col">
         {/* Header fisso - Same as Blog page */}
