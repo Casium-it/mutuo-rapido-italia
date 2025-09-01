@@ -276,7 +276,8 @@ export default function AdminBlogEditor() {
         author_name: article.author_name,
         category_id: article.category_id || null, // Critical fix: null instead of empty string
         status: status || article.status,
-        published_at: status === 'published' && !article.id ? new Date().toISOString() : undefined,
+        // Set published_at when publishing (for both new and existing articles)
+        ...(status === 'published' ? { published_at: new Date().toISOString() } : {}),
         reading_time_minutes: Math.max(1, Math.ceil(article.content.split(' ').length / 200)),
         is_featured: article.is_featured || false,
         allow_comments: article.allow_comments !== false, // Default true
