@@ -243,16 +243,6 @@ export default function BlogArticlePreview() {
 
             {/* Right side - Metadata with light green background */}
             <div className="bg-[#245C4F]/5 p-8 space-y-6 flex flex-col justify-center">
-              {/* Preview Status */}
-              <div className="flex items-center gap-2 mb-4">
-                <Badge 
-                  variant="outline" 
-                  className="text-orange-600 border-orange-300 bg-orange-50"
-                >
-                  {article.status === 'draft' ? 'Bozza' : article.status === 'archived' ? 'Archiviato' : 'In Anteprima'}
-                </Badge>
-              </div>
-
               {/* Category */}
               {article.category && (
                 <Badge 
@@ -272,17 +262,16 @@ export default function BlogArticlePreview() {
               {/* Author and Date */}
               <div className="flex flex-wrap items-center gap-4 text-gray-600">
                 <span className="font-medium">di {article.author_name}</span>
-                <span className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  {article.published_at ? 
-                    new Date(article.published_at).toLocaleDateString('it-IT', {
+                {article.published_at && (
+                  <span className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    {new Date(article.published_at).toLocaleDateString('it-IT', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric'
-                    }) : 
-                    'Data di pubblicazione non impostata'
-                  }
-                </span>
+                    })}
+                  </span>
+                )}
               </div>
 
               {/* Excerpt */}
@@ -332,32 +321,71 @@ export default function BlogArticlePreview() {
                     </nav>
                   </div>
 
-                  {/* Preview Info */}
+                  {/* Preview Info instead of Share buttons */}
                   <div className="mb-8 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                    <h4 className="text-sm font-semibold text-orange-700 mb-2">Modalità Anteprima</h4>
+                    <h4 className="text-sm font-semibold text-orange-700 mb-2">🔍 Modalità Anteprima</h4>
                     <p className="text-xs text-orange-600">
                       Questa è un'anteprima dell'articolo. Le funzioni di condivisione sono disabilitate.
                     </p>
+                  </div>
+
+                  {/* CTA Button */}
+                  <div className="mb-6">
+                    <Button 
+                      onClick={() => navigate('/simulazioni')}
+                      className="bg-[#245C4F] hover:bg-[#1e4f44] text-white w-full shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all"
+                    >
+                      Simula il tuo Mutuo
+                    </Button>
+                  </div>
+
+                  {/* Reading time and views */}
+                  <div className="pt-6 border-t border-gray-200">
+                    <div className="space-y-2 text-sm text-gray-500">
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        <span>{article.reading_time_minutes} min di lettura</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Eye className="w-4 h-4" />
+                        <span>{article.view_count} visualizzazioni</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
                 {/* Main Content - 3/4 width */}
                 <div className="lg:col-span-3 p-8">
-                  <article 
-                    className="prose prose-lg max-w-none prose-headings:text-[#245C4F] prose-h1:text-2xl prose-h1:font-bold prose-h1:mb-4 prose-h2:text-xl prose-h2:font-semibold prose-h2:mb-3 prose-h2:mt-8 prose-h3:text-lg prose-h3:font-medium prose-h3:mb-2 prose-h3:mt-6 prose-p:mb-2 prose-p:mt-0 prose-ul:mb-2 prose-ul:mt-0 prose-ol:mb-2 prose-ol:mt-0 prose-li:mt-0 prose-li:-mt-1 prose-strong:text-[#245C4F] prose-a:text-[#245C4F] prose-a:no-underline hover:prose-a:underline prose-blockquote:border-[#245C4F] prose-blockquote:bg-[#245C4F]/5 prose-blockquote:p-4 prose-blockquote:rounded-lg"
-                    data-article-content
-                  >
-                    {article.content ? (
-                      <div 
-                        dangerouslySetInnerHTML={{ 
-                          __html: article.content
-                        }}
-                      />
-                    ) : (
-                      <p className="text-gray-500 italic">
-                        Nessun contenuto inserito...
-                      </p>
-                    )}
+                  <article>
+                    <div 
+                      data-article-content
+                      className="prose prose-lg max-w-none 
+                       prose-headings:text-[#245C4F] prose-headings:font-bold
+                       prose-h1:text-4xl prose-h1:mb-6 prose-h1:mt-8 prose-h1:leading-tight
+                       prose-h2:text-3xl prose-h2:mb-4 prose-h2:mt-8 prose-h2:leading-tight prose-h2:font-bold
+                       prose-h3:text-2xl prose-h3:mb-3 prose-h3:mt-6 prose-h3:leading-tight prose-h3:font-bold
+                       prose-h4:text-xl prose-h4:mb-3 prose-h4:mt-5 prose-h4:font-bold
+                       prose-h5:text-lg prose-h5:mb-2 prose-h5:mt-4 prose-h5:font-bold
+                       prose-h6:text-base prose-h6:mb-2 prose-h6:mt-3 prose-h6:font-bold
+                         prose-p:text-gray-800 prose-p:leading-relaxed prose-p:text-base prose-p:font-normal prose-p:mb-2 prose-p:mt-0
+                         prose-a:text-blue-600 prose-a:underline prose-a:font-bold hover:prose-a:text-blue-800 prose-a:transition-colors 
+                         prose-strong:text-gray-900 prose-strong:font-bold
+                         prose-ul:text-gray-800 prose-ul:list-disc prose-ul:pl-6 prose-ul:mb-2 prose-ul:mt-0
+                         prose-ol:text-gray-800 prose-ol:list-decimal prose-ol:pl-6 prose-ol:mb-2 prose-ol:mt-0
+                        prose-li:mb-0 prose-li:leading-relaxed prose-li:text-base prose-li:mt-0
+                      prose-blockquote:border-l-4 prose-blockquote:border-[#245C4F] prose-blockquote:bg-[#f8f5f1] prose-blockquote:p-4 prose-blockquote:italic prose-blockquote:my-6
+                      prose-img:rounded-lg prose-img:shadow-md prose-img:mx-auto prose-img:my-8
+                      prose-code:bg-gray-100 prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-sm
+                      prose-pre:bg-gray-900 prose-pre:text-white prose-pre:p-4 prose-pre:rounded-lg prose-pre:my-6
+                      prose-table:border-collapse prose-table:my-6
+                      prose-th:bg-gray-50 prose-th:border prose-th:border-gray-300 prose-th:p-3 prose-th:text-left prose-th:font-semibold
+                      prose-td:border prose-td:border-gray-300 prose-td:p-3
+                      "
+                      style={{
+                        fontSize: 'inherit'
+                      }}
+                      dangerouslySetInnerHTML={{ __html: article.content }}
+                    />
                   </article>
                 </div>
               </div>
