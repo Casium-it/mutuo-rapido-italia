@@ -36,6 +36,7 @@ import AdminBlockDetail from "./pages/AdminBlockDetail";
 import AdminBlogArticles from "./pages/AdminBlogArticles";
 import AdminBlogEditor from "./pages/AdminBlogEditor";
 import BlogArticle from "./pages/BlogArticle";
+import BlogArticlePreview from "./pages/BlogArticlePreview";
 import AdminSimulationDetail from "./pages/AdminSimulationDetail";
 import AdminLeadDetail from "./pages/AdminLeadDetail";
 import AdminNotifications from "./pages/AdminNotifications";
@@ -71,6 +72,11 @@ const AppWithTracking = () => {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/blog" element={<Blog />} />
+      <Route path="/blog/preview/:id" element={
+        <ProtectedRoute requireAdmin>
+          <BlogArticlePreview />
+        </ProtectedRoute>
+      } />
       <Route path="/blog/:slug" element={<BlogArticle />} />
       <Route path="/chi-siamo" element={<ChiSiamo />} />
       <Route path="/auth" element={<Auth />} />
