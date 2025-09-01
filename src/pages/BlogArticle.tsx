@@ -10,6 +10,7 @@ import { Helmet } from 'react-helmet-async';
 import { Logo } from "@/components/Logo";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { LoginButton } from "@/components/LoginButton";
+import 'react-quill/dist/quill.snow.css';
 
 interface BlogArticle {
   id: string;
