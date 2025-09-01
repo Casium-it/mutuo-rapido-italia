@@ -420,20 +420,20 @@ export default function BlogArticle() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => shareOnSocial('whatsapp')}
+                        onClick={() => shareOnSocial('facebook')}
                         className="text-blue-600 hover:bg-blue-50 justify-start"
                       >
-                        <whatsapp className="w-4 h-4 mr-2" />
-                        whatsapp
+                        <Facebook className="w-4 h-4 mr-2" />
+                        Facebook
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => shareOnSocial('facebook')}
+                        onClick={() => shareOnSocial('twitter')}
                         className="text-sky-500 hover:bg-sky-50 justify-start"
                       >
-                        <facebook className="w-4 h-4 mr-2" />
-                        facebook
+                        <Twitter className="w-4 h-4 mr-2" />
+                        Twitter
                       </Button>
                       <Button
                         variant="outline"
@@ -447,11 +447,11 @@ export default function BlogArticle() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => shareOnSocial('twitter')}
+                        onClick={() => shareOnSocial('whatsapp')}
                         className="text-green-600 hover:bg-green-50 justify-start"
                       >
                         <MessageCircle className="w-4 h-4 mr-2" />
-                        twitter
+                        WhatsApp
                       </Button>
                     </div>
                   </div>
@@ -494,12 +494,12 @@ export default function BlogArticle() {
                        prose-h4:text-xl prose-h4:mb-3 prose-h4:mt-5 prose-h4:font-bold
                        prose-h5:text-lg prose-h5:mb-2 prose-h5:mt-4 prose-h5:font-bold
                        prose-h6:text-base prose-h6:mb-2 prose-h6:mt-3 prose-h6:font-bold
-                         prose-p:text-gray-800 prose-p:leading-relaxed prose-p:text-base prose-p:font-normal prose-p:mb-3 prose-p:mt-0
+                         prose-p:text-gray-800 prose-p:leading-relaxed prose-p:text-base prose-p:font-normal prose-p:mb-2 prose-p:mt-0
                          prose-a:text-blue-600 prose-a:underline prose-a:font-bold hover:prose-a:text-blue-800 prose-a:transition-colors 
                          prose-strong:text-gray-900 prose-strong:font-bold
-                         prose-ul:text-gray-800 prose-ul:list-disc prose-ul:pl-6 prose-ul:mb-3 prose-ul:mt-0
-                         prose-ol:text-gray-800 prose-ol:list-decimal prose-ol:pl-6 prose-ol:mb-3 prose-ol:mt-0
-                        prose-li:mb-0 prose-li:leading-relaxed prose-li:text-base prose-li:mt-0.5
+                         prose-ul:text-gray-800 prose-ul:list-disc prose-ul:pl-6 prose-ul:mb-2 prose-ul:mt-0
+                         prose-ol:text-gray-800 prose-ol:list-decimal prose-ol:pl-6 prose-ol:mb-2 prose-ol:mt-0
+                        prose-li:mb-0 prose-li:leading-relaxed prose-li:text-base prose-li:mt-0
                       prose-blockquote:border-l-4 prose-blockquote:border-[#245C4F] prose-blockquote:bg-[#f8f5f1] prose-blockquote:p-4 prose-blockquote:italic prose-blockquote:my-6
                       prose-img:rounded-lg prose-img:shadow-md prose-img:mx-auto prose-img:my-8
                       prose-code:bg-gray-100 prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-sm
