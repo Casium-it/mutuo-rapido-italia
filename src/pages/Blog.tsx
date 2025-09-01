@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { Logo } from "@/components/Logo";
@@ -9,98 +9,119 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { LoginButton } from "@/components/LoginButton";
-import { FileText, Calendar, Search, BookOpen, Tag } from "lucide-react";
+import { FileText, Calendar, Search, BookOpen, Tag, Clock, Eye } from "lucide-react";
 import BlogPostSchema from "@/components/BlogPostSchema";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+interface BlogArticle {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  featured_image_url: string | null;
+  author_name: string;
+  published_at: string | null;
+  reading_time_minutes: number;
+  view_count: number;
+  category?: {
+    id: string;
+    name: string;
+    color: string;
+  };
+}
 
 const Blog = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+  const [featuredArticles, setFeaturedArticles] = useState<BlogArticle[]>([]);
+  const [recentArticles, setRecentArticles] = useState<BlogArticle[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [allArticles, setAllArticles] = useState<BlogArticle[]>([]);
 
-  const featuredPosts = [
-    {
-      id: 1,
-      title: "Come scegliere il mutuo giusto per le tue esigenze",
-      excerpt: "Una guida completa per orientarsi tra le diverse tipologie di mutuo e trovare quello più adatto alla tua situazione finanziaria.",
-      category: "Guide",
-      date: "15 Gen 2025",
-      author: "Marco Rossi",
-      image: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1026&q=80"
-    },
-    {
-      id: 2,
-      title: "Tassi mutui 2025: previsioni e andamenti",
-      excerpt: "Analisi dell'andamento dei tassi di interesse e previsioni per il mercato dei mutui nel 2025.",
-      category: "Mercato",
-      date: "10 Gen 2025",
-      author: "Laura Bianchi",
-      image: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80"
-    },
-    {
-      id: 3,
-      title: "Surroga del mutuo: quando conviene davvero",
-      excerpt: "Tutto quello che devi sapere sulla surroga del mutuo e come valutare se è vantaggiosa per te.",
-      category: "Consigli",
-      date: "5 Gen 2025",
-      author: "Giuseppe Verdi",
-      image: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80"
+  useEffect(() => {
+    fetchArticles();
+  }, []);
+
+  const fetchArticles = async () => {
+    try {
+      setLoading(true);
+
+      // Fetch featured articles
+      const { data: featuredData, error: featuredError } = await supabase
+        .from('blog_articles')
+        .select(`
+          id, title, slug, excerpt, featured_image_url, author_name, published_at, reading_time_minutes, view_count,
+          category:blog_categories(id, name, color)
+        `)
+        .eq('status', 'published')
+        .eq('is_featured', true)
+        .order('published_at', { ascending: false })
+        .limit(6);
+
+      if (featuredError) throw featuredError;
+
+      // Fetch recent articles
+      const { data: recentData, error: recentError } = await supabase
+        .from('blog_articles')
+        .select(`
+          id, title, slug, excerpt, featured_image_url, author_name, published_at, reading_time_minutes, view_count,
+          category:blog_categories(id, name, color)
+        `)
+        .eq('status', 'published')
+        .order('published_at', { ascending: false })
+        .limit(10);
+
+      if (recentError) throw recentError;
+
+      // Fetch all articles for search
+      const { data: allData, error: allError } = await supabase
+        .from('blog_articles')
+        .select(`
+          id, title, slug, excerpt, featured_image_url, author_name, published_at, reading_time_minutes, view_count,
+          category:blog_categories(id, name, color)
+        `)
+        .eq('status', 'published')
+        .order('published_at', { ascending: false });
+
+      if (allError) throw allError;
+
+      setFeaturedArticles(featuredData || []);
+      setRecentArticles(recentData || []);
+      setAllArticles(allData || []);
+
+    } catch (error) {
+      console.error('Error fetching articles:', error);
+      toast({
+        title: "Errore",
+        description: "Impossibile caricare gli articoli",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const recentPosts = [
-    {
-      id: 4,
-      title: "Mutuo prima casa: agevolazioni e requisiti 2025",
-      category: "Prima Casa",
-      date: "28 Dic 2024",
-      author: "Anna Ferrari"
-    },
-    {
-      id: 5,
-      title: "Documentazione necessaria per richiedere un mutuo",
-      category: "Guide",
-      date: "20 Dic 2024",
-      author: "Paolo Neri"
-    },
-    {
-      id: 6,
-      title: "Mutuo a tasso fisso vs variabile: quale scegliere",
-      category: "Confronti",
-      date: "15 Dic 2024",
-      author: "Maria Gialli"
-    },
-    {
-      id: 7,
-      title: "Come migliorare il proprio credit score",
-      category: "Consigli",
-      date: "10 Dic 2024",
-      author: "Luca Blu"
-    },
-    {
-      id: 8,
-      title: "Mutuo giovani: opportunità e vantaggi",
-      category: "Giovani",
-      date: "5 Dic 2024",
-      author: "Sofia Rosa"
-    }
-  ];
+  // Filter articles based on search term
+  const filteredFeaturedArticles = searchTerm 
+    ? allArticles.filter(article => 
+        article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (article.excerpt && article.excerpt.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (article.category && article.category.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        article.author_name.toLowerCase().includes(searchTerm.toLowerCase())
+      ).filter(article => featuredArticles.some(f => f.id === article.id))
+    : featuredArticles;
 
-  // Featured posts filter
-  const filteredFeaturedPosts = searchTerm 
-    ? featuredPosts.filter(post => 
-        post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.category.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredRecentArticles = searchTerm
+    ? allArticles.filter(article =>
+        article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (article.excerpt && article.excerpt.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (article.category && article.category.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        article.author_name.toLowerCase().includes(searchTerm.toLowerCase())
       )
-    : featuredPosts;
-
-  // Recent posts filter  
-  const filteredRecentPosts = searchTerm
-    ? recentPosts.filter(post =>
-        post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.category.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : recentPosts;
+    : recentArticles;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -183,89 +204,196 @@ const Blog = () => {
             </div>
           </div>
 
-          {/* Featured Posts Section */}
-          <section className="mb-12">
-            <h2 className="text-2xl font-semibold mb-6 border-b pb-2 text-[#245C4F]">Articoli in Evidenza</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredFeaturedPosts.map((post) => (
-                <Card key={post.id} className="overflow-hidden flex flex-col h-full hover:shadow-lg transition-shadow bg-white">
-                  {/* Image */}
-                  <div className="h-48 overflow-hidden">
-                    <img 
-                      src={post.image} 
-                      alt={post.title}
-                      className="w-full h-full object-cover transition-transform hover:scale-105 duration-300" 
-                    />
-                  </div>
-                  
-                  {/* Header */}
-                  <CardHeader>
-                    <div className="flex justify-between items-center mb-2">
-                      <Badge className="bg-[#245C4F] hover:bg-[#1e4f44] text-white">
-                        {post.category}
-                      </Badge>
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Calendar className="h-4 w-4 mr-1 text-[#245C4F]" />
-                        {post.date}
-                      </div>
+          {/* Loading State */}
+          {loading && (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#245C4F] mx-auto mb-4"></div>
+              <p className="text-gray-600">Caricamento articoli...</p>
+            </div>
+          )}
+
+          {/* Featured Articles Section */}
+          {!loading && filteredFeaturedArticles.length > 0 && (
+            <section className="mb-12">
+              <h2 className="text-2xl font-semibold mb-6 border-b pb-2 text-[#245C4F]">
+                {searchTerm ? `Articoli in Evidenza (${filteredFeaturedArticles.length})` : 'Articoli in Evidenza'}
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredFeaturedArticles.map((article) => (
+                  <Card key={article.id} className="overflow-hidden flex flex-col h-full hover:shadow-lg transition-shadow bg-white">
+                    {/* Image */}
+                    <div className="h-48 overflow-hidden">
+                      {article.featured_image_url ? (
+                        <img 
+                          src={article.featured_image_url} 
+                          alt={article.title}
+                          className="w-full h-full object-cover transition-transform hover:scale-105 duration-300" 
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-[#245C4F] to-[#1e4f44] flex items-center justify-center">
+                          <div className="text-white text-center p-4">
+                            <h3 className="font-bold opacity-80">GoMutuo</h3>
+                            <p className="text-sm opacity-60">Blog</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <CardTitle className="text-xl hover:text-[#245C4F] transition-colors">
-                      <Link to={`/blog/${post.id}`}>{post.title}</Link>
-                    </CardTitle>
-                    <CardDescription>{post.excerpt}</CardDescription>
-                  </CardHeader>
-                  
-                  {/* Footer */}
-                  <CardFooter className="border-t pt-4 mt-auto">
-                    <div className="flex justify-between items-center w-full">
-                      <span className="text-sm text-gray-600">Di {post.author}</span>
-                      <Button variant="ghost" size="sm" className="text-[#245C4F] hover:text-[#1e4f44]">
-                        <Link to={`/blog/${post.id}`} className="flex items-center">
-                          Leggi <FileText className="ml-1 h-4 w-4" />
-                        </Link>
+                    
+                    {/* Header */}
+                    <CardHeader>
+                      <div className="flex justify-between items-center mb-2">
+                        {article.category && (
+                          <Badge 
+                            style={{ backgroundColor: article.category.color + '20', color: article.category.color, borderColor: article.category.color }}
+                            className="border"
+                          >
+                            {article.category.name}
+                          </Badge>
+                        )}
+                        <div className="flex items-center text-sm text-gray-500">
+                          <Calendar className="h-4 w-4 mr-1 text-[#245C4F]" />
+                          {article.published_at && new Date(article.published_at).toLocaleDateString('it-IT', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric'
+                          })}
+                        </div>
+                      </div>
+                      <CardTitle className="text-xl hover:text-[#245C4F] transition-colors">
+                        <button onClick={() => navigate(`/blog/${article.slug}`)}>
+                          {article.title}
+                        </button>
+                      </CardTitle>
+                      {article.excerpt && (
+                        <CardDescription className="line-clamp-3">
+                          {article.excerpt}
+                        </CardDescription>
+                      )}
+                    </CardHeader>
+                    
+                    {/* Footer */}
+                    <CardFooter className="border-t pt-4 mt-auto">
+                      <div className="flex justify-between items-center w-full">
+                        <span className="text-sm text-gray-600">Di {article.author_name}</span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs text-gray-500 flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {article.reading_time_minutes} min
+                          </span>
+                          <span className="text-xs text-gray-500 flex items-center gap-1">
+                            <Eye className="h-3 w-3" />
+                            {article.view_count}
+                          </span>
+                          <Button variant="ghost" size="sm" className="text-[#245C4F] hover:text-[#1e4f44] p-0">
+                            <button onClick={() => navigate(`/blog/${article.slug}`)} className="flex items-center">
+                              Leggi <FileText className="ml-1 h-4 w-4" />
+                            </button>
+                          </Button>
+                        </div>
+                      </div>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Recent Articles Section */}
+          {!loading && filteredRecentArticles.length > 0 && (
+            <section className="mb-12">
+              <h2 className="text-2xl font-semibold mb-6 border-b pb-2 text-[#245C4F]">
+                {searchTerm ? `Risultati di ricerca (${filteredRecentArticles.length})` : 'Articoli Recenti'}
+              </h2>
+              <div className="space-y-4">
+                {filteredRecentArticles.map((article) => (
+                  <div key={article.id} className="p-4 border rounded-lg hover:shadow-md transition-shadow bg-white">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex gap-4 flex-1">
+                        {article.featured_image_url && (
+                          <div className="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden">
+                            <img 
+                              src={article.featured_image_url} 
+                              alt={article.title}
+                              className="w-full h-full object-cover" 
+                            />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            {article.category && (
+                              <Badge 
+                                style={{ backgroundColor: article.category.color + '20', color: article.category.color, borderColor: article.category.color }}
+                                className="border text-xs"
+                              >
+                                <Tag className="h-3 w-3 mr-1" />
+                                {article.category.name}
+                              </Badge>
+                            )}
+                            <span className="text-xs text-gray-500 flex items-center">
+                              <Calendar className="h-3 w-3 mr-1 text-[#245C4F]" />
+                              {article.published_at && new Date(article.published_at).toLocaleDateString('it-IT', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric'
+                              })}
+                            </span>
+                          </div>
+                          <h3 className="font-medium">
+                            <button 
+                              onClick={() => navigate(`/blog/${article.slug}`)} 
+                              className="hover:text-[#245C4F] transition-colors text-left"
+                            >
+                              {article.title}
+                            </button>
+                          </h3>
+                          <div className="flex items-center justify-between mt-2">
+                            <p className="text-xs text-gray-500">Di {article.author_name}</p>
+                            <div className="flex items-center gap-3 text-xs text-gray-500">
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {article.reading_time_minutes} min
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Eye className="h-3 w-3" />
+                                {article.view_count}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm" className="text-[#245C4F] hover:text-[#1e4f44] self-end sm:self-center">
+                        <button onClick={() => navigate(`/blog/${article.slug}`)} className="flex items-center">
+                          <BookOpen className="mr-1 h-4 w-4" /> Leggi
+                        </button>
                       </Button>
                     </div>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          </section>
-
-          {/* Recent Posts Section */}
-          <section className="mb-12">
-            <h2 className="text-2xl font-semibold mb-6 border-b pb-2 text-[#245C4F]">Articoli Recenti</h2>
-            <div className="space-y-4">
-              {filteredRecentPosts.map((post) => (
-                <div key={post.id} className="p-4 border rounded-lg hover:shadow-md transition-shadow bg-white">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Badge className="bg-[#245C4F]/10 text-[#245C4F] hover:bg-[#245C4F]/20">
-                          <Tag className="h-3 w-3 mr-1" />
-                          {post.category}
-                        </Badge>
-                        <span className="text-xs text-gray-500 flex items-center">
-                          <Calendar className="h-3 w-3 mr-1 text-[#245C4F]" />
-                          {post.date}
-                        </span>
-                      </div>
-                      <h3 className="font-medium">
-                        <Link to={`/blog/${post.id}`} className="hover:text-[#245C4F] transition-colors">
-                          {post.title}
-                        </Link>
-                      </h3>
-                      <p className="text-xs text-gray-500 mt-1">Di {post.author}</p>
-                    </div>
-                    <Button variant="ghost" size="sm" className="text-[#245C4F] hover:text-[#1e4f44] self-end sm:self-center">
-                      <Link to={`/blog/${post.id}`} className="flex items-center">
-                        <BookOpen className="mr-1 h-4 w-4" /> Leggi
-                      </Link>
-                    </Button>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* No results message */}
+          {!loading && searchTerm && filteredFeaturedArticles.length === 0 && filteredRecentArticles.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-gray-600 mb-4">Nessun articolo trovato per "{searchTerm}"</p>
+              <Button 
+                variant="outline" 
+                onClick={() => setSearchTerm("")}
+                className="bg-white border-[#245C4F] text-[#245C4F] hover:bg-[#245C4F] hover:text-white"
+              >
+                Cancella ricerca
+              </Button>
             </div>
-          </section>
+          )}
+
+          {/* No articles message */}
+          {!loading && !searchTerm && featuredArticles.length === 0 && recentArticles.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-gray-600 mb-4">Nessun articolo pubblicato al momento.</p>
+              <p className="text-sm text-gray-500">Torna presto per leggere i nostri contenuti!</p>
+            </div>
+          )}
         </div>
       </div>
 
