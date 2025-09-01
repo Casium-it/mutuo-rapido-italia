@@ -70,13 +70,9 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
                     >
                       {idx === 0 ? "Simulazioni vere" : idx === 1 ? "Consulenti esperti" : "Mutui difficili"}
                     </h3>
-                    <p className={`text-lg text-muted-foreground leading-relaxed transition-all duration-1000 ${
-                        shouldAnimate ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-                      }`}
-                      style={{ transitionDelay: `${idx * 300 + 600}ms` }}
-                    >
-                      {idx === 0 ? "Analisi approfondita per capire se il mutuo si può fare, davvero." : idx === 1 ? "Prima consulenza gratuita con consulenti esperti in tutta Italia." : "Mutui 95% e 100%, anche per le situazioni più complesse."}
-                    </p>
+                     <p className="text-lg text-muted-foreground leading-relaxed opacity-100 translate-y-0">
+                       {idx === 0 ? "Analisi approfondita per capire se il mutuo si può fare, davvero." : idx === 1 ? "Prima consulenza gratuita con consulenti esperti in tutta Italia." : "Mutui 95% e 100%, anche per le situazioni più complesse."}
+                     </p>
                   </div>
                 </div>
               </article>)}
