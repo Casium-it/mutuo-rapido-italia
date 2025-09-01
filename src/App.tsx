@@ -33,6 +33,8 @@ import AdminLeads from "./pages/AdminLeads";
 import AdminSimulations from "./pages/AdminSimulations";
 import AdminBlocks from "./pages/AdminBlocks";
 import AdminBlockDetail from "./pages/AdminBlockDetail";
+import AdminBlogArticles from "./pages/AdminBlogArticles";
+import AdminBlogEditor from "./pages/AdminBlogEditor";
 import AdminSimulationDetail from "./pages/AdminSimulationDetail";
 import AdminLeadDetail from "./pages/AdminLeadDetail";
 import AdminNotifications from "./pages/AdminNotifications";
@@ -131,6 +133,21 @@ const AppWithTracking = () => {
       <Route path="/admin/forms" element={
         <ProtectedRoute requireAdmin>
           <AdminForms />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/articles" element={
+        <ProtectedRoute requireAdmin>
+          <AdminBlogArticles />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/articles/new" element={
+        <ProtectedRoute requireAdmin>
+          <AdminBlogEditor />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/articles/:id/edit" element={
+        <ProtectedRoute requireAdmin>
+          <AdminBlogEditor />
         </ProtectedRoute>
       } />
       <Route path="*" element={<NotFound />} />

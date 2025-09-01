@@ -243,6 +243,14 @@ export default function Admin() {
               </CardContent>
             </Card>
 
+            <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/articles')}>
+              <CardContent className="p-6 text-center">
+                <FileText className="h-12 w-12 text-[#245C4F] mx-auto mb-3" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Gestisci Articoli</h3>
+                <p className="text-sm text-gray-600">Crea, modifica e pubblica articoli del blog</p>
+              </CardContent>
+            </Card>
+
             <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/leads')}>
               <CardContent className="p-6 text-center">
                 <Users className="h-12 w-12 text-[#245C4F] mx-auto mb-3" />
