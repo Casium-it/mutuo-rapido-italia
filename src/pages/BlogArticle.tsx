@@ -423,8 +423,8 @@ export default function BlogArticle() {
                         onClick={() => shareOnSocial('whatsapp')}
                         className="text-blue-600 hover:bg-blue-50 justify-start"
                       >
-                        <Facebook className="w-4 h-4 mr-2" />
-                        Facebook
+                        <whatsapp className="w-4 h-4 mr-2" />
+                        whatsapp
                       </Button>
                       <Button
                         variant="outline"
@@ -432,8 +432,8 @@ export default function BlogArticle() {
                         onClick={() => shareOnSocial('facebook')}
                         className="text-sky-500 hover:bg-sky-50 justify-start"
                       >
-                        <Twitter className="w-4 h-4 mr-2" />
-                        Twitter
+                        <facebook className="w-4 h-4 mr-2" />
+                        facebook
                       </Button>
                       <Button
                         variant="outline"
@@ -451,7 +451,7 @@ export default function BlogArticle() {
                         className="text-green-600 hover:bg-green-50 justify-start"
                       >
                         <MessageCircle className="w-4 h-4 mr-2" />
-                        WhatsApp
+                        twitter
                       </Button>
                     </div>
                   </div>
