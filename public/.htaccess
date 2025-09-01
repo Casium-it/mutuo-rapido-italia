@@ -1,0 +1,8 @@
+# Apache redirect configuration
+Redirect 301 /sitemap.xml https://jegdbtznkwzpqntzzlvf.supabase.co/functions/v1/sitemap
+
+# SPA fallback
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.html [L]
