@@ -282,7 +282,7 @@ export default function BlogArticle() {
                   <img 
                     src={article.featured_image_url} 
                     alt={article.featured_image_alt || article.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                   />
                 </div>
               ) : (
