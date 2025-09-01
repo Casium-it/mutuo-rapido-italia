@@ -19,14 +19,11 @@ export function Logo({ onClick, size = 'md' }: LogoProps) {
       className={`flex items-center gap-2 ${onClick ? 'cursor-pointer' : ''}`}
       onClick={onClick}
     >
-        <picture>
-          <source srcSet="/lovable-uploads/f8bbfaf2-359b-44d7-ad1c-d0c6c30ff620.webp" type="image/webp" />
-          <img 
-            src="/lovable-uploads/f8bbfaf2-359b-44d7-ad1c-d0c6c30ff620.png"
-            alt="GoMutuo Logo"
-            className={sizeClasses[size]}
-          />
-        </picture>
+        <img 
+          src="/lovable-uploads/f8bbfaf2-359b-44d7-ad1c-d0c6c30ff620.png"
+          alt="GoMutuo Logo"
+          className={sizeClasses[size]}
+        />
     </div>
   );
 }
