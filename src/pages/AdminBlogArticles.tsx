@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Filter, Eye, Edit, Trash2, MoreHorizontal, FileText, Clock, Users, ArrowLeft, Copy, Sitemap } from 'lucide-react';
+import { Plus, Search, Filter, Eye, Edit, Trash2, MoreHorizontal, FileText, Clock, Users, ArrowLeft, Copy, Map } from 'lucide-react';
 import { CategoryTagManager } from '@/components/admin/CategoryTagManager';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -155,6 +155,89 @@ export default function AdminBlogArticles() {
     }
   };
 
+  const duplicateArticle = async (article: BlogArticle) => {
+    try {
+      const { data, error } = await supabase
+        .from('blog_articles')
+        .insert({
+          title: `${article.title} (Copia)`,
+          slug: `${article.slug}-copia-${Date.now()}`,
+          excerpt: article.excerpt,
+          content: (await supabase.from('blog_articles').select('content').eq('id', article.id).single()).data?.content || '',
+          author_name: article.author_name,
+          category_id: null,
+          status: 'draft'
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Successo",
+        description: "Articolo duplicato con successo",
+      });
+      
+      fetchArticles();
+      navigate(`/admin/articles/${data.id}/edit`);
+    } catch (error) {
+      console.error('Error duplicating article:', error);
+      toast({
+        title: "Errore", 
+        description: "Impossibile duplicare l'articolo",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const generateSitemap = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('blog_articles')
+        .select('slug, updated_at')
+        .eq('status', 'published');
+
+      if (error) throw error;
+
+      const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://gomutuo.it/blog</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+${data?.map(article => `  <url>
+    <loc>https://gomutuo.it/blog/${article.slug}</loc>
+    <lastmod>${new Date(article.updated_at).toISOString().split('T')[0]}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>`).join('\n')}
+</urlset>`;
+
+      const blob = new Blob([sitemap], { type: 'application/xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'blog-sitemap.xml';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Successo",
+        description: "Sitemap generata e scaricata",
+      });
+    } catch (error) {
+      console.error('Error generating sitemap:', error);
+      toast({
+        title: "Errore",
+        description: "Impossibile generare la sitemap",
+        variant: "destructive",
+      });
+    }
+  };
+
   const filteredArticles = articles.filter(article => {
     const matchesSearch = article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          article.excerpt?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -214,6 +297,10 @@ export default function AdminBlogArticles() {
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
             <CategoryTagManager />
+            <Button variant="outline" onClick={generateSitemap} size="sm">
+              <Map className="w-4 h-4 mr-2" />
+              Genera Sitemap
+            </Button>
             <Button 
               onClick={() => navigate('/admin/articles/new')}
               className="bg-[#245C4F] hover:bg-[#1e4f44] text-white"
@@ -414,6 +501,10 @@ export default function AdminBlogArticles() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => duplicateArticle(article)}>
+                            <Copy className="w-4 h-4 mr-2" />
+                            Duplica Articolo
+                          </DropdownMenuItem>
                           {article.status === 'draft' && (
                             <DropdownMenuItem onClick={() => updateArticleStatus(article.id, 'published')}>
                               Pubblica

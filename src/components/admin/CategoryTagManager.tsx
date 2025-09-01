@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Tag as TagIcon, FolderOpen } from 'lucide-react';
+import { Plus, Edit, Trash2, Tag as TagIcon, FolderOpen, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ interface Category {
   name: string;
   color: string;
   description?: string;
+  slug: string;
 }
 
 interface Tag {
@@ -27,10 +28,10 @@ export function CategoryTagManager() {
   const { toast } = useToast();
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [editingTag, setEditingTag] = useState<Tag | null>(null);
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
   const [showTagDialog, setShowTagDialog] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newTagName, setNewTagName] = useState('');
 
   useEffect(() => {
     fetchCategories();
@@ -47,36 +48,73 @@ export function CategoryTagManager() {
     setTags(data || []);
   };
 
-  const saveCategory = async (category: Partial<Category>) => {
+  const generateSlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .replace(/[àáâäæ]/g, 'a')
+      .replace(/[èéêë]/g, 'e')
+      .replace(/[ìíîï]/g, 'i')
+      .replace(/[òóôöœ]/g, 'o')
+      .replace(/[ùúûü]/g, 'u')
+      .replace(/[^a-z0-9\s]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  };
+
+  const addCategory = async () => {
+    if (!newCategoryName.trim()) return;
+    
     try {
-      if (editingCategory) {
-        await supabase.from('blog_categories').update(category).eq('id', editingCategory.id);
-      } else {
-        await supabase.from('blog_categories').insert(category);
-      }
+      const slug = generateSlug(newCategoryName);
+      await supabase.from('blog_categories').insert({
+        name: newCategoryName.trim(),
+        slug,
+        color: '#245C4F'
+      });
+      
       fetchCategories();
-      setShowCategoryDialog(false);
-      setEditingCategory(null);
-      toast({ title: "Successo", description: "Categoria salvata" });
+      setNewCategoryName('');
+      toast({ title: "Successo", description: "Categoria creata" });
     } catch (error) {
-      toast({ title: "Errore", description: "Errore nel salvare la categoria", variant: "destructive" });
+      toast({ title: "Errore", description: "Errore nel creare la categoria", variant: "destructive" });
     }
   };
 
-  const saveTag = async (tag: Partial<Tag>) => {
+  const addTag = async () => {
+    if (!newTagName.trim()) return;
+    
     try {
-      const slug = tag.name?.toLowerCase().replace(/\s+/g, '-') || '';
-      if (editingTag) {
-        await supabase.from('blog_tags').update({...tag, slug}).eq('id', editingTag.id);
-      } else {
-        await supabase.from('blog_tags').insert({...tag, slug});
-      }
+      const slug = generateSlug(newTagName);
+      await supabase.from('blog_tags').insert({
+        name: newTagName.trim(),
+        slug
+      });
+      
       fetchTags();
-      setShowTagDialog(false);
-      setEditingTag(null);
-      toast({ title: "Successo", description: "Tag salvato" });
+      setNewTagName('');
+      toast({ title: "Successo", description: "Tag creato" });
     } catch (error) {
-      toast({ title: "Errore", description: "Errore nel salvare il tag", variant: "destructive" });
+      toast({ title: "Errore", description: "Errore nel creare il tag", variant: "destructive" });
+    }
+  };
+
+  const deleteCategory = async (id: string) => {
+    try {
+      await supabase.from('blog_categories').delete().eq('id', id);
+      fetchCategories();
+      toast({ title: "Successo", description: "Categoria eliminata" });
+    } catch (error) {
+      toast({ title: "Errore", description: "Errore nell'eliminare la categoria", variant: "destructive" });
+    }
+  };
+
+  const deleteTag = async (id: string) => {
+    try {
+      await supabase.from('blog_tags').delete().eq('id', id);
+      fetchTags();
+      toast({ title: "Successo", description: "Tag eliminato" });
+    } catch (error) {
+      toast({ title: "Errore", description: "Errore nell'eliminare il tag", variant: "destructive" });
     }
   };
 
@@ -98,33 +136,23 @@ export function CategoryTagManager() {
             <div className="flex gap-2">
               <Input
                 placeholder="Nome categoria"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
-                    const name = e.currentTarget.value;
-                    if (name) {
-                      saveCategory({ name, color: '#245C4F' });
-                      e.currentTarget.value = '';
-                    }
+                    addCategory();
                   }
                 }}
               />
-              <Button onClick={() => {
-                const input = document.querySelector('input[placeholder="Nome categoria"]') as HTMLInputElement;
-                if (input?.value) {
-                  saveCategory({ name: input.value, color: '#245C4F' });
-                  input.value = '';
-                }
-              }}>
+              <Button onClick={addCategory}>
                 <Plus className="w-4 h-4" />
               </Button>
             </div>
             <div className="space-y-2 max-h-60 overflow-y-auto">
               {categories.map((cat) => (
                 <div key={cat.id} className="flex items-center justify-between p-2 border rounded">
-                  <Badge style={{ backgroundColor: cat.color }}>{cat.name}</Badge>
-                  <Button size="sm" variant="outline" onClick={() => {
-                    supabase.from('blog_categories').delete().eq('id', cat.id).then(() => fetchCategories());
-                  }}>
+                  <Badge style={{ backgroundColor: cat.color, color: 'white' }}>{cat.name}</Badge>
+                  <Button size="sm" variant="outline" onClick={() => deleteCategory(cat.id)}>
                     <Trash2 className="w-3 h-3" />
                   </Button>
                 </div>
@@ -150,23 +178,15 @@ export function CategoryTagManager() {
             <div className="flex gap-2">
               <Input
                 placeholder="Nome tag"
+                value={newTagName}
+                onChange={(e) => setNewTagName(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
-                    const name = e.currentTarget.value;
-                    if (name) {
-                      saveTag({ name });
-                      e.currentTarget.value = '';
-                    }
+                    addTag();
                   }
                 }}
               />
-              <Button onClick={() => {
-                const input = document.querySelector('input[placeholder="Nome tag"]') as HTMLInputElement;
-                if (input?.value) {
-                  saveTag({ name: input.value });
-                  input.value = '';
-                }
-              }}>
+              <Button onClick={addTag}>
                 <Plus className="w-4 h-4" />
               </Button>
             </div>
@@ -174,9 +194,7 @@ export function CategoryTagManager() {
               {tags.map((tag) => (
                 <div key={tag.id} className="flex items-center justify-between p-2 border rounded">
                   <Badge variant="outline">{tag.name}</Badge>
-                  <Button size="sm" variant="outline" onClick={() => {
-                    supabase.from('blog_tags').delete().eq('id', tag.id).then(() => fetchTags());
-                  }}>
+                  <Button size="sm" variant="outline" onClick={() => deleteTag(tag.id)}>
                     <Trash2 className="w-3 h-3" />
                   </Button>
                 </div>
