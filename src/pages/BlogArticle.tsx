@@ -278,11 +278,11 @@ export default function BlogArticle() {
             {/* Left side - Image */}
             <div className="w-full">
               {article.featured_image_url ? (
-                <div className="aspect-[2/1] overflow-hidden">
+                <div className="w-full h-full overflow-hidden">
                   <img 
                     src={article.featured_image_url} 
                     alt={article.featured_image_alt || article.title}
-                    className="w-full h-full object-contain"
+                    className="w-full h-full object-cover"
                   />
                 </div>
               ) : (
