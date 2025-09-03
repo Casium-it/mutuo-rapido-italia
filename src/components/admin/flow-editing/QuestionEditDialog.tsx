@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Question, Placeholder } from '@/types/form';
 import { useFlowEdit } from '@/contexts/FlowEditContext';
 import { useAdminBlocks } from '@/hooks/useAdminBlocks';
-import { Plus, Trash2, Copy, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, Copy, AlertTriangle, ArrowUp, ArrowDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { CreatePlaceholderDialog } from './CreatePlaceholderDialog';
@@ -32,7 +32,7 @@ export const QuestionEditDialog: React.FC<QuestionEditDialogProps> = ({
   onDuplicate,
   onDelete
 }) => {
-  const { state, updateBlockData } = useFlowEdit();
+  const { state, updateBlockData, moveQuestionUp, moveQuestionDown } = useFlowEdit();
   const { blocks } = useAdminBlocks();
   const { toast } = useToast();
   const [createPlaceholderDialog, setCreatePlaceholderDialog] = useState(false);
@@ -240,6 +240,11 @@ export const QuestionEditDialog: React.FC<QuestionEditDialogProps> = ({
   };
 
   const placeholderOptions = Object.keys(question.placeholders || {});
+  
+  // Get question position for move buttons
+  const questionIndex = state.blockData.questions.findIndex(q => q.question_id === question.question_id);
+  const canMoveUp = questionIndex > 0;
+  const canMoveDown = questionIndex < state.blockData.questions.length - 1;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -390,6 +395,26 @@ export const QuestionEditDialog: React.FC<QuestionEditDialogProps> = ({
         <DialogFooter>
           <div className="flex w-full justify-between">
             <div className="flex gap-2">
+              {/* Move buttons */}
+              <Button
+                variant="outline"
+                onClick={() => moveQuestionUp(question.question_id)}
+                disabled={!canMoveUp || loading}
+                className="flex items-center gap-2"
+                title="Sposta su"
+              >
+                <ArrowUp className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => moveQuestionDown(question.question_id)}
+                disabled={!canMoveDown || loading}
+                className="flex items-center gap-2"
+                title="Sposta giù"
+              >
+                <ArrowDown className="h-4 w-4" />
+              </Button>
+              
               {onDuplicate && (
                 <Button
                   variant="outline"

@@ -46,6 +46,8 @@ interface FlowEditContextType {
   saveWithoutValidation: () => Promise<void>;
   undoLastChange: () => void;
   canUndo: boolean;
+  moveQuestionUp: (questionId: string) => void;
+  moveQuestionDown: (questionId: string) => void;
 }
 
 const FlowEditContext = createContext<FlowEditContextType | null>(null);
@@ -208,6 +210,68 @@ export const FlowEditProvider: React.FC<FlowEditProviderProps> = ({
     });
   }, []);
 
+  const moveQuestionUp = useCallback((questionId: string) => {
+    setState(prev => {
+      const questions = [...prev.blockData.questions];
+      const index = questions.findIndex(q => q.question_id === questionId);
+      
+      if (index <= 0) return prev; // Can't move up if first or not found
+      
+      // Swap with previous question
+      [questions[index - 1], questions[index]] = [questions[index], questions[index - 1]];
+      
+      const newBlockData = { ...prev.blockData, questions };
+      
+      // Create change record
+      const change: Change = {
+        id: Date.now().toString(),
+        type: 'question',
+        path: `questions.${questionId}.order`,
+        oldValue: prev.blockData,
+        newValue: newBlockData,
+        timestamp: Date.now()
+      };
+
+      return {
+        ...prev,
+        blockData: newBlockData,
+        changes: [...prev.changes, change],
+        hasUnsavedChanges: true
+      };
+    });
+  }, []);
+
+  const moveQuestionDown = useCallback((questionId: string) => {
+    setState(prev => {
+      const questions = [...prev.blockData.questions];
+      const index = questions.findIndex(q => q.question_id === questionId);
+      
+      if (index < 0 || index >= questions.length - 1) return prev; // Can't move down if last or not found
+      
+      // Swap with next question
+      [questions[index], questions[index + 1]] = [questions[index + 1], questions[index]];
+      
+      const newBlockData = { ...prev.blockData, questions };
+      
+      // Create change record
+      const change: Change = {
+        id: Date.now().toString(),
+        type: 'question',
+        path: `questions.${questionId}.order`,
+        oldValue: prev.blockData,
+        newValue: newBlockData,
+        timestamp: Date.now()
+      };
+
+      return {
+        ...prev,
+        blockData: newBlockData,
+        changes: [...prev.changes, change],
+        hasUnsavedChanges: true
+      };
+    });
+  }, []);
+
   const canUndo = state.changes.length > 0;
 
   const contextValue: FlowEditContextType = {
@@ -219,7 +283,9 @@ export const FlowEditProvider: React.FC<FlowEditProviderProps> = ({
     saveChanges,
     saveWithoutValidation,
     undoLastChange,
-    canUndo
+    canUndo,
+    moveQuestionUp,
+    moveQuestionDown
   };
 
   return (
