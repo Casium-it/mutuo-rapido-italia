@@ -247,8 +247,8 @@ export const QuestionEditDialog: React.FC<QuestionEditDialogProps> = ({
   const canMoveDown = questionIndex < state.blockData.questions.length - 1;
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={onClose} modal={false}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" allowBackgroundScroll>
         <DialogHeader>
           <DialogTitle>Modifica Domanda</DialogTitle>
         </DialogHeader>
