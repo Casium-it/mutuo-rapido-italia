@@ -10,6 +10,8 @@ import { getQuestionTextWithStyledResponses } from '@/utils/formUtils';
 import { generateSubmissionPDF, PDFSubmissionData } from '@/utils/pdfUtils';
 import { LeadManagementCard } from '@/components/admin/LeadManagementCard';
 import { LeadStatus } from '@/types/leadStatus';
+import { useFormCache } from '@/hooks/useFormCache';
+import { FormState, Block } from '@/types/form';
 
 interface FormSubmission {
   id: string;
@@ -30,24 +32,18 @@ interface FormSubmission {
   assigned_to: string | null;
   reminder: boolean;
   form_title?: string;
-}
-
-interface FormResponse {
-  id: string;
-  question_id: string;
-  question_text: string;
-  block_id: string;
-  response_value: any;
-  created_at: string;
+  saved_simulation_id: string | null;
 }
 
 export default function AdminLeadDetail() {
   const { leadId } = useParams<{ leadId: string }>();
   const navigate = useNavigate();
   const [submission, setSubmission] = useState<FormSubmission | null>(null);
-  const [responses, setResponses] = useState<FormResponse[]>([]);
+  const [formState, setFormState] = useState<FormState | null>(null);
+  const [blocks, setBlocks] = useState<Block[]>([]);
   const [loading, setLoading] = useState(true);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const { getFormBySlug } = useFormCache();
 
   useEffect(() => {
     if (leadId) {
@@ -57,7 +53,7 @@ export default function AdminLeadDetail() {
 
   const fetchSubmissionDetails = async () => {
     try {
-      // Fetch submission with form title
+      // Fetch submission with form title and saved_simulation_id
       const { data: submissionData, error: submissionError } = await supabase
         .from('form_submissions')
         .select(`
@@ -81,22 +77,6 @@ export default function AdminLeadDetail() {
         return;
       }
 
-      // Fetch responses
-      const { data: responsesData, error: responsesError } = await supabase
-        .from('form_responses')
-        .select('*')
-        .eq('submission_id', leadId)
-        .order('created_at', { ascending: true });
-
-      if (responsesError) {
-        console.error('Error fetching responses:', responsesError);
-        toast({
-          title: "Errore",
-          description: "Errore nel caricamento delle risposte",
-          variant: "destructive"
-        });
-      }
-
       // Add form title to submission
       const submissionWithTitle = {
         ...submissionData,
@@ -104,7 +84,26 @@ export default function AdminLeadDetail() {
       };
 
       setSubmission(submissionWithTitle);
-      setResponses(responsesData || []);
+
+      // If we have a saved_simulation_id, fetch the form_state
+      if (submissionData.saved_simulation_id) {
+        const { data: simulationData, error: simulationError } = await supabase
+          .from('saved_simulations')
+          .select('form_state, form_slug')
+          .eq('id', submissionData.saved_simulation_id)
+          .single();
+
+        if (!simulationError && simulationData) {
+          setFormState(simulationData.form_state as unknown as FormState);
+          
+          // Get form structure from cache
+          const formCache = await getFormBySlug(simulationData.form_slug);
+          if (formCache) {
+            setBlocks(formCache.blocks);
+          }
+        }
+      }
+      
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -165,7 +164,7 @@ export default function AdminLeadDetail() {
   };
 
   const handleDownloadPDF = async () => {
-    if (!submission || !responses) {
+    if (!submission || !formState) {
       toast({
         title: "Errore",
         description: "Dati del lead non disponibili",
@@ -176,6 +175,16 @@ export default function AdminLeadDetail() {
 
     setPdfLoading(true);
     try {
+      // Convert form_state responses to the format expected by PDF generator
+      const responses = Object.entries(formState.responses || {}).map(([questionId, responseData]) => ({
+        id: questionId,
+        question_id: questionId,
+        question_text: '',  // We'll need to look this up from blocks if needed
+        block_id: '',
+        response_value: responseData,
+        created_at: new Date().toISOString()
+      }));
+
       const pdfData: PDFSubmissionData = {
         id: submission.id,
         created_at: submission.created_at,
@@ -236,13 +245,76 @@ export default function AdminLeadDetail() {
     );
   };
 
-  const responsesByBlock = responses.reduce((acc, response) => {
-    if (!acc[response.block_id]) {
-      acc[response.block_id] = [];
-    }
-    acc[response.block_id].push(response);
-    return acc;
-  }, {} as Record<string, FormResponse[]>);
+  // Process responses from form_state using blocks structure (same as AdminSimulationDetail)
+  const processedResponses = React.useMemo(() => {
+    if (!formState || !formState.responses || !blocks.length) return [];
+
+    const allResponses: Array<{
+      blockId: string;
+      blockTitle: string;
+      questionId: string;
+      questionText: string;
+      responseValue: any;
+      placeholders?: any;
+    }> = [];
+
+    // Process each block
+    blocks.forEach(block => {
+      const blockResponses: Array<{
+        blockId: string;
+        blockTitle: string;
+        questionId: string;
+        questionText: string;
+        responseValue: any;
+        placeholders?: any;
+      }> = [];
+
+      // Process each question in the block
+      block.questions.forEach(question => {
+        const questionResponse = formState.responses[question.question_id];
+        if (questionResponse) {
+          // Handle different response formats
+          Object.entries(questionResponse).forEach(([placeholderKey, value]) => {
+            if (value !== null && value !== undefined && value !== '') {
+              blockResponses.push({
+                blockId: block.block_id,
+                blockTitle: block.title || block.block_id,
+                questionId: question.question_id,
+                questionText: question.question_text,
+                responseValue: value,
+                placeholders: question.placeholders
+              });
+            }
+          });
+        }
+      });
+
+      allResponses.push(...blockResponses);
+    });
+
+    return allResponses;
+  }, [formState, blocks]);
+
+  // Group processed responses by block
+  const responsesByBlock = React.useMemo(() => {
+    const grouped: Record<string, Array<{
+      blockId: string;
+      blockTitle: string;
+      questionId: string;
+      questionText: string;
+      responseValue: any;
+      placeholders?: any;
+    }>> = {};
+
+    processedResponses.forEach(response => {
+      if (!grouped[response.blockId]) {
+        grouped[response.blockId] = [];
+      }
+      grouped[response.blockId].push(response);
+    });
+
+    return grouped;
+  }, [processedResponses]);
 
   if (loading) {
     return (
@@ -380,7 +452,7 @@ export default function AdminLeadDetail() {
 
         <div className="space-y-6">
           <h2 className="text-xl font-semibold text-gray-900">
-            Risposte Fornite ({responses.length} totali)
+            Risposte Fornite ({processedResponses.length} totali)
           </h2>
           
           {Object.keys(responsesByBlock).length === 0 ? (
@@ -398,7 +470,7 @@ export default function AdminLeadDetail() {
               <Card key={blockId}>
                 <CardHeader>
                   <CardTitle className="text-lg">
-                    Blocco: {blockId}
+                    Blocco: {blockResponses[0]?.blockTitle || blockId}
                     <span className="ml-2 text-sm font-normal text-gray-600">
                       ({blockResponses.length} risposte)
                     </span>
@@ -406,15 +478,15 @@ export default function AdminLeadDetail() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {blockResponses.map((response) => (
-                      <div key={response.id} className="border-l-4 border-[#245C4F] pl-4">
+                    {blockResponses.map((response, index) => (
+                      <div key={`${response.questionId}-${index}`} className="border-l-4 border-[#245C4F] pl-4">
                         <div className="mb-2">
                           <StyledQuestionText 
-                            questionText={response.question_text}
-                            questionId={response.question_id}
-                            responseValue={response.response_value}
+                            questionText={response.questionText}
+                            questionId={response.questionId}
+                            responseValue={response.responseValue}
                           />
-                          <p className="text-xs text-gray-500">ID: {response.question_id}</p>
+                          <p className="text-xs text-gray-500">ID: {response.questionId}</p>
                         </div>
                       </div>
                     ))}
