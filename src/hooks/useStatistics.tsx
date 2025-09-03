@@ -244,15 +244,27 @@ export function useStatistics(period: PeriodData) {
 
     } catch (error) {
       console.error('Error fetching statistics:', error);
+      
+      // Check if it's an auth error
+      const isAuthError = error?.message?.includes('Invalid Refresh Token') || 
+                         error?.message?.includes('refresh_token_not_found') ||
+                         error?.code === 'refresh_token_not_found';
+      
+      const errorMessage = isAuthError 
+        ? 'Sessione scaduta. Aggiorna la pagina per riautenticarti e vedere tutti i dati.'
+        : 'Errore nel caricamento delle statistiche';
+      
       setData(prev => ({
         ...prev,
         loading: false,
-        error: 'Errore nel caricamento delle statistiche'
+        error: errorMessage
       }));
+      
       toast({
-        title: "Errore",
-        description: "Errore nel caricamento delle statistiche",
-        variant: "destructive"
+        title: isAuthError ? "Sessione Scaduta" : "Errore",
+        description: errorMessage,
+        variant: "destructive",
+        duration: isAuthError ? 8000 : 5000,
       });
     }
   };

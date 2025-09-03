@@ -57,7 +57,7 @@ export function StatisticCard({ title, metric, icon, showConversion = false }: S
         <CardContent>
           <div className="space-y-2">
             {/* Main metric */}
-            <div className="text-2xl font-bold text-[#245C4F]">
+            <div className="text-2xl font-bold text-primary-green">
               {formatNumber(metric.current)}
             </div>
 
