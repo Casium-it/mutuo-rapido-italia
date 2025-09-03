@@ -221,12 +221,13 @@ export default function AdminLeadDetail() {
     }
   };
 
-  const StyledQuestionText = ({ questionText, questionId, responseValue }: {
+  const StyledQuestionText = ({ questionText, questionId, responseValue, question }: {
     questionText: string;
     questionId: string;
     responseValue: any;
+    question?: any;
   }) => {
-    const { parts } = getQuestionTextWithStyledResponses(questionText, questionId, responseValue);
+    const { parts } = getQuestionTextWithStyledResponses(questionText, questionId, responseValue, question?.placeholders);
     
     return (
       <div className="mb-2">
@@ -249,68 +250,66 @@ export default function AdminLeadDetail() {
   const processedResponses = React.useMemo(() => {
     if (!formState || !formState.responses || !blocks.length) return [];
 
-    const allResponses: Array<{
-      blockId: string;
-      blockTitle: string;
-      questionId: string;
-      questionText: string;
-      responseValue: any;
-      placeholders?: any;
+    const responses: Array<{
+      id: string;
+      question_id: string;
+      question_text: string;
+      block_id: string;
+      response_value: any;
     }> = [];
 
-    // Process each block
+    // Create a map of questions for quick lookup (same as AdminSimulationDetail)
+    const questionMap = new Map();
     blocks.forEach(block => {
-      const blockResponses: Array<{
-        blockId: string;
-        blockTitle: string;
-        questionId: string;
-        questionText: string;
-        responseValue: any;
-        placeholders?: any;
-      }> = [];
-
-      // Process each question in the block
       block.questions.forEach(question => {
-        const questionResponse = formState.responses[question.question_id];
-        if (questionResponse) {
-          // Handle different response formats
-          Object.entries(questionResponse).forEach(([placeholderKey, value]) => {
-            if (value !== null && value !== undefined && value !== '') {
-              blockResponses.push({
-                blockId: block.block_id,
-                blockTitle: block.title || block.block_id,
-                questionId: question.question_id,
-                questionText: question.question_text,
-                responseValue: value,
-                placeholders: question.placeholders
-              });
-            }
-          });
-        }
+        questionMap.set(question.question_id, { question, block_id: block.block_id });
       });
-
-      allResponses.push(...blockResponses);
     });
 
-    return allResponses;
+    // Process responses from form_state (exactly like AdminSimulationDetail)
+    Object.entries(formState.responses).forEach(([questionId, placeholderResponses]: [string, any]) => {
+      const questionInfo = questionMap.get(questionId);
+      if (!questionInfo) return;
+
+      // Create ONE entry per question with the complete placeholder responses
+      responses.push({
+        id: questionId,
+        question_id: questionId,
+        question_text: questionInfo.question.question_text,
+        block_id: questionInfo.block_id,
+        response_value: placeholderResponses // Pass the complete object with all placeholder values
+      });
+    });
+
+    return responses;
   }, [formState, blocks]);
+
+  // Create question map for StyledQuestionText (same as AdminSimulationDetail)
+  const questionMap = React.useMemo(() => {
+    const map = new Map();
+    blocks.forEach(block => {
+      block.questions.forEach(question => {
+        map.set(question.question_id, { question, block_id: block.block_id });
+      });
+    });
+    return map;
+  }, [blocks]);
 
   // Group processed responses by block
   const responsesByBlock = React.useMemo(() => {
     const grouped: Record<string, Array<{
-      blockId: string;
-      blockTitle: string;
-      questionId: string;
-      questionText: string;
-      responseValue: any;
-      placeholders?: any;
+      id: string;
+      question_id: string;
+      question_text: string;
+      block_id: string;
+      response_value: any;
     }>> = {};
 
     processedResponses.forEach(response => {
-      if (!grouped[response.blockId]) {
-        grouped[response.blockId] = [];
+      if (!grouped[response.block_id]) {
+        grouped[response.block_id] = [];
       }
-      grouped[response.blockId].push(response);
+      grouped[response.block_id].push(response);
     });
 
     return grouped;
@@ -466,34 +465,41 @@ export default function AdminLeadDetail() {
               </CardContent>
             </Card>
           ) : (
-            Object.entries(responsesByBlock).map(([blockId, blockResponses]) => (
-              <Card key={blockId}>
-                <CardHeader>
-                  <CardTitle className="text-lg">
-                    Blocco: {blockResponses[0]?.blockTitle || blockId}
-                    <span className="ml-2 text-sm font-normal text-gray-600">
-                      ({blockResponses.length} risposte)
-                    </span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {blockResponses.map((response, index) => (
-                      <div key={`${response.questionId}-${index}`} className="border-l-4 border-[#245C4F] pl-4">
-                        <div className="mb-2">
-                          <StyledQuestionText 
-                            questionText={response.questionText}
-                            questionId={response.questionId}
-                            responseValue={response.responseValue}
-                          />
-                          <p className="text-xs text-gray-500">ID: {response.questionId}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+            Object.entries(responsesByBlock).map(([blockId, blockResponses]) => {
+              const blockInfo = blocks.find(b => b.block_id === blockId);
+              return (
+                <Card key={blockId}>
+                  <CardHeader>
+                    <CardTitle className="text-lg">
+                      Blocco: {blockInfo?.title || blockId}
+                      <span className="ml-2 text-sm font-normal text-gray-600">
+                        ({blockResponses.length} risposte)
+                      </span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {blockResponses.map((response) => {
+                        const questionInfo = questionMap.get(response.question_id);
+                        return (
+                          <div key={response.id} className="border-l-4 border-[#245C4F] pl-4">
+                            <div className="mb-2">
+                              <StyledQuestionText 
+                                questionText={response.question_text}
+                                questionId={response.question_id}
+                                responseValue={response.response_value}
+                                question={questionInfo?.question}
+                              />
+                              <p className="text-xs text-gray-500">ID: {response.question_id}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })
           )}
         </div>
       </main>
