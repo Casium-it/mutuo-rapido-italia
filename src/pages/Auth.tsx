@@ -7,27 +7,42 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { signIn, user, isAdmin, loading: authLoading, roleLoading } = useAuth();
+  const { signIn, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    // Wait for both auth loading and role loading to complete
-    if (user && !authLoading && !roleLoading) {
-      if (isAdmin) {
-        navigate('/admin', { replace: true });
-      } else {
-        const from = (location.state as any)?.from?.pathname || '/';
-        navigate(from, { replace: true });
-      }
+    if (user && !authLoading) {
+      // Check user role and redirect accordingly
+      const checkRoleAndRedirect = async () => {
+        try {
+          const { data: roleData } = await supabase.rpc('get_current_user_role');
+          const isAdmin = roleData === 'admin';
+          
+          if (isAdmin) {
+            navigate('/admin', { replace: true });
+          } else {
+            const from = (location.state as any)?.from?.pathname || '/';
+            navigate(from, { replace: true });
+          }
+        } catch (error) {
+          console.error('Error checking user role:', error);
+          // Default redirect to home if role check fails
+          const from = (location.state as any)?.from?.pathname || '/';
+          navigate(from, { replace: true });
+        }
+      };
+
+      checkRoleAndRedirect();
     }
-  }, [user, isAdmin, authLoading, roleLoading, navigate, location]);
+  }, [user, authLoading, navigate, location]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
