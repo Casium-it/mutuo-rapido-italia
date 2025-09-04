@@ -69,19 +69,29 @@ Deno.serve(async (req) => {
     }
 
     // 3. Extract age and province from form responses
-    const { data: responses } = await supabase
+    const { data: ageResponses } = await supabase
       .from('form_responses')
       .select('response_value')
       .eq('submission_id', submissionId)
-      .eq('question_id', 'eta_e_citta')
+      .eq('question_id', 'eta')
+
+    const { data: provinceResponses } = await supabase
+      .from('form_responses')
+      .select('response_value')
+      .eq('submission_id', submissionId)
+      .eq('question_id', 'provincia_residenza')
 
     let ageData = "Età non disponibile"
     let provinceData = "Provincia non disponibile"
 
-    if (responses && responses.length > 0) {
-      const responseValue = responses[0].response_value as any
-      ageData = responseValue?.placeholder1 || ageData
-      provinceData = responseValue?.placeholder2 || provinceData
+    if (ageResponses && ageResponses.length > 0) {
+      const ageValue = ageResponses[0].response_value as any
+      ageData = ageValue?.placeholder1 || ageData
+    }
+
+    if (provinceResponses && provinceResponses.length > 0) {
+      const provinceValue = provinceResponses[0].response_value as any
+      provinceData = provinceValue?.placeholder1 || provinceData
     }
 
     // 4. Prepare message parameters
