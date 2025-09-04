@@ -371,9 +371,9 @@ const AdminQuestionIds = () => {
                   
                   return (
                     <div key={question.id} className="border rounded-lg p-6 hover:bg-gray-50 transition-colors">
-                      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                        {/* Left Column - Main Info */}
-                        <div className="xl:col-span-2 space-y-3 min-w-0">
+                      <div className="grid grid-cols-4 gap-6">
+                        {/* Left Column - Main Info (3/4 width) */}
+                        <div className="col-span-3 space-y-4 min-w-0">
                           <div className="flex items-center gap-3 flex-wrap">
                             <code className="bg-[#245C4F]/10 text-[#245C4F] px-3 py-1 rounded-md text-sm font-mono font-medium">
                               {question.question_id}
@@ -392,39 +392,42 @@ const AdminQuestionIds = () => {
                           </div>
                           
                           {latestVersion && (
-                            <div className="space-y-2 pr-4">
-                              <p className="text-gray-700 leading-relaxed break-words">
+                            <div className="space-y-2">
+                              <p className="text-gray-700 leading-relaxed break-words text-base">
                                 {renderFormattedText(formatQuestionText(latestVersion.question_text, latestVersion.placeholder_values))}
                               </p>
                             </div>
                           )}
                           
                           {question.description && (
-                            <div className="space-y-2 pr-4">
-                              <h4 className="font-medium text-gray-900">Descrizione:</h4>
-                              <p className="text-gray-600 text-sm leading-relaxed break-words">
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                              <div className="flex items-center gap-2 mb-2">
+                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                <h4 className="font-medium text-blue-900 text-sm">Descrizione</h4>
+                              </div>
+                              <p className="text-blue-800 text-sm leading-relaxed">
                                 {question.description}
                               </p>
                             </div>
                           )}
                         </div>
                         
-                        {/* Right Column - Versions & Actions */}
-                        <div className="space-y-4 xl:border-l xl:pl-6">
+                        {/* Right Column - Versions & Actions (1/4 width) */}
+                        <div className="col-span-1 space-y-4 border-l border-gray-200 pl-4">
                           <div>
-                            <h4 className="font-medium text-gray-900 mb-2">Versioni disponibili</h4>
-                            <div className="space-y-2 max-h-32 overflow-y-auto">
+                            <h4 className="font-medium text-gray-900 mb-3 text-sm">Versioni</h4>
+                            <div className="space-y-2 max-h-40 overflow-y-auto">
                               {versions.length > 0 ? (
                                 versions.map((version) => (
                                   <div 
                                     key={version.id} 
-                                    className={`flex items-center justify-between p-2 rounded text-xs ${
+                                    className={`flex flex-col gap-1 p-2 rounded text-xs ${
                                       version.is_active 
                                         ? 'bg-[#245C4F]/10 border border-[#245C4F]/20' 
                                         : 'bg-gray-50'
                                     }`}
                                   >
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center justify-between">
                                       <Badge 
                                         variant={version.is_active ? "default" : "secondary"}
                                         className="text-xs"
@@ -432,31 +435,31 @@ const AdminQuestionIds = () => {
                                         v{version.version_number}
                                       </Badge>
                                       {version.is_active && (
-                                        <span className="text-[#245C4F] font-medium">Attiva</span>
+                                        <span className="text-[#245C4F] font-medium text-xs">Attiva</span>
                                       )}
                                     </div>
-                                    <span className="text-gray-500">
+                                    <span className="text-gray-500 text-xs">
                                       {new Date(version.created_at).toLocaleDateString('it-IT')}
                                     </span>
                                   </div>
                                 ))
                               ) : (
-                                <p className="text-gray-500 text-xs">Nessuna versione disponibile</p>
+                                <p className="text-gray-500 text-xs">Nessuna versione</p>
                               )}
                             </div>
                           </div>
                           
-                          <div className="pt-2 border-t">
+                          <div className="pt-3 border-t border-gray-200">
                             <Dialog>
                               <DialogTrigger asChild>
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="w-full"
+                                  className="w-full text-xs"
                                   onClick={() => setSelectedQuestion(question)}
                                 >
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  Visualizza dettagli
+                                  <Eye className="h-3 w-3 mr-1" />
+                                  Dettagli
                                 </Button>
                               </DialogTrigger>
                               <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
