@@ -7,7 +7,8 @@ import { DateTimePicker } from './DateTimePicker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { User } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { User, UserCog, Clock, StickyNote } from 'lucide-react';
 import { LeadStatus } from '@/types/leadStatus';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -61,9 +62,14 @@ export function LeadManagementCard({ submission, onUpdate }: LeadManagementCardP
           Gestione Lead
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-4">
+      <CardContent className="space-y-6">
+        {/* Personal Information Section */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 mb-3">
+            <User className="h-4 w-4 text-primary" />
+            <h4 className="text-sm font-semibold text-foreground">Informazioni Personali</h4>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <EditableField
               label="Nome"
               value={submission.first_name || ''}
@@ -84,62 +90,26 @@ export function LeadManagementCard({ submission, onUpdate }: LeadManagementCardP
               onSave={(value) => onUpdate('email', value)}
               placeholder="Inserisci l'email"
             />
-
-            <DateTimePicker
-              label="Ultimo Contatto"
-              value={submission.ultimo_contatto}
-              onChange={(value) => onUpdate('ultimo_contatto', value)}
-              placeholder="Seleziona data ultimo contatto"
-            />
-
-            <div className="flex items-end gap-3">
-              <div className="flex-1">
-                <DateTimePicker
-                  label="Prossimo Contatto"
-                  value={submission.prossimo_contatto}
-                  onChange={(value) => {
-                    onUpdate('prossimo_contatto', value);
-                    // Reset reminder_sent when prossimo_contatto changes
-                    if (value) {
-                      onUpdate('reminder_sent', false);
-                    }
-                  }}
-                  placeholder="Seleziona data prossimo contatto"
-                />
-              </div>
-              
-              <div className="flex flex-col items-center gap-1 pb-1">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="reminder"
-                    checked={submission.reminder}
-                    onCheckedChange={(checked) => {
-                      if (checked && !submission.assigned_to) {
-                        toast({
-                          title: "Errore",
-                          description: "Devi assegnare il lead prima di abilitare il reminder",
-                          variant: "destructive"
-                        });
-                        return;
-                      }
-                      onUpdate('reminder', checked);
-                    }}
-                  />
-                  <Label htmlFor="reminder" className="text-sm font-medium whitespace-nowrap">
-                    Reminder
-                  </Label>
-                </div>
-              </div>
-            </div>
           </div>
-          
-          <div className="space-y-4">
-            <StatusSelector
-              value={submission.lead_status}
-              onValueChange={(value) => onUpdate('lead_status', value)}
-            />
+        </div>
 
-            <div>
+        <Separator />
+
+        {/* Lead Management Section */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 mb-3">
+            <UserCog className="h-4 w-4 text-primary" />
+            <h4 className="text-sm font-semibold text-foreground">Gestione Lead</h4>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-1">
+              <StatusSelector
+                value={submission.lead_status}
+                onValueChange={(value) => onUpdate('lead_status', value)}
+              />
+            </div>
+
+            <div className="md:col-span-1">
               <Label htmlFor="assigned-to" className="text-sm font-medium">
                 Assegnato a
               </Label>
@@ -169,22 +139,95 @@ export function LeadManagementCard({ submission, onUpdate }: LeadManagementCardP
               </Select>
             </div>
 
-
-            <EditableField
-              label="Mediatore"
-              value={submission.mediatore || ''}
-              onSave={(value) => onUpdate('mediatore', value)}
-              placeholder="Inserisci il nome del mediatore"
-            />
-            
-            <EditableField
-              label="Note"
-              value={submission.notes || ''}
-              onSave={(value) => onUpdate('notes', value)}
-              placeholder="Aggiungi note sul lead..."
-              multiline
-            />
+            <div className="md:col-span-1">
+              <EditableField
+                label="Mediatore"
+                value={submission.mediatore || ''}
+                onSave={(value) => onUpdate('mediatore', value)}
+                placeholder="Inserisci il nome del mediatore"
+              />
+            </div>
           </div>
+        </div>
+
+        <Separator />
+
+        {/* Contact Tracking Section */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Clock className="h-4 w-4 text-primary" />
+            <h4 className="text-sm font-semibold text-foreground">Tracciamento Contatti</h4>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-1">
+              <DateTimePicker
+                label="Ultimo Contatto"
+                value={submission.ultimo_contatto}
+                onChange={(value) => onUpdate('ultimo_contatto', value)}
+                placeholder="Seleziona data ultimo contatto"
+              />
+            </div>
+
+            <div className="md:col-span-1">
+              <DateTimePicker
+                label="Prossimo Contatto"
+                value={submission.prossimo_contatto}
+                onChange={(value) => {
+                  onUpdate('prossimo_contatto', value);
+                  // Reset reminder_sent when prossimo_contatto changes
+                  if (value) {
+                    onUpdate('reminder_sent', false);
+                  }
+                }}
+                placeholder="Seleziona data prossimo contatto"
+              />
+            </div>
+            
+            <div className="md:col-span-1 flex items-end">
+              <div className="w-full">
+                <Label className="text-sm font-medium text-gray-600 mb-2 block">
+                  Opzioni
+                </Label>
+                <div className="flex items-center space-x-2 h-10">
+                  <Switch
+                    id="reminder"
+                    checked={submission.reminder}
+                    onCheckedChange={(checked) => {
+                      if (checked && !submission.assigned_to) {
+                        toast({
+                          title: "Errore",
+                          description: "Devi assegnare il lead prima di abilitare il reminder",
+                          variant: "destructive"
+                        });
+                        return;
+                      }
+                      onUpdate('reminder', checked);
+                    }}
+                  />
+                  <Label htmlFor="reminder" className="text-sm font-medium">
+                    Abilita Reminder
+                  </Label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Notes Section */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 mb-3">
+            <StickyNote className="h-4 w-4 text-primary" />
+            <h4 className="text-sm font-semibold text-foreground">Note</h4>
+          </div>
+          <EditableField
+            label="Note Lead"
+            value={submission.notes || ''}
+            onSave={(value) => onUpdate('notes', value)}
+            placeholder="Aggiungi note dettagliate sul lead..."
+            multiline
+          />
         </div>
       </CardContent>
     </Card>
