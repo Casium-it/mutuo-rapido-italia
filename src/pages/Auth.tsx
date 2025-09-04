@@ -20,27 +20,16 @@ export default function Auth() {
 
   useEffect(() => {
     if (user && !authLoading) {
-      // Check user role and redirect accordingly
-      const checkRoleAndRedirect = async () => {
-        try {
-          const { data: roleData } = await supabase.rpc('get_current_user_role');
-          const isAdmin = roleData === 'admin';
-          
-          if (isAdmin) {
-            navigate('/admin', { replace: true });
-          } else {
-            const from = (location.state as any)?.from?.pathname || '/';
-            navigate(from, { replace: true });
-          }
-        } catch (error) {
-          console.error('Error checking user role:', error);
-          // Default redirect to home if role check fails
-          const from = (location.state as any)?.from?.pathname || '/';
-          navigate(from, { replace: true });
-        }
-      };
-
-      checkRoleAndRedirect();
+      // For admin users, always redirect to admin - let ProtectedRoute handle role verification
+      const from = (location.state as any)?.from?.pathname;
+      
+      if (from && from.startsWith('/admin')) {
+        // If coming from admin route, go back there
+        navigate(from, { replace: true });
+      } else {
+        // Default: try admin first, if not admin ProtectedRoute will handle the redirect
+        navigate('/admin', { replace: true });
+      }
     }
   }, [user, authLoading, navigate, location]);
 
