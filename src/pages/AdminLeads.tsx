@@ -490,9 +490,6 @@ export default function AdminLeads() {
                       )}
                     </CardTitle>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-500 opacity-50">
-                        Submission #{submission.id.slice(0, 8)}
-                      </span>
                       <Badge variant="secondary">
                         {submission.form_title}
                       </Badge>
@@ -588,72 +585,75 @@ export default function AdminLeads() {
                     </div>
                   )}
                   
-                  {submission.metadata && (
-                    <div className="text-sm text-gray-600 mb-4">
-                      <p>Blocchi attivi: {submission.metadata.blocks?.length || 0}</p>
-                      <p>Blocchi completati: {submission.metadata.completedBlocks?.length || 0}</p>
-                      {submission.metadata.slug && (
-                        <p>Slug: {submission.metadata.slug}</p>
-                      )}
-                    </div>
-                  )}
+                   {submission.metadata && submission.metadata.slug && (
+                     <div className="text-sm text-gray-600 mb-4">
+                       <p>Slug: {submission.metadata.slug}</p>
+                     </div>
+                   )}
                   
-                  <div className="flex justify-end items-center gap-2">
-                    <Button
-                      onClick={() => {
-                        saveScrollPosition();
-                        navigate(`/admin/leads/${submission.id}`);
-                      }}
-                      className="bg-[#245C4F] hover:bg-[#1e4f44] flex items-center gap-2"
-                    >
-                      <Eye className="h-4 w-4" />
-                      Visualizza Dettagli
-                    </Button>
-                    
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 flex items-center gap-2"
-                          disabled={deletingId === submission.id}
-                        >
-                          {deletingId === submission.id ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
-                          )}
-                          Elimina
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Conferma Eliminazione</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Sei sicuro di voler eliminare questa submission? 
-                            {(submission.first_name || submission.last_name) && (
-                              <span className="font-medium">
-                                {' '}({submission.first_name} {submission.last_name})
-                              </span>
-                            )}
-                            <br />
-                            <span className="text-red-600 font-medium">
-                              Questa azione non può essere annullata e eliminerà anche tutte le risposte associate.
-                            </span>
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Annulla</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDeleteSubmission(submission.id)}
-                            className="bg-red-600 hover:bg-red-700"
-                          >
-                            Elimina Definitivamente
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
+                   <div className="flex flex-col gap-2">
+                     <div className="flex justify-end items-center gap-2">
+                       <Button
+                         onClick={() => {
+                           saveScrollPosition();
+                           navigate(`/admin/leads/${submission.id}`);
+                         }}
+                         className="bg-[#245C4F] hover:bg-[#1e4f44] flex items-center gap-2"
+                       >
+                         <Eye className="h-4 w-4" />
+                         Visualizza Dettagli
+                       </Button>
+                       
+                       <AlertDialog>
+                         <AlertDialogTrigger asChild>
+                           <Button
+                             variant="outline"
+                             size="sm"
+                             className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 flex items-center gap-2"
+                             disabled={deletingId === submission.id}
+                           >
+                             {deletingId === submission.id ? (
+                               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                             ) : (
+                               <Trash2 className="h-4 w-4" />
+                             )}
+                             Elimina
+                           </Button>
+                         </AlertDialogTrigger>
+                         <AlertDialogContent>
+                           <AlertDialogHeader>
+                             <AlertDialogTitle>Conferma Eliminazione</AlertDialogTitle>
+                             <AlertDialogDescription>
+                               Sei sicuro di voler eliminare questa submission? 
+                               {(submission.first_name || submission.last_name) && (
+                                 <span className="font-medium">
+                                   {' '}({submission.first_name} {submission.last_name})
+                                 </span>
+                               )}
+                               <br />
+                               <span className="text-red-600 font-medium">
+                                 Questa azione non può essere annullata e eliminerà anche tutte le risposte associate.
+                               </span>
+                             </AlertDialogDescription>
+                           </AlertDialogHeader>
+                           <AlertDialogFooter>
+                             <AlertDialogCancel>Annulla</AlertDialogCancel>
+                             <AlertDialogAction
+                               onClick={() => handleDeleteSubmission(submission.id)}
+                               className="bg-red-600 hover:bg-red-700"
+                             >
+                               Elimina Definitivamente
+                             </AlertDialogAction>
+                           </AlertDialogFooter>
+                         </AlertDialogContent>
+                       </AlertDialog>
+                     </div>
+                     <div className="flex justify-end">
+                       <span className="text-xs text-gray-500 opacity-50">
+                         Submission #{submission.id.slice(0, 8)}
+                       </span>
+                     </div>
+                   </div>
                 </CardContent>
               </Card>
             ))}
