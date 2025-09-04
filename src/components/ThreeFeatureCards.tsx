@@ -1,6 +1,7 @@
 import React from "react";
 import { Logo } from "./Logo";
 import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
+import { useIsMobile } from "@/hooks/use-mobile";
 export type FeatureCardItem = {
   title: string;
   description: string;
@@ -17,6 +18,7 @@ interface ThreeFeatureCardsProps {
 const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
   items
 }) => {
+  const isMobile = useIsMobile();
   const [sectionRef, isInView] = useIntersectionObserver({
     threshold: 0.2,
     rootMargin: '0px 0px -10% 0px'
@@ -24,6 +26,7 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
 
   // Delay aggiuntivo di 1 secondo dopo che la sezione è visibile
   const [shouldAnimate, setShouldAnimate] = React.useState(false);
+  const [centerCardIndex, setCenterCardIndex] = React.useState<number | null>(null);
   
   React.useEffect(() => {
     if (isInView) {
@@ -35,13 +38,46 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
     }
   }, [isInView]);
 
+  // Mobile center detection
+  React.useEffect(() => {
+    if (!isMobile || !shouldAnimate) return;
+
+    const handleScroll = () => {
+      const cards = document.querySelectorAll('.feature-card-mobile');
+      const viewportCenter = window.innerHeight / 2;
+      let closestIndex = null;
+      let closestDistance = Infinity;
+
+      cards.forEach((card, index) => {
+        const rect = card.getBoundingClientRect();
+        const cardCenter = rect.top + rect.height / 2;
+        const distance = Math.abs(cardCenter - viewportCenter);
+        
+        if (distance < closestDistance && distance < 150) {
+          closestDistance = distance;
+          closestIndex = index;
+        }
+      });
+
+      setCenterCardIndex(closestIndex);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Initial check
+    
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isMobile, shouldAnimate]);
+
   return <section ref={sectionRef} className="mt-4 md:mt-6 bg-white py-4 md:py-6 min-h-[200px] md:min-h-[220px] flex items-center justify-center max-w-7xl mx-auto w-full px-4 md:px-8">
         <div className="relative w-full">
           {/* Blocchi - griglia: mobile impilate, desktop in una riga */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-5 relative z-10">
             {items.slice(0, 3).map((item, idx) => <article 
                 key={idx} 
-                className={`feature-card bg-white border border-gray-100 shadow-lg hover:translate-y-[1px] hover:shadow-xl transition-all duration-700 rounded-[12px] cursor-pointer p-5 md:p-7 min-h-[180px] md:min-h-[200px] h-full
+                className={`feature-card ${isMobile ? 'feature-card-mobile' : ''} bg-white border border-gray-100 shadow-lg rounded-[12px] cursor-pointer p-5 md:p-7 min-h-[180px] md:min-h-[200px] h-full
+                  transition-all duration-500 ease-out
+                  md:hover:scale-105 md:hover:shadow-2xl md:hover:-translate-y-2 md:hover:border-primary/20
+                  ${isMobile && centerCardIndex === idx ? 'scale-110 shadow-2xl -translate-y-1 border-primary/30' : ''}
                   ${shouldAnimate 
                     ? 'opacity-100 translate-y-0 animate-fade-in' 
                     : 'opacity-0 translate-y-8'
