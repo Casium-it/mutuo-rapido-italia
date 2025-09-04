@@ -138,7 +138,7 @@ export default function AdminLeads() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
-    }, 1500);
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [searchQuery]);
