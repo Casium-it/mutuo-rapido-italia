@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { LogOut, FileText, Database, Users, Bell, Blocks, TrendingUp, Clock } from 'lucide-react';
+import { LogOut, FileText, Database, Users, Bell, Blocks, TrendingUp, Clock, MessageSquare } from 'lucide-react';
 
 interface DashboardStats {
   totalSubmissions: number;
@@ -264,6 +264,14 @@ export default function Admin() {
                 <TrendingUp className="h-12 w-12 text-[#245C4F] mx-auto mb-3" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Simulations</h3>
                 <p className="text-sm text-gray-600">Visualizza le simulazioni salvate dagli utenti</p>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/question-ids')}>
+              <CardContent className="p-6 text-center">
+                <MessageSquare className="h-12 w-12 text-[#245C4F] mx-auto mb-3" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Question IDs</h3>
+                <p className="text-sm text-gray-600">Gestisci le domande utilizzate nei form e visualizza le versioni</p>
               </CardContent>
             </Card>
           </div>

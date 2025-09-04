@@ -548,6 +548,74 @@ export type Database = {
         }
         Relationships: []
       }
+      question_ids: {
+        Row: {
+          created_at: string
+          current_version: number
+          description: string | null
+          id: string
+          question_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_version?: number
+          description?: string | null
+          id?: string
+          question_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_version?: number
+          description?: string | null
+          id?: string
+          question_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      question_versions: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          placeholder_values: Json | null
+          question_id_record: string
+          question_text: string
+          question_type: string
+          version_number: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          placeholder_values?: Json | null
+          question_id_record: string
+          question_text: string
+          question_type: string
+          version_number: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          placeholder_values?: Json | null
+          question_id_record?: string
+          question_text?: string
+          question_type?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_versions_question_id_record_fkey"
+            columns: ["question_id_record"]
+            isOneToOne: false
+            referencedRelation: "question_ids"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_simulations: {
         Row: {
           created_at: string
@@ -667,6 +735,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_question_used: {
+        Args: { question_id_param: string }
         Returns: boolean
       }
       reconstruct_form_state: {
