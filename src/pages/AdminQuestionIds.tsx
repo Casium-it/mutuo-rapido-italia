@@ -99,6 +99,29 @@ const AdminQuestionIds = () => {
     enabled: !!selectedQuestion?.id
   });
 
+  // Fetch all question versions for display
+  const { data: allVersionsData = {} } = useQuery({
+    queryKey: ['all-question-versions', questionIds.map(q => q.id)],
+    queryFn: async () => {
+      const versionsMap: Record<string, QuestionVersion[]> = {};
+      
+      for (const question of questionIds) {
+        const { data, error } = await supabase
+          .from('question_versions')
+          .select('*')
+          .eq('question_id_record', question.id)
+          .order('version_number', { ascending: false });
+        
+        if (!error && data) {
+          versionsMap[question.id] = data as QuestionVersion[];
+        }
+      }
+      
+      return versionsMap;
+    },
+    enabled: questionIds.length > 0
+  });
+
   // Check if question is used
   const { data: usageData = {} } = useQuery({
     queryKey: ['question-usage', questionIds.map(q => q.question_id)],
@@ -271,100 +294,177 @@ const AdminQuestionIds = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredQuestions.map((question) => (
-                  <div key={question.id} className="border rounded-lg p-4 hover:bg-gray-50">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono">
-                            {question.question_id}
-                          </code>
-                          <Badge variant={usageData[question.question_id] ? "default" : "secondary"}>
-                            {usageData[question.question_id] ? "In uso" : "Non utilizzata"}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-gray-600 mb-1">
-                          Versione: {question.current_version}
-                        </p>
-                        {question.description && (
-                          <p className="text-sm text-gray-800">{question.description}</p>
-                        )}
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setSelectedQuestion(question)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
-                            <DialogHeader>
-                              <DialogTitle>Dettagli Question ID: {question.question_id}</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                              <div>
-                                <label className="block text-sm font-medium mb-2">Descrizione</label>
-                                <Textarea
-                                  value={editingDescription}
-                                  onChange={(e) => setEditingDescription(e.target.value)}
-                                  placeholder="Aggiungi una descrizione per questa domanda..."
-                                  onFocus={() => setEditingDescription(question.description || "")}
-                                />
-                                <Button
-                                  onClick={handleUpdateDescription}
-                                  disabled={updateDescriptionMutation.isPending}
-                                  className="mt-2"
-                                  size="sm"
-                                >
-                                  <Edit2 className="h-4 w-4 mr-2" />
-                                  Salva Descrizione
-                                </Button>
-                              </div>
-                              
-                              <div>
-                                <h4 className="font-medium mb-2">Storico Versioni</h4>
-                                <div className="space-y-2">
-                                  {questionVersions.map((version) => (
-                                    <div key={version.id} className="border rounded p-3 text-sm">
-                                      <div className="flex items-center gap-2 mb-2">
-                                        <Badge variant={version.is_active ? "default" : "secondary"}>
-                                          v{version.version_number}
-                                        </Badge>
-                                        <Badge variant="outline">{version.question_type}</Badge>
-                                        {version.is_active && (
-                                          <Badge variant="default">Attiva</Badge>
-                                        )}
-                                      </div>
-                                      <p className="text-gray-800 mb-1">{version.question_text}</p>
-                                      {version.placeholder_values && (
-                                        <details className="mt-2">
-                                          <summary className="cursor-pointer text-blue-600">
-                                            Valori placeholder
-                                          </summary>
-                                          <pre className="mt-2 text-xs bg-gray-100 p-2 rounded overflow-auto">
-                                            {JSON.stringify(version.placeholder_values, null, 2)}
-                                          </pre>
-                                        </details>
-                                      )}
-                                      <p className="text-xs text-gray-500 mt-1">
-                                        {new Date(version.created_at).toLocaleString('it-IT')}
-                                      </p>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
+                {filteredQuestions.map((question) => {
+                  const versions = allVersionsData[question.id] || [];
+                  const latestVersion = versions.find(v => v.is_active) || versions[0];
+                  
+                  return (
+                    <div key={question.id} className="border rounded-lg p-6 hover:bg-gray-50 transition-colors">
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Left Column - Main Info */}
+                        <div className="lg:col-span-2 space-y-3">
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <code className="bg-[#245C4F]/10 text-[#245C4F] px-3 py-1 rounded-md text-sm font-mono font-medium">
+                              {question.question_id}
+                            </code>
+                            <Badge variant={usageData[question.question_id] ? "default" : "secondary"}>
+                              {usageData[question.question_id] ? "In uso" : "Non utilizzata"}
+                            </Badge>
+                            {latestVersion && (
+                              <Badge variant="outline" className="capitalize">
+                                {latestVersion.question_type}
+                              </Badge>
+                            )}
+                            <span className="text-xs text-gray-500">
+                              v{question.current_version}
+                            </span>
+                          </div>
+                          
+                          {latestVersion && (
+                            <div className="space-y-2">
+                              <h4 className="font-medium text-gray-900">Testo della domanda:</h4>
+                              <p className="text-gray-700 leading-relaxed">
+                                {latestVersion.question_text}
+                              </p>
                             </div>
-                          </DialogContent>
-                        </Dialog>
+                          )}
+                          
+                          {question.description && (
+                            <div className="space-y-2">
+                              <h4 className="font-medium text-gray-900">Descrizione:</h4>
+                              <p className="text-gray-600 text-sm leading-relaxed">
+                                {question.description}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Right Column - Versions & Actions */}
+                        <div className="space-y-4">
+                          <div>
+                            <h4 className="font-medium text-gray-900 mb-2">Versioni disponibili</h4>
+                            <div className="space-y-2 max-h-32 overflow-y-auto">
+                              {versions.length > 0 ? (
+                                versions.map((version) => (
+                                  <div 
+                                    key={version.id} 
+                                    className={`flex items-center justify-between p-2 rounded text-xs ${
+                                      version.is_active 
+                                        ? 'bg-[#245C4F]/10 border border-[#245C4F]/20' 
+                                        : 'bg-gray-50'
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <Badge 
+                                        variant={version.is_active ? "default" : "secondary"}
+                                        className="text-xs"
+                                      >
+                                        v{version.version_number}
+                                      </Badge>
+                                      {version.is_active && (
+                                        <span className="text-[#245C4F] font-medium">Attiva</span>
+                                      )}
+                                    </div>
+                                    <span className="text-gray-500">
+                                      {new Date(version.created_at).toLocaleDateString('it-IT')}
+                                    </span>
+                                  </div>
+                                ))
+                              ) : (
+                                <p className="text-gray-500 text-xs">Nessuna versione disponibile</p>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="pt-2 border-t">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full"
+                                  onClick={() => setSelectedQuestion(question)}
+                                >
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  Visualizza dettagli
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                                <DialogHeader>
+                                  <DialogTitle className="flex items-center gap-2">
+                                    <Database className="h-5 w-5" />
+                                    Dettagli Question ID: {question.question_id}
+                                  </DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-6">
+                                  <div>
+                                    <label className="block text-sm font-medium mb-2">Descrizione</label>
+                                    <Textarea
+                                      value={editingDescription}
+                                      onChange={(e) => setEditingDescription(e.target.value)}
+                                      placeholder="Aggiungi una descrizione per questa domanda..."
+                                      onFocus={() => setEditingDescription(question.description || "")}
+                                      className="min-h-20"
+                                    />
+                                    <Button
+                                      onClick={handleUpdateDescription}
+                                      disabled={updateDescriptionMutation.isPending}
+                                      className="mt-2"
+                                      size="sm"
+                                    >
+                                      <Edit2 className="h-4 w-4 mr-2" />
+                                      Salva Descrizione
+                                    </Button>
+                                  </div>
+                                  
+                                  <div>
+                                    <h4 className="font-medium mb-3">Storico completo delle versioni</h4>
+                                    <div className="space-y-3">
+                                      {questionVersions.map((version) => (
+                                        <div key={version.id} className="border rounded-lg p-4">
+                                          <div className="flex items-center gap-2 mb-3">
+                                            <Badge variant={version.is_active ? "default" : "secondary"}>
+                                              v{version.version_number}
+                                            </Badge>
+                                            <Badge variant="outline" className="capitalize">
+                                              {version.question_type}
+                                            </Badge>
+                                            {version.is_active && (
+                                              <Badge className="bg-green-100 text-green-800">Attiva</Badge>
+                                            )}
+                                          </div>
+                                          <div className="space-y-2">
+                                            <div>
+                                              <h5 className="text-sm font-medium text-gray-700">Testo della domanda:</h5>
+                                              <p className="text-gray-900">{version.question_text}</p>
+                                            </div>
+                                            {version.placeholder_values && (
+                                              <details className="mt-3">
+                                                <summary className="cursor-pointer text-sm font-medium text-blue-600 hover:text-blue-800">
+                                                  Configurazione placeholder
+                                                </summary>
+                                                <pre className="mt-2 text-xs bg-gray-50 p-3 rounded border overflow-auto">
+                                                  {JSON.stringify(version.placeholder_values, null, 2)}
+                                                </pre>
+                                              </details>
+                                            )}
+                                            <p className="text-xs text-gray-500 pt-2 border-t">
+                                              Creata: {new Date(version.created_at).toLocaleString('it-IT')}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 
                 {filteredQuestions.length === 0 && (
                   <div className="text-center py-8">
