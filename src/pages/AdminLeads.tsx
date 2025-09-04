@@ -63,10 +63,8 @@ export default function AdminLeads() {
   const [forms, setForms] = useState<FormInfo[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [phoneFilter, setPhoneFilter] = useState<boolean>(true); // Default on
-  const [formFilter, setFormFilter] = useState<string>('all');
   const [mediatoreFilter, setMediatoreFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [prossimoContattoFilter, setProssimoContattoFilter] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [uniqueMediaatori, setUniqueMediaatori] = useState<string[]>([]);
   const itemsPerPage = 30;
@@ -74,11 +72,10 @@ export default function AdminLeads() {
   const navigate = useNavigate();
 
   // Session Storage helpers
-  const saveFiltersToSession = (status: string, phone: boolean, form: string, mediatore: string, search: string) => {
+  const saveFiltersToSession = (status: string, phone: boolean, mediatore: string, search: string) => {
     try {
       sessionStorage.setItem('adminLeads_statusFilter', status);
       sessionStorage.setItem('adminLeads_phoneFilter', phone.toString());
-      sessionStorage.setItem('adminLeads_formFilter', form);
       sessionStorage.setItem('adminLeads_mediatoreFilter', mediatore);
       sessionStorage.setItem('adminLeads_searchQuery', search);
     } catch (error) {
@@ -90,19 +87,17 @@ export default function AdminLeads() {
     try {
       const savedStatus = sessionStorage.getItem('adminLeads_statusFilter') || 'all';
       const savedPhone = sessionStorage.getItem('adminLeads_phoneFilter') === 'false' ? false : true;
-      const savedForm = sessionStorage.getItem('adminLeads_formFilter') || 'all';
       const savedMediator = sessionStorage.getItem('adminLeads_mediatoreFilter') || 'all';
       const savedSearch = sessionStorage.getItem('adminLeads_searchQuery') || '';
       return { 
         status: savedStatus, 
         phone: savedPhone,
-        form: savedForm,
         mediatore: savedMediator,
         search: savedSearch
       };
     } catch (error) {
       console.warn('Could not load filters from session storage:', error);
-      return { status: 'all', phone: true, form: 'all', mediatore: 'all', search: '' };
+      return { status: 'all', phone: true, mediatore: 'all', search: '' };
     }
   };
 
@@ -128,10 +123,9 @@ export default function AdminLeads() {
 
   // Initialize filters from session storage
   useEffect(() => {
-    const { status, phone, form, mediatore, search } = loadFiltersFromSession();
+    const { status, phone, mediatore, search } = loadFiltersFromSession();
     setStatusFilter(status);
     setPhoneFilter(phone);
-    setFormFilter(form);
     setMediatoreFilter(mediatore);
     setSearchQuery(search);
   }, []);
@@ -288,9 +282,7 @@ export default function AdminLeads() {
   let filteredSubmissions = submissions.filter(submission => {
     const statusMatch = statusFilter === 'all' || submission.lead_status === statusFilter;
     const phoneMatch = !phoneFilter || submission.phone_number; // If phone filter is ON, show only with phone
-    const formMatch = formFilter === 'all' || submission.forms?.slug === formFilter;
     const mediatoreMatch = mediatoreFilter === 'all' || submission.mediatore === mediatoreFilter;
-    const prossimoContattoMatch = !prossimoContattoFilter || submission.prossimo_contatto;
     
     // Search functionality - search in names, email, phone, notes
     const searchMatch = searchQuery === '' || [
@@ -302,16 +294,13 @@ export default function AdminLeads() {
       submission.mediatore
     ].some(field => field?.toLowerCase().includes(searchQuery.toLowerCase()));
     
-    return statusMatch && phoneMatch && formMatch && mediatoreMatch && prossimoContattoMatch && searchMatch;
+    return statusMatch && phoneMatch && mediatoreMatch && searchMatch;
   });
 
-  // Sort by prossimo_contatto when filter is active (oldest first)
-  if (prossimoContattoFilter) {
-    filteredSubmissions = filteredSubmissions.sort((a, b) => {
-      if (!a.prossimo_contatto || !b.prossimo_contatto) return 0;
-      return new Date(a.prossimo_contatto).getTime() - new Date(b.prossimo_contatto).getTime();
-    });
-  }
+  // Sort by created_at (newest first) since we removed prossimo_contatto filter
+  filteredSubmissions = filteredSubmissions.sort((a, b) => {
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
 
   // Pagination logic
   const totalPages = Math.ceil(filteredSubmissions.length / itemsPerPage);
@@ -321,7 +310,7 @@ export default function AdminLeads() {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [statusFilter, phoneFilter, formFilter, mediatoreFilter, searchQuery, prossimoContattoFilter]);
+  }, [statusFilter, phoneFilter, mediatoreFilter, searchQuery]);
 
   if (loading) {
     return (
@@ -370,136 +359,99 @@ export default function AdminLeads() {
             </div>
           </div>
 
-          {/* Search Bar */}
-          <div className="mb-4">
-            <div className="relative max-w-md">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <Input
-                type="text"
-                placeholder="Cerca per nome, email, telefono, note, mediatore..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  saveFiltersToSession(statusFilter, phoneFilter, formFilter, mediatoreFilter, e.target.value);
-                }}
-                className="pl-10"
-              />
-            </div>
-          </div>
-
           {/* Filters */}
-          <div className="flex flex-wrap items-center gap-4">
-            {/* Status Filter */}
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-gray-500" />
-              <Select value={statusFilter} onValueChange={(value) => {
-                setStatusFilter(value);
-                saveFiltersToSession(value, phoneFilter, formFilter, mediatoreFilter, searchQuery);
-              }}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Filtra per status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tutti gli status</SelectItem>
-                  <SelectItem value="not_contacted">Non Contattato</SelectItem>
-                  <SelectItem value="non_risponde_x1">Non Risponde x1</SelectItem>
-                  <SelectItem value="non_risponde_x2">Non Risponde x2</SelectItem>
-                  <SelectItem value="non_risponde_x3">Non Risponde x3</SelectItem>
-                  <SelectItem value="non_interessato">Non Interessato</SelectItem>
-                  <SelectItem value="da_risentire">Da Risentire</SelectItem>
-                  <SelectItem value="da_assegnare">Da Assegnare</SelectItem>
-                  <SelectItem value="prenotata_consulenza">Prenotata Consulenza</SelectItem>
-                  <SelectItem value="pratica_bocciata">Pratica Bocciata</SelectItem>
-                  <SelectItem value="converted">Convertito</SelectItem>
-                  <SelectItem value="perso">Perso</SelectItem>
-                  <SelectItem value="first_contact">Primo Contatto</SelectItem>
-                  <SelectItem value="advanced_conversations">Conversazioni Avanzate</SelectItem>
-                  <SelectItem value="rejected">Respinto</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {/* Phone Filter (Switch) */}
-            <div className="flex items-center gap-2 border-l pl-4">
-              <Phone className="h-4 w-4 text-gray-500" />
-              <Label htmlFor="phone-filter" className="text-sm text-gray-600">
-                Solo con telefono:
-              </Label>
-              <Switch
-                id="phone-filter"
-                checked={phoneFilter}
-                onCheckedChange={(checked) => {
-                  setPhoneFilter(checked);
-                  saveFiltersToSession(statusFilter, checked, formFilter, mediatoreFilter, searchQuery);
-                }}
-              />
+          <div className="flex items-center justify-between gap-4">
+            {/* Left side - Filters */}
+            <div className="flex items-center gap-4">
+              {/* Mediatore Filter */}
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-gray-500" />
+                <Select value={mediatoreFilter} onValueChange={(value) => {
+                  setMediatoreFilter(value);
+                  saveFiltersToSession(statusFilter, phoneFilter, value, searchQuery);
+                }}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Mediatore" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutti</SelectItem>
+                    {uniqueMediaatori.map((mediatore) => (
+                      <SelectItem key={mediatore} value={mediatore}>
+                        {mediatore}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Phone Filter (Switch) */}
+              <div className="flex items-center gap-2 border-l pl-4">
+                <Phone className="h-4 w-4 text-gray-500" />
+                <Switch
+                  checked={phoneFilter}
+                  onCheckedChange={(checked) => {
+                    setPhoneFilter(checked);
+                    saveFiltersToSession(statusFilter, checked, mediatoreFilter, searchQuery);
+                  }}
+                />
+              </div>
+
+              {/* Status Filter */}
+              <div className="flex items-center gap-2 border-l pl-4">
+                <Filter className="h-4 w-4 text-gray-500" />
+                <Select value={statusFilter} onValueChange={(value) => {
+                  setStatusFilter(value);
+                  saveFiltersToSession(value, phoneFilter, mediatoreFilter, searchQuery);
+                }}>
+                  <SelectTrigger className="w-44">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutti gli status</SelectItem>
+                    <SelectItem value="not_contacted">Non Contattato</SelectItem>
+                    <SelectItem value="non_risponde_x1">Non Risponde x1</SelectItem>
+                    <SelectItem value="non_risponde_x2">Non Risponde x2</SelectItem>
+                    <SelectItem value="non_risponde_x3">Non Risponde x3</SelectItem>
+                    <SelectItem value="non_interessato">Non Interessato</SelectItem>
+                    <SelectItem value="da_risentire">Da Risentire</SelectItem>
+                    <SelectItem value="da_assegnare">Da Assegnare</SelectItem>
+                    <SelectItem value="prenotata_consulenza">Prenotata Consulenza</SelectItem>
+                    <SelectItem value="pratica_bocciata">Pratica Bocciata</SelectItem>
+                    <SelectItem value="converted">Convertito</SelectItem>
+                    <SelectItem value="perso">Perso</SelectItem>
+                    <SelectItem value="first_contact">Primo Contatto</SelectItem>
+                    <SelectItem value="advanced_conversations">Conversazioni Avanzate</SelectItem>
+                    <SelectItem value="rejected">Respinto</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            {/* Mediatore Filter */}
-            <div className="flex items-center gap-2 border-l pl-4">
-              <User className="h-4 w-4 text-gray-500" />
-              <Label htmlFor="mediatore-filter" className="text-sm text-gray-600">Mediatore:</Label>
-              <Select value={mediatoreFilter} onValueChange={(value) => {
-                setMediatoreFilter(value);
-                saveFiltersToSession(statusFilter, phoneFilter, formFilter, value, searchQuery);
-              }}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Filtra per mediatore" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tutti i mediatori</SelectItem>
-                  {uniqueMediaatori.map((mediatore) => (
-                    <SelectItem key={mediatore} value={mediatore}>
-                      {mediatore}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Form Filter */}
-            <div className="flex items-center gap-2 border-l pl-4">
-              <FileText className="h-4 w-4 text-gray-500" />
-              <Label htmlFor="form-filter" className="text-sm text-gray-600">Form:</Label>
-              <Select value={formFilter} onValueChange={(value) => {
-                setFormFilter(value);
-                saveFiltersToSession(statusFilter, phoneFilter, value, mediatoreFilter, searchQuery);
-              }}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Filtra per form" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tutti i form</SelectItem>
-                  {forms.map((form) => (
-                    <SelectItem key={form.slug} value={form.slug}>
-                      {form.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Prossimo Contatto Filter */}
-            <div className="flex items-center gap-2 border-l pl-4">
-              <Button
-                onClick={() => setProssimoContattoFilter(!prossimoContattoFilter)}
-                variant={prossimoContattoFilter ? "default" : "outline"}
-                className={prossimoContattoFilter ? "bg-[#245C4F] hover:bg-[#1e4f44]" : ""}
+            {/* Right side - Search and Update */}
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Cerca..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    saveFiltersToSession(statusFilter, phoneFilter, mediatoreFilter, e.target.value);
+                  }}
+                  className="pl-10 w-64"
+                />
+              </div>
+              
+              <Button 
+                onClick={fetchSubmissions} 
+                variant="outline" 
+                size="sm"
+                className="px-3 py-2"
               >
-                <Calendar className="h-4 w-4 mr-2" />
-                Prossimo Contatto
+                <RotateCcw className="h-4 w-4" />
               </Button>
             </div>
-            
-            {/* Refresh Button (Icon Only) */}
-            <Button 
-              onClick={fetchSubmissions} 
-              variant="outline" 
-              size="sm"
-              className="p-2"
-            >
-              <RotateCcw className="h-4 w-4" />
-            </Button>
           </div>
         </div>
 
