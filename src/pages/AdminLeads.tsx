@@ -66,8 +66,9 @@ export default function AdminLeads() {
   const [mediatoreFilter, setMediatoreFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalCount, setTotalCount] = useState<number>(0);
   const [uniqueMediaatori, setUniqueMediaatori] = useState<string[]>([]);
-  const itemsPerPage = 30;
+  const itemsPerPage = 50;
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -140,12 +141,15 @@ export default function AdminLeads() {
 
   useEffect(() => {
     fetchSubmissions();
-  }, []);
+    fetchUniqueMediaatori();
+  }, [currentPage, statusFilter, phoneFilter, mediatoreFilter, searchQuery]);
 
   const fetchSubmissions = async () => {
     try {
-      // Get submissions with joined form data
-      const { data: submissionsData, error: submissionsError } = await supabase
+      setLoading(true);
+      
+      // Build the query
+      let query = supabase
         .from('form_submissions')
         .select(`
           *,
@@ -156,8 +160,35 @@ export default function AdminLeads() {
           admin_notification_settings!assigned_to (
             admin_name
           )
-        `)
-        .order('created_at', { ascending: false });
+        `, { count: 'exact' });
+
+      // Apply filters
+      if (statusFilter !== 'all') {
+        query = query.eq('lead_status', statusFilter as LeadStatus);
+      }
+
+      if (phoneFilter) {
+        query = query.not('phone_number', 'is', null);
+      }
+
+      if (mediatoreFilter !== 'all') {
+        query = query.eq('mediatore', mediatoreFilter);
+      }
+
+      // Search functionality
+      if (searchQuery) {
+        query = query.or(`first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%,phone_number.ilike.%${searchQuery}%,notes.ilike.%${searchQuery}%,mediatore.ilike.%${searchQuery}%`);
+      }
+
+      // Apply pagination and ordering
+      const from = (currentPage - 1) * itemsPerPage;
+      const to = from + itemsPerPage - 1;
+      
+      query = query
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
+      const { data: submissionsData, error: submissionsError, count } = await query;
 
       if (submissionsError) {
         console.error('Error fetching submissions:', submissionsError);
@@ -177,8 +208,9 @@ export default function AdminLeads() {
       }));
       
       setSubmissions(mappedData);
+      setTotalCount(count || 0);
 
-      // Extract unique forms for the filter
+      // Extract unique forms for any future filter
       const uniqueForms = Array.from(
         new Map(
           mappedData
@@ -194,17 +226,6 @@ export default function AdminLeads() {
       );
       
       setForms(uniqueForms);
-
-      // Extract unique mediatori for the filter
-      const mediatori = Array.from(
-        new Set(
-          mappedData
-            .filter(submission => submission.mediatore)
-            .map(submission => submission.mediatore)
-        )
-      ).sort();
-      
-      setUniqueMediaatori(mediatori);
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -214,6 +235,33 @@ export default function AdminLeads() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUniqueMediaatori = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('form_submissions')
+        .select('mediatore')
+        .not('mediatore', 'is', null)
+        .order('mediatore');
+
+      if (error) {
+        console.error('Error fetching mediatori:', error);
+        return;
+      }
+
+      const mediatori = Array.from(
+        new Set(
+          data
+            .map(item => item.mediatore)
+            .filter(Boolean)
+        )
+      ).sort();
+      
+      setUniqueMediaatori(mediatori);
+    } catch (error) {
+      console.error('Error fetching mediatori:', error);
     }
   };
 
@@ -249,8 +297,8 @@ export default function AdminLeads() {
 
       console.log('Successfully deleted submission:', submissionId);
 
-      // Update local state
-      setSubmissions(prev => prev.filter(s => s.id !== submissionId));
+      // Refetch data to update pagination and counts
+      await fetchSubmissions();
       
       toast({
         title: "Successo",
@@ -278,36 +326,9 @@ export default function AdminLeads() {
     });
   };
 
-  // Filter submissions based on all filters
-  let filteredSubmissions = submissions.filter(submission => {
-    const statusMatch = statusFilter === 'all' || submission.lead_status === statusFilter;
-    const phoneMatch = !phoneFilter || submission.phone_number; // If phone filter is ON, show only with phone
-    const mediatoreMatch = mediatoreFilter === 'all' || submission.mediatore === mediatoreFilter;
-    
-    // Search functionality - search in names, email, phone, notes
-    const searchMatch = searchQuery === '' || [
-      submission.first_name,
-      submission.last_name,
-      submission.email,
-      submission.phone_number,
-      submission.notes,
-      submission.mediatore
-    ].some(field => field?.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    return statusMatch && phoneMatch && mediatoreMatch && searchMatch;
-  });
+  const totalPages = Math.ceil(totalCount / itemsPerPage);
 
-  // Sort by created_at (newest first) since we removed prossimo_contatto filter
-  filteredSubmissions = filteredSubmissions.sort((a, b) => {
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-  });
-
-  // Pagination logic
-  const totalPages = Math.ceil(filteredSubmissions.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedSubmissions = filteredSubmissions.slice(startIndex, startIndex + itemsPerPage);
-
-  // Reset page when filters change
+  // Reset page when filters change  
   useEffect(() => {
     setCurrentPage(1);
   }, [statusFilter, phoneFilter, mediatoreFilter, searchQuery]);
@@ -353,7 +374,7 @@ export default function AdminLeads() {
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Form Submissions</h2>
               <p className="text-gray-600">
-                Totale: {filteredSubmissions.length} submissions 
+                Totale: {totalCount} submissions 
                 {totalPages > 1 && ` - Pagina ${currentPage} di ${totalPages}`}
               </p>
             </div>
@@ -444,7 +465,10 @@ export default function AdminLeads() {
               </div>
               
               <Button 
-                onClick={fetchSubmissions} 
+                onClick={() => {
+                  fetchSubmissions();
+                  fetchUniqueMediaatori();
+                }} 
                 variant="outline" 
                 size="sm"
                 className="px-3 py-2"
@@ -455,7 +479,7 @@ export default function AdminLeads() {
           </div>
         </div>
 
-        {filteredSubmissions.length === 0 ? (
+        {totalCount === 0 ? (
           <Card>
             <CardContent className="flex items-center justify-center py-12">
               <div className="text-center">
@@ -474,7 +498,7 @@ export default function AdminLeads() {
         ) : (
           <>
             <div className="grid gap-4">
-              {paginatedSubmissions.map((submission) => (
+              {submissions.map((submission) => (
               <Card key={submission.id} className="hover:shadow-md transition-shadow">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
