@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { jsPDF } from 'https://esm.sh/jspdf@2.5.1'
 import { corsHeaders } from '../_shared/cors.ts'
 
 const supabase = createClient(
@@ -34,6 +35,24 @@ interface PDFSubmissionData {
   }>
 }
 
+// PDF layout constants
+const PAGE_WIDTH = 210; // A4 width in mm
+const PAGE_HEIGHT = 297; // A4 height in mm
+const MARGIN = 20; // Margin in mm
+const CONTENT_WIDTH = PAGE_WIDTH - (MARGIN * 2);
+
+// Font sizes
+const FONT_SIZE_TITLE = 18;
+const FONT_SIZE_SUBTITLE = 14;
+const FONT_SIZE_SECTION = 12;
+const FONT_SIZE_NORMAL = 10;
+const FONT_SIZE_SMALL = 9;
+
+// Line heights
+const LINE_HEIGHT_TITLE = 8;
+const LINE_HEIGHT_NORMAL = 5;
+const LINE_HEIGHT_SECTION = 7;
+
 // Helper function to get lead status label in Italian
 function getLeadStatusLabel(status: string): string {
   const statusLabels: { [key: string]: string } = {
@@ -62,254 +81,222 @@ function formatDate(dateString: string): string {
   })
 }
 
-// Helper function to format response value
+/**
+ * Add text with automatic line wrapping and return new Y position
+ */
+function addWrappedText(
+  pdf: jsPDF, 
+  text: string, 
+  x: number, 
+  y: number, 
+  maxWidth: number,
+  fontSize: number = FONT_SIZE_NORMAL,
+  lineHeight: number = LINE_HEIGHT_NORMAL
+): number {
+  pdf.setFontSize(fontSize);
+  const lines = pdf.splitTextToSize(text, maxWidth);
+  
+  for (let i = 0; i < lines.length; i++) {
+    if (y > PAGE_HEIGHT - MARGIN - 10) {
+      pdf.addPage();
+      y = MARGIN;
+    }
+    pdf.text(lines[i], x, y);
+    y += lineHeight;
+  }
+  
+  return y;
+}
+
+/**
+ * Add a section title
+ */
+function addSectionTitle(
+  pdf: jsPDF,
+  title: string,
+  x: number,
+  y: number
+): number {
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(FONT_SIZE_SECTION);
+  pdf.setTextColor(36, 92, 79); // #245C4F
+  pdf.text(title, x, y);
+  pdf.setTextColor(0, 0, 0); // Reset to black
+  pdf.setFont('helvetica', 'normal');
+  return y + LINE_HEIGHT_SECTION;
+}
+
+/**
+ * Format response value for display
+ */
 function formatResponseValue(value: any): string {
   if (value === null || value === undefined) {
-    return 'Non specificato'
+    return 'Non specificato';
   }
   
   if (typeof value === 'object') {
     if (Array.isArray(value)) {
-      return value.join(', ')
+      return value.join(', ');
     }
     
     // Handle placeholder responses
-    const placeholderKeys = Object.keys(value).filter(key => key.startsWith('placeholder'))
+    const placeholderKeys = Object.keys(value).filter(key => key.startsWith('placeholder'));
     if (placeholderKeys.length > 0) {
-      return placeholderKeys.map(key => value[key]).filter(v => v).join(', ')
+      return placeholderKeys.map(key => value[key]).filter(v => v).join(', ');
     }
     
-    return JSON.stringify(value)
+    return JSON.stringify(value);
   }
   
-  return String(value)
+  return String(value);
 }
 
-// Generate PDF content as HTML (we'll convert this to PDF)
-function generatePDFHTML(data: PDFSubmissionData): string {
-  const responsesByBlock: { [blockId: string]: typeof data.responses } = {}
-  
-  // Group responses by block
-  data.responses.forEach(response => {
-    if (!responsesByBlock[response.block_id]) {
-      responsesByBlock[response.block_id] = []
-    }
-    responsesByBlock[response.block_id].push(response)
-  })
-
-  // Generate filename
-  const firstName = data.first_name || 'nome'
-  const lastName = data.last_name || 'cognome'
-  const phoneNumber = data.phone_number?.replace(/[^\d]/g, '') || 'telefono'
-  const filename = `${firstName}_${lastName}_${phoneNumber}.pdf`
-
-  return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="UTF-8">
-      <style>
-        body { 
-          font-family: Arial, sans-serif; 
-          margin: 20px; 
-          line-height: 1.4; 
-          color: #333;
-        }
-        .header { 
-          border-bottom: 2px solid #245C4F; 
-          padding-bottom: 20px; 
-          margin-bottom: 30px; 
-        }
-        .title { 
-          color: #245C4F; 
-          font-size: 24px; 
-          font-weight: bold; 
-          margin: 0 0 10px 0; 
-        }
-        .subtitle { 
-          color: #666; 
-          font-size: 14px; 
-          margin: 0; 
-        }
-        .section { 
-          margin-bottom: 25px; 
-          background: #f9f9f9; 
-          padding: 15px; 
-          border-radius: 5px; 
-        }
-        .section-title { 
-          color: #245C4F; 
-          font-size: 16px; 
-          font-weight: bold; 
-          margin: 0 0 15px 0; 
-          border-bottom: 1px solid #ddd; 
-          padding-bottom: 5px; 
-        }
-        .info-grid { 
-          display: grid; 
-          grid-template-columns: 1fr 1fr; 
-          gap: 15px; 
-          margin-bottom: 20px; 
-        }
-        .info-item { 
-          background: white; 
-          padding: 10px; 
-          border-radius: 3px; 
-          border-left: 3px solid #245C4F; 
-        }
-        .info-label { 
-          font-weight: bold; 
-          color: #555; 
-          font-size: 12px; 
-          text-transform: uppercase; 
-          margin-bottom: 5px; 
-        }
-        .info-value { 
-          font-size: 14px; 
-          color: #333; 
-        }
-        .question { 
-          margin-bottom: 15px; 
-          padding: 10px; 
-          background: white; 
-          border-radius: 3px; 
-          border-left: 3px solid #245C4F; 
-        }
-        .question-text { 
-          font-weight: bold; 
-          color: #333; 
-          margin-bottom: 5px; 
-          font-size: 13px; 
-        }
-        .question-response { 
-          color: #245C4F; 
-          font-size: 14px; 
-          font-weight: 500; 
-        }
-        .notes { 
-          background: #fff3cd; 
-          border: 1px solid #ffeaa7; 
-          padding: 15px; 
-          border-radius: 5px; 
-          margin-top: 20px; 
-        }
-        .notes-title { 
-          font-weight: bold; 
-          color: #856404; 
-          margin-bottom: 10px; 
-        }
-        .notes-content { 
-          color: #856404; 
-          line-height: 1.6; 
-          white-space: pre-wrap; 
-        }
-        @media print {
-          body { margin: 0; }
-          .section { break-inside: avoid; }
-        }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        <h1 class="title">Dettagli Lead - ${data.form_title}</h1>
-        <p class="subtitle">Generato il ${formatDate(new Date().toISOString())}</p>
-      </div>
-
-      <div class="section">
-        <h2 class="section-title">Informazioni Generali</h2>
-        <div class="info-grid">
-          <div class="info-item">
-            <div class="info-label">Nome</div>
-            <div class="info-value">${data.first_name || 'Non specificato'}</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">Cognome</div>
-            <div class="info-value">${data.last_name || 'Non specificato'}</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">Telefono</div>
-            <div class="info-value">${data.phone_number || 'Non specificato'}</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">Email</div>
-            <div class="info-value">${data.email || 'Non specificato'}</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">Richiesta Consulenza</div>
-            <div class="info-value">${data.consulting ? 'Sì' : 'No'}</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">Stato Lead</div>
-            <div class="info-value">${getLeadStatusLabel(data.lead_status)}</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">Mediatore</div>
-            <div class="info-value">${data.mediatore || 'Non assegnato'}</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">Data Invio</div>
-            <div class="info-value">${formatDate(data.created_at)}</div>
-          </div>
-        </div>
-      </div>
-
-      ${Object.keys(responsesByBlock).map(blockId => `
-        <div class="section">
-          <h2 class="section-title">Blocco: ${blockId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</h2>
-          ${responsesByBlock[blockId].map(response => `
-            <div class="question">
-              <div class="question-text">${response.question_text}</div>
-              <div class="question-response">${formatResponseValue(response.response_value)}</div>
-            </div>
-          `).join('')}
-        </div>
-      `).join('')}
-
-      ${data.notes ? `
-        <div class="notes">
-          <div class="notes-title">Note</div>
-          <div class="notes-content">${data.notes}</div>
-        </div>
-      ` : ''}
-    </body>
-    </html>
-  `
-}
-
-// Convert HTML to PDF using Puppeteer (via Deno)
-async function htmlToPDF(html: string): Promise<Uint8Array> {
-  try {
-    // Use the htmlcsstoimage API or similar service for PDF generation
-    // For now, we'll use a simple approach with the browser API
-    const response = await fetch('https://api.htmlcsstoimage.com/v1/pdf', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + (Deno.env.get('HTMLCSSTOIMAGE_API_KEY') || ''),
-      },
-      body: JSON.stringify({
-        html: html,
-        css: '',
-        format: 'A4',
-        margin: {
-          top: 20,
-          bottom: 20,
-          left: 20,
-          right: 20
-        }
-      })
-    })
-
-    if (!response.ok) {
-      throw new Error(`PDF generation failed: ${response.statusText}`)
-    }
-
-    const arrayBuffer = await response.arrayBuffer()
-    return new Uint8Array(arrayBuffer)
-  } catch (error) {
-    console.error('Error converting HTML to PDF:', error)
-    throw error
+/**
+ * Add question with response
+ */
+function addQuestionWithResponse(
+  pdf: jsPDF,
+  questionText: string,
+  responseValue: any,
+  questionId: string,
+  x: number,
+  y: number
+): number {
+  // Check if we need a new page
+  if (y > PAGE_HEIGHT - MARGIN - 20) {
+    pdf.addPage();
+    y = MARGIN;
   }
+  
+  // Question text
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(FONT_SIZE_NORMAL);
+  pdf.setTextColor(0, 0, 0);
+  y = addWrappedText(pdf, `D: ${questionText}`, x, y, CONTENT_WIDTH, FONT_SIZE_NORMAL, LINE_HEIGHT_NORMAL);
+  
+  // Response value
+  pdf.setFont('helvetica', 'bold');
+  pdf.setTextColor(36, 92, 79); // #245C4F
+  const responseText = formatResponseValue(responseValue);
+  y = addWrappedText(pdf, `R: ${responseText}`, x, y, CONTENT_WIDTH, FONT_SIZE_NORMAL, LINE_HEIGHT_NORMAL);
+  
+  // Question ID
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(FONT_SIZE_SMALL);
+  pdf.setTextColor(100, 100, 100); // Gray
+  y = addWrappedText(pdf, `ID: ${questionId}`, x, y, CONTENT_WIDTH, FONT_SIZE_SMALL, 4);
+  
+  // Reset colors
+  pdf.setTextColor(0, 0, 0);
+  
+  return y + 3; // Extra spacing after each question
+}
+
+/**
+ * Generate PDF using jsPDF
+ */
+function generateSubmissionPDF(data: PDFSubmissionData): Uint8Array {
+  const pdf = new jsPDF('p', 'mm', 'a4');
+  let y = MARGIN;
+  
+  // Header
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(FONT_SIZE_TITLE);
+  pdf.setTextColor(36, 92, 79); // #245C4F
+  
+  const fullName = [data.first_name, data.last_name].filter(Boolean).join(' ');
+  const title = fullName ? `GoMutuo - ${fullName}` : 'GoMutuo - Dettagli Lead';
+  
+  y = addWrappedText(pdf, title, MARGIN, y, CONTENT_WIDTH, FONT_SIZE_TITLE, LINE_HEIGHT_TITLE);
+  
+  // Submission ID
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(FONT_SIZE_NORMAL);
+  pdf.setTextColor(100, 100, 100); // Gray
+  y = addWrappedText(pdf, `ID: ${data.id}`, MARGIN, y, CONTENT_WIDTH, FONT_SIZE_NORMAL, LINE_HEIGHT_NORMAL);
+  y += 5;
+  
+  // Lead Information Section
+  pdf.setTextColor(0, 0, 0);
+  y = addSectionTitle(pdf, 'Informazioni Lead', MARGIN, y);
+  
+  const leadInfo = [
+    `Nome: ${fullName || 'Non specificato'}`,
+    `Email: ${data.email || 'Non specificata'}`,
+    `Telefono: ${data.phone_number || 'Non specificato'}`,
+    `Status: ${getLeadStatusLabel(data.lead_status)}`,
+    `Tipo Form: ${data.form_title}`,
+    `Data Invio: ${formatDate(data.created_at)}`,
+    `Consulenza: ${data.consulting ? 'Richiesta' : 'Non richiesta'}`,
+    `Mediatore: ${data.mediatore || 'Non specificato'}`
+  ];
+  
+  leadInfo.forEach(info => {
+    y = addWrappedText(pdf, info, MARGIN, y, CONTENT_WIDTH, FONT_SIZE_NORMAL, LINE_HEIGHT_NORMAL);
+  });
+  
+  y += 10;
+  
+  // Notes Section
+  if (data.notes && data.notes.trim()) {
+    y = addSectionTitle(pdf, 'Note', MARGIN, y);
+    y = addWrappedText(pdf, data.notes, MARGIN, y, CONTENT_WIDTH, FONT_SIZE_NORMAL, LINE_HEIGHT_NORMAL);
+    y += 10;
+  }
+  
+  // Responses Section
+  if (data.responses.length > 0) {
+    // Start new page for responses if needed
+    if (y > PAGE_HEIGHT - MARGIN - 50) {
+      pdf.addPage();
+      y = MARGIN;
+    }
+    
+    y = addSectionTitle(pdf, `Risposte (${data.responses.length} totali)`, MARGIN, y);
+    y += 5;
+    
+    // Group responses by block
+    const responsesByBlock = data.responses.reduce((acc, response) => {
+      if (!acc[response.block_id]) {
+        acc[response.block_id] = [];
+      }
+      acc[response.block_id].push(response);
+      return acc;
+    }, {} as Record<string, typeof data.responses>);
+    
+    // Process each block
+    Object.entries(responsesByBlock).forEach(([blockId, blockResponses]) => {
+      // Check if we need a new page for the block header
+      if (y > PAGE_HEIGHT - MARGIN - 30) {
+        pdf.addPage();
+        y = MARGIN;
+      }
+      
+      // Block header
+      const blockTitle = `Blocco: ${blockId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} (${blockResponses.length} risposte)`;
+      y = addSectionTitle(pdf, blockTitle, MARGIN, y);
+      y += 3;
+      
+      // Process each response in the block
+      blockResponses.forEach(response => {
+        y = addQuestionWithResponse(
+          pdf,
+          response.question_text,
+          response.response_value,
+          response.question_id,
+          MARGIN,
+          y
+        );
+        y += 2;
+      });
+      
+      y += 5;
+    });
+  }
+  
+  // Return PDF as Uint8Array
+  const pdfOutput = pdf.output('arraybuffer');
+  return new Uint8Array(pdfOutput);
 }
 
 Deno.serve(async (req) => {
@@ -430,38 +417,19 @@ Deno.serve(async (req) => {
       }))
     })
 
-    // 4. Generate PDF content
+    // 4. Generate PDF content using jsPDF
     console.log(`[${requestId}] 📝 Phase 3: Generating PDF content...`)
     const contentStartTime = Date.now()
     
-    const pdfContent = `
-PDF Lead Report
-================
-
-Lead Information:
-- Name: ${pdfData.first_name} ${pdfData.last_name}
-- Phone: ${pdfData.phone_number}
-- Email: ${pdfData.email}
-- Consulting Requested: ${pdfData.consulting ? 'Yes' : 'No'}
-- Status: ${getLeadStatusLabel(pdfData.lead_status)}
-- Created: ${formatDate(pdfData.created_at)}
-
-Form Responses:
-${responses?.map(r => `
-Q: ${r.question_text}
-A: ${formatResponseValue(r.response_value)}
-`).join('\n') || 'No responses'}
-
-${pdfData.notes ? `\nNotes:\n${pdfData.notes}` : ''}
-`
+    const pdfBuffer = generateSubmissionPDF(pdfData)
 
     const contentEndTime = Date.now()
     console.log(`[${requestId}] 📝 PDF content generated (${contentEndTime - contentStartTime}ms):`, {
-      contentLength: pdfContent.length,
-      contentLines: pdfContent.split('\n').length,
-      hasResponses: pdfContent.includes('Form Responses:'),
-      hasNotes: pdfContent.includes('Notes:'),
-      contentPreview: `${pdfContent.substring(0, 100)}...`
+      contentLength: pdfBuffer.length,
+      contentType: 'application/pdf',
+      hasResponses: pdfData.responses.length > 0,
+      hasNotes: !!pdfData.notes,
+      bufferSize: `${(pdfBuffer.length / 1024).toFixed(1)} KB`
     })
 
     // 5. Generate filename and path
@@ -487,20 +455,19 @@ ${pdfData.notes ? `\nNotes:\n${pdfData.notes}` : ''}
     // 6. Upload to storage
     console.log(`[${requestId}] 💾 Phase 5: Uploading to storage...`)
     const uploadStartTime = Date.now()
-    const encodedContent = new TextEncoder().encode(pdfContent)
     
     console.log(`[${requestId}] 💾 Storage upload details:`, {
       bucket: 'temp-pdfs',
       filePath,
-      contentType: 'text/plain',
-      contentSize: encodedContent.length,
+      contentType: 'application/pdf',
+      contentSize: pdfBuffer.length,
       upsert: true
     })
 
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('temp-pdfs')
-      .upload(filePath, encodedContent, {
-        contentType: 'text/plain', // Will be application/pdf when using real PDF
+      .upload(filePath, pdfBuffer, {
+        contentType: 'application/pdf',
         upsert: true
       })
 
