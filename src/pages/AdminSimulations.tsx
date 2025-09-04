@@ -30,6 +30,7 @@ export default function AdminSimulations() {
   const [simulations, setSimulations] = useState<SavedSimulation[]>([]);
   const [filteredSimulations, setFilteredSimulations] = useState<SavedSimulation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [simulationsLoading, setSimulationsLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [completionFilter, setCompletionFilter] = useState<'all' | 'completed' | 'in_progress'>('all');
@@ -51,8 +52,15 @@ export default function AdminSimulations() {
   } = useAuth();
   const navigate = useNavigate();
   useEffect(() => {
-    fetchSimulations();
-    fetchStats();
+    setLoading(true);
+    Promise.all([fetchSimulations(), fetchStats()]).finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (!loading) {
+      fetchSimulations();
+      fetchStats();
+    }
   }, [currentPage, searchTerm, completionFilter, contactFilter, formTypeFilter]);
   
   const fetchStats = async () => {
@@ -89,7 +97,7 @@ export default function AdminSimulations() {
   };
 
   const fetchSimulations = async () => {
-    setLoading(true);
+    setSimulationsLoading(true);
     try {
       const startIndex = (currentPage - 1) * itemsPerPage;
       const endIndex = startIndex + itemsPerPage - 1;
@@ -144,7 +152,7 @@ export default function AdminSimulations() {
         variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      setSimulationsLoading(false);
     }
   };
   const handleDeleteSimulation = async (simulationId: string) => {
@@ -450,7 +458,18 @@ export default function AdminSimulations() {
                 </div>
               </CardContent>
             </Card> : <>
-          <div className="grid gap-4">
+          <div className="relative">
+            {/* Loading overlay for simulations list */}
+            {simulationsLoading && (
+              <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#245C4F] mx-auto"></div>
+                  <p className="mt-2 text-gray-600">Caricamento simulazioni...</p>
+                </div>
+              </div>
+            )}
+            
+            <div className="grid gap-4">
             {filteredSimulations.map(simulation => <Card key={simulation.id} className={`hover:shadow-md transition-shadow ${isExpired(simulation.expires_at) ? 'border-red-200 bg-red-50' : ''}`}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
@@ -670,7 +689,8 @@ export default function AdminSimulations() {
                 </PaginationContent>
               </Pagination>
             </div>
-          )}
+           )}
+          </div>
         </>}
       </main>
     </div>;
