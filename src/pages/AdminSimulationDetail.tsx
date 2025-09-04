@@ -9,6 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import { getQuestionTextWithStyledResponses } from '@/utils/formUtils';
 import { formCacheService } from '@/services/formCacheService';
 import type { Block, Question, FormResponse as FormResponseType } from '@/types/form';
+import { sortBlocksByPriority, sortQuestionsByNumber } from '@/lib/utils';
 
 interface SavedSimulation {
   id: string;
@@ -50,6 +51,7 @@ export default function AdminSimulationDetail() {
   const [processedResponses, setProcessedResponses] = useState<ProcessedResponse[]>([]);
   const [missingBlocks, setMissingBlocks] = useState<BlockStatus[]>([]);
   const [questionMap, setQuestionMap] = useState<Map<string, { question: Question; block_id: string }>>(new Map());
+  const [blocks, setBlocks] = useState<Block[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -102,6 +104,7 @@ export default function AdminSimulationDetail() {
       // Get cached form and extract blocks
       const cachedForm = await formCacheService.getForm(simulation.form_slug);
       const blocks: Block[] = cachedForm?.blocks || [];
+      setBlocks(blocks);
 
       // Create a map of questions for quick lookup
       const newQuestionMap = new Map<string, { question: Question; block_id: string }>();
@@ -453,38 +456,43 @@ export default function AdminSimulationDetail() {
               </CardContent>
             </Card>
           ) : (
-            Object.entries(responsesByBlock).map(([blockId, blockResponses]) => (
-              <Card key={blockId}>
-                <CardHeader>
-                  <CardTitle className="text-lg">
-                    Blocco: {blockId}
-                    <span className="ml-2 text-sm font-normal text-gray-600">
-                      ({blockResponses.length} risposte)
-                    </span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {blockResponses.map((response) => {
-                      const questionInfo = questionMap.get(response.question_id);
-                      return (
-                        <div key={response.id} className="border-l-4 border-[#245C4F] pl-4">
-                          <div className="mb-2">
-                            <StyledQuestionText 
-                              questionText={response.question_text}
-                              questionId={response.question_id}
-                              responseValue={response.response_value}
-                              question={questionInfo?.question}
-                            />
-                            <p className="text-xs text-gray-500">ID: {response.question_id}</p>
+            sortBlocksByPriority(responsesByBlock, blocks).map(([blockId, blockResponses]) => {
+              const blockInfo = blocks.find(b => b.block_id === blockId);
+              const sortedResponses = sortQuestionsByNumber(blockResponses, questionMap);
+              
+              return (
+                <Card key={blockId}>
+                  <CardHeader>
+                    <CardTitle className="text-lg">
+                      Blocco: {blockInfo?.title || blockId}
+                      <span className="ml-2 text-sm font-normal text-gray-600">
+                        ({sortedResponses.length} risposte)
+                      </span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {sortedResponses.map((response) => {
+                        const questionInfo = questionMap.get(response.question_id);
+                        return (
+                          <div key={response.id} className="border-l-4 border-[#245C4F] pl-4">
+                            <div className="mb-2">
+                              <StyledQuestionText 
+                                questionText={response.question_text}
+                                questionId={response.question_id}
+                                responseValue={response.response_value}
+                                question={questionInfo?.question}
+                              />
+                              <p className="text-xs text-gray-500">ID: {response.question_id}</p>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })
           )}
         </div>
       </main>
