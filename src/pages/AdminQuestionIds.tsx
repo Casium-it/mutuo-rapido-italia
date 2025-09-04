@@ -715,7 +715,7 @@ const AdminQuestionIds = () => {
                   <SelectValue placeholder="Seleziona un form..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {forms.filter(form => form.id && form.id.trim() !== '').map((form) => (
+                  {forms.map((form) => (
                     <SelectItem key={form.id} value={form.id}>
                       {form.title} ({form.slug})
                     </SelectItem>

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { Eye, ArrowLeft, Phone, Calendar, FileText, Mail, User, StickyNote, Trash2, Filter, RotateCcw, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Eye, ArrowLeft, Phone, Calendar, FileText, Mail, User, StickyNote, Trash2, Filter, RotateCcw, Search } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -67,14 +67,7 @@ export default function AdminLeads() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [uniqueMediaatori, setUniqueMediaatori] = useState<string[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
-  const [totalStats, setTotalStats] = useState({
-    total: 0,
-    withPhone: 0,
-    withoutPhone: 0,
-    byStatus: {} as Record<string, number>
-  });
-  const itemsPerPage = 50;
+  const itemsPerPage = 30;
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -147,102 +140,12 @@ export default function AdminLeads() {
 
   useEffect(() => {
     fetchSubmissions();
-    fetchStats();
-    fetchFormTypes();
-    fetchMediaatori();
-  }, [currentPage, statusFilter, phoneFilter, mediatoreFilter, searchQuery]);
-
-  const fetchStats = async () => {
-    try {
-      // Get total count and basic stats
-      const { count: totalCount } = await supabase
-        .from('form_submissions')
-        .select('*', { count: 'exact', head: true });
-
-      // Get all data for statistics
-      const { data: allData } = await supabase
-        .from('form_submissions')
-        .select('phone_number, lead_status');
-
-      if (allData) {
-        const withPhone = allData.filter(s => s.phone_number).length;
-        const withoutPhone = allData.filter(s => !s.phone_number).length;
-        
-        const statusCounts = allData.reduce((acc, submission) => {
-          acc[submission.lead_status] = (acc[submission.lead_status] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>);
-
-        setTotalStats({
-          total: totalCount || 0,
-          withPhone,
-          withoutPhone,
-          byStatus: statusCounts
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    }
-  };
-
-  const fetchFormTypes = async () => {
-    try {
-      const { data } = await supabase
-        .from('form_submissions')
-        .select(`
-          forms (
-            title,
-            slug
-          )
-        `)
-        .not('forms', 'is', null);
-      
-      if (data) {
-        const uniqueForms = Array.from(
-          new Map(
-            data
-              .filter(item => item.forms)
-              .map(item => [
-                item.forms.slug,
-                {
-                  slug: item.forms.slug,
-                  title: item.forms.title
-                }
-              ])
-          ).values()
-        );
-        setForms(uniqueForms);
-      }
-    } catch (error) {
-      console.error('Error fetching form types:', error);
-    }
-  };
-
-  const fetchMediaatori = async () => {
-    try {
-      const { data } = await supabase
-        .from('form_submissions')
-        .select('mediatore')
-        .not('mediatore', 'is', null);
-      
-      if (data) {
-        const uniqueMediaatori = Array.from(
-          new Set(data.map(item => item.mediatore))
-        ).sort();
-        setUniqueMediaatori(uniqueMediaatori);
-      }
-    } catch (error) {
-      console.error('Error fetching mediatori:', error);
-    }
-  };
+  }, []);
 
   const fetchSubmissions = async () => {
-    setLoading(true);
     try {
-      const startIndex = (currentPage - 1) * itemsPerPage;
-      const endIndex = startIndex + itemsPerPage - 1;
-
-      let query = supabase
+      // Get submissions with joined form data
+      const { data: submissionsData, error: submissionsError } = await supabase
         .from('form_submissions')
         .select(`
           *,
@@ -253,30 +156,8 @@ export default function AdminLeads() {
           admin_notification_settings!assigned_to (
             admin_name
           )
-        `, { count: 'exact' })
+        `)
         .order('created_at', { ascending: false });
-
-      // Apply status filter
-      if (statusFilter !== 'all') {
-        query = query.eq('lead_status', statusFilter as LeadStatus);
-      }
-
-      // Apply phone filter
-      if (phoneFilter) {
-        query = query.not('phone_number', 'is', null);
-      }
-
-      // Apply mediatore filter
-      if (mediatoreFilter !== 'all') {
-        query = query.eq('mediatore', mediatoreFilter);
-      }
-
-      // Apply search filter
-      if (searchQuery) {
-        query = query.or(`first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%,phone_number.ilike.%${searchQuery}%,notes.ilike.%${searchQuery}%,mediatore.ilike.%${searchQuery}%`);
-      }
-
-      const { data: submissionsData, error: submissionsError, count } = await query.range(startIndex, endIndex);
 
       if (submissionsError) {
         console.error('Error fetching submissions:', submissionsError);
@@ -296,8 +177,34 @@ export default function AdminLeads() {
       }));
       
       setSubmissions(mappedData);
-      setTotalCount(count || 0);
 
+      // Extract unique forms for the filter
+      const uniqueForms = Array.from(
+        new Map(
+          mappedData
+            .filter(submission => submission.forms)
+            .map(submission => [
+              submission.forms.slug,
+              {
+                slug: submission.forms.slug,
+                title: submission.forms.title
+              }
+            ])
+        ).values()
+      );
+      
+      setForms(uniqueForms);
+
+      // Extract unique mediatori for the filter
+      const mediatori = Array.from(
+        new Set(
+          mappedData
+            .filter(submission => submission.mediatore)
+            .map(submission => submission.mediatore)
+        )
+      ).sort();
+      
+      setUniqueMediaatori(mediatori);
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -342,9 +249,8 @@ export default function AdminLeads() {
 
       console.log('Successfully deleted submission:', submissionId);
 
-      // Refresh data to maintain pagination consistency
-      await fetchSubmissions();
-      await fetchStats();
+      // Update local state
+      setSubmissions(prev => prev.filter(s => s.id !== submissionId));
       
       toast({
         title: "Successo",
@@ -372,25 +278,34 @@ export default function AdminLeads() {
     });
   };
 
-  // Pagination logic - now server-side
-  const totalPages = Math.ceil(totalCount / itemsPerPage);
-  
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  // Filter submissions based on all filters
+  let filteredSubmissions = submissions.filter(submission => {
+    const statusMatch = statusFilter === 'all' || submission.lead_status === statusFilter;
+    const phoneMatch = !phoneFilter || submission.phone_number; // If phone filter is ON, show only with phone
+    const mediatoreMatch = mediatoreFilter === 'all' || submission.mediatore === mediatoreFilter;
+    
+    // Search functionality - search in names, email, phone, notes
+    const searchMatch = searchQuery === '' || [
+      submission.first_name,
+      submission.last_name,
+      submission.email,
+      submission.phone_number,
+      submission.notes,
+      submission.mediatore
+    ].some(field => field?.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    return statusMatch && phoneMatch && mediatoreMatch && searchMatch;
+  });
 
-  const handlePrevious = () => {
-    if (currentPage > 1) {
-      handlePageChange(currentPage - 1);
-    }
-  };
+  // Sort by created_at (newest first) since we removed prossimo_contatto filter
+  filteredSubmissions = filteredSubmissions.sort((a, b) => {
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
 
-  const handleNext = () => {
-    if (currentPage < totalPages) {
-      handlePageChange(currentPage + 1);
-    }
-  };
+  // Pagination logic
+  const totalPages = Math.ceil(filteredSubmissions.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedSubmissions = filteredSubmissions.slice(startIndex, startIndex + itemsPerPage);
 
   // Reset page when filters change
   useEffect(() => {
@@ -438,7 +353,8 @@ export default function AdminLeads() {
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Form Submissions</h2>
               <p className="text-gray-600">
-                Mostrando {submissions.length} di {itemsPerPage} submissions (Pagina {currentPage} di {totalPages} - Totale: {totalCount})
+                Totale: {filteredSubmissions.length} submissions 
+                {totalPages > 1 && ` - Pagina ${currentPage} di ${totalPages}`}
               </p>
             </div>
           </div>
@@ -528,12 +444,7 @@ export default function AdminLeads() {
               </div>
               
               <Button 
-                onClick={() => { 
-                  fetchSubmissions(); 
-                  fetchStats(); 
-                  fetchFormTypes(); 
-                  fetchMediaatori(); 
-                }} 
+                onClick={fetchSubmissions} 
                 variant="outline" 
                 size="sm"
                 className="px-3 py-2"
@@ -544,7 +455,7 @@ export default function AdminLeads() {
           </div>
         </div>
 
-        {submissions.length === 0 ? (
+        {filteredSubmissions.length === 0 ? (
           <Card>
             <CardContent className="flex items-center justify-center py-12">
               <div className="text-center">
@@ -563,7 +474,7 @@ export default function AdminLeads() {
         ) : (
           <>
             <div className="grid gap-4">
-            {submissions.map((submission) => (
+              {paginatedSubmissions.map((submission) => (
               <Card key={submission.id} className="hover:shadow-md transition-shadow">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
@@ -748,95 +659,64 @@ export default function AdminLeads() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="mt-8">
+              <div className="mt-8 flex justify-center">
                 <Pagination>
                   <PaginationContent>
                     <PaginationItem>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={handlePrevious}
-                        disabled={currentPage === 1}
-                        className="flex items-center gap-2"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                        Precedente
-                      </Button>
+                      <PaginationPrevious 
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (currentPage > 1) setCurrentPage(currentPage - 1);
+                        }}
+                        className={currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                      />
                     </PaginationItem>
                     
-                    {/* First page */}
-                    {currentPage > 3 && (
-                      <>
-                        <PaginationItem>
-                          <Button
-                            variant={currentPage === 1 ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => handlePageChange(1)}
-                          >
-                            1
-                          </Button>
-                        </PaginationItem>
-                        {currentPage > 4 && (
-                          <PaginationItem>
-                            <span className="px-3 py-2 text-gray-500">...</span>
-                          </PaginationItem>
-                        )}
-                      </>
-                    )}
-                    
-                    {/* Pages around current page */}
-                    {(() => {
-                      const pages = [];
-                      const start = Math.max(1, currentPage - 2);
-                      const end = Math.min(totalPages, currentPage + 2);
-                      
-                      for (let i = start; i <= end; i++) {
-                        pages.push(
-                          <PaginationItem key={i}>
-                            <Button
-                              variant={currentPage === i ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => handlePageChange(i)}
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                      // Show first page, last page, current page, and pages around current
+                      if (
+                        page === 1 ||
+                        page === totalPages ||
+                        (page >= currentPage - 1 && page <= currentPage + 1)
+                      ) {
+                        return (
+                          <PaginationItem key={page}>
+                            <PaginationLink
+                              href="#"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setCurrentPage(page);
+                              }}
+                              isActive={currentPage === page}
+                              className="cursor-pointer"
                             >
-                              {i}
-                            </Button>
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        );
+                      } else if (
+                        page === currentPage - 2 ||
+                        page === currentPage + 2
+                      ) {
+                        return (
+                          <PaginationItem key={page}>
+                            <span className="px-4 py-2">...</span>
                           </PaginationItem>
                         );
                       }
-                      return pages;
-                    })()}
-                    
-                    {/* Last page */}
-                    {currentPage < totalPages - 2 && (
-                      <>
-                        {currentPage < totalPages - 3 && (
-                          <PaginationItem>
-                            <span className="px-3 py-2 text-gray-500">...</span>
-                          </PaginationItem>
-                        )}
-                        <PaginationItem>
-                          <Button
-                            variant={currentPage === totalPages ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => handlePageChange(totalPages)}
-                          >
-                            {totalPages}
-                          </Button>
-                        </PaginationItem>
-                      </>
-                    )}
+                      return null;
+                    })}
                     
                     <PaginationItem>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={handleNext}
-                        disabled={currentPage === totalPages}
-                        className="flex items-center gap-2"
-                      >
-                        Successiva
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
+                      <PaginationNext
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+                        }}
+                        className={currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                      />
                     </PaginationItem>
                   </PaginationContent>
                 </Pagination>
