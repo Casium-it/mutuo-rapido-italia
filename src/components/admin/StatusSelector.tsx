@@ -34,7 +34,7 @@ export function StatusSelector({ value, onValueChange }: StatusSelectorProps) {
           </SelectValue>
         </SelectTrigger>
         <SelectContent>
-          {statusOptions.map((option) => (
+          {statusOptions.filter(option => option.value && option.value.trim() !== '').map((option) => (
             <SelectItem key={option.value} value={option.value}>
               <LeadStatusBadge status={option.value} />
             </SelectItem>

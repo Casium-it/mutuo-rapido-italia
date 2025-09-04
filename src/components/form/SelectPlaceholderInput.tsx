@@ -52,7 +52,7 @@ export function SelectPlaceholderInput({
           <SelectValue placeholder="Seleziona un'opzione" />
         </SelectTrigger>
         <SelectContent>
-          {placeholder.options.map((option) => (
+          {placeholder.options.filter(option => option.id && option.id.trim() !== '').map((option) => (
             <SelectItem key={option.id} value={option.id}>
               {option.label}
             </SelectItem>
