@@ -12,6 +12,7 @@ import { User, UserCog, Clock, StickyNote } from 'lucide-react';
 import { LeadStatus } from '@/types/leadStatus';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { AINotesSection } from './AINotesSection';
 
 interface AdminNotification {
   id: string;
@@ -25,6 +26,7 @@ interface LeadManagementCardProps {
     last_name: string | null;
     email: string | null;
     notes: string | null;
+    ai_notes: string | null;
     lead_status: LeadStatus;
     mediatore: string | null;
     ultimo_contatto: string | null;
@@ -227,6 +229,12 @@ export function LeadManagementCard({ submission, onUpdate }: LeadManagementCardP
             onSave={(value) => onUpdate('notes', value)}
             placeholder="Aggiungi note dettagliate sul lead..."
             multiline
+          />
+          
+          <AINotesSection
+            submissionId={submission.id}
+            aiNotes={submission.ai_notes}
+            onUpdate={onUpdate}
           />
         </div>
       </CardContent>
