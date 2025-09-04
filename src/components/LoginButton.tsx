@@ -1,36 +1,15 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserRole } from '@/hooks/useUserRole';
 import { User, LogOut } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 
 export function LoginButton() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (user) {
-      setLoading(true);
-      const checkRole = async () => {
-        try {
-          const { data: roleData } = await supabase.rpc('get_current_user_role');
-          setIsAdmin(roleData === 'admin');
-        } catch (error) {
-          setIsAdmin(false);
-        } finally {
-          setLoading(false);
-        }
-      };
-      checkRole();
-    } else {
-      setIsAdmin(false);
-      setLoading(false);
-    }
-  }, [user]);
+  const { isAdmin, roleLoading } = useUserRole();
 
   const handleSignOut = async () => {
     await signOut();
@@ -39,7 +18,7 @@ export function LoginButton() {
   if (user) {
     return (
       <div className="flex items-center gap-2">
-        {isAdmin && !loading && (
+        {isAdmin && !roleLoading && (
           <Button
             onClick={() => navigate('/admin')}
             variant="outline"

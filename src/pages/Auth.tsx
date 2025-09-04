@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -6,32 +5,35 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserRole } from '@/hooks/useUserRole';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 
 export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  
+  const [loginLoading, setLoginLoading] = useState(false);
+
   const { signIn, user, loading: authLoading } = useAuth();
+  const { isAdmin, roleLoading, roleChecked } = useUserRole();
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Handle redirect after successful login and role check
   useEffect(() => {
-    if (user && !authLoading) {
-      // For admin users, always redirect to admin - let ProtectedRoute handle role verification
+    if (user && !authLoading && roleChecked && !roleLoading) {
       const from = (location.state as any)?.from?.pathname;
       
-      if (from && from.startsWith('/admin')) {
-        // If coming from admin route, go back there
-        navigate(from, { replace: true });
-      } else {
-        // Default: try admin first, if not admin ProtectedRoute will handle the redirect
+      if (isAdmin) {
         navigate('/admin', { replace: true });
+      } else {
+        // Regular users go to requested page or home
+        navigate(from || '/', { replace: true });
       }
     }
-  }, [user, authLoading, navigate, location]);
+  }, [user, authLoading, roleChecked, roleLoading, isAdmin, navigate, location]);
+
+  // Show loading while logging in or checking role
+  const isLoading = loginLoading || (user && (!roleChecked || roleLoading));
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +46,7 @@ export default function Auth() {
       return;
     }
 
-    setLoading(true);
+    setLoginLoading(true);
     try {
       const { error } = await signIn(email, password);
       
@@ -62,18 +64,32 @@ export default function Auth() {
             variant: "destructive"
           });
         }
+        setLoginLoading(false);
       }
-      // Remove success toast to prevent showing before redirect
+      // Don't set loading to false here - let the useEffect handle redirect
     } catch (error) {
       toast({
         title: "Errore",
         description: "Errore imprevisto durante l'accesso",
         variant: "destructive"
       });
-    } finally {
-      setLoading(false);
+      setLoginLoading(false);
     }
   };
+
+  // Show loading screen during login process
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f7f5f2]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#245C4F] mx-auto"></div>
+          <p className="mt-2 text-gray-600">
+            {loginLoading ? 'Accesso in corso...' : 'Verifica permessi...'}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f7f5f2] px-4">
@@ -93,6 +109,7 @@ export default function Auth() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="inserisci la tua email"
                 required
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -104,14 +121,15 @@ export default function Auth() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="inserisci la tua password"
                 required
+                disabled={isLoading}
               />
             </div>
             <Button 
               type="submit" 
               className="w-full bg-[#245C4F] hover:bg-[#1e4f44]"
-              disabled={loading}
+              disabled={isLoading}
             >
-              {loading ? 'Accesso in corso...' : 'Accedi'}
+              {isLoading ? 'Accesso in corso...' : 'Accedi'}
             </Button>
           </form>
         </CardContent>

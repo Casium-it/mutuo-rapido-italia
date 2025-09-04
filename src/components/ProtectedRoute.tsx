@@ -1,8 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -10,33 +10,12 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [roleLoading, setRoleLoading] = useState(false);
+  const { user, loading: authLoading } = useAuth();
+  const { isAdmin, roleLoading, roleChecked } = useUserRole();
   const location = useLocation();
 
-  useEffect(() => {
-    if (user && requireAdmin) {
-      setRoleLoading(true);
-      const checkRole = async () => {
-        try {
-          const { data: roleData } = await supabase.rpc('get_current_user_role');
-          setIsAdmin(roleData === 'admin');
-        } catch (error) {
-          console.error('Error checking user role:', error);
-          setIsAdmin(false);
-        } finally {
-          setRoleLoading(false);
-        }
-      };
-      checkRole();
-    } else if (!requireAdmin) {
-      setIsAdmin(null); // Not needed for non-admin routes
-      setRoleLoading(false);
-    }
-  }, [user, requireAdmin]);
-
-  if (loading || (requireAdmin && roleLoading)) {
+  // Show loading while auth or role is loading
+  if (authLoading || (user && requireAdmin && (!roleChecked || roleLoading))) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f7f5f2]">
         <div className="text-center">
@@ -47,12 +26,13 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
     );
   }
 
+  // Redirect to login if not authenticated
   if (!user) {
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
-  if (requireAdmin && isAdmin === false) {
-    // Redirect non-admin users to home instead of showing access denied
+  // Redirect non-admin users away from admin routes
+  if (requireAdmin && roleChecked && !isAdmin) {
     return <Navigate to="/" replace />;
   }
 
