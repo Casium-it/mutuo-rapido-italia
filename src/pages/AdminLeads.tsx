@@ -59,12 +59,14 @@ interface FormInfo {
 export default function AdminLeads() {
   const [submissions, setSubmissions] = useState<FormSubmission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [submissionsLoading, setSubmissionsLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [forms, setForms] = useState<FormInfo[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [phoneFilter, setPhoneFilter] = useState<boolean>(true); // Default on
   const [mediatoreFilter, setMediatoreFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [uniqueMediaatori, setUniqueMediaatori] = useState<string[]>([]);
@@ -129,6 +131,22 @@ export default function AdminLeads() {
     setPhoneFilter(phone);
     setMediatoreFilter(mediatore);
     setSearchQuery(search);
+    setDebouncedSearchQuery(search);
+  }, []);
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Initial load with full page loading
+  useEffect(() => {
+    fetchSubmissions();
+    fetchUniqueMediaatori();
   }, []);
 
   // Restore scroll position after component mounts and DOM is ready
@@ -139,10 +157,13 @@ export default function AdminLeads() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Subsequent loads with submissions loading only
   useEffect(() => {
-    fetchSubmissions();
-    fetchUniqueMediaatori();
-  }, [currentPage, statusFilter, phoneFilter, mediatoreFilter, searchQuery]);
+    if (loading) return; // Skip if initial loading
+    
+    setSubmissionsLoading(true);
+    fetchSubmissions().finally(() => setSubmissionsLoading(false));
+  }, [currentPage, statusFilter, phoneFilter, mediatoreFilter, debouncedSearchQuery]);
 
   const fetchSubmissions = async () => {
     try {
@@ -176,8 +197,8 @@ export default function AdminLeads() {
       }
 
       // Search functionality
-      if (searchQuery) {
-        query = query.or(`first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%,phone_number.ilike.%${searchQuery}%,notes.ilike.%${searchQuery}%,mediatore.ilike.%${searchQuery}%`);
+      if (debouncedSearchQuery) {
+        query = query.or(`first_name.ilike.%${debouncedSearchQuery}%,last_name.ilike.%${debouncedSearchQuery}%,email.ilike.%${debouncedSearchQuery}%,phone_number.ilike.%${debouncedSearchQuery}%,notes.ilike.%${debouncedSearchQuery}%,mediatore.ilike.%${debouncedSearchQuery}%`);
       }
 
       // Apply pagination and ordering
@@ -497,7 +518,18 @@ export default function AdminLeads() {
           </Card>
         ) : (
           <>
-            <div className="grid gap-4">
+            <div className="relative">
+              {/* Loading overlay */}
+              {submissionsLoading && (
+                <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] z-10 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#245C4F] mx-auto"></div>
+                    <p className="mt-2 text-gray-600">Caricamento...</p>
+                  </div>
+                </div>
+              )}
+              
+              <div className="grid gap-4">
               {submissions.map((submission) => (
               <Card key={submission.id} className="hover:shadow-md transition-shadow">
                 <CardHeader className="pb-3">
@@ -678,7 +710,8 @@ export default function AdminLeads() {
                    </div>
                 </CardContent>
               </Card>
-            ))}
+             ))}
+             </div>
             </div>
 
             {/* Pagination */}
