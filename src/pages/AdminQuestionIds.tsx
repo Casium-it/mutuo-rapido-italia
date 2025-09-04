@@ -258,7 +258,8 @@ const AdminQuestionIds = () => {
         return `**{{${optionLabels}}}**`;
       } else if (placeholderValues.type === 'input') {
         const inputType = placeholderValues.input_type || 'text';
-        return `**{{${inputType}:${placeholderKey}}}**`;
+        const validation = placeholderValues.validation || 'none';
+        return `**{{${inputType}:${validation}}}**`;
       } else if (placeholderValues.type === 'multiblock') {
         return `**{{multiblock:${placeholderKey}}}**`;
       }
@@ -370,9 +371,9 @@ const AdminQuestionIds = () => {
                   
                   return (
                     <div key={question.id} className="border rounded-lg p-6 hover:bg-gray-50 transition-colors">
-                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                         {/* Left Column - Main Info */}
-                        <div className="lg:col-span-2 space-y-3">
+                        <div className="xl:col-span-2 space-y-3 min-w-0">
                           <div className="flex items-center gap-3 flex-wrap">
                             <code className="bg-[#245C4F]/10 text-[#245C4F] px-3 py-1 rounded-md text-sm font-mono font-medium">
                               {question.question_id}
@@ -391,17 +392,17 @@ const AdminQuestionIds = () => {
                           </div>
                           
                           {latestVersion && (
-                            <div className="space-y-2">
-                              <p className="text-gray-700 leading-relaxed italic">
+                            <div className="space-y-2 pr-4">
+                              <p className="text-gray-700 leading-relaxed break-words">
                                 {renderFormattedText(formatQuestionText(latestVersion.question_text, latestVersion.placeholder_values))}
                               </p>
                             </div>
                           )}
                           
                           {question.description && (
-                            <div className="space-y-2">
+                            <div className="space-y-2 pr-4">
                               <h4 className="font-medium text-gray-900">Descrizione:</h4>
-                              <p className="text-gray-600 text-sm leading-relaxed">
+                              <p className="text-gray-600 text-sm leading-relaxed break-words">
                                 {question.description}
                               </p>
                             </div>
@@ -409,7 +410,7 @@ const AdminQuestionIds = () => {
                         </div>
                         
                         {/* Right Column - Versions & Actions */}
-                        <div className="space-y-4">
+                        <div className="space-y-4 xl:border-l xl:pl-6">
                           <div>
                             <h4 className="font-medium text-gray-900 mb-2">Versioni disponibili</h4>
                             <div className="space-y-2 max-h-32 overflow-y-auto">
@@ -504,7 +505,7 @@ const AdminQuestionIds = () => {
                                           </div>
                                           <div className="space-y-2">
                                             <div className="space-y-2">
-                                              <p className="text-gray-900 italic">
+                                              <p className="text-gray-900 break-words">
                                                 {renderFormattedText(formatQuestionText(version.question_text, version.placeholder_values))}
                                               </p>
                                             </div>
