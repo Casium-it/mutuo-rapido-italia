@@ -7,9 +7,10 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { ArrowLeft, Clock, User, Phone, Mail, FileText, Trash2, Eye, RefreshCw, Search, Filter, Calendar, CalendarCheck, Check, X, Save, UserCheck } from 'lucide-react';
+import { ArrowLeft, Clock, User, Phone, Mail, FileText, Trash2, Eye, RefreshCw, Search, Filter, Calendar, CalendarCheck, Check, X, Save, UserCheck, ChevronLeft, ChevronRight } from 'lucide-react';
 interface SavedSimulation {
   id: string;
   created_at: string;
@@ -34,21 +35,96 @@ export default function AdminSimulations() {
   const [completionFilter, setCompletionFilter] = useState<'all' | 'completed' | 'in_progress'>('all');
   const [contactFilter, setContactFilter] = useState<'all' | 'with_contact' | 'without_contact'>('all');
   const [formTypeFilter, setFormTypeFilter] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalStats, setTotalStats] = useState({
+    total: 0,
+    autoSave: 0,
+    manual: 0,
+    completed: 0,
+    expired: 0,
+    withContact: 0
+  });
+  const itemsPerPage = 50;
   const {
     user
   } = useAuth();
   const navigate = useNavigate();
   useEffect(() => {
     fetchSimulations();
-  }, []);
-  const fetchSimulations = async () => {
+    fetchStats();
+  }, [currentPage, searchTerm, completionFilter, contactFilter, formTypeFilter]);
+  
+  const fetchStats = async () => {
     try {
-      const {
-        data,
-        error
-      } = await supabase.from('saved_simulations').select('*').order('updated_at', {
-        ascending: false
-      });
+      // Get total count and basic stats
+      const { count: totalCount } = await supabase
+        .from('saved_simulations')
+        .select('*', { count: 'exact', head: true });
+
+      // Get all data for statistics (we need this for accurate filtering)
+      const { data: allData } = await supabase
+        .from('saved_simulations')
+        .select('save_method, percentage, expires_at, name, phone, email');
+
+      if (allData) {
+        const autoSave = allData.filter(s => s.save_method === 'auto-save').length;
+        const manual = allData.filter(s => s.save_method === 'manual-save').length;
+        const completed = allData.filter(s => s.save_method === 'completed-save').length;
+        const expired = allData.filter(s => new Date(s.expires_at) < new Date()).length;
+        const withContact = allData.filter(s => !!(s.name || s.phone || s.email)).length;
+
+        setTotalStats({
+          total: totalCount || 0,
+          autoSave,
+          manual,
+          completed,
+          expired,
+          withContact
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
+  };
+
+  const fetchSimulations = async () => {
+    setLoading(true);
+    try {
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage - 1;
+
+      let query = supabase
+        .from('saved_simulations')
+        .select('*', { count: 'exact' })
+        .order('updated_at', { ascending: false });
+
+      // Apply search filter
+      if (searchTerm) {
+        query = query.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,resume_code.ilike.%${searchTerm}%`);
+      }
+
+      // Apply completion filter
+      if (completionFilter === 'completed') {
+        query = query.eq('percentage', 100);
+      } else if (completionFilter === 'in_progress') {
+        query = query.lt('percentage', 100);
+      }
+
+      // Apply contact filter
+      if (contactFilter === 'with_contact') {
+        query = query.or('name.not.is.null,phone.not.is.null,email.not.is.null');
+      } else if (contactFilter === 'without_contact') {
+        query = query.is('name', null).is('phone', null).is('email', null);
+      }
+
+      // Apply form type filter
+      if (formTypeFilter !== 'all') {
+        query = query.eq('form_slug', formTypeFilter);
+      }
+
+      const { data, error, count } = await query.range(startIndex, endIndex);
+
       if (error) {
         console.error('Error fetching simulations:', error);
         toast({
@@ -58,7 +134,7 @@ export default function AdminSimulations() {
         });
       } else {
         setSimulations(data || []);
-        setFilteredSimulations(data || []);
+        setTotalCount(count || 0);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -82,9 +158,10 @@ export default function AdminSimulations() {
         throw error;
       }
 
-      // Update local state
-      setSimulations(prev => prev.filter(s => s.id !== simulationId));
-      setFilteredSimulations(prev => prev.filter(s => s.id !== simulationId));
+      // Refresh data to maintain pagination consistency
+      await fetchSimulations();
+      await fetchStats();
+      
       toast({
         title: "Successo",
         description: "Simulazione eliminata con successo"
@@ -122,43 +199,58 @@ export default function AdminSimulations() {
     return !!(simulation.name || simulation.phone || simulation.email);
   };
 
-  // Apply filters when simulations or filters change
+  // Apply filters directly to simulations since we now get filtered results from server
   useEffect(() => {
-    let filtered = [...simulations];
+    setFilteredSimulations(simulations);
+  }, [simulations]);
 
-    // Search filter
-    if (searchTerm) {
-      filtered = filtered.filter(sim => getSimulationDisplayName(sim).toLowerCase().includes(searchTerm.toLowerCase()) || sim.resume_code.toLowerCase().includes(searchTerm.toLowerCase()) || sim.phone?.toLowerCase().includes(searchTerm.toLowerCase()) || sim.email?.toLowerCase().includes(searchTerm.toLowerCase()));
-    }
-
-    // Completion filter
-    if (completionFilter === 'completed') {
-      filtered = filtered.filter(sim => sim.percentage === 100);
-    } else if (completionFilter === 'in_progress') {
-      filtered = filtered.filter(sim => sim.percentage < 100);
-    }
-
-    // Contact filter
-    if (contactFilter === 'with_contact') {
-      filtered = filtered.filter(sim => hasContactData(sim));
-    } else if (contactFilter === 'without_contact') {
-      filtered = filtered.filter(sim => !hasContactData(sim));
-    }
-
-    // Form type filter
-    if (formTypeFilter !== 'all') {
-      filtered = filtered.filter(sim => sim.form_slug === formTypeFilter);
-    }
-    setFilteredSimulations(filtered);
-  }, [simulations, searchTerm, completionFilter, contactFilter, formTypeFilter]);
-
-  // Get unique form types for filter
-  const formTypes = [...new Set(simulations.map(sim => sim.form_slug))];
+  // Get unique form types for filter - fetch from server for accurate data
+  const [formTypes, setFormTypes] = useState<string[]>([]);
+  
+  useEffect(() => {
+    const fetchFormTypes = async () => {
+      try {
+        const { data } = await supabase
+          .from('saved_simulations')
+          .select('form_slug')
+          .neq('form_slug', null);
+        
+        if (data) {
+          const uniqueTypes = [...new Set(data.map(item => item.form_slug))];
+          setFormTypes(uniqueTypes);
+        }
+      } catch (error) {
+        console.error('Error fetching form types:', error);
+      }
+    };
+    
+    fetchFormTypes();
+  }, []);
   const clearFilters = () => {
     setSearchTerm('');
     setCompletionFilter('all');
     setContactFilter('all');
     setFormTypeFilter('all');
+    setCurrentPage(1);
+  };
+
+  const totalPages = Math.ceil(totalCount / itemsPerPage);
+  
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handlePrevious = () => {
+    if (currentPage > 1) {
+      handlePageChange(currentPage - 1);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentPage < totalPages) {
+      handlePageChange(currentPage + 1);
+    }
   };
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center bg-[#f7f5f2]">
@@ -168,12 +260,7 @@ export default function AdminSimulations() {
         </div>
       </div>;
   }
-  const autoSaveSimulations = simulations.filter(s => s.save_method === 'auto-save');
-  const manualSimulations = simulations.filter(s => s.save_method === 'manual-save');
-  const completedSaveSimulations = simulations.filter(s => s.save_method === 'completed-save');
-  const expiredSimulations = simulations.filter(s => isExpired(s.expires_at));
-  const completedSimulations = simulations.filter(s => s.percentage === 100);
-  const withContactSimulations = simulations.filter(s => hasContactData(s));
+  // Statistics are now handled by totalStats state
   return <div className="min-h-screen bg-[#f7f5f2]">
       {/* Header */}
       <header className="bg-white border-b border-[#BEB8AE] px-4 py-4">
@@ -188,7 +275,7 @@ export default function AdminSimulations() {
               <p className="text-gray-600">Visualizza e gestisci le simulazioni salvate</p>
             </div>
           </div>
-          <Button onClick={fetchSimulations} variant="outline" className="flex items-center gap-2">
+          <Button onClick={() => { fetchSimulations(); fetchStats(); }} variant="outline" className="flex items-center gap-2">
             <RefreshCw className="h-4 w-4" />
             Aggiorna
           </Button>
@@ -205,7 +292,7 @@ export default function AdminSimulations() {
                 <FileText className="h-5 w-5 text-[#245C4F]" />
                 <div>
                   <p className="text-sm text-gray-600">Totale Simulazioni</p>
-                  <p className="text-2xl font-bold text-[#245C4F]">{simulations.length}</p>
+                  <p className="text-2xl font-bold text-[#245C4F]">{totalStats.total}</p>
                 </div>
               </div>
             </CardContent>
@@ -216,7 +303,7 @@ export default function AdminSimulations() {
                 <Clock className="h-5 w-5 text-blue-600" />
                 <div>
                   <p className="text-sm text-gray-600">Auto-salvate</p>
-                  <p className="text-2xl font-bold text-blue-600">{autoSaveSimulations.length}</p>
+                  <p className="text-2xl font-bold text-blue-600">{totalStats.autoSave}</p>
                 </div>
               </div>
             </CardContent>
@@ -227,7 +314,7 @@ export default function AdminSimulations() {
                 <User className="h-5 w-5 text-green-600" />
                 <div>
                   <p className="text-sm text-gray-600">Manuali</p>
-                  <p className="text-2xl font-bold text-green-600">{manualSimulations.length}</p>
+                  <p className="text-2xl font-bold text-green-600">{totalStats.manual}</p>
                 </div>
               </div>
             </CardContent>
@@ -238,7 +325,7 @@ export default function AdminSimulations() {
                 <Check className="h-5 w-5 text-emerald-600" />
                 <div>
                   <p className="text-sm text-gray-600">Completati</p>
-                  <p className="text-2xl font-bold text-emerald-600">{completedSaveSimulations.length}</p>
+                  <p className="text-2xl font-bold text-emerald-600">{totalStats.completed}</p>
                 </div>
               </div>
             </CardContent>
@@ -249,7 +336,7 @@ export default function AdminSimulations() {
                 <Clock className="h-5 w-5 text-red-600" />
                 <div>
                   <p className="text-sm text-gray-600">Scadute</p>
-                  <p className="text-2xl font-bold text-red-600">{expiredSimulations.length}</p>
+                  <p className="text-2xl font-bold text-red-600">{totalStats.expired}</p>
                 </div>
               </div>
             </CardContent>
@@ -260,7 +347,7 @@ export default function AdminSimulations() {
                 <User className="h-5 w-5 text-purple-600" />
                 <div>
                   <p className="text-sm text-gray-600">Con Contatti</p>
-                  <p className="text-2xl font-bold text-purple-600">{withContactSimulations.length}</p>
+                  <p className="text-2xl font-bold text-purple-600">{totalStats.withContact}</p>
                 </div>
               </div>
             </CardContent>
@@ -329,7 +416,7 @@ export default function AdminSimulations() {
 
             <div className="flex items-center justify-between">
               <p className="text-sm text-gray-600">
-                Mostrando {filteredSimulations.length} di {simulations.length} simulazioni
+                Mostrando {filteredSimulations.length} di {itemsPerPage} simulazioni (Pagina {currentPage} di {totalPages} - Totale: {totalCount})
               </p>
               <Button variant="outline" size="sm" onClick={clearFilters} className="text-gray-600">
                 Pulisci Filtri
@@ -343,7 +430,7 @@ export default function AdminSimulations() {
           <p className="text-gray-600">Visualizza tutte le simulazioni salvate dagli utenti</p>
         </div>
 
-        {filteredSimulations.length === 0 ? simulations.length === 0 ? <Card>
+        {filteredSimulations.length === 0 ? totalCount === 0 ? <Card>
               <CardContent className="flex items-center justify-center py-12">
                 <div className="text-center">
                   <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -362,7 +449,8 @@ export default function AdminSimulations() {
                   </Button>
                 </div>
               </CardContent>
-            </Card> : <div className="grid gap-4">
+            </Card> : <>
+          <div className="grid gap-4">
             {filteredSimulations.map(simulation => <Card key={simulation.id} className={`hover:shadow-md transition-shadow ${isExpired(simulation.expires_at) ? 'border-red-200 bg-red-50' : ''}`}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
@@ -485,7 +573,100 @@ export default function AdminSimulations() {
                   </div>
                 </CardContent>
               </Card>)}
-          </div>}
+          </div>
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-8">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handlePrevious}
+                      disabled={currentPage === 1}
+                      className="flex items-center gap-2"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Precedente
+                    </Button>
+                  </PaginationItem>
+                  
+                  {/* Show first page if current page is > 3 */}
+                  {currentPage > 3 && (
+                    <>
+                      <PaginationItem>
+                        <PaginationLink 
+                          onClick={() => handlePageChange(1)}
+                          isActive={currentPage === 1}
+                        >
+                          1
+                        </PaginationLink>
+                      </PaginationItem>
+                      {currentPage > 4 && (
+                        <PaginationItem>
+                          <span className="px-2 text-gray-500">...</span>
+                        </PaginationItem>
+                      )}
+                    </>
+                  )}
+                  
+                  {/* Show pages around current page */}
+                  {Array.from(
+                    { length: Math.min(5, totalPages) }, 
+                    (_, i) => {
+                      const pageNum = Math.max(1, Math.min(totalPages, currentPage - 2 + i));
+                      if (pageNum < 1 || pageNum > totalPages) return null;
+                      return (
+                        <PaginationItem key={pageNum}>
+                          <PaginationLink 
+                            onClick={() => handlePageChange(pageNum)}
+                            isActive={currentPage === pageNum}
+                          >
+                            {pageNum}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
+                    }
+                  ).filter(Boolean)}
+                  
+                  {/* Show last page if current page is < totalPages - 2 */}
+                  {currentPage < totalPages - 2 && (
+                    <>
+                      {currentPage < totalPages - 3 && (
+                        <PaginationItem>
+                          <span className="px-2 text-gray-500">...</span>
+                        </PaginationItem>
+                      )}
+                      <PaginationItem>
+                        <PaginationLink 
+                          onClick={() => handlePageChange(totalPages)}
+                          isActive={currentPage === totalPages}
+                        >
+                          {totalPages}
+                        </PaginationLink>
+                      </PaginationItem>
+                    </>
+                  )}
+                  
+                  <PaginationItem>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleNext}
+                      disabled={currentPage === totalPages}
+                      className="flex items-center gap-2"
+                    >
+                      Successiva
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
+        </>}
       </main>
     </div>;
 }
