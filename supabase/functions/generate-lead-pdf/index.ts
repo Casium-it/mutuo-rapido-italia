@@ -25,6 +25,7 @@ interface PDFSubmissionData {
   notes: string | null
   lead_status: string
   mediatore: string | null
+  form_id: string | null
   responses: Array<{
     id: string
     question_id: string
@@ -33,6 +34,7 @@ interface PDFSubmissionData {
     response_value: any
     created_at: string
   }>
+  formBlocks?: any[]
 }
 
 // PDF layout constants
@@ -152,11 +154,68 @@ function formatResponseValue(value: any): string {
 }
 
 /**
+ * Get option label from form blocks data
+ */
+function getOptionLabel(
+  responseValue: any,
+  placeholderKey: string,
+  formBlocks: any[]
+): string {
+  if (!responseValue || !formBlocks || formBlocks.length === 0) {
+    return "";
+  }
+
+  let optionValue = "";
+  
+  // Try to get the response value for this placeholder
+  if (typeof responseValue === 'object') {
+    const responseForPlaceholder = responseValue[placeholderKey];
+    
+    if (responseForPlaceholder !== undefined && responseForPlaceholder !== null) {
+      optionValue = Array.isArray(responseForPlaceholder) 
+        ? responseForPlaceholder[0] // Take first value if array
+        : responseForPlaceholder.toString();
+    }
+  }
+  
+  // If no response found, try to use the response value directly if it's a simple value
+  if (!optionValue && responseValue && typeof responseValue !== 'object') {
+    optionValue = responseValue.toString();
+  }
+  
+  if (!optionValue) {
+    return "";
+  }
+
+  // Search through all form blocks to find the matching option
+  for (const block of formBlocks) {
+    if (!block.block_data?.questions) continue;
+    
+    for (const question of block.block_data.questions) {
+      if (!question.placeholders) continue;
+      
+      for (const [phKey, placeholder] of Object.entries(question.placeholders)) {
+        if (phKey === placeholderKey && placeholder.options) {
+          const matchingOption = placeholder.options.find(opt => opt.id === optionValue);
+          if (matchingOption?.label) {
+            return matchingOption.label;
+          }
+        }
+      }
+    }
+  }
+  
+  // If no label found, return the original value
+  return optionValue;
+}
+
+/**
  * Get styled responses for inline display like admin dashboard
  */
 function getQuestionTextWithStyledResponses(
   questionText: string,
-  responseValue: any
+  responseValue: any,
+  formBlocks: any[] = []
 ): Array<{type: 'text' | 'response', content: string}> {
   if (!questionText) return [{ type: 'text', content: '' }];
 
@@ -178,25 +237,31 @@ function getQuestionTextWithStyledResponses(
     const placeholderKey = match[1];
     let displayValue = "";
     
-    // Try to get the response value for this placeholder
-    if (responseValue && typeof responseValue === 'object') {
-      const responseForPlaceholder = responseValue[placeholderKey];
-      
-      if (responseForPlaceholder !== undefined && responseForPlaceholder !== null) {
-        displayValue = Array.isArray(responseForPlaceholder) 
-          ? responseForPlaceholder.join(", ") 
-          : responseForPlaceholder.toString();
-      }
-    }
+    // Try to get the option label instead of just the value
+    displayValue = getOptionLabel(responseValue, placeholderKey, formBlocks);
     
-    // If no response found, try to use the response value directly if it's a simple value
-    if (!displayValue && responseValue && typeof responseValue !== 'object') {
-      displayValue = responseValue.toString();
-    }
-    
-    // Fallback to placeholder if no response found
+    // If no label found, try fallback to direct value
     if (!displayValue) {
-      displayValue = "____";
+      // Try to get the response value for this placeholder
+      if (responseValue && typeof responseValue === 'object') {
+        const responseForPlaceholder = responseValue[placeholderKey];
+        
+        if (responseForPlaceholder !== undefined && responseForPlaceholder !== null) {
+          displayValue = Array.isArray(responseForPlaceholder) 
+            ? responseForPlaceholder.join(", ") 
+            : responseForPlaceholder.toString();
+        }
+      }
+      
+      // If no response found, try to use the response value directly if it's a simple value
+      if (!displayValue && responseValue && typeof responseValue !== 'object') {
+        displayValue = responseValue.toString();
+      }
+      
+      // Fallback to placeholder if no response found
+      if (!displayValue) {
+        displayValue = "____";
+      }
     }
     
     parts.push({
@@ -227,7 +292,8 @@ function addQuestionWithInlineResponse(
   responseValue: any,
   questionId: string,
   x: number,
-  y: number
+  y: number,
+  formBlocks: any[] = []
 ): number {
   // Check if we need a new page
   if (y > PAGE_HEIGHT - MARGIN - 20) {
@@ -235,7 +301,7 @@ function addQuestionWithInlineResponse(
     y = MARGIN;
   }
 
-  const parts = getQuestionTextWithStyledResponses(questionText, responseValue);
+  const parts = getQuestionTextWithStyledResponses(questionText, responseValue, formBlocks);
   
   pdf.setFontSize(FONT_SIZE_NORMAL);
   let currentX = x;
@@ -375,7 +441,8 @@ function generateSubmissionPDF(data: PDFSubmissionData): Uint8Array {
           response.response_value,
           response.question_id,
           MARGIN,
-          y
+          y,
+          data.formBlocks || []
         );
         y += 2;
       });
@@ -482,12 +549,39 @@ Deno.serve(async (req) => {
       }, { status: 500, headers: corsHeaders })
     }
 
+    // 2.5. Fetch form blocks for option labels
+    console.log(`[${requestId}] 📚 Fetching form blocks for option labels...`)
+    const formBlocksStartTime = Date.now()
+    
+    let formBlocks = []
+    if (submission.form_id) {
+      const { data: blocks, error: blocksError } = await supabase
+        .from('form_blocks')
+        .select('*')
+        .eq('form_id', submission.form_id)
+        .order('sort_order', { ascending: true })
+      
+      const formBlocksEndTime = Date.now()
+      console.log(`[${requestId}] 📚 Form blocks fetched (${formBlocksEndTime - formBlocksStartTime}ms):`, {
+        hasBlocks: !!blocks,
+        hasError: !!blocksError,
+        errorDetails: blocksError,
+        blockCount: blocks?.length || 0,
+        formId: submission.form_id
+      })
+      
+      if (!blocksError && blocks) {
+        formBlocks = blocks
+      }
+    }
+
     // 3. Prepare PDF data
     console.log(`[${requestId}] 🔄 Phase 2: Preparing PDF data structure...`)
     const pdfData: PDFSubmissionData = {
       ...submission,
       form_title: submission.forms?.title || 'Form',
-      responses: responses || []
+      responses: responses || [],
+      formBlocks: formBlocks
     }
 
     console.log(`[${requestId}] 📋 PDF data structure prepared:`, {
