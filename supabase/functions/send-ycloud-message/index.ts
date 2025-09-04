@@ -56,12 +56,26 @@ function buildTemplateComponents(templateName: string, templateParams: string[] 
   // Check if this is a PDF template that should use document header
   const isPdfTemplate = templateName.includes('_pdf');
   
+  console.log(`📋 Building template components:`, {
+    templateName,
+    isPdfTemplate,
+    hasMedia: !!media,
+    mediaDetails: media ? {
+      hasUrl: !!media.url,
+      hasFilename: !!media.filename,
+      urlLength: media.url?.length,
+      filename: media.filename
+    } : null,
+    templateParamsCount: templateParams.length,
+    defaultMediaUrl: TEMPLATE_MEDIA_MAPPING[templateName]
+  });
+  
   // Add header component if media is provided or template has default media
   const mediaUrl = media?.url || TEMPLATE_MEDIA_MAPPING[templateName];
   if (mediaUrl) {
     if (isPdfTemplate) {
       // For PDF templates, use document header
-      components.push({
+      const documentComponent = {
         type: 'header',
         parameters: [
           {
@@ -72,10 +86,17 @@ function buildTemplateComponents(templateName: string, templateParams: string[] 
             }
           }
         ]
+      };
+      console.log(`📎 Adding DOCUMENT header component:`, {
+        type: 'document',
+        link: `${mediaUrl.substring(0, 50)}...`,
+        filename: media?.filename || 'document.pdf',
+        fullComponent: documentComponent
       });
+      components.push(documentComponent);
     } else {
       // For other templates, use image header
-      components.push({
+      const imageComponent = {
         type: 'header',
         parameters: [
           {
@@ -83,20 +104,42 @@ function buildTemplateComponents(templateName: string, templateParams: string[] 
             image: { link: mediaUrl }
           }
         ]
+      };
+      console.log(`🖼️  Adding IMAGE header component:`, {
+        type: 'image',
+        link: `${mediaUrl.substring(0, 50)}...`,
+        fullComponent: imageComponent
       });
+      components.push(imageComponent);
     }
+  } else {
+    console.log(`⚠️  No media URL found for template: ${templateName}`);
   }
   
   // Add body component with parameters
   if (templateParams && templateParams.length > 0) {
-    components.push({
+    const bodyComponent = {
       type: 'body',
       parameters: templateParams.map(param => ({
         type: 'text',
         text: param
       }))
+    };
+    console.log(`📝 Adding BODY component:`, {
+      parametersCount: templateParams.length,
+      parameters: templateParams.map((p, i) => `[${i}]: ${String(p).substring(0, 30)}...`),
+      fullComponent: bodyComponent
     });
+    components.push(bodyComponent);
   }
+  
+  console.log(`✅ Template components built successfully:`, {
+    totalComponents: components.length,
+    componentTypes: components.map(c => c.type),
+    hasDocumentHeader: components.some(c => c.parameters?.[0]?.type === 'document'),
+    hasImageHeader: components.some(c => c.parameters?.[0]?.type === 'image'),
+    hasBodyParameters: components.some(c => c.type === 'body')
+  });
   
   return components;
 }
@@ -107,28 +150,62 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const requestId = crypto.randomUUID()
+  console.log(`[${requestId}] === YCloud Message Started ===`)
+
   try {
+    console.log(`[${requestId}] 📨 Parsing request body...`)
     const requestBody: YCloudRequestBody = await req.json();
+    
+    console.log(`[${requestId}] 📨 YCloud request received:`, {
+      templateName: requestBody.templateName,
+      destination: requestBody.destination ? `${requestBody.destination.substring(0, 6)}...` : 'MISSING',
+      userName: requestBody.userName,
+      source: requestBody.source,
+      hasMedia: !!requestBody.media,
+      mediaDetails: requestBody.media ? {
+        hasUrl: !!requestBody.media.url,
+        hasFilename: !!requestBody.media.filename,
+        urlLength: requestBody.media.url?.length,
+        filename: requestBody.media.filename,
+        urlPreview: requestBody.media.url ? `${requestBody.media.url.substring(0, 50)}...` : null
+      } : null,
+      templateParamsCount: requestBody.templateParams?.length || 0,
+      tagsCount: requestBody.tags?.length || 0,
+      attributesCount: Object.keys(requestBody.attributes || {}).length,
+      hasLocation: !!requestBody.location
+    });
     
     // Validate required fields
     if (!requestBody.templateName) {
+      console.error(`[${requestId}] ❌ Missing templateName`)
       throw new Error('templateName is required');
     }
     if (!requestBody.destination) {
+      console.error(`[${requestId}] ❌ Missing destination`)
       throw new Error('destination is required');
     }
     if (!requestBody.userName) {
+      console.error(`[${requestId}] ❌ Missing userName`)
       throw new Error('userName is required');
     }
 
     const templateName = requestBody.templateName;
     
+    console.log(`[${requestId}] 🔄 Phase 1: Processing phone number...`)
     // Normalize the phone number for validation and API call
     const normalizedPhone = normalizePhoneNumber(requestBody.destination);
     
+    console.log(`[${requestId}] 📞 Phone number processing:`, {
+      original: requestBody.destination,
+      normalized: normalizedPhone,
+      lengthOriginal: requestBody.destination.length,
+      lengthNormalized: normalizedPhone.length
+    })
+    
     // Validate phone number format
     if (!validatePhoneNumber(normalizedPhone)) {
-      console.error('Phone number validation failed:', {
+      console.error(`[${requestId}] ❌ Phone number validation failed:`, {
         original: requestBody.destination,
         normalized: normalizedPhone,
         expectedFormat: '+39xxxxxxxxx (or other international format)'
@@ -136,24 +213,15 @@ serve(async (req) => {
       throw new Error(`destination must be a valid phone number with country code (e.g., +39xxxxxxxxx). Received: "${requestBody.destination}"`);
     }
 
-    console.log('Sending YCloud template message with parameters:', {
-      templateName: templateName,
-      destination: requestBody.destination,
-      normalizedDestination: normalizedPhone,
-      userName: requestBody.userName,
-      source: requestBody.source,
-      hasMedia: !!requestBody.media,
-      templateParamsCount: requestBody.templateParams?.length || 0,
-      tagsCount: requestBody.tags?.length || 0,
-      attributesCount: Object.keys(requestBody.attributes || {}).length,
-      hasLocation: !!requestBody.location
-    });
-
+    console.log(`[${requestId}] 🔄 Phase 2: Checking API key...`)
     const ycloudApiKey = Deno.env.get('YCLOUD_API_KEY');
     if (!ycloudApiKey) {
+      console.error(`[${requestId}] ❌ YCLOUD_API_KEY not configured`)
       throw new Error('YCLOUD_API_KEY not configured');
     }
+    console.log(`[${requestId}] ✅ API key found: ${ycloudApiKey.substring(0, 10)}...`)
 
+    console.log(`[${requestId}] 🔄 Phase 3: Building template components...`)
     // Build template components
     const templateComponents = buildTemplateComponents(
       templateName, 
@@ -161,6 +229,7 @@ serve(async (req) => {
       requestBody.media
     );
 
+    console.log(`[${requestId}] 🔄 Phase 4: Building YCloud payload...`)
     // Build the payload for YCloud API
     const ycloudPayload = {
       type: 'template',
@@ -173,8 +242,24 @@ serve(async (req) => {
       to: normalizedPhone
     };
 
-    console.log('Final YCloud payload:', JSON.stringify(ycloudPayload, null, 2));
+    console.log(`[${requestId}] 📋 Final YCloud payload summary:`, {
+      type: ycloudPayload.type,
+      templateName: ycloudPayload.template.name,
+      language: ycloudPayload.template.language.code,
+      componentsCount: ycloudPayload.template.components.length,
+      componentTypes: ycloudPayload.template.components.map(c => c.type),
+      hasDocumentComponent: ycloudPayload.template.components.some(c => 
+        c.parameters?.[0]?.type === 'document'
+      ),
+      from: ycloudPayload.from,
+      to: `${ycloudPayload.to.substring(0, 6)}...`
+    });
 
+    console.log(`[${requestId}] 📋 Complete YCloud payload:`, JSON.stringify(ycloudPayload, null, 2));
+
+    console.log(`[${requestId}] 🔄 Phase 5: Sending to YCloud API...`)
+    const apiStartTime = Date.now()
+    
     // YCloud API call
     const ycloudResponse = await fetch('https://api.ycloud.com/v2/whatsapp/messages/sendDirectly', {
       method: 'POST',
@@ -186,18 +271,38 @@ serve(async (req) => {
       body: JSON.stringify(ycloudPayload),
     });
 
+    const apiEndTime = Date.now()
+    console.log(`[${requestId}] 📡 YCloud API response received (${apiEndTime - apiStartTime}ms):`, {
+      status: ycloudResponse.status,
+      statusText: ycloudResponse.statusText,
+      ok: ycloudResponse.ok,
+      headers: Object.fromEntries(ycloudResponse.headers.entries())
+    })
+
     const ycloudData = await ycloudResponse.json();
     
+    console.log(`[${requestId}] 📡 YCloud response data:`, {
+      hasData: !!ycloudData,
+      dataKeys: ycloudData ? Object.keys(ycloudData) : [],
+      fullData: ycloudData
+    })
+    
     if (!ycloudResponse.ok) {
-      console.error('YCloud API error:', {
+      console.error(`[${requestId}] ❌ YCloud API error:`, {
         status: ycloudResponse.status,
         statusText: ycloudResponse.statusText,
-        response: ycloudData
+        response: ycloudData,
+        payloadSent: ycloudPayload
       });
       throw new Error(`YCloud API error: ${ycloudData.message || ycloudData.error || 'Unknown error'}`);
     }
 
-    console.log('YCloud message sent successfully:', ycloudData);
+    console.log(`[${requestId}] ✅ YCloud message sent successfully:`, {
+      success: true,
+      templateUsed: templateName,
+      destination: `${normalizedPhone.substring(0, 6)}...`,
+      ycloudData
+    });
 
     return new Response(JSON.stringify({ 
       success: true, 
@@ -208,7 +313,16 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Error in send-ycloud-message function:', error);
+    const requestId = crypto.randomUUID()
+    console.error(`[${requestId}] ❌ Error in send-ycloud-message function:`, {
+      errorName: error?.name,
+      errorMessage: error?.message,
+      errorStack: error?.stack,
+      errorType: typeof error,
+      requestMethod: req.method,
+      requestUrl: req.url,
+      fullError: error
+    });
     
     return new Response(JSON.stringify({ 
       success: false, 

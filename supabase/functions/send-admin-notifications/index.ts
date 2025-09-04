@@ -102,35 +102,109 @@ Deno.serve(async (req) => {
     let successCount = 0
     const notificationPromises = maskedAdminData.map(async (admin: any) => {
       try {
-        console.log(`[${requestId}] Sending notification to admin: ${admin.admin_display_name} (${admin.phone_masked})`)
+        console.log(`[${requestId}] 📧 Starting notification process for admin: ${admin.admin_display_name} (${admin.phone_masked})`)
         
         // First, try to generate PDF
         let templateName = 'admin_notification_new_simulation'
         let pdfMedia = undefined
 
+        console.log(`[${requestId}] 🔄 Phase 1: Starting PDF generation process for submission: ${submissionId}`)
+        
         try {
-          console.log(`[${requestId}] Attempting to generate PDF for submission: ${submissionId}`)
+          const pdfStartTime = Date.now()
+          console.log(`[${requestId}] 📞 Invoking generate-lead-pdf function...`)
           
           const { data: pdfResult, error: pdfError } = await supabase.functions.invoke('generate-lead-pdf', {
             body: { submissionId }
           })
 
+          const pdfEndTime = Date.now()
+          console.log(`[${requestId}] 📄 PDF Generation Response (${pdfEndTime - pdfStartTime}ms):`, {
+            hasError: !!pdfError,
+            errorDetails: pdfError,
+            hasData: !!pdfResult,
+            success: pdfResult?.success,
+            hasPdfUrl: !!pdfResult?.pdfUrl,
+            pdfUrl: pdfResult?.pdfUrl ? `${pdfResult.pdfUrl.substring(0, 50)}...` : 'MISSING',
+            filename: pdfResult?.filename,
+            fullResultKeys: pdfResult ? Object.keys(pdfResult) : [],
+            fullResult: pdfResult
+          })
+
           if (pdfError) {
-            console.warn(`[${requestId}] PDF generation failed, falling back to text-only notification:`, pdfError)
+            console.error(`[${requestId}] ❌ PDF generation failed with error:`, {
+              errorType: typeof pdfError,
+              errorMessage: pdfError?.message || pdfError,
+              errorStack: pdfError?.stack,
+              fullError: pdfError
+            })
+            console.warn(`[${requestId}] ⚠️  Falling back to text-only notification due to PDF error`)
           } else if (pdfResult?.success && pdfResult?.pdfUrl) {
-            console.log(`[${requestId}] ✅ PDF generated successfully: ${pdfResult.pdfUrl}`)
+            console.log(`[${requestId}] ✅ PDF generation SUCCESS - switching to PDF template`)
             templateName = 'admin_notification_new_simulation_pdf'
             pdfMedia = {
               url: pdfResult.pdfUrl,
               filename: pdfResult.filename || 'lead_details.pdf'
             }
+            console.log(`[${requestId}] 📎 PDF media object created:`, {
+              url: `${pdfMedia.url.substring(0, 50)}...`,
+              filename: pdfMedia.filename,
+              urlLength: pdfMedia.url.length,
+              isValidUrl: pdfMedia.url.startsWith('http')
+            })
           } else {
-            console.warn(`[${requestId}] PDF generation returned unsuccessful result:`, pdfResult)
+            console.warn(`[${requestId}] ⚠️  PDF generation returned unsuccessful result:`, {
+              hasResult: !!pdfResult,
+              success: pdfResult?.success,
+              pdfUrl: pdfResult?.pdfUrl,
+              resultType: typeof pdfResult,
+              resultKeys: pdfResult ? Object.keys(pdfResult) : [],
+              fullResult: pdfResult
+            })
+            console.warn(`[${requestId}] ⚠️  Falling back to text-only notification due to invalid PDF result`)
           }
         } catch (pdfGenerationError) {
-          console.warn(`[${requestId}] PDF generation exception, continuing with text-only:`, pdfGenerationError)
+          console.error(`[${requestId}] 💥 PDF generation EXCEPTION:`, {
+            errorName: pdfGenerationError?.name,
+            errorMessage: pdfGenerationError?.message,
+            errorStack: pdfGenerationError?.stack,
+            errorType: typeof pdfGenerationError,
+            fullError: pdfGenerationError
+          })
+          console.warn(`[${requestId}] ⚠️  Falling back to text-only notification due to PDF exception`)
         }
 
+         // Template selection confirmation
+        console.log(`[${requestId}] 🎯 Phase 2: Template Selection Complete:`, {
+          selectedTemplate: templateName,
+          isPdfTemplate: templateName.includes('_pdf'),
+          hasPdfMedia: !!pdfMedia,
+          mediaDetails: pdfMedia ? {
+            hasUrl: !!pdfMedia.url,
+            hasFilename: !!pdfMedia.filename,
+            urlPreview: pdfMedia.url ? `${pdfMedia.url.substring(0, 50)}...` : null,
+            filename: pdfMedia.filename
+          } : 'NO_PDF_MEDIA'
+        })
+
+        console.log(`[${requestId}] 📨 Phase 3: Preparing YCloud message:`, {
+          templateName,
+          destination: admin.phone_masked, // Don't log full phone
+          userName: admin.admin_display_name,
+          source: 'admin-notification',
+          hasMedia: !!pdfMedia,
+          mediaType: pdfMedia ? 'PDF_DOCUMENT' : 'NONE',
+          templateParamsCount: 5,
+          templateParams: {
+            consulting: consultingStatus,
+            name: submitterName,
+            age: ageData,
+            province: provinceData,
+            phone: submitterPhone ? `${submitterPhone.substring(0, 6)}...` : 'MISSING'
+          }
+        })
+
+        const ycloudStartTime = Date.now()
         const { data: result, error } = await supabase.functions.invoke('send-ycloud-message', {
           body: {
             templateName,
@@ -148,14 +222,42 @@ Deno.serve(async (req) => {
           }
         })
 
+        const ycloudEndTime = Date.now()
+        console.log(`[${requestId}] 📬 Phase 4: YCloud Response (${ycloudEndTime - ycloudStartTime}ms):`, {
+          hasError: !!error,
+          hasResult: !!result,
+          resultSuccess: result?.success,
+          errorDetails: error,
+          ycloudResponseKeys: result ? Object.keys(result) : [],
+          ycloudMessage: result?.message,
+          ycloudResponse: result?.ycloudResponse,
+          fullResult: result,
+          fullError: error
+        })
+
         if (error) {
-          console.error(`[${requestId}] ❌ Failed to send notification to ${admin.admin_display_name}:`, error)
+          console.error(`[${requestId}] ❌ YCloud invocation failed for ${admin.admin_display_name}:`, {
+            errorType: typeof error,
+            errorMessage: error?.message || error,
+            errorStack: error?.stack,
+            fullError: error
+          })
         } else if (result?.success) {
           const notificationType = pdfMedia ? 'PDF notification' : 'text notification'
-          console.log(`[${requestId}] ✅ ${notificationType} sent successfully to ${admin.admin_display_name}`)
+          console.log(`[${requestId}] ✅ ${notificationType} sent successfully to ${admin.admin_display_name}:`, {
+            templateUsed: templateName,
+            hadPdfAttachment: !!pdfMedia,
+            ycloudSuccess: result.success,
+            ycloudMessage: result.message
+          })
           successCount++
         } else {
-          console.error(`[${requestId}] ❌ Notification failed for ${admin.admin_display_name}:`, result?.error)
+          console.error(`[${requestId}] ❌ YCloud returned unsuccessful result for ${admin.admin_display_name}:`, {
+            resultSuccess: result?.success,
+            resultError: result?.error,
+            resultMessage: result?.message,
+            fullResult: result
+          })
         }
       } catch (error) {
         console.error(`[${requestId}] ❌ Error sending notification to ${admin.admin_display_name}:`, error)
@@ -173,7 +275,16 @@ Deno.serve(async (req) => {
     }, { headers: corsHeaders })
 
   } catch (error) {
-    console.error(`[${requestId}] ❌ Error in admin notifications:`, error)
+    console.error(`[${requestId}] ❌ Error in admin notifications:`, {
+      errorName: error?.name,
+      errorMessage: error?.message,
+      errorStack: error?.stack,
+      errorType: typeof error,
+      submissionId,
+      processedAdmins: maskedAdminData?.length || 0,
+      successfulNotifications: successCount,
+      fullError: error
+    })
     return Response.json({
       success: false,
       error: error instanceof Error ? error.message : "Unknown error"

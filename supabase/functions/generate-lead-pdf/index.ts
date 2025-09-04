@@ -332,9 +332,12 @@ Deno.serve(async (req) => {
       }, { status: 400, headers: corsHeaders })
     }
 
-    console.log(`[${requestId}] Generating PDF for submission:`, submissionId)
+    console.log(`[${requestId}] 🔄 Phase 1: Starting PDF generation for submission:`, submissionId)
 
     // 1. Fetch submission data with responses
+    console.log(`[${requestId}] 📊 Fetching submission data from database...`)
+    const submissionStartTime = Date.now()
+    
     const { data: submission, error: submissionError } = await supabase
       .from('form_submissions')
       .select(`
@@ -344,8 +347,26 @@ Deno.serve(async (req) => {
       .eq('id', submissionId)
       .single()
 
+    const submissionEndTime = Date.now()
+    console.log(`[${requestId}] 📊 Submission data fetched (${submissionEndTime - submissionStartTime}ms):`, {
+      hasSubmission: !!submission,
+      hasError: !!submissionError,
+      errorDetails: submissionError,
+      submissionKeys: submission ? Object.keys(submission) : [],
+      formTitle: submission?.forms?.title,
+      firstName: submission?.first_name,
+      lastName: submission?.last_name,
+      phoneNumber: submission?.phone_number ? 'Present' : 'Missing',
+      createdAt: submission?.created_at
+    })
+
     if (submissionError || !submission) {
-      console.error(`[${requestId}] Error fetching submission:`, submissionError)
+      console.error(`[${requestId}] ❌ Error fetching submission:`, {
+        errorType: typeof submissionError,
+        errorMessage: submissionError?.message || submissionError,
+        errorCode: submissionError?.code,
+        fullError: submissionError
+      })
       return Response.json({
         success: false,
         error: "Failed to fetch submission data"
@@ -353,14 +374,31 @@ Deno.serve(async (req) => {
     }
 
     // 2. Fetch form responses
+    console.log(`[${requestId}] 📝 Fetching form responses...`)
+    const responsesStartTime = Date.now()
+    
     const { data: responses, error: responsesError } = await supabase
       .from('form_responses')
       .select('*')
       .eq('submission_id', submissionId)
       .order('created_at', { ascending: true })
 
+    const responsesEndTime = Date.now()
+    console.log(`[${requestId}] 📝 Form responses fetched (${responsesEndTime - responsesStartTime}ms):`, {
+      hasResponses: !!responses,
+      hasError: !!responsesError,
+      errorDetails: responsesError,
+      responseCount: responses?.length || 0,
+      sampleQuestionIds: responses?.slice(0, 3).map(r => r.question_id) || []
+    })
+
     if (responsesError) {
-      console.error(`[${requestId}] Error fetching responses:`, responsesError)
+      console.error(`[${requestId}] ❌ Error fetching responses:`, {
+        errorType: typeof responsesError,
+        errorMessage: responsesError?.message || responsesError,
+        errorCode: responsesError?.code,
+        fullError: responsesError
+      })
       return Response.json({
         success: false,
         error: "Failed to fetch form responses"
@@ -368,23 +406,34 @@ Deno.serve(async (req) => {
     }
 
     // 3. Prepare PDF data
+    console.log(`[${requestId}] 🔄 Phase 2: Preparing PDF data structure...`)
     const pdfData: PDFSubmissionData = {
       ...submission,
       form_title: submission.forms?.title || 'Form',
       responses: responses || []
     }
 
-    console.log(`[${requestId}] Prepared PDF data with ${responses?.length || 0} responses`)
+    console.log(`[${requestId}] 📋 PDF data structure prepared:`, {
+      hasData: !!pdfData,
+      formTitle: pdfData.form_title,
+      responseCount: pdfData.responses.length,
+      hasFirstName: !!pdfData.first_name,
+      hasLastName: !!pdfData.last_name,
+      hasPhoneNumber: !!pdfData.phone_number,
+      leadStatus: pdfData.lead_status,
+      consultingRequested: pdfData.consulting,
+      hasNotes: !!pdfData.notes,
+      sampleResponses: pdfData.responses.slice(0, 2).map(r => ({
+        questionId: r.question_id,
+        blockId: r.block_id,
+        hasResponse: !!r.response_value
+      }))
+    })
 
-    // 4. Generate PDF HTML
-    const htmlContent = generatePDFHTML(pdfData)
-
-    // 5. Convert HTML to PDF (using simple text-based approach for now)
-    // Since we don't have access to complex PDF libraries in Deno, 
-    // we'll create a simple text-based PDF or use an external service
+    // 4. Generate PDF content
+    console.log(`[${requestId}] 📝 Phase 3: Generating PDF content...`)
+    const contentStartTime = Date.now()
     
-    // For now, let's create a simple PDF-like content and save as text
-    // In production, you'd want to use a proper PDF generation service
     const pdfContent = `
 PDF Lead Report
 ================
@@ -406,41 +455,100 @@ A: ${formatResponseValue(r.response_value)}
 ${pdfData.notes ? `\nNotes:\n${pdfData.notes}` : ''}
 `
 
-    // 6. Generate filename
+    const contentEndTime = Date.now()
+    console.log(`[${requestId}] 📝 PDF content generated (${contentEndTime - contentStartTime}ms):`, {
+      contentLength: pdfContent.length,
+      contentLines: pdfContent.split('\n').length,
+      hasResponses: pdfContent.includes('Form Responses:'),
+      hasNotes: pdfContent.includes('Notes:'),
+      contentPreview: `${pdfContent.substring(0, 100)}...`
+    })
+
+    // 5. Generate filename and path
+    console.log(`[${requestId}] 📁 Phase 4: Generating filename and storage path...`)
     const firstName = pdfData.first_name || 'nome'
     const lastName = pdfData.last_name || 'cognome'
     const phoneNumber = pdfData.phone_number?.replace(/[^\d]/g, '') || 'telefono'
     const timestamp = Date.now()
     const filename = `${firstName}_${lastName}_${phoneNumber}_${timestamp}.pdf`
-    const filePath = `${new Date().toISOString().split('T')[0]}/${filename}`
+    const datePath = new Date().toISOString().split('T')[0]
+    const filePath = `${datePath}/${filename}`
 
-    // 7. Upload to storage
+    console.log(`[${requestId}] 📁 File details prepared:`, {
+      firstName,
+      lastName,
+      phoneNumber: phoneNumber !== 'telefono' ? `${phoneNumber.substring(0, 3)}...` : 'telefono',
+      filename,
+      datePath,
+      filePath,
+      filenameLength: filename.length
+    })
+
+    // 6. Upload to storage
+    console.log(`[${requestId}] 💾 Phase 5: Uploading to storage...`)
+    const uploadStartTime = Date.now()
+    const encodedContent = new TextEncoder().encode(pdfContent)
+    
+    console.log(`[${requestId}] 💾 Storage upload details:`, {
+      bucket: 'temp-pdfs',
+      filePath,
+      contentType: 'text/plain',
+      contentSize: encodedContent.length,
+      upsert: true
+    })
+
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('temp-pdfs')
-      .upload(filePath, new TextEncoder().encode(pdfContent), {
+      .upload(filePath, encodedContent, {
         contentType: 'text/plain', // Will be application/pdf when using real PDF
         upsert: true
       })
 
+    const uploadEndTime = Date.now()
+    console.log(`[${requestId}] 💾 Storage upload result (${uploadEndTime - uploadStartTime}ms):`, {
+      hasUploadData: !!uploadData,
+      hasUploadError: !!uploadError,
+      uploadError: uploadError,
+      uploadPath: uploadData?.path,
+      uploadId: uploadData?.id,
+      uploadFullPath: uploadData?.fullPath
+    })
+
     if (uploadError) {
-      console.error(`[${requestId}] Error uploading PDF:`, uploadError)
+      console.error(`[${requestId}] ❌ Storage upload failed:`, {
+        errorType: typeof uploadError,
+        errorMessage: uploadError?.message || uploadError,
+        errorCode: uploadError?.code,
+        fullError: uploadError
+      })
       return Response.json({
         success: false,
         error: "Failed to upload PDF"
       }, { status: 500, headers: corsHeaders })
     }
 
-    // 8. Get public URL
+    // 7. Get public URL
+    console.log(`[${requestId}] 🔗 Phase 6: Generating public URL...`)
     const { data: urlData } = supabase.storage
       .from('temp-pdfs')
       .getPublicUrl(filePath)
 
     const publicUrl = urlData.publicUrl
 
-    console.log(`[${requestId}] ✅ PDF generated successfully:`, {
+    console.log(`[${requestId}] 🔗 Public URL generated:`, {
+      hasUrlData: !!urlData,
+      hasPublicUrl: !!publicUrl,
+      urlLength: publicUrl?.length,
+      urlPrefix: publicUrl ? `${publicUrl.substring(0, 50)}...` : 'MISSING',
+      isValidUrl: publicUrl?.startsWith('http')
+    })
+
+    console.log(`[${requestId}] ✅ PDF generation COMPLETED successfully:`, {
       filename,
       filePath,
-      publicUrl
+      publicUrl: `${publicUrl.substring(0, 50)}...`,
+      totalProcessingTime: Date.now() - contentStartTime,
+      success: true
     })
 
     return Response.json({
@@ -450,7 +558,15 @@ ${pdfData.notes ? `\nNotes:\n${pdfData.notes}` : ''}
     }, { headers: corsHeaders })
 
   } catch (error) {
-    console.error(`[${requestId}] ❌ Error in PDF generation:`, error)
+    console.error(`[${requestId}] ❌ Error in PDF generation:`, {
+      errorName: error?.name,
+      errorMessage: error?.message,
+      errorStack: error?.stack,
+      errorType: typeof error,
+      submissionId: submissionId || 'UNKNOWN',
+      currentPhase: 'Unknown - check logs above',
+      fullError: error
+    })
     return Response.json({
       success: false,
       error: error instanceof Error ? error.message : "Unknown error"
