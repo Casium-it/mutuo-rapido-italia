@@ -316,6 +316,7 @@ export type Database = {
       }
       form_submissions: {
         Row: {
+          ai_notes: string | null
           assigned_to: string | null
           consulting: boolean | null
           created_at: string
@@ -338,6 +339,7 @@ export type Database = {
           user_identifier: string | null
         }
         Insert: {
+          ai_notes?: string | null
           assigned_to?: string | null
           consulting?: boolean | null
           created_at?: string
@@ -360,6 +362,7 @@ export type Database = {
           user_identifier?: string | null
         }
         Update: {
+          ai_notes?: string | null
           assigned_to?: string | null
           consulting?: boolean | null
           created_at?: string
