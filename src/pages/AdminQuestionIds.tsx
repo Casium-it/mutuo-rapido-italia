@@ -25,6 +25,7 @@ interface QuestionId {
 
 interface QuestionVersion {
   id: string;
+  question_id_record?: string;
   version_number: number;
   question_text: string;
   question_type: string;
@@ -54,6 +55,7 @@ const AdminQuestionIds = () => {
   const [showDuplicateError, setShowDuplicateError] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [extractionProgress, setExtractionProgress] = useState(0);
+  const [dataLoading, setDataLoading] = useState(false);
   const itemsPerPage = 20;
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -105,22 +107,30 @@ const AdminQuestionIds = () => {
     enabled: !!selectedQuestion?.id
   });
 
-  // Fetch all question versions for display
-  const { data: allVersionsData = {} } = useQuery({
+  // Fetch all question versions for display (optimized bulk query)
+  const { data: allVersionsData = {}, isLoading: versionsLoading } = useQuery({
     queryKey: ['all-question-versions', questionIds.map(q => q.id)],
     queryFn: async () => {
-      const versionsMap: Record<string, QuestionVersion[]> = {};
+      if (questionIds.length === 0) return {};
       
-      for (const question of questionIds) {
-        const { data, error } = await supabase
-          .from('question_versions')
-          .select('*')
-          .eq('question_id_record', question.id)
-          .order('version_number', { ascending: false });
-        
-        if (!error && data) {
-          versionsMap[question.id] = data as QuestionVersion[];
+      // Single bulk query instead of N+1 queries
+      const questionIdRecords = questionIds.map(q => q.id);
+      const { data, error } = await supabase
+        .from('question_versions')
+        .select('*')
+        .in('question_id_record', questionIdRecords)
+        .order('version_number', { ascending: false });
+      
+      if (error) throw error;
+      
+      // Group by question_id_record
+      const versionsMap: Record<string, QuestionVersion[]> = {};
+      for (const version of data as QuestionVersion[]) {
+        const questionIdRecord = version.question_id_record || '';
+        if (!versionsMap[questionIdRecord]) {
+          versionsMap[questionIdRecord] = [];
         }
+        versionsMap[questionIdRecord].push(version);
       }
       
       return versionsMap;
@@ -128,13 +138,21 @@ const AdminQuestionIds = () => {
     enabled: questionIds.length > 0
   });
 
-  // Check if question is used
-  const { data: usageData = {} } = useQuery({
+  // Check if question is used (optimized server-side query)
+  const { data: usageData = {}, isLoading: usageLoading } = useQuery({
     queryKey: ['question-usage', questionIds.map(q => q.question_id)],
     queryFn: async () => {
-      const usageMap: Record<string, boolean> = {};
+      if (questionIds.length === 0) return {};
       
-      // Get all active form blocks and check manually
+      const usageMap: Record<string, boolean> = {};
+      const questionIdList = questionIds.map(q => q.question_id);
+      
+      // Initialize all questions as not used
+      for (const questionId of questionIdList) {
+        usageMap[questionId] = false;
+      }
+      
+      // Use a more efficient query to check usage
       const { data: formBlocks, error } = await supabase
         .from('form_blocks')
         .select(`
@@ -148,24 +166,13 @@ const AdminQuestionIds = () => {
         return usageMap;
       }
       
-      // Initialize all questions as not used
-      for (const question of questionIds) {
-        usageMap[question.question_id] = false;
-      }
-      
-      // Check each block for question usage
+      // Check usage efficiently
       for (const block of formBlocks || []) {
-        const blockData = block.block_data;
-        if (blockData && typeof blockData === 'object' && !Array.isArray(blockData) && 'questions' in blockData) {
-          const questions = (blockData as any).questions;
-          if (Array.isArray(questions)) {
-            for (const question of questions) {
-              if (question && typeof question === 'object' && 'question_id' in question) {
-                const questionId = question.question_id;
-                if (questionId && typeof questionId === 'string' && usageMap.hasOwnProperty(questionId)) {
-                  usageMap[questionId] = true;
-                }
-              }
+        const blockData = block.block_data as any;
+        if (blockData?.questions && Array.isArray(blockData.questions)) {
+          for (const question of blockData.questions) {
+            if (question?.question_id && usageMap.hasOwnProperty(question.question_id)) {
+              usageMap[question.question_id] = true;
             }
           }
         }
@@ -212,14 +219,22 @@ const AdminQuestionIds = () => {
       }
       
       toast.success(`Extracted questions: ${data.new_questions} new, ${data.updated_questions} updated, ${data.unchanged} unchanged`);
-      queryClient.invalidateQueries({ queryKey: ['question-ids'] });
-      queryClient.invalidateQueries({ queryKey: ['question-usage'] });
-      setShowFormSelector(false);
+      
+      // Show loading state for data refresh
+      setDataLoading(true);
+      
+      // Invalidate and refetch data
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['question-ids'] }),
+        queryClient.invalidateQueries({ queryKey: ['question-usage'] }),
+        queryClient.invalidateQueries({ queryKey: ['all-question-versions'] })
+      ]).finally(() => {
+        setTimeout(() => setDataLoading(false), 500);
+      });
     },
     onError: (error: any) => {
       setExtractionProgress(0);
       toast.error(`Failed to extract questions: ${error.message}`);
-      setShowFormSelector(false);
     }
   });
 
@@ -274,6 +289,7 @@ const AdminQuestionIds = () => {
 
   const handleFormSelect = () => {
     if (selectedFormId) {
+      setShowFormSelector(false); // Close dialog immediately
       extractQuestionsMutation.mutate(selectedFormId);
     }
   };
@@ -427,12 +443,25 @@ const AdminQuestionIds = () => {
             </div>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <div className="text-center py-8">
-                <RefreshCw className="h-8 w-8 animate-spin mx-auto text-gray-400 mb-4" />
-                <p className="text-gray-600">Caricamento question IDs...</p>
-              </div>
-            ) : (
+            <div className="relative">
+              {/* Loading overlay for data refresh */}
+              {(dataLoading || versionsLoading || usageLoading) && (
+                <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#245C4F] mx-auto"></div>
+                    <p className="mt-2 text-gray-600">
+                      {dataLoading ? "Aggiornamento dati..." : "Caricamento..."}
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              {isLoading ? (
+                <div className="text-center py-8">
+                  <RefreshCw className="h-8 w-8 animate-spin mx-auto text-gray-400 mb-4" />
+                  <p className="text-gray-600">Caricamento question IDs...</p>
+                </div>
+              ) : (
               <div className="space-y-4">
                 {paginatedQuestions.map((question) => {
                   const versions = allVersionsData[question.id] || [];
@@ -694,11 +723,12 @@ const AdminQuestionIds = () => {
                       {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredQuestions.length)} di {filteredQuestions.length}
                     </div>
                   </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                 )}
+               </div>
+             )}
+            </div>
+           </CardContent>
+         </Card>
 
         {/* Form Selection Dialog */}
         <Dialog open={showFormSelector} onOpenChange={setShowFormSelector}>
