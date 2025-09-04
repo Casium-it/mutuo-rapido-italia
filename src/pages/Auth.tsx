@@ -13,12 +13,13 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { signIn, user, isAdmin, loading: authLoading } = useAuth();
+  const { signIn, user, isAdmin, loading: authLoading, roleLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    if (user && !authLoading) {
+    // Wait for both auth loading and role loading to complete
+    if (user && !authLoading && !roleLoading) {
       if (isAdmin) {
         navigate('/admin', { replace: true });
       } else {
@@ -26,7 +27,7 @@ export default function Auth() {
         navigate(from, { replace: true });
       }
     }
-  }, [user, isAdmin, authLoading, navigate, location]);
+  }, [user, isAdmin, authLoading, roleLoading, navigate, location]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,12 +58,8 @@ export default function Auth() {
             variant: "destructive"
           });
         }
-      } else {
-        toast({
-          title: "Accesso effettuato",
-          description: "Benvenuto!",
-        });
       }
+      // Remove success toast to prevent showing before redirect
     } catch (error) {
       toast({
         title: "Errore",

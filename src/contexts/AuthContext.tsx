@@ -8,6 +8,7 @@ interface AuthContextType {
   session: Session | null;
   userRole: string | null;
   loading: boolean;
+  roleLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, metadata?: any) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -21,27 +22,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [roleLoading, setRoleLoading] = useState(false);
+
+  const fetchUserRole = async () => {
+    setRoleLoading(true);
+    try {
+      const { data: roleData } = await supabase.rpc('get_current_user_role');
+      setUserRole(roleData || null);
+    } catch (error) {
+      console.error('Error fetching user role:', error);
+      setUserRole(null);
+    } finally {
+      setRoleLoading(false);
+    }
+  };
 
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Fetch user role
-          setTimeout(async () => {
-            try {
-              const { data: roleData } = await supabase.rpc('get_current_user_role');
-              setUserRole(roleData || null);
-            } catch (error) {
-              console.error('Error fetching user role:', error);
-              setUserRole(null);
-            }
+          // Fetch user role without setTimeout
+          setTimeout(() => {
+            fetchUserRole();
           }, 0);
         } else {
           setUserRole(null);
+          setRoleLoading(false);
         }
         
         setLoading(false);
@@ -54,12 +64,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        supabase.rpc('get_current_user_role').then(({ data: roleData }) => {
-          setUserRole(roleData || null);
-        });
+        fetchUserRole();
+      } else {
+        setLoading(false);
       }
-      
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -98,6 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     session,
     userRole,
     loading,
+    roleLoading,
     signIn,
     signUp,
     signOut,
