@@ -593,59 +593,64 @@ export default function AdminSimulations() {
                     </Button>
                   </PaginationItem>
                   
-                  {/* Show first page if current page is > 3 */}
+                  {/* First page */}
                   {currentPage > 3 && (
                     <>
                       <PaginationItem>
-                        <PaginationLink 
+                        <Button
+                          variant={currentPage === 1 ? "default" : "outline"}
+                          size="sm"
                           onClick={() => handlePageChange(1)}
-                          isActive={currentPage === 1}
                         >
                           1
-                        </PaginationLink>
+                        </Button>
                       </PaginationItem>
                       {currentPage > 4 && (
                         <PaginationItem>
-                          <span className="px-2 text-gray-500">...</span>
+                          <span className="px-3 py-2 text-gray-500">...</span>
                         </PaginationItem>
                       )}
                     </>
                   )}
                   
-                  {/* Show pages around current page */}
-                  {Array.from(
-                    { length: Math.min(5, totalPages) }, 
-                    (_, i) => {
-                      const pageNum = Math.max(1, Math.min(totalPages, currentPage - 2 + i));
-                      if (pageNum < 1 || pageNum > totalPages) return null;
-                      return (
-                        <PaginationItem key={pageNum}>
-                          <PaginationLink 
-                            onClick={() => handlePageChange(pageNum)}
-                            isActive={currentPage === pageNum}
+                  {/* Pages around current page */}
+                  {(() => {
+                    const pages = [];
+                    const start = Math.max(1, currentPage - 2);
+                    const end = Math.min(totalPages, currentPage + 2);
+                    
+                    for (let i = start; i <= end; i++) {
+                      pages.push(
+                        <PaginationItem key={i}>
+                          <Button
+                            variant={currentPage === i ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => handlePageChange(i)}
                           >
-                            {pageNum}
-                          </PaginationLink>
+                            {i}
+                          </Button>
                         </PaginationItem>
                       );
                     }
-                  ).filter(Boolean)}
+                    return pages;
+                  })()}
                   
-                  {/* Show last page if current page is < totalPages - 2 */}
+                  {/* Last page */}
                   {currentPage < totalPages - 2 && (
                     <>
                       {currentPage < totalPages - 3 && (
                         <PaginationItem>
-                          <span className="px-2 text-gray-500">...</span>
+                          <span className="px-3 py-2 text-gray-500">...</span>
                         </PaginationItem>
                       )}
                       <PaginationItem>
-                        <PaginationLink 
+                        <Button
+                          variant={currentPage === totalPages ? "default" : "outline"}
+                          size="sm"
                           onClick={() => handlePageChange(totalPages)}
-                          isActive={currentPage === totalPages}
                         >
                           {totalPages}
-                        </PaginationLink>
+                        </Button>
                       </PaginationItem>
                     </>
                   )}
