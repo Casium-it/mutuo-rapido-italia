@@ -364,10 +364,10 @@ export const generateSubmissionPDF = async (data: PDFSubmissionData): Promise<vo
     generateBlocksAndResponses(pdf, data);
     
     // Generate filename and save
-    const date = new Date().toISOString().split('T')[0];
-    const fullName = [data.first_name, data.last_name].filter(Boolean).join(' ');
-    const nameForFilename = fullName ? `_${fullName.replace(/\s+/g, '_')}` : '';
-    const filename = `submission_${data.id.substring(0, 8)}${nameForFilename}_${date}.pdf`;
+    const firstName = data.first_name?.replace(/\s+/g, '_') || 'sconosciuto';
+    const lastName = data.last_name?.replace(/\s+/g, '_') || 'sconosciuto';
+    const phoneNumber = data.phone_number?.replace(/\s+/g, '') || 'nessun_numero';
+    const filename = `${firstName}_${lastName}_${phoneNumber}.pdf`;
     
     pdf.save(filename);
     
