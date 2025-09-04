@@ -6,10 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { Eye, ArrowLeft, Phone, Calendar, FileText, Mail, User, StickyNote, Trash2, Filter } from 'lucide-react';
+import { Eye, ArrowLeft, Phone, Calendar, FileText, Mail, User, StickyNote, Trash2, Filter, RotateCcw, Search } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { LeadStatusBadge } from '@/components/admin/LeadStatusBadge';
 import { LeadStatus } from '@/types/leadStatus';
 import {
@@ -60,18 +62,25 @@ export default function AdminLeads() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [forms, setForms] = useState<FormInfo[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [phoneFilter, setPhoneFilter] = useState<'all' | 'with' | 'without'>('all');
+  const [phoneFilter, setPhoneFilter] = useState<boolean>(true); // Default on
   const [formFilter, setFormFilter] = useState<string>('all');
+  const [mediatoreFilter, setMediatoreFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [prossimoContattoFilter, setProssimoContattoFilter] = useState<boolean>(false);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [uniqueMediaatori, setUniqueMediaatori] = useState<string[]>([]);
+  const itemsPerPage = 30;
   const { user } = useAuth();
   const navigate = useNavigate();
 
   // Session Storage helpers
-  const saveFiltersToSession = (status: string, phone: 'all' | 'with' | 'without', form: string) => {
+  const saveFiltersToSession = (status: string, phone: boolean, form: string, mediatore: string, search: string) => {
     try {
       sessionStorage.setItem('adminLeads_statusFilter', status);
-      sessionStorage.setItem('adminLeads_phoneFilter', phone);
+      sessionStorage.setItem('adminLeads_phoneFilter', phone.toString());
       sessionStorage.setItem('adminLeads_formFilter', form);
+      sessionStorage.setItem('adminLeads_mediatoreFilter', mediatore);
+      sessionStorage.setItem('adminLeads_searchQuery', search);
     } catch (error) {
       console.warn('Could not save filters to session storage:', error);
     }
@@ -80,16 +89,20 @@ export default function AdminLeads() {
   const loadFiltersFromSession = () => {
     try {
       const savedStatus = sessionStorage.getItem('adminLeads_statusFilter') || 'all';
-      const savedPhone = sessionStorage.getItem('adminLeads_phoneFilter') || 'all';
+      const savedPhone = sessionStorage.getItem('adminLeads_phoneFilter') === 'false' ? false : true;
       const savedForm = sessionStorage.getItem('adminLeads_formFilter') || 'all';
+      const savedMediator = sessionStorage.getItem('adminLeads_mediatoreFilter') || 'all';
+      const savedSearch = sessionStorage.getItem('adminLeads_searchQuery') || '';
       return { 
         status: savedStatus, 
-        phone: savedPhone as 'all' | 'with' | 'without',
-        form: savedForm
+        phone: savedPhone,
+        form: savedForm,
+        mediatore: savedMediator,
+        search: savedSearch
       };
     } catch (error) {
       console.warn('Could not load filters from session storage:', error);
-      return { status: 'all', phone: 'all' as const, form: 'all' };
+      return { status: 'all', phone: true, form: 'all', mediatore: 'all', search: '' };
     }
   };
 
@@ -115,10 +128,12 @@ export default function AdminLeads() {
 
   // Initialize filters from session storage
   useEffect(() => {
-    const { status, phone, form } = loadFiltersFromSession();
+    const { status, phone, form, mediatore, search } = loadFiltersFromSession();
     setStatusFilter(status);
     setPhoneFilter(phone);
     setFormFilter(form);
+    setMediatoreFilter(mediatore);
+    setSearchQuery(search);
   }, []);
 
   // Restore scroll position after component mounts and DOM is ready
@@ -185,6 +200,17 @@ export default function AdminLeads() {
       );
       
       setForms(uniqueForms);
+
+      // Extract unique mediatori for the filter
+      const mediatori = Array.from(
+        new Set(
+          mappedData
+            .filter(submission => submission.mediatore)
+            .map(submission => submission.mediatore)
+        )
+      ).sort();
+      
+      setUniqueMediaatori(mediatori);
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -258,15 +284,25 @@ export default function AdminLeads() {
     });
   };
 
-  // Filter submissions based on status, phone, form and prossimo contatto
+  // Filter submissions based on all filters
   let filteredSubmissions = submissions.filter(submission => {
     const statusMatch = statusFilter === 'all' || submission.lead_status === statusFilter;
-    const phoneMatch = phoneFilter === 'all' || 
-      (phoneFilter === 'with' && submission.phone_number) ||
-      (phoneFilter === 'without' && !submission.phone_number);
+    const phoneMatch = !phoneFilter || submission.phone_number; // If phone filter is ON, show only with phone
     const formMatch = formFilter === 'all' || submission.forms?.slug === formFilter;
+    const mediatoreMatch = mediatoreFilter === 'all' || submission.mediatore === mediatoreFilter;
     const prossimoContattoMatch = !prossimoContattoFilter || submission.prossimo_contatto;
-    return statusMatch && phoneMatch && formMatch && prossimoContattoMatch;
+    
+    // Search functionality - search in names, email, phone, notes
+    const searchMatch = searchQuery === '' || [
+      submission.first_name,
+      submission.last_name,
+      submission.email,
+      submission.phone_number,
+      submission.notes,
+      submission.mediatore
+    ].some(field => field?.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    return statusMatch && phoneMatch && formMatch && mediatoreMatch && prossimoContattoMatch && searchMatch;
   });
 
   // Sort by prossimo_contatto when filter is active (oldest first)
@@ -276,6 +312,16 @@ export default function AdminLeads() {
       return new Date(a.prossimo_contatto).getTime() - new Date(b.prossimo_contatto).getTime();
     });
   }
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredSubmissions.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedSubmissions = filteredSubmissions.slice(startIndex, startIndex + itemsPerPage);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, phoneFilter, formFilter, mediatoreFilter, searchQuery, prossimoContattoFilter]);
 
   if (loading) {
     return (
@@ -317,15 +363,38 @@ export default function AdminLeads() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Form Submissions</h2>
-              <p className="text-gray-600">Totale: {filteredSubmissions.length} submissions</p>
+              <p className="text-gray-600">
+                Totale: {filteredSubmissions.length} submissions 
+                {totalPages > 1 && ` - Pagina ${currentPage} di ${totalPages}`}
+              </p>
             </div>
           </div>
+
+          {/* Search Bar */}
+          <div className="mb-4">
+            <div className="relative max-w-md">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Cerca per nome, email, telefono, note, mediatore..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  saveFiltersToSession(statusFilter, phoneFilter, formFilter, mediatoreFilter, e.target.value);
+                }}
+                className="pl-10"
+              />
+            </div>
+          </div>
+
+          {/* Filters */}
           <div className="flex flex-wrap items-center gap-4">
+            {/* Status Filter */}
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-gray-500" />
               <Select value={statusFilter} onValueChange={(value) => {
                 setStatusFilter(value);
-                saveFiltersToSession(value, phoneFilter, formFilter);
+                saveFiltersToSession(value, phoneFilter, formFilter, mediatoreFilter, searchQuery);
               }}>
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="Filtra per status" />
@@ -350,30 +419,51 @@ export default function AdminLeads() {
               </Select>
             </div>
             
+            {/* Phone Filter (Switch) */}
             <div className="flex items-center gap-2 border-l pl-4">
               <Phone className="h-4 w-4 text-gray-500" />
-              <Label htmlFor="phone-filter" className="text-sm text-gray-600">Telefono:</Label>
-              <Select value={phoneFilter} onValueChange={(value: 'all' | 'with' | 'without') => {
-                setPhoneFilter(value);
-                saveFiltersToSession(statusFilter, value, formFilter);
+              <Label htmlFor="phone-filter" className="text-sm text-gray-600">
+                Solo con telefono:
+              </Label>
+              <Switch
+                id="phone-filter"
+                checked={phoneFilter}
+                onCheckedChange={(checked) => {
+                  setPhoneFilter(checked);
+                  saveFiltersToSession(statusFilter, checked, formFilter, mediatoreFilter, searchQuery);
+                }}
+              />
+            </div>
+
+            {/* Mediatore Filter */}
+            <div className="flex items-center gap-2 border-l pl-4">
+              <User className="h-4 w-4 text-gray-500" />
+              <Label htmlFor="mediatore-filter" className="text-sm text-gray-600">Mediatore:</Label>
+              <Select value={mediatoreFilter} onValueChange={(value) => {
+                setMediatoreFilter(value);
+                saveFiltersToSession(statusFilter, phoneFilter, formFilter, value, searchQuery);
               }}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Filtra per mediatore" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tutti</SelectItem>
-                  <SelectItem value="with">Sì</SelectItem>
-                  <SelectItem value="without">No</SelectItem>
+                  <SelectItem value="all">Tutti i mediatori</SelectItem>
+                  {uniqueMediaatori.map((mediatore) => (
+                    <SelectItem key={mediatore} value={mediatore}>
+                      {mediatore}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
+            {/* Form Filter */}
             <div className="flex items-center gap-2 border-l pl-4">
               <FileText className="h-4 w-4 text-gray-500" />
               <Label htmlFor="form-filter" className="text-sm text-gray-600">Form:</Label>
               <Select value={formFilter} onValueChange={(value) => {
                 setFormFilter(value);
-                saveFiltersToSession(statusFilter, phoneFilter, value);
+                saveFiltersToSession(statusFilter, phoneFilter, value, mediatoreFilter, searchQuery);
               }}>
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="Filtra per form" />
@@ -389,6 +479,7 @@ export default function AdminLeads() {
               </Select>
             </div>
 
+            {/* Prossimo Contatto Filter */}
             <div className="flex items-center gap-2 border-l pl-4">
               <Button
                 onClick={() => setProssimoContattoFilter(!prossimoContattoFilter)}
@@ -400,8 +491,14 @@ export default function AdminLeads() {
               </Button>
             </div>
             
-            <Button onClick={fetchSubmissions} variant="outline">
-              Aggiorna
+            {/* Refresh Button (Icon Only) */}
+            <Button 
+              onClick={fetchSubmissions} 
+              variant="outline" 
+              size="sm"
+              className="p-2"
+            >
+              <RotateCcw className="h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -423,8 +520,9 @@ export default function AdminLeads() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4">
-            {filteredSubmissions.map((submission) => (
+          <>
+            <div className="grid gap-4">
+              {paginatedSubmissions.map((submission) => (
               <Card key={submission.id} className="hover:shadow-md transition-shadow">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
@@ -601,7 +699,74 @@ export default function AdminLeads() {
                 </CardContent>
               </Card>
             ))}
-          </div>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-8 flex justify-center">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (currentPage > 1) setCurrentPage(currentPage - 1);
+                        }}
+                        className={currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                      />
+                    </PaginationItem>
+                    
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                      // Show first page, last page, current page, and pages around current
+                      if (
+                        page === 1 ||
+                        page === totalPages ||
+                        (page >= currentPage - 1 && page <= currentPage + 1)
+                      ) {
+                        return (
+                          <PaginationItem key={page}>
+                            <PaginationLink
+                              href="#"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setCurrentPage(page);
+                              }}
+                              isActive={currentPage === page}
+                              className="cursor-pointer"
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        );
+                      } else if (
+                        page === currentPage - 2 ||
+                        page === currentPage + 2
+                      ) {
+                        return (
+                          <PaginationItem key={page}>
+                            <span className="px-4 py-2">...</span>
+                          </PaginationItem>
+                        );
+                      }
+                      return null;
+                    })}
+                    
+                    <PaginationItem>
+                      <PaginationNext
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+                        }}
+                        className={currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
+          </>
         )}
       </main>
     </div>
