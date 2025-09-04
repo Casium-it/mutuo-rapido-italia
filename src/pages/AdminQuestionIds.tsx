@@ -10,7 +10,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Search, RefreshCw, Eye, Edit2, Database, AlertTriangle } from "lucide-react";
+import { Search, RefreshCw, Eye, Edit2, Database, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 interface QuestionId {
   id: string;
@@ -50,6 +51,9 @@ const AdminQuestionIds = () => {
   const [selectedFormId, setSelectedFormId] = useState<string>("");
   const [duplicateErrors, setDuplicateErrors] = useState<DuplicateError[]>([]);
   const [showDuplicateError, setShowDuplicateError] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [extractionProgress, setExtractionProgress] = useState(0);
+  const itemsPerPage = 20;
   const queryClient = useQueryClient();
 
   // Fetch forms
@@ -173,14 +177,32 @@ const AdminQuestionIds = () => {
   // Extract questions mutation
   const extractQuestionsMutation = useMutation({
     mutationFn: async (formId: string) => {
-      const { data, error } = await supabase.functions.invoke('extract-question-ids', {
-        body: { form_id: formId }
-      });
+      // Start progress simulation
+      setExtractionProgress(10);
       
-      if (error) throw error;
-      return data;
+      const progressInterval = setInterval(() => {
+        setExtractionProgress(prev => Math.min(prev + 15, 85));
+      }, 300);
+
+      try {
+        const { data, error } = await supabase.functions.invoke('extract-question-ids', {
+          body: { form_id: formId }
+        });
+        
+        clearInterval(progressInterval);
+        setExtractionProgress(100);
+        
+        if (error) throw error;
+        return data;
+      } catch (error) {
+        clearInterval(progressInterval);
+        setExtractionProgress(0);
+        throw error;
+      }
     },
     onSuccess: (data) => {
+      setTimeout(() => setExtractionProgress(0), 1000);
+      
       if (data.duplicate_errors && data.duplicate_errors.length > 0) {
         setDuplicateErrors(data.duplicate_errors);
         setShowDuplicateError(true);
@@ -193,6 +215,7 @@ const AdminQuestionIds = () => {
       setShowFormSelector(false);
     },
     onError: (error: any) => {
+      setExtractionProgress(0);
       toast.error(`Failed to extract questions: ${error.message}`);
       setShowFormSelector(false);
     }
@@ -222,6 +245,17 @@ const AdminQuestionIds = () => {
     q.question_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (q.description && q.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredQuestions.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedQuestions = filteredQuestions.slice(startIndex, startIndex + itemsPerPage);
+
+  // Reset to first page when search changes
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  };
 
   const handleUpdateDescription = () => {
     if (selectedQuestion) {
@@ -302,7 +336,7 @@ const AdminQuestionIds = () => {
                 <Input
                   placeholder="Cerca per ID domanda o descrizione..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                   className="pl-10"
                 />
               </div>
@@ -325,6 +359,21 @@ const AdminQuestionIds = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Extraction Progress */}
+        {extractionProgress > 0 && (
+          <Card className="mb-6">
+            <CardContent className="p-6">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">Estrazione in corso...</span>
+                  <span className="text-sm text-gray-600">{extractionProgress}%</span>
+                </div>
+                <Progress value={extractionProgress} className="w-full" />
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -355,7 +404,16 @@ const AdminQuestionIds = () => {
         {/* Questions List */}
         <Card>
           <CardHeader>
-            <CardTitle>Question IDs ({filteredQuestions.length})</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Question IDs ({filteredQuestions.length})</CardTitle>
+              {totalPages > 1 && (
+                <div className="flex items-center gap-4">
+                  <span className="text-sm text-gray-600">
+                    Pagina {currentPage} di {totalPages} • Mostrate {paginatedQuestions.length} di {filteredQuestions.length}
+                  </span>
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -365,7 +423,7 @@ const AdminQuestionIds = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredQuestions.map((question) => {
+                {paginatedQuestions.map((question) => {
                   const versions = allVersionsData[question.id] || [];
                   const latestVersion = versions.find(v => v.is_active) || versions[0];
                   
@@ -540,12 +598,90 @@ const AdminQuestionIds = () => {
                   );
                 })}
                 
+                {paginatedQuestions.length === 0 && filteredQuestions.length > 0 && (
+                  <div className="text-center py-8">
+                    <Database className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">Nessun risultato in questa pagina</p>
+                  </div>
+                )}
+                
                 {filteredQuestions.length === 0 && (
                   <div className="text-center py-8">
                     <Database className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <p className="text-gray-600">
                       {searchTerm ? "Nessuna question ID trovata per la ricerca" : "Nessuna question ID disponibile. Usa 'Estrai Question IDs' per iniziare."}
                     </p>
+                  </div>
+                )}
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between mt-6 pt-6 border-t">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        Precedente
+                      </Button>
+                      
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                          let pageNum;
+                          if (totalPages <= 5) {
+                            pageNum = i + 1;
+                          } else if (currentPage <= 3) {
+                            pageNum = i + 1;
+                          } else if (currentPage >= totalPages - 2) {
+                            pageNum = totalPages - 4 + i;
+                          } else {
+                            pageNum = currentPage - 2 + i;
+                          }
+                          
+                          return (
+                            <Button
+                              key={pageNum}
+                              variant={currentPage === pageNum ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setCurrentPage(pageNum)}
+                              className={currentPage === pageNum ? "bg-[#245C4F] hover:bg-[#1e4f44]" : ""}
+                            >
+                              {pageNum}
+                            </Button>
+                          );
+                        })}
+                        
+                        {totalPages > 5 && currentPage < totalPages - 2 && (
+                          <>
+                            <span className="px-2">...</span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setCurrentPage(totalPages)}
+                            >
+                              {totalPages}
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                      >
+                        Successiva
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    <div className="text-sm text-gray-600">
+                      {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredQuestions.length)} di {filteredQuestions.length}
+                    </div>
                   </div>
                 )}
               </div>
