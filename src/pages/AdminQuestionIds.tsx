@@ -10,7 +10,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Search, RefreshCw, Eye, Edit2, Database, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, RefreshCw, Eye, Edit2, Database, AlertTriangle, ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 
 interface QuestionId {
@@ -55,6 +56,7 @@ const AdminQuestionIds = () => {
   const [extractionProgress, setExtractionProgress] = useState(0);
   const itemsPerPage = 20;
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   // Fetch forms
   const { data: forms = [] } = useQuery({
@@ -323,6 +325,15 @@ const AdminQuestionIds = () => {
     <div className="min-h-screen bg-[#f8f5f1] p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
+          <div className="flex items-center gap-4 mb-4">
+            <Button
+              variant="ghost"
+              onClick={() => navigate('/admin')}
+              className="text-gray-700 hover:text-[#245C4F] hover:bg-transparent p-2"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </div>
           <h1 className="text-3xl md:text-4xl font-bold text-[#245C4F] mb-2">Question IDs</h1>
           <p className="text-gray-600">Gestisci tutte le domande utilizzate nei form</p>
         </div>
