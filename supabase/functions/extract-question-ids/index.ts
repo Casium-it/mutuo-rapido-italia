@@ -25,6 +25,10 @@ interface ExtractionResult {
   updated_questions: number;
   unchanged: number;
   errors: string[];
+  duplicate_errors?: Array<{
+    question_id: string;
+    locations: string[];
+  }>;
 }
 
 function extractQuestionsFromBlock(blockData: any): Question[] {
@@ -47,21 +51,21 @@ function extractQuestionsFromBlock(blockData: any): Question[] {
           // Extract relevant values based on type
           if (firstPlaceholder.type === 'select' && firstPlaceholder.options) {
             placeholderValues = {
+              type: 'select',
               options: firstPlaceholder.options.map((opt: any) => ({
                 id: opt.id,
-                label: opt.label,
-                leads_to: opt.leads_to
+                label: opt.label
               }))
             };
           } else if (firstPlaceholder.type === 'input') {
             placeholderValues = {
+              type: 'input',
               input_type: firstPlaceholder.input_type,
-              placeholder_label: firstPlaceholder.placeholder_label,
-              input_validation: firstPlaceholder.input_validation
+              validation: firstPlaceholder.input_validation
             };
           } else if (firstPlaceholder.type === 'MultiBlockManager') {
             placeholderValues = {
-              add_block_label: firstPlaceholder.add_block_label,
+              type: 'multiblock',
               blockBlueprint: firstPlaceholder.blockBlueprint
             };
           } else {
@@ -93,6 +97,13 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
+    // Get request body to extract form_id
+    const { form_id } = await req.json();
+    
+    if (!form_id) {
+      throw new Error('form_id is required');
+    }
+
     const result: ExtractionResult = {
       new_questions: 0,
       updated_questions: 0,
@@ -100,7 +111,7 @@ serve(async (req) => {
       errors: []
     };
 
-    // 1. Get all form blocks from active forms
+    // 1. Get form blocks from the specified form only
     const { data: formBlocks, error: blocksError } = await supabaseClient
       .from('form_blocks')
       .select(`
@@ -108,27 +119,66 @@ serve(async (req) => {
         form_id,
         block_data,
         sort_order,
-        forms!inner(is_active)
+        forms!inner(id, title, slug, is_active)
       `)
+      .eq('form_id', form_id)
       .eq('forms.is_active', true);
 
     if (blocksError) {
       throw new Error(`Failed to fetch form blocks: ${blocksError.message}`);
     }
 
-    // 2. Extract all questions from blocks
-    const allQuestions: Question[] = [];
+    // 2. Extract all questions from blocks and track locations
+    const allQuestions: (Question & { blockId: string })[] = [];
+    const questionLocations = new Map<string, string[]>();
     
     for (const block of formBlocks as any[]) {
       try {
         const questions = extractQuestionsFromBlock(block.block_data);
-        allQuestions.push(...questions);
+        for (const question of questions) {
+          // Track where each question_id appears
+          if (!questionLocations.has(question.question_id)) {
+            questionLocations.set(question.question_id, []);
+          }
+          questionLocations.get(question.question_id)!.push(`Block ${block.id} (${block.block_data.block_id || 'unknown'})`);
+          
+          allQuestions.push({ ...question, blockId: block.id });
+        }
       } catch (error) {
         result.errors.push(`Error extracting from block ${block.id}: ${error.message}`);
       }
     }
 
-    // 3. Group questions by question_id and detect changes
+    // 3. Check for duplicate question_ids
+    const duplicateErrors: Array<{ question_id: string; locations: string[] }> = [];
+    
+    for (const [questionId, locations] of questionLocations) {
+      if (locations.length > 1) {
+        duplicateErrors.push({
+          question_id: questionId,
+          locations: locations
+        });
+      }
+    }
+
+    // If duplicates found, return error and cancel extraction
+    if (duplicateErrors.length > 0) {
+      return new Response(
+        JSON.stringify({
+          ...result,
+          duplicate_errors: duplicateErrors,
+          errors: [`Found ${duplicateErrors.length} duplicate question IDs in the selected form`]
+        }),
+        { 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          } 
+        }
+      );
+    }
+
+    // 4. Group questions by question_id (no duplicates at this point)
     const questionGroups = new Map<string, Question[]>();
     
     for (const question of allQuestions) {
@@ -138,7 +188,7 @@ serve(async (req) => {
       questionGroups.get(question.question_id)!.push(question);
     }
 
-    // 4. Get existing question_ids from database
+    // 5. Get existing question_ids from database
     const { data: existingQuestions, error: existingError } = await supabaseClient
       .from('question_ids')
       .select('*');
@@ -151,7 +201,7 @@ serve(async (req) => {
       existingQuestions.map(q => [q.question_id, q])
     );
 
-    // 5. Process each question group
+    // 6. Process each question group
     for (const [questionId, questions] of questionGroups) {
       try {
         // Take the first occurrence as the canonical version

@@ -5,10 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Search, RefreshCw, Eye, Edit2, Database } from "lucide-react";
+import { Search, RefreshCw, Eye, Edit2, Database, AlertTriangle } from "lucide-react";
 
 interface QuestionId {
   id: string;
@@ -29,11 +31,41 @@ interface QuestionVersion {
   created_at: string;
 }
 
+interface Form {
+  id: string;
+  title: string;
+  slug: string;
+}
+
+interface DuplicateError {
+  question_id: string;
+  locations: string[];
+}
+
 const AdminQuestionIds = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedQuestion, setSelectedQuestion] = useState<QuestionId | null>(null);
   const [editingDescription, setEditingDescription] = useState<string>("");
+  const [showFormSelector, setShowFormSelector] = useState(false);
+  const [selectedFormId, setSelectedFormId] = useState<string>("");
+  const [duplicateErrors, setDuplicateErrors] = useState<DuplicateError[]>([]);
+  const [showDuplicateError, setShowDuplicateError] = useState(false);
   const queryClient = useQueryClient();
+
+  // Fetch forms
+  const { data: forms = [] } = useQuery({
+    queryKey: ['forms'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('forms')
+        .select('id, title, slug')
+        .eq('is_active', true)
+        .order('title', { ascending: true });
+      
+      if (error) throw error;
+      return data as Form[];
+    }
+  });
 
   // Fetch question IDs
   const { data: questionIds = [], isLoading } = useQuery({
@@ -89,19 +121,29 @@ const AdminQuestionIds = () => {
 
   // Extract questions mutation
   const extractQuestionsMutation = useMutation({
-    mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('extract-question-ids');
+    mutationFn: async (formId: string) => {
+      const { data, error } = await supabase.functions.invoke('extract-question-ids', {
+        body: { form_id: formId }
+      });
       
       if (error) throw error;
       return data;
     },
     onSuccess: (data) => {
+      if (data.duplicate_errors && data.duplicate_errors.length > 0) {
+        setDuplicateErrors(data.duplicate_errors);
+        setShowDuplicateError(true);
+        return;
+      }
+      
       toast.success(`Extracted questions: ${data.new_questions} new, ${data.updated_questions} updated, ${data.unchanged} unchanged`);
       queryClient.invalidateQueries({ queryKey: ['question-ids'] });
       queryClient.invalidateQueries({ queryKey: ['question-usage'] });
+      setShowFormSelector(false);
     },
     onError: (error: any) => {
       toast.error(`Failed to extract questions: ${error.message}`);
+      setShowFormSelector(false);
     }
   });
 
@@ -139,6 +181,16 @@ const AdminQuestionIds = () => {
     }
   };
 
+  const handleExtractClick = () => {
+    setShowFormSelector(true);
+  };
+
+  const handleFormSelect = () => {
+    if (selectedFormId) {
+      extractQuestionsMutation.mutate(selectedFormId);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#f8f5f1] p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
@@ -162,7 +214,7 @@ const AdminQuestionIds = () => {
               </div>
               
               <Button
-                onClick={() => extractQuestionsMutation.mutate()}
+                onClick={handleExtractClick}
                 disabled={extractQuestionsMutation.isPending}
                 className="bg-[#245C4F] hover:bg-[#1e4f44] text-white"
               >
@@ -326,6 +378,97 @@ const AdminQuestionIds = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Form Selection Dialog */}
+        <Dialog open={showFormSelector} onOpenChange={setShowFormSelector}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Seleziona Form per Estrazione</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">
+                Seleziona il form da cui estrarre i Question IDs:
+              </p>
+              <Select value={selectedFormId} onValueChange={setSelectedFormId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleziona un form..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {forms.map((form) => (
+                    <SelectItem key={form.id} value={form.id}>
+                      {form.title} ({form.slug})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleFormSelect}
+                  disabled={!selectedFormId || extractQuestionsMutation.isPending}
+                  className="bg-[#245C4F] hover:bg-[#1e4f44] text-white"
+                >
+                  {extractQuestionsMutation.isPending ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Estrazione...
+                    </>
+                  ) : (
+                    'Inizia Estrazione'
+                  )}
+                </Button>
+                <Button variant="outline" onClick={() => setShowFormSelector(false)}>
+                  Annulla
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Duplicate Error Dialog */}
+        <Dialog open={showDuplicateError} onOpenChange={setShowDuplicateError}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="text-red-600">
+                <AlertTriangle className="h-5 w-5 inline mr-2" />
+                Errore: Question IDs Duplicati
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Alert>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  Sono stati trovati Question IDs duplicati nel form selezionato. 
+                  L'estrazione è stata annullata per mantenere l'integrità dei dati.
+                </AlertDescription>
+              </Alert>
+              
+              <div className="space-y-2">
+                <h4 className="font-medium">Question IDs duplicati trovati:</h4>
+                {duplicateErrors.map((error, index) => (
+                  <div key={index} className="border rounded p-3 bg-red-50">
+                    <p className="font-mono text-sm font-medium text-red-800">
+                      {error.question_id}
+                    </p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Trovato in: {error.locations.join(', ')}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="text-sm text-gray-600">
+                <p>
+                  <strong>Cosa fare:</strong> Modifica i form per assegnare Question IDs unici a ogni domanda, 
+                  poi riprova l'estrazione.
+                </p>
+              </div>
+              
+              <Button onClick={() => setShowDuplicateError(false)} className="w-full">
+                Chiudi
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
