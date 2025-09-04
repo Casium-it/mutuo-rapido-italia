@@ -1,136 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/hooks/use-toast';
-import { LogOut, FileText, Database, Users, Bell, Blocks, TrendingUp, Clock, MessageSquare } from 'lucide-react';
-
-interface DashboardStats {
-  totalSubmissions: number;
-  totalSimulations: number;
-  simulationsWithContact: number;
-  submissionsWithContact: number;
-  recentSubmissions: number;
-  recentSimulations: number;
-}
+import { LogOut, FileText, Database, Users, Bell, TrendingUp, MessageSquare } from 'lucide-react';
 
 export default function Admin() {
-  const [stats, setStats] = useState<DashboardStats>({
-    totalSubmissions: 0,
-    totalSimulations: 0,
-    simulationsWithContact: 0,
-    submissionsWithContact: 0,
-    recentSubmissions: 0,
-    recentSimulations: 0
-  });
-  const [loading, setLoading] = useState(true);
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
-  const fetchStats = async () => {
-    try {
-      // Start date: July 13, 2025 00:00
-      const startDate = new Date('2025-07-13T00:00:00.000Z');
-      
-      // Get submissions count from start date
-      const { count: submissionsCount, error: submissionsError } = await supabase
-        .from('form_submissions')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', startDate.toISOString());
-
-      if (submissionsError) throw submissionsError;
-
-      // Get simulations count from start date
-      const { count: simulationsCount, error: simulationsError } = await supabase
-        .from('saved_simulations')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', startDate.toISOString());
-
-      if (simulationsError) throw simulationsError;
-
-      // Get simulations with contact info from start date
-      const { count: simulationsWithContactCount, error: simulationsWithContactError } = await supabase
-        .from('saved_simulations')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', startDate.toISOString())
-        .not('email', 'is', null)
-        .not('phone', 'is', null)
-        .not('name', 'is', null);
-
-      if (simulationsWithContactError) throw simulationsWithContactError;
-
-      // Get submissions with contact info from start date
-      const { count: submissionsWithContactCount, error: submissionsWithContactError } = await supabase
-        .from('form_submissions')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', startDate.toISOString())
-        .not('phone_number', 'is', null);
-
-      if (submissionsWithContactError) throw submissionsWithContactError;
-
-      // Get recent submissions (last 7 days)
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      
-      const { count: recentSubmissionsCount, error: recentSubmissionsError } = await supabase
-        .from('form_submissions')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', sevenDaysAgo.toISOString());
-
-      if (recentSubmissionsError) throw recentSubmissionsError;
-
-      // Get recent simulations (last 7 days)
-      const { count: recentSimulationsCount, error: recentSimulationsError } = await supabase
-        .from('saved_simulations')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', sevenDaysAgo.toISOString());
-
-      if (recentSimulationsError) throw recentSimulationsError;
-
-      setStats({
-        totalSubmissions: submissionsCount || 0,
-        totalSimulations: simulationsCount || 0,
-        simulationsWithContact: simulationsWithContactCount || 0,
-        submissionsWithContact: submissionsWithContactCount || 0,
-        recentSubmissions: recentSubmissionsCount || 0,
-        recentSimulations: recentSimulationsCount || 0
-      });
-
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-      toast({
-        title: "Errore",
-        description: "Errore nel caricamento delle statistiche",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
   };
-
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f7f5f2]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#245C4F] mx-auto"></div>
-          <p className="mt-2 text-gray-600">Caricamento dashboard...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-[#f7f5f2]">
@@ -156,65 +38,6 @@ export default function Admin() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <FileText className="h-8 w-8 text-[#245C4F]" />
-                <div>
-                  <p className="text-sm text-gray-600">Submissions Totali</p>
-                  <p className="text-2xl font-bold text-[#245C4F]">{stats.totalSubmissions}</p>
-                  <p className="text-xs text-gray-500">+{stats.recentSubmissions} ultimi 7gg</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <Database className="h-8 w-8 text-blue-600" />
-                <div>
-                  <p className="text-sm text-gray-600">Simulazioni Salvate</p>
-                  <p className="text-2xl font-bold text-blue-600">{stats.totalSimulations}</p>
-                  <p className="text-xs text-gray-500">+{stats.recentSimulations} ultimi 7gg</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <Clock className="h-8 w-8 text-orange-600" />
-                <div>
-                  <p className="text-sm text-gray-600">% Form Completati</p>
-                  <p className="text-2xl font-bold text-orange-600">
-                    {stats.totalSimulations > 0 ? Math.round((stats.totalSubmissions / stats.totalSimulations) * 100) : 0}%
-                  </p>
-                  <p className="text-xs text-gray-500">submission / simulazioni</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <Users className="h-8 w-8 text-purple-600" />
-                <div>
-                  <p className="text-sm text-gray-600">% Form con Contatti</p>
-                  <p className="text-2xl font-bold text-purple-600">
-                    {stats.totalSimulations > 0 ? Math.round((stats.submissionsWithContact / stats.totalSimulations) * 100) : 0}%
-                  </p>
-                  <p className="text-xs text-gray-500">submissions contatti / simulazioni</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Navigation Cards */}
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Gestisci Piattaforma</h2>
@@ -304,12 +127,6 @@ export default function Admin() {
               variant="outline"
             >
               Gestisci Simulazioni
-            </Button>
-            <Button 
-              onClick={fetchStats}
-              variant="outline"
-            >
-              Aggiorna Statistiche
             </Button>
           </div>
         </div>
