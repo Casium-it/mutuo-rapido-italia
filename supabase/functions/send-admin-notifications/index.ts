@@ -104,12 +104,40 @@ Deno.serve(async (req) => {
       try {
         console.log(`[${requestId}] Sending notification to admin: ${admin.admin_display_name} (${admin.phone_masked})`)
         
+        // First, try to generate PDF
+        let templateName = 'admin_notification_new_simulation'
+        let pdfMedia = undefined
+
+        try {
+          console.log(`[${requestId}] Attempting to generate PDF for submission: ${submissionId}`)
+          
+          const { data: pdfResult, error: pdfError } = await supabase.functions.invoke('generate-lead-pdf', {
+            body: { submissionId }
+          })
+
+          if (pdfError) {
+            console.warn(`[${requestId}] PDF generation failed, falling back to text-only notification:`, pdfError)
+          } else if (pdfResult?.success && pdfResult?.pdfUrl) {
+            console.log(`[${requestId}] ✅ PDF generated successfully: ${pdfResult.pdfUrl}`)
+            templateName = 'admin_notification_new_simulation_pdf'
+            pdfMedia = {
+              url: pdfResult.pdfUrl,
+              filename: pdfResult.filename || 'lead_details.pdf'
+            }
+          } else {
+            console.warn(`[${requestId}] PDF generation returned unsuccessful result:`, pdfResult)
+          }
+        } catch (pdfGenerationError) {
+          console.warn(`[${requestId}] PDF generation exception, continuing with text-only:`, pdfGenerationError)
+        }
+
         const { data: result, error } = await supabase.functions.invoke('send-ycloud-message', {
           body: {
-            templateName: 'admin_notification_new_simulation',
+            templateName,
             destination: admin.phone_full,
             userName: admin.admin_display_name,
             source: 'admin-notification',
+            media: pdfMedia,
             templateParams: [
               consultingStatus,
               submitterName,
@@ -123,7 +151,8 @@ Deno.serve(async (req) => {
         if (error) {
           console.error(`[${requestId}] ❌ Failed to send notification to ${admin.admin_display_name}:`, error)
         } else if (result?.success) {
-          console.log(`[${requestId}] ✅ Admin notification sent successfully to ${admin.admin_display_name}`)
+          const notificationType = pdfMedia ? 'PDF notification' : 'text notification'
+          console.log(`[${requestId}] ✅ ${notificationType} sent successfully to ${admin.admin_display_name}`)
           successCount++
         } else {
           console.error(`[${requestId}] ❌ Notification failed for ${admin.admin_display_name}:`, result?.error)

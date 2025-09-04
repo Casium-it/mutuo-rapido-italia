@@ -27,6 +27,7 @@ const TEMPLATE_MEDIA_MAPPING: Record<string, string> = {
   'simulation_c_no': 'https://i.ibb.co/20RqqT9k/banner.png',
   'simulation_save': 'https://i.ibb.co/DfWNjp7g/simulazione-salvata.png',
   'admin_notification_new_simulation': '',
+  'admin_notification_new_simulation_pdf': '',
   'admin_notification_reminder': ''
 };
 
@@ -52,18 +53,38 @@ function validatePhoneNumber(phoneNumber: string): boolean {
 function buildTemplateComponents(templateName: string, templateParams: string[] = [], media?: { url: string; filename: string; }): any[] {
   const components: any[] = [];
   
+  // Check if this is a PDF template that should use document header
+  const isPdfTemplate = templateName.includes('_pdf');
+  
   // Add header component if media is provided or template has default media
   const mediaUrl = media?.url || TEMPLATE_MEDIA_MAPPING[templateName];
   if (mediaUrl) {
-    components.push({
-      type: 'header',
-      parameters: [
-        {
-          type: 'image',
-          image: { link: mediaUrl }
-        }
-      ]
-    });
+    if (isPdfTemplate) {
+      // For PDF templates, use document header
+      components.push({
+        type: 'header',
+        parameters: [
+          {
+            type: 'document',
+            document: { 
+              link: mediaUrl,
+              filename: media?.filename || 'document.pdf'
+            }
+          }
+        ]
+      });
+    } else {
+      // For other templates, use image header
+      components.push({
+        type: 'header',
+        parameters: [
+          {
+            type: 'image',
+            image: { link: mediaUrl }
+          }
+        ]
+      });
+    }
   }
   
   // Add body component with parameters
