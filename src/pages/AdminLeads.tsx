@@ -479,14 +479,20 @@ export default function AdminLeads() {
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">
-                      Submission #{submission.id.slice(0, 8)}
-                      {(submission.first_name || submission.last_name) && (
-                        <span className="ml-2 font-bold text-[#245C4F]">
+                      {(submission.first_name || submission.last_name) ? (
+                        <span className="font-bold text-[#245C4F]">
                           {submission.first_name} {submission.last_name}
+                        </span>
+                      ) : (
+                        <span className="opacity-50">
+                          sconosciuto
                         </span>
                       )}
                     </CardTitle>
                     <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500 opacity-50">
+                        Submission #{submission.id.slice(0, 8)}
+                      </span>
                       <Badge variant="secondary">
                         {submission.form_title}
                       </Badge>
