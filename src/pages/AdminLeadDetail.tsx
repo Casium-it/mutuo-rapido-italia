@@ -12,7 +12,7 @@ import { LeadManagementCard } from '@/components/admin/LeadManagementCard';
 import { LeadStatus } from '@/types/leadStatus';
 import { useFormCache } from '@/hooks/useFormCache';
 import { FormState, Block } from '@/types/form';
-import { sortBlocksByPriority, sortQuestionsByNumber } from '@/lib/utils';
+import { sortBlocksByPriority, sortQuestionsByArrayOrder } from '@/lib/utils';
 
 interface FormSubmission {
   id: string;
@@ -468,7 +468,7 @@ export default function AdminLeadDetail() {
           ) : (
             sortBlocksByPriority(responsesByBlock, blocks).map(([blockId, blockResponses]) => {
               const blockInfo = blocks.find(b => b.block_id === blockId);
-              const sortedResponses = sortQuestionsByNumber(blockResponses, questionMap);
+              const sortedResponses = sortQuestionsByArrayOrder(blockResponses, blocks, blockId);
               
               return (
                 <Card key={blockId}>

@@ -9,7 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import { getQuestionTextWithStyledResponses } from '@/utils/formUtils';
 import { formCacheService } from '@/services/formCacheService';
 import type { Block, Question, FormResponse as FormResponseType } from '@/types/form';
-import { sortBlocksByPriority, sortQuestionsByNumber } from '@/lib/utils';
+import { sortBlocksByPriority, sortQuestionsByArrayOrder } from '@/lib/utils';
 
 interface SavedSimulation {
   id: string;
@@ -458,7 +458,7 @@ export default function AdminSimulationDetail() {
           ) : (
             sortBlocksByPriority(responsesByBlock, blocks).map(([blockId, blockResponses]) => {
               const blockInfo = blocks.find(b => b.block_id === blockId);
-              const sortedResponses = sortQuestionsByNumber(blockResponses, questionMap);
+              const sortedResponses = sortQuestionsByArrayOrder(blockResponses, blocks, blockId);
               
               return (
                 <Card key={blockId}>

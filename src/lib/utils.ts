@@ -52,22 +52,22 @@ export function sortBlocksByPriority<T extends { block_id: string }>(
   });
 }
 
-export function sortQuestionsByNumber<T extends { question_id: string }>(
+export function sortQuestionsByArrayOrder<T extends { question_id: string }>(
   responses: T[],
-  questionMap: Map<string, { question: { question_number?: string } }>
+  blocks: Array<{ block_id: string; questions: Array<{ question_id: string }> }>,
+  blockId: string
 ): T[] {
+  const block = blocks.find(b => b.block_id === blockId);
+  if (!block) return responses;
+  
+  // Create a map of question_id to its index in the questions array
+  const questionIndexMap = new Map(
+    block.questions.map((question, index) => [question.question_id, index])
+  );
+  
   return responses.sort((a, b) => {
-    const questionA = questionMap.get(a.question_id)?.question;
-    const questionB = questionMap.get(b.question_id)?.question;
-    
-    if (!questionA?.question_number || !questionB?.question_number) return 0;
-    
-    // Extract numeric parts for proper sorting (e.g., "6.1" -> 6.1)
-    const parseQuestionNumber = (qNum: string) => {
-      const parts = qNum.split('.');
-      return parseFloat(parts[0]) + (parts[1] ? parseFloat(parts[1]) / 1000 : 0);
-    };
-    
-    return parseQuestionNumber(questionA.question_number) - parseQuestionNumber(questionB.question_number);
+    const indexA = questionIndexMap.get(a.question_id) ?? Infinity;
+    const indexB = questionIndexMap.get(b.question_id) ?? Infinity;
+    return indexA - indexB;
   });
 }
