@@ -128,12 +128,40 @@ const AdminQuestionIds = () => {
     queryFn: async () => {
       const usageMap: Record<string, boolean> = {};
       
+      // Get all active form blocks and check manually
+      const { data: formBlocks, error } = await supabase
+        .from('form_blocks')
+        .select(`
+          block_data,
+          forms!inner(is_active)
+        `)
+        .eq('forms.is_active', true);
+      
+      if (error) {
+        console.error('Error fetching form blocks for usage check:', error);
+        return usageMap;
+      }
+      
+      // Initialize all questions as not used
       for (const question of questionIds) {
-        const { data, error } = await supabase
-          .rpc('is_question_used', { question_id_param: question.question_id });
-        
-        if (!error) {
-          usageMap[question.question_id] = data;
+        usageMap[question.question_id] = false;
+      }
+      
+      // Check each block for question usage
+      for (const block of formBlocks || []) {
+        const blockData = block.block_data;
+        if (blockData && typeof blockData === 'object' && !Array.isArray(blockData) && 'questions' in blockData) {
+          const questions = (blockData as any).questions;
+          if (Array.isArray(questions)) {
+            for (const question of questions) {
+              if (question && typeof question === 'object' && 'question_id' in question) {
+                const questionId = question.question_id;
+                if (questionId && typeof questionId === 'string' && usageMap.hasOwnProperty(questionId)) {
+                  usageMap[questionId] = true;
+                }
+              }
+            }
+          }
         }
       }
       
@@ -212,6 +240,48 @@ const AdminQuestionIds = () => {
     if (selectedFormId) {
       extractQuestionsMutation.mutate(selectedFormId);
     }
+  };
+
+  const formatQuestionText = (questionText: string, placeholderValues: any) => {
+    if (!placeholderValues || !questionText) {
+      return questionText;
+    }
+
+    let formattedText = questionText;
+
+    // Replace placeholder patterns with formatted versions
+    const placeholderRegex = /\{\{([^}]+)\}\}/g;
+    
+    formattedText = formattedText.replace(placeholderRegex, (match, placeholderKey) => {
+      if (placeholderValues.type === 'select' && placeholderValues.options) {
+        const optionLabels = placeholderValues.options.map((opt: any) => opt.label).join('/');
+        return `**{{${optionLabels}}}**`;
+      } else if (placeholderValues.type === 'input') {
+        const inputType = placeholderValues.input_type || 'text';
+        return `**{{${inputType}:${placeholderKey}}}**`;
+      } else if (placeholderValues.type === 'multiblock') {
+        return `**{{multiblock:${placeholderKey}}}**`;
+      }
+      return `**{{${placeholderKey}}}**`;
+    });
+
+    return formattedText;
+  };
+
+  const renderFormattedText = (text: string) => {
+    // Split text by bold markers and render accordingly
+    const parts = text.split(/(\*\*[^*]+\*\*)/g);
+    
+    return parts.map((part, index) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return (
+          <strong key={index} className="font-semibold text-gray-900">
+            {part.slice(2, -2)}
+          </strong>
+        );
+      }
+      return part;
+    });
   };
 
   return (
@@ -322,9 +392,8 @@ const AdminQuestionIds = () => {
                           
                           {latestVersion && (
                             <div className="space-y-2">
-                              <h4 className="font-medium text-gray-900">Testo della domanda:</h4>
-                              <p className="text-gray-700 leading-relaxed">
-                                {latestVersion.question_text}
+                              <p className="text-gray-700 leading-relaxed italic">
+                                {renderFormattedText(formatQuestionText(latestVersion.question_text, latestVersion.placeholder_values))}
                               </p>
                             </div>
                           )}
@@ -434,9 +503,10 @@ const AdminQuestionIds = () => {
                                             )}
                                           </div>
                                           <div className="space-y-2">
-                                            <div>
-                                              <h5 className="text-sm font-medium text-gray-700">Testo della domanda:</h5>
-                                              <p className="text-gray-900">{version.question_text}</p>
+                                            <div className="space-y-2">
+                                              <p className="text-gray-900 italic">
+                                                {renderFormattedText(formatQuestionText(version.question_text, version.placeholder_values))}
+                                              </p>
                                             </div>
                                             {version.placeholder_values && (
                                               <details className="mt-3">
