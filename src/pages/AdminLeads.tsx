@@ -167,7 +167,6 @@ export default function AdminLeads() {
 
   const fetchSubmissions = async () => {
     try {
-      setLoading(true);
       
       // Build the query
       let query = supabase
