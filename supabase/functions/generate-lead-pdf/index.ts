@@ -152,9 +152,76 @@ function formatResponseValue(value: any): string {
 }
 
 /**
- * Add question with response
+ * Get styled responses for inline display like admin dashboard
  */
-function addQuestionWithResponse(
+function getQuestionTextWithStyledResponses(
+  questionText: string,
+  responseValue: any
+): Array<{type: 'text' | 'response', content: string}> {
+  if (!questionText) return [{ type: 'text', content: '' }];
+
+  const parts: Array<{type: 'text' | 'response', content: string}> = [];
+  
+  let lastIndex = 0;
+  const regex = /\{\{([^}]+)\}\}/g;
+  let match;
+
+  while ((match = regex.exec(questionText)) !== null) {
+    // Add text before the placeholder
+    if (match.index > lastIndex) {
+      parts.push({
+        type: 'text',
+        content: questionText.slice(lastIndex, match.index)
+      });
+    }
+
+    const placeholderKey = match[1];
+    let displayValue = "";
+    
+    // Try to get the response value for this placeholder
+    if (responseValue && typeof responseValue === 'object') {
+      const responseForPlaceholder = responseValue[placeholderKey];
+      
+      if (responseForPlaceholder !== undefined && responseForPlaceholder !== null) {
+        displayValue = Array.isArray(responseForPlaceholder) 
+          ? responseForPlaceholder.join(", ") 
+          : responseForPlaceholder.toString();
+      }
+    }
+    
+    // If no response found, try to use the response value directly if it's a simple value
+    if (!displayValue && responseValue && typeof responseValue !== 'object') {
+      displayValue = responseValue.toString();
+    }
+    
+    // Fallback to placeholder if no response found
+    if (!displayValue) {
+      displayValue = "____";
+    }
+    
+    parts.push({
+      type: 'response',
+      content: displayValue
+    });
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Add remaining text after the last placeholder
+  if (lastIndex < questionText.length) {
+    parts.push({
+      type: 'text',
+      content: questionText.slice(lastIndex)
+    });
+  }
+
+  return parts;
+}
+
+/**
+ * Add question with inline styled responses like admin dashboard
+ */
+function addQuestionWithInlineResponse(
   pdf: jsPDF,
   questionText: string,
   responseValue: any,
@@ -167,27 +234,50 @@ function addQuestionWithResponse(
     pdf.addPage();
     y = MARGIN;
   }
+
+  const parts = getQuestionTextWithStyledResponses(questionText, responseValue);
   
-  // Question text
-  pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(FONT_SIZE_NORMAL);
-  pdf.setTextColor(0, 0, 0);
-  y = addWrappedText(pdf, `D: ${questionText}`, x, y, CONTENT_WIDTH, FONT_SIZE_NORMAL, LINE_HEIGHT_NORMAL);
+  let currentX = x;
   
-  // Response value
-  pdf.setFont('helvetica', 'bold');
-  pdf.setTextColor(36, 92, 79); // #245C4F
-  const responseText = formatResponseValue(responseValue);
-  y = addWrappedText(pdf, `R: ${responseText}`, x, y, CONTENT_WIDTH, FONT_SIZE_NORMAL, LINE_HEIGHT_NORMAL);
+  for (const part of parts) {
+    if (part.type === 'response') {
+      // Style responses as bold and colored
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(36, 92, 79); // #245C4F
+    } else {
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(0, 0, 0); // Black
+    }
+    
+    const textWidth = pdf.getTextWidth(part.content);
+    
+    // Check if text fits on current line
+    if (currentX + textWidth > MARGIN + CONTENT_WIDTH) {
+      y += LINE_HEIGHT_NORMAL;
+      currentX = x;
+      
+      // Check if we need a new page
+      if (y > PAGE_HEIGHT - MARGIN - 10) {
+        pdf.addPage();
+        y = MARGIN;
+      }
+    }
+    
+    pdf.text(part.content, currentX, y);
+    currentX += textWidth;
+  }
   
-  // Question ID
+  // Reset font and color
   pdf.setFont('helvetica', 'normal');
+  pdf.setTextColor(0, 0, 0);
+  
+  // Add question ID
+  y += LINE_HEIGHT_NORMAL;
   pdf.setFontSize(FONT_SIZE_SMALL);
   pdf.setTextColor(100, 100, 100); // Gray
   y = addWrappedText(pdf, `ID: ${questionId}`, x, y, CONTENT_WIDTH, FONT_SIZE_SMALL, 4);
-  
-  // Reset colors
-  pdf.setTextColor(0, 0, 0);
+  pdf.setTextColor(0, 0, 0); // Reset to black
   
   return y + 3; // Extra spacing after each question
 }
@@ -279,7 +369,7 @@ function generateSubmissionPDF(data: PDFSubmissionData): Uint8Array {
       
       // Process each response in the block
       blockResponses.forEach(response => {
-        y = addQuestionWithResponse(
+        y = addQuestionWithInlineResponse(
           pdf,
           response.question_text,
           response.response_value,
@@ -517,6 +607,29 @@ Deno.serve(async (req) => {
       totalProcessingTime: Date.now() - contentStartTime,
       success: true
     })
+
+    // Schedule PDF deletion after 2 minutes using background task
+    const deletePdfAfterDelay = async () => {
+      console.log(`[${requestId}] 🗑️ Scheduling PDF deletion in 2 minutes for: ${filename}`);
+      await new Promise(resolve => setTimeout(resolve, 2 * 60 * 1000)); // 2 minutes
+      
+      try {
+        const { error: deleteError } = await supabase.storage
+          .from('temp-pdfs')
+          .remove([filePath]);
+          
+        if (deleteError) {
+          console.error(`[${requestId}] ❌ Error deleting PDF:`, deleteError);
+        } else {
+          console.log(`[${requestId}] ✅ PDF deleted successfully after 2 minutes: ${filename}`);
+        }
+      } catch (error) {
+        console.error(`[${requestId}] ❌ Error in PDF deletion task:`, error);
+      }
+    };
+    
+    // Start background deletion task
+    EdgeRuntime.waitUntil(deletePdfAfterDelay());
 
     return Response.json({
       success: true,
