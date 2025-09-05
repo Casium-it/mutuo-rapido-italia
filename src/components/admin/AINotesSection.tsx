@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Sparkles, RefreshCw, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -10,9 +11,50 @@ interface AINotesSectionProps {
   onUpdate: (field: string, value: string) => Promise<void>;
 }
 
+interface ParsedAINotes {
+  confidence: number | null;
+  text: string;
+}
+
 export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSectionProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isImproving, setIsImproving] = useState(false);
+
+  // Parse AI notes to extract confidence score and text
+  const parseAINotes = (notes: string | null): ParsedAINotes => {
+    if (!notes) return { confidence: null, text: '' };
+    
+    // Check if notes follow the new format: "[score] - text"
+    const match = notes.match(/^\[(\d+)\]\s*-\s*(.*)$/s);
+    if (match) {
+      return {
+        confidence: parseInt(match[1], 10),
+        text: match[2].trim()
+      };
+    }
+    
+    // Backward compatibility: treat as plain text
+    return {
+      confidence: null,
+      text: notes.trim()
+    };
+  };
+
+  // Get confidence badge variant based on score
+  const getConfidenceBadgeVariant = (confidence: number) => {
+    if (confidence >= 80) return 'default'; // Green
+    if (confidence >= 60) return 'secondary'; // Yellow
+    return 'destructive'; // Red
+  };
+
+  // Get confidence label
+  const getConfidenceLabel = (confidence: number) => {
+    if (confidence >= 80) return 'Alta';
+    if (confidence >= 60) return 'Media';
+    return 'Bassa';
+  };
+
+  const parsedNotes = parseAINotes(aiNotes);
 
   const handleGenerate = async () => {
     setIsGenerating(true);
@@ -83,15 +125,23 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center">
+      <div className="flex items-center justify-between">
         <label className="text-sm font-medium text-gray-600">Note AI</label>
+        {parsedNotes.confidence !== null && (
+          <Badge 
+            variant={getConfidenceBadgeVariant(parsedNotes.confidence)}
+            className="text-xs"
+          >
+            Affidabilità: {getConfidenceLabel(parsedNotes.confidence)} ({parsedNotes.confidence}%)
+          </Badge>
+        )}
       </div>
       
       <div className={`w-full rounded-md border border-input bg-gray-50 p-3 text-sm relative ${
-        aiNotes ? 'min-h-[200px]' : 'h-24'
+        parsedNotes.text ? 'min-h-[200px]' : 'h-24'
       }`}>
-        {aiNotes ? (
-          <div className="whitespace-pre-wrap">{aiNotes}</div>
+        {parsedNotes.text ? (
+          <div className="whitespace-pre-wrap">{parsedNotes.text}</div>
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <div className="text-gray-400 italic text-center mb-3 px-4">
@@ -114,7 +164,7 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
         )}
       </div>
 
-      {aiNotes && (
+      {parsedNotes.text && (
         <div className="flex justify-end gap-2">
           <Button
             size="sm"
