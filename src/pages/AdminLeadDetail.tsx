@@ -190,13 +190,20 @@ export default function AdminLeadDetail() {
         throw new Error('URL del PDF non ricevuto');
       }
 
-      // Download the PDF
+      // Download the PDF as blob to force download
+      const response = await fetch(data.pdfUrl);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      
       const link = document.createElement('a');
-      link.href = data.pdfUrl;
+      link.href = blobUrl;
       link.download = `lead_${submission.id}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      
+      // Clean up the blob URL
+      window.URL.revokeObjectURL(blobUrl);
       
       toast({
         title: "PDF generato",
