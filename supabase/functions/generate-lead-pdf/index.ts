@@ -23,6 +23,7 @@ interface PDFSubmissionData {
   last_name: string | null
   email: string | null
   notes: string | null
+  ai_notes: string | null
   lead_status: string
   mediatore: string | null
   form_id: string | null
@@ -393,10 +394,12 @@ function generateSubmissionPDF(data: PDFSubmissionData): Uint8Array {
   
   y += 10;
   
-  // Notes Section
-  if (data.notes && data.notes.trim()) {
-    y = addSectionTitle(pdf, 'Note', MARGIN, y);
-    y = addWrappedText(pdf, data.notes, MARGIN, y, CONTENT_WIDTH, FONT_SIZE_NORMAL, LINE_HEIGHT_NORMAL);
+  // Notes Section - Prioritize AI notes over regular notes
+  const notesToDisplay = (data.ai_notes && data.ai_notes.trim()) ? data.ai_notes : data.notes;
+  if (notesToDisplay && notesToDisplay.trim()) {
+    const noteTitle = (data.ai_notes && data.ai_notes.trim()) ? 'Note AI' : 'Note';
+    y = addSectionTitle(pdf, noteTitle, MARGIN, y);
+    y = addWrappedText(pdf, notesToDisplay, MARGIN, y, CONTENT_WIDTH, FONT_SIZE_NORMAL, LINE_HEIGHT_NORMAL);
     y += 10;
   }
   
