@@ -272,16 +272,6 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
         )}
       </div>
       
-      {(isGenerating || isImproving) && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm text-gray-600">
-            <span>{progressLabel || (isImproving ? 'Preparazione...' : 'Preparazione...')}</span>
-            <span>{Math.round(progress)}%</span>
-          </div>
-          <Progress value={progress} className="w-full h-2" />
-        </div>
-      )}
-      
       <div className={`w-full rounded-md border border-input bg-gray-50 p-3 text-sm relative ${
         parsedNotes.text ? 'min-h-[200px]' : 'h-24'
       }`}>
