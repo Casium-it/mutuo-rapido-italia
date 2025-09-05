@@ -5,6 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { Sparkles, RefreshCw, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { EditableField } from './EditableField';
 
 interface AINotesSectionProps {
   submissionId: string;
@@ -268,30 +269,37 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
         )}
       </div>
       
-      <div className={`w-full rounded-md border border-input bg-gray-50 p-3 text-sm relative ${
-        parsedNotes.text ? 'min-h-[200px]' : 'h-24'
-      }`}>
-        {parsedNotes.text ? (
-          <div className="relative">
-            {/* Blur existing text when regenerating/improving */}
-            <div className={`whitespace-pre-wrap ${(isGenerating || isImproving) ? 'blur-sm opacity-50' : ''} transition-all duration-300`}>
-              {parsedNotes.text}
-            </div>
-            
-            {/* Progress bar overlay for regenerate/improve */}
-            {(isGenerating || isImproving) && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50/80 backdrop-blur-sm">
-                <div className="w-full max-w-md space-y-3 p-6 bg-white/90 rounded-lg shadow-sm border">
-                  <div className="flex items-center justify-between text-sm text-gray-600">
-                    <span>{progressLabel || (isImproving ? 'Preparazione...' : 'Preparazione...')}</span>
-                    <span>{Math.round(progress)}%</span>
-                  </div>
-                  <Progress value={progress} className="w-full h-2" />
+      {parsedNotes.text ? (
+        <div className="space-y-4">
+          <EditableField
+            label=""
+            value={parsedNotes.text}
+            onSave={(value) => {
+              // Preserve confidence score if it exists
+              const updatedValue = parsedNotes.confidence !== null 
+                ? `[${parsedNotes.confidence}] - ${value}`
+                : value;
+              return onUpdate('ai_notes', updatedValue);
+            }}
+            placeholder="Modifica le note AI..."
+            multiline
+          />
+          
+          {/* Progress bar overlay for regenerate/improve */}
+          {(isGenerating || isImproving) && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50/80 backdrop-blur-sm z-10">
+              <div className="w-full max-w-md space-y-3 p-6 bg-white/90 rounded-lg shadow-sm border">
+                <div className="flex items-center justify-between text-sm text-gray-600">
+                  <span>{progressLabel || (isImproving ? 'Preparazione...' : 'Preparazione...')}</span>
+                  <span>{Math.round(progress)}%</span>
                 </div>
+                <Progress value={progress} className="w-full h-2" />
               </div>
-            )}
-          </div>
-        ) : (
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className={`w-full rounded-md border border-input bg-gray-50 p-3 text-sm relative h-24`}>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             {!isGenerating ? (
               <>
@@ -323,8 +331,8 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
               </div>
             )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {parsedNotes.text && !isGenerating && !isImproving && (
         <div className="flex justify-end gap-2">

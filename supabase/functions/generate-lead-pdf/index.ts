@@ -130,6 +130,26 @@ function addSectionTitle(
 }
 
 /**
+ * Remove emojis and non-ASCII characters that can't be rendered in PDF
+ */
+function removeEmojis(text: string): string {
+  // Remove emojis and other non-ASCII characters
+  return text.replace(/[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '')
+    // Replace common emoji-like characters with text alternatives
+    .replace(/🏠/g, '[Casa]')
+    .replace(/💼/g, '[Lavoro]')
+    .replace(/👤/g, '[Persona]')
+    .replace(/💰/g, '[Denaro]')
+    .replace(/📜/g, '[Documento]')
+    .replace(/📆/g, '[Data]')
+    .replace(/✅/g, '[OK]')
+    .replace(/❌/g, '[NO]')
+    .replace(/⚠️/g, '[Attenzione]')
+    // Remove any remaining non-printable characters
+    .replace(/[^\x20-\x7E\u00A0-\u024F\u0370-\u03FF]/g, '');
+}
+
+/**
  * Format response value for display
  */
 function formatResponseValue(value: any): string {
@@ -139,19 +159,19 @@ function formatResponseValue(value: any): string {
   
   if (typeof value === 'object') {
     if (Array.isArray(value)) {
-      return value.join(', ');
+      return removeEmojis(value.join(', '));
     }
     
     // Handle placeholder responses
     const placeholderKeys = Object.keys(value).filter(key => key.startsWith('placeholder'));
     if (placeholderKeys.length > 0) {
-      return placeholderKeys.map(key => value[key]).filter(v => v).join(', ');
+      return removeEmojis(placeholderKeys.map(key => value[key]).filter(v => v).join(', '));
     }
     
-    return JSON.stringify(value);
+    return removeEmojis(JSON.stringify(value));
   }
   
-  return String(value);
+  return removeEmojis(String(value));
 }
 
 /**
@@ -399,7 +419,9 @@ function generateSubmissionPDF(data: PDFSubmissionData): Uint8Array {
   if (notesToDisplay && notesToDisplay.trim()) {
     const noteTitle = (data.ai_notes && data.ai_notes.trim()) ? 'Note AI' : 'Note';
     y = addSectionTitle(pdf, noteTitle, MARGIN, y);
-    y = addWrappedText(pdf, notesToDisplay, MARGIN, y, CONTENT_WIDTH, FONT_SIZE_NORMAL, LINE_HEIGHT_NORMAL);
+    // Remove emojis from notes before adding to PDF
+    const cleanNotes = removeEmojis(notesToDisplay);
+    y = addWrappedText(pdf, cleanNotes, MARGIN, y, CONTENT_WIDTH, FONT_SIZE_NORMAL, LINE_HEIGHT_NORMAL);
     y += 10;
   }
   
