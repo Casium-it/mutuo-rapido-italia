@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { LeadStatusBadge } from '@/components/admin/LeadStatusBadge';
+import { ExpandableNotes } from '@/components/admin/ExpandableNotes';
 import { LeadStatus } from '@/types/leadStatus';
 import {
   AlertDialog,
@@ -667,9 +668,7 @@ export default function AdminLeads() {
                         <StickyNote className="h-4 w-4 text-gray-500 mt-0.5" />
                         <span className="text-sm text-gray-600">Note:</span>
                       </div>
-                      <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">
-                        {submission.notes}
-                      </p>
+                      <ExpandableNotes notes={submission.notes} />
                     </div>
                   )}
                   
