@@ -49,6 +49,10 @@ interface FormSubmission {
     slug: string;
     title: string;
   };
+  form_responses?: Array<{
+    question_id: string;
+    response_value: any;
+  }>;
 }
 
 interface FormInfo {
@@ -179,6 +183,10 @@ export default function AdminLeads() {
           ),
           admin_notification_settings!assigned_to (
             admin_name
+          ),
+          form_responses (
+            question_id,
+            response_value
           )
         `, { count: 'exact' });
 
@@ -567,6 +575,26 @@ export default function AdminLeads() {
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                           <Phone className="h-4 w-4" />
                           {submission.phone_number}
+                          {(() => {
+                            const gomutoService = submission.form_responses?.find(
+                              response => response.question_id === 'gomutuo_service'
+                            );
+                            if (gomutoService) {
+                              const value = typeof gomutoService.response_value === 'object' 
+                                ? Object.values(gomutoService.response_value)[0]
+                                : gomutoService.response_value;
+                              const isContattami = value === 'mi piacerebbe';
+                              return (
+                                <Badge 
+                                  variant={isContattami ? "default" : "secondary"}
+                                  className={`ml-2 text-xs ${isContattami ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
+                                >
+                                  {isContattami ? 'Contattami' : 'Non contattarmi'}
+                                </Badge>
+                              );
+                            }
+                            return null;
+                          })()}
                         </div>
                       )}
                       {submission.email && (
