@@ -21,6 +21,7 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
   const [isGenerating, setIsGenerating] = useState(false);
   const [isImproving, setIsImproving] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [progressLabel, setProgressLabel] = useState('');
 
   // Parse AI notes to extract confidence score and text
   const parseAINotes = (notes: string | null): ParsedAINotes => {
@@ -58,13 +59,56 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
 
   const parsedNotes = parseAINotes(aiNotes);
 
+  // Simulate realistic progress for different models
+  const simulateProgress = (totalTime: number, isFastModel: boolean) => {
+    return new Promise<void>((resolve) => {
+      let currentProgress = 0;
+      const startTime = Date.now();
+      
+      // Initial upload phase (10%)
+      setProgressLabel('Caricamento dati...');
+      setProgress(10);
+      currentProgress = 10;
+      
+      const progressInterval = setInterval(() => {
+        const elapsedTime = Date.now() - startTime;
+        const timeRatio = elapsedTime / (totalTime * 1000);
+        
+        if (timeRatio < 0.1) {
+          // Upload phase - stay at 10%
+          return;
+        } else if (timeRatio < 0.7) {
+          // Fast progression phase (10% to 90%)
+          setProgressLabel(isFastModel ? 'Generazione rapida...' : 'Elaborazione approfondita...');
+          const fastProgress = 10 + (80 * (timeRatio - 0.1) / 0.6);
+          currentProgress = Math.min(90, fastProgress);
+          setProgress(Math.floor(currentProgress));
+        } else {
+          // Slow progression phase (90% to 99%)
+          setProgressLabel('Finalizzazione...');
+          const slowProgress = 90 + (9 * (timeRatio - 0.7) / 0.3);
+          currentProgress = Math.min(99, slowProgress);
+          setProgress(Math.floor(currentProgress));
+        }
+        
+        if (timeRatio >= 1 || currentProgress >= 99) {
+          clearInterval(progressInterval);
+          resolve();
+        }
+      }, 200); // Update every 200ms for smooth animation
+    });
+  };
+
   const handleGenerate = async () => {
     setIsGenerating(true);
-    setProgress(10);
+    setProgress(0);
     
     try {
-      setProgress(30);
-      const { data, error } = await supabase.functions.invoke('generate-ai-notes', {
+      // Start progress simulation for fast model (10 seconds)
+      const progressPromise = simulateProgress(10, true);
+      
+      // Make API call
+      const apiPromise = supabase.functions.invoke('generate-ai-notes', {
         body: {
           submissionId,
           type: 'generate',
@@ -72,12 +116,14 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
         }
       });
 
-      setProgress(80);
+      // Wait for both progress simulation and API call
+      const [, { data, error }] = await Promise.all([progressPromise, apiPromise]);
 
       if (error) throw error;
 
       if (data.success) {
         setProgress(100);
+        setProgressLabel('Completato!');
         await onUpdate('ai_notes', data.aiNotes);
         toast({
           title: "Note AI generate",
@@ -94,18 +140,24 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
         variant: "destructive"
       });
     } finally {
-      setIsGenerating(false);
-      setProgress(0);
+      setTimeout(() => {
+        setIsGenerating(false);
+        setProgress(0);
+        setProgressLabel('');
+      }, 1000); // Keep completion state visible for 1 second
     }
   };
 
   const handleImprove = async () => {
     setIsImproving(true);
-    setProgress(10);
+    setProgress(0);
     
     try {
-      setProgress(30);
-      const { data, error } = await supabase.functions.invoke('generate-ai-notes', {
+      // Start progress simulation for slow model (50 seconds)
+      const progressPromise = simulateProgress(50, false);
+      
+      // Make API call
+      const apiPromise = supabase.functions.invoke('generate-ai-notes', {
         body: {
           submissionId,
           type: 'improve',
@@ -114,12 +166,14 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
         }
       });
 
-      setProgress(80);
+      // Wait for both progress simulation and API call
+      const [, { data, error }] = await Promise.all([progressPromise, apiPromise]);
 
       if (error) throw error;
 
       if (data.success) {
         setProgress(100);
+        setProgressLabel('Completato!');
         await onUpdate('ai_notes', data.aiNotes);
         toast({
           title: "Note AI migliorate",
@@ -136,8 +190,11 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
         variant: "destructive"
       });
     } finally {
-      setIsImproving(false);
-      setProgress(0);
+      setTimeout(() => {
+        setIsImproving(false);
+        setProgress(0);
+        setProgressLabel('');
+      }, 1000); // Keep completion state visible for 1 second
     }
   };
 
@@ -155,13 +212,16 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
         )}
       </div>
       
-      {(isGenerating || isImproving) && progress > 0 && (
+      {(isGenerating || isImproving) && (
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm text-gray-600">
-            <span>{isImproving ? 'Miglioramento in corso...' : 'Generazione in corso...'}</span>
+            <span>{progressLabel || (isImproving ? 'Preparazione...' : 'Preparazione...')}</span>
             <span>{progress}%</span>
           </div>
           <Progress value={progress} className="w-full h-2" />
+          <div className="text-xs text-gray-500 text-center">
+            {isImproving ? 'Modello avanzato - Tempo stimato: ~50 secondi' : 'Modello rapido - Tempo stimato: ~10 secondi'}
+          </div>
         </div>
       )}
       
