@@ -304,21 +304,33 @@ INPUT (dati da fondere)
       // Clean the response to extract JSON
       const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
+        console.error('❌ No JSON found in AI response:', rawResponse);
         throw new Error('No JSON found in response');
       }
       
+      console.log('📋 Extracted JSON string:', jsonMatch[0]);
       aiResult = JSON.parse(jsonMatch[0]);
       
+      console.log('✅ Parsed AI result:', aiResult);
+      
       if (!aiResult.response || typeof aiResult.confidence !== 'number') {
+        console.error('❌ Invalid JSON structure:', aiResult);
         throw new Error('Invalid JSON structure');
       }
       
+      // Check if response is empty or just whitespace
+      if (!aiResult.response.trim()) {
+        console.error('❌ AI returned empty response text');
+        throw new Error('AI returned empty response text');
+      }
+      
     } catch (parseError) {
-      console.error('Failed to parse AI response as JSON:', parseError);
+      console.error('❌ Failed to parse AI response as JSON:', parseError);
+      console.log('🔄 Raw AI response was:', rawResponse);
       // Fallback: treat as plain text with default confidence
       aiResult = {
-        response: rawResponse,
-        confidence: 50
+        response: rawResponse || 'Errore nella generazione delle note AI',
+        confidence: 30
       };
     }
 
