@@ -10,8 +10,8 @@ interface ExpandableNotesProps {
 export function ExpandableNotes({ notes, maxLines = 8 }: ExpandableNotesProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   
-  // Split notes into lines and filter out empty lines
-  const lines = notes.split('\n').filter(line => line.trim() !== '');
+  // Split notes into lines and preserve empty lines
+  const lines = notes.split('\n');
   const shouldShowExpandButton = lines.length > maxLines;
   
   // Determine which lines to show
@@ -22,7 +22,7 @@ export function ExpandableNotes({ notes, maxLines = 8 }: ExpandableNotesProps) {
       <div className="text-sm text-gray-700 bg-gray-50 p-3 rounded-md">
         {displayLines.map((line, index) => (
           <div key={index} className={index > 0 ? 'mt-1' : ''}>
-            {line.trim()}
+            {line.trim() === '' ? '\u00A0' : line}
           </div>
         ))}
       </div>
