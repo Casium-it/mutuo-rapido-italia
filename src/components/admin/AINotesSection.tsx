@@ -64,15 +64,18 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
     const firstPhaseTime = isFastModel ? 25 : 100; // Time to reach 80%
     const secondPhaseTime = isFastModel ? 25 : 100; // Time from 80% to 99%
     
-    return new Promise<void>((resolve) => {
+    return new Promise<{ cancel: () => void }>((resolve) => {
       const startTime = Date.now();
       let animationFrame: number;
+      let cancelled = false;
       
       // Initial upload phase (10%)
       setProgressLabel('Caricamento dati...');
       setProgress(10);
       
       const updateProgress = () => {
+        if (cancelled) return;
+        
         const elapsedTime = (Date.now() - startTime) / 1000; // Convert to seconds
         
         if (elapsedTime < 2) {
@@ -97,31 +100,69 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
           // Wait at 99% for actual completion
           setProgressLabel('Attesa completamento...');
           setProgress(99);
-          resolve();
+          // Don't resolve here, wait for external completion
+          animationFrame = requestAnimationFrame(updateProgress);
         }
       };
       
-      animationFrame = requestAnimationFrame(updateProgress);
-      
-      // Cleanup function to cancel animation frame
-      return () => {
+      const cancel = () => {
+        cancelled = true;
         if (animationFrame) {
           cancelAnimationFrame(animationFrame);
         }
       };
+      
+      animationFrame = requestAnimationFrame(updateProgress);
+      resolve({ cancel });
+    });
+  };
+
+  // Sprint to completion animation (2 seconds)
+  const sprintToCompletion = (currentProgress: number) => {
+    return new Promise<void>((resolve) => {
+      const startTime = Date.now();
+      const startProgress = currentProgress;
+      const targetProgress = 100;
+      const sprintDuration = 2000; // 2 seconds
+      let animationFrame: number;
+      
+      setProgressLabel('Completamento...');
+      
+      const updateSprint = () => {
+        const elapsedTime = Date.now() - startTime;
+        const sprintRatio = Math.min(elapsedTime / sprintDuration, 1);
+        
+        // Smooth easing function (ease-out)
+        const easedRatio = 1 - Math.pow(1 - sprintRatio, 3);
+        const newProgress = startProgress + ((targetProgress - startProgress) * easedRatio);
+        
+        setProgress(newProgress);
+        
+        if (sprintRatio >= 1) {
+          setProgress(100);
+          setProgressLabel('Completato!');
+          resolve();
+        } else {
+          animationFrame = requestAnimationFrame(updateSprint);
+        }
+      };
+      
+      animationFrame = requestAnimationFrame(updateSprint);
     });
   };
 
   const handleGenerate = async () => {
     setIsGenerating(true);
     setProgress(0);
+    let progressController: { cancel: () => void } | null = null;
     
     try {
       // Start progress simulation for fast model
       const progressPromise = simulateProgress(true);
+      progressController = await progressPromise;
       
       // Make API call
-      const apiPromise = supabase.functions.invoke('generate-ai-notes', {
+      const { data, error } = await supabase.functions.invoke('generate-ai-notes', {
         body: {
           submissionId,
           type: 'generate',
@@ -129,14 +170,16 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
         }
       });
 
-      // Wait for both progress simulation and API call
-      const [, { data, error }] = await Promise.all([progressPromise, apiPromise]);
+      // Cancel the progress simulation since API completed
+      if (progressController) {
+        progressController.cancel();
+      }
 
       if (error) throw error;
 
       if (data.success) {
-        setProgress(100);
-        setProgressLabel('Completato!');
+        // Sprint to completion in 2 seconds
+        await sprintToCompletion(progress);
         await onUpdate('ai_notes', data.aiNotes);
         toast({
           title: "Note AI generate",
@@ -164,13 +207,15 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
   const handleImprove = async () => {
     setIsImproving(true);
     setProgress(0);
+    let progressController: { cancel: () => void } | null = null;
     
     try {
       // Start progress simulation for slow model
       const progressPromise = simulateProgress(false);
+      progressController = await progressPromise;
       
       // Make API call
-      const apiPromise = supabase.functions.invoke('generate-ai-notes', {
+      const { data, error } = await supabase.functions.invoke('generate-ai-notes', {
         body: {
           submissionId,
           type: 'improve',
@@ -179,14 +224,16 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
         }
       });
 
-      // Wait for both progress simulation and API call
-      const [, { data, error }] = await Promise.all([progressPromise, apiPromise]);
+      // Cancel the progress simulation since API completed
+      if (progressController) {
+        progressController.cancel();
+      }
 
       if (error) throw error;
 
       if (data.success) {
-        setProgress(100);
-        setProgressLabel('Completato!');
+        // Sprint to completion in 2 seconds
+        await sprintToCompletion(progress);
         await onUpdate('ai_notes', data.aiNotes);
         toast({
           title: "Note AI migliorate",
