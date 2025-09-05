@@ -21,9 +21,10 @@ function getOptionLabel(blockData: any, questionId: string, optionValue: string)
     const question = blockData.questions.find((q: any) => q.question_id === questionId);
     if (!question?.placeholders) return optionValue;
     
-    for (const placeholder of question.placeholders) {
-      if (placeholder.type === 'select' && placeholder.options) {
-        const option = placeholder.options.find((opt: any) => opt.value === optionValue);
+    // Fix: placeholders is an object, not an array - use Object.entries()
+    for (const [placeholderKey, placeholder] of Object.entries(question.placeholders)) {
+      if (placeholder && typeof placeholder === 'object' && placeholder.type === 'select' && placeholder.options) {
+        const option = placeholder.options.find((opt: any) => opt.id === optionValue);
         if (option?.label) return option.label;
       }
     }
