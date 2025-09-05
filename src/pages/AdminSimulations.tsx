@@ -25,6 +25,10 @@ interface SavedSimulation {
   save_method: 'auto-save' | 'manual-save' | 'completed-save';
   simulation_id: string | null;
   form_state: any;
+  form_responses?: Array<{
+    question_id: string;
+    response_value: any;
+  }>;
 }
 export default function AdminSimulations() {
   const [simulations, setSimulations] = useState<SavedSimulation[]>([]);
@@ -104,7 +108,13 @@ export default function AdminSimulations() {
 
       let query = supabase
         .from('saved_simulations')
-        .select('*', { count: 'exact' })
+        .select(`
+          *,
+          form_responses (
+            question_id,
+            response_value
+          )
+        `, { count: 'exact' })
         .order('updated_at', { ascending: false });
 
       // Apply search filter
@@ -141,7 +151,11 @@ export default function AdminSimulations() {
           variant: "destructive"
         });
       } else {
-        setSimulations(data || []);
+        const processedData = (data || []).map(item => ({
+          ...item,
+          form_responses: Array.isArray(item.form_responses) ? item.form_responses : []
+        }));
+        setSimulations(processedData);
         setTotalCount(count || 0);
       }
     } catch (error) {
@@ -503,9 +517,29 @@ export default function AdminSimulations() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                    {simulation.phone && <div className="flex items-center gap-2 text-sm text-gray-600">
+                     {simulation.phone && <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Phone className="h-4 w-4" />
                         {simulation.phone}
+                        {(() => {
+                          const gomutoService = simulation.form_responses?.find(
+                            response => response.question_id === 'gomutuo_service'
+                          );
+                          if (gomutoService) {
+                            const value = typeof gomutoService.response_value === 'object' 
+                              ? Object.values(gomutoService.response_value)[0]
+                              : gomutoService.response_value;
+                            const isContattami = value === 'mi piacerebbe';
+                            return (
+                              <Badge 
+                                variant={isContattami ? "default" : "secondary"}
+                                className={`ml-2 text-xs ${isContattami ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
+                              >
+                                {isContattami ? 'Contattami' : 'Non contattarmi'}
+                              </Badge>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>}
                     {simulation.email && <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Mail className="h-4 w-4" />
