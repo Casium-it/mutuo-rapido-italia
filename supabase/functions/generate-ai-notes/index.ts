@@ -299,6 +299,32 @@ INPUT (dati da fondere)
     console.log('📊 LEAD_METADATA:', JSON.stringify(leadMetadata, null, 2));
     console.log('📋 FORM_RAW keys:', Object.keys(formRaw));
     console.log('📝 NOTES_QUALITATIVE preview:', notesText.substring(0, 100) + '...');
+    
+    // Enhanced logging for debugging
+    console.log('📊 Request details:');
+    console.log(`- Model: gpt-5-mini-2025-08-07`);
+    console.log(`- System prompt length: ${systemPrompt.length} chars`);
+    console.log(`- User prompt length: ${userPrompt.length} chars`);
+    console.log(`- Total prompt length: ${systemPrompt.length + userPrompt.length} chars`);
+    console.log(`- Max completion tokens: 10000`);
+    
+    const requestBody = {
+      model: 'gpt-5-mini-2025-08-07',
+      messages: [
+        {
+          role: 'system',
+          content: systemPrompt
+        },
+        {
+          role: 'user',
+          content: userPrompt
+        }
+      ],
+      max_completion_tokens: 10000
+    };
+    
+    console.log('📤 Request body keys:', Object.keys(requestBody));
+    console.log('📤 Messages array length:', requestBody.messages.length);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -306,27 +332,29 @@ INPUT (dati da fondere)
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: 'gpt-5-mini-2025-08-07',
-        messages: [
-          {
-            role: 'system',
-            content: systemPrompt
-          },
-          {
-            role: 'user',
-            content: userPrompt
-          }
-        ],
-        max_completion_tokens: 2000
-      }),
+      body: JSON.stringify(requestBody),
     });
 
+    console.log('📥 OpenAI response status:', response.status);
+    console.log('📥 OpenAI response ok:', response.ok);
+    console.log('📥 OpenAI response headers:', Object.fromEntries(response.headers.entries()));
+
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('❌ OpenAI API error details:', errorText);
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     const data = await response.json();
+    console.log('📋 OpenAI response structure:', Object.keys(data));
+    console.log('📋 OpenAI choices length:', data.choices?.length || 0);
+    if (data.usage) {
+      console.log('📊 Token usage:', data.usage);
+    }
+    if (data.error) {
+      console.error('❌ OpenAI API returned error:', data.error);
+      throw new Error(`OpenAI API error: ${data.error.message}`);
+    }
     const rawResponse = data.choices[0].message.content;
     
     console.log('🤖 Raw AI response length:', rawResponse?.length || 0);
