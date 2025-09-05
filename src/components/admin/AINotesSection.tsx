@@ -60,7 +60,10 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
   const parsedNotes = parseAINotes(aiNotes);
 
   // Simulate realistic progress for different models
-  const simulateProgress = (totalTime: number, isFastModel: boolean) => {
+  const simulateProgress = (isFastModel: boolean) => {
+    const firstPhaseTime = isFastModel ? 20 : 80; // Time to reach 80%
+    const secondPhaseTime = isFastModel ? 20 : 80; // Time from 80% to 99%
+    
     return new Promise<void>((resolve) => {
       let currentProgress = 0;
       const startTime = Date.now();
@@ -71,31 +74,30 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
       currentProgress = 10;
       
       const progressInterval = setInterval(() => {
-        const elapsedTime = Date.now() - startTime;
-        const timeRatio = elapsedTime / (totalTime * 1000);
+        const elapsedTime = (Date.now() - startTime) / 1000; // Convert to seconds
         
-        if (timeRatio < 0.1) {
-          // Upload phase - stay at 10%
+        if (elapsedTime < 2) {
+          // Upload phase - stay at 10% for first 2 seconds
           return;
-        } else if (timeRatio < 0.7) {
-          // Fast progression phase (10% to 90%)
+        } else if (elapsedTime < firstPhaseTime) {
+          // First phase: 10% to 80% in firstPhaseTime seconds
           setProgressLabel(isFastModel ? 'Generazione rapida...' : 'Elaborazione approfondita...');
-          const fastProgress = 10 + (80 * (timeRatio - 0.1) / 0.6);
-          currentProgress = Math.min(90, fastProgress);
+          const phaseProgress = (elapsedTime - 2) / (firstPhaseTime - 2);
+          currentProgress = 10 + (70 * phaseProgress); // 10% + 70% progression
+          setProgress(Math.floor(currentProgress));
+        } else if (elapsedTime < (firstPhaseTime + secondPhaseTime)) {
+          // Second phase: 80% to 99% in secondPhaseTime seconds
+          setProgressLabel('Finalizzazione...');
+          const secondPhaseProgress = (elapsedTime - firstPhaseTime) / secondPhaseTime;
+          currentProgress = 80 + (19 * secondPhaseProgress); // 80% + 19% progression to reach 99%
           setProgress(Math.floor(currentProgress));
         } else {
-          // Slow progression phase (90% to 99%)
-          setProgressLabel('Finalizzazione...');
-          const slowProgress = 90 + (9 * (timeRatio - 0.7) / 0.3);
-          currentProgress = Math.min(99, slowProgress);
-          setProgress(Math.floor(currentProgress));
-        }
-        
-        if (timeRatio >= 1 || currentProgress >= 99) {
-          clearInterval(progressInterval);
+          // Wait at 99% for actual completion
+          setProgressLabel('Attesa completamento...');
+          setProgress(99);
           resolve();
         }
-      }, 200); // Update every 200ms for smooth animation
+      }, 50); // Update every 50ms for smooth animation
     });
   };
 
@@ -104,8 +106,8 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
     setProgress(0);
     
     try {
-      // Start progress simulation for fast model (10 seconds)
-      const progressPromise = simulateProgress(10, true);
+      // Start progress simulation for fast model
+      const progressPromise = simulateProgress(true);
       
       // Make API call
       const apiPromise = supabase.functions.invoke('generate-ai-notes', {
@@ -153,8 +155,8 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
     setProgress(0);
     
     try {
-      // Start progress simulation for slow model (50 seconds)
-      const progressPromise = simulateProgress(50, false);
+      // Start progress simulation for slow model
+      const progressPromise = simulateProgress(false);
       
       // Make API call
       const apiPromise = supabase.functions.invoke('generate-ai-notes', {
@@ -218,10 +220,7 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
             <span>{progressLabel || (isImproving ? 'Preparazione...' : 'Preparazione...')}</span>
             <span>{progress}%</span>
           </div>
-          <Progress value={progress} className="w-full h-2" />
-          <div className="text-xs text-gray-500 text-center">
-            {isImproving ? 'Modello avanzato - Tempo stimato: ~50 secondi' : 'Modello rapido - Tempo stimato: ~10 secondi'}
-          </div>
+          <Progress value={progress} className="w-full h-2 transition-all duration-75" />
         </div>
       )}
       
