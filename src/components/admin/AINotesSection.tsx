@@ -61,43 +61,54 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
 
   // Simulate realistic progress for different models
   const simulateProgress = (isFastModel: boolean) => {
-    const firstPhaseTime = isFastModel ? 20 : 80; // Time to reach 80%
-    const secondPhaseTime = isFastModel ? 20 : 80; // Time from 80% to 99%
+    const firstPhaseTime = isFastModel ? 25 : 100; // Time to reach 80%
+    const secondPhaseTime = isFastModel ? 25 : 100; // Time from 80% to 99%
     
     return new Promise<void>((resolve) => {
-      let currentProgress = 0;
       const startTime = Date.now();
+      let animationFrame: number;
       
       // Initial upload phase (10%)
       setProgressLabel('Caricamento dati...');
       setProgress(10);
-      currentProgress = 10;
       
-      const progressInterval = setInterval(() => {
+      const updateProgress = () => {
         const elapsedTime = (Date.now() - startTime) / 1000; // Convert to seconds
         
         if (elapsedTime < 2) {
           // Upload phase - stay at 10% for first 2 seconds
+          animationFrame = requestAnimationFrame(updateProgress);
           return;
         } else if (elapsedTime < firstPhaseTime) {
           // First phase: 10% to 80% in firstPhaseTime seconds
           setProgressLabel(isFastModel ? 'Generazione rapida...' : 'Elaborazione approfondita...');
           const phaseProgress = (elapsedTime - 2) / (firstPhaseTime - 2);
-          currentProgress = 10 + (70 * phaseProgress); // 10% + 70% progression
-          setProgress(Math.floor(currentProgress));
+          const currentProgress = 10 + (70 * phaseProgress); // 10% + 70% progression
+          setProgress(Math.min(80, currentProgress));
+          animationFrame = requestAnimationFrame(updateProgress);
         } else if (elapsedTime < (firstPhaseTime + secondPhaseTime)) {
           // Second phase: 80% to 99% in secondPhaseTime seconds
           setProgressLabel('Finalizzazione...');
           const secondPhaseProgress = (elapsedTime - firstPhaseTime) / secondPhaseTime;
-          currentProgress = 80 + (19 * secondPhaseProgress); // 80% + 19% progression to reach 99%
-          setProgress(Math.floor(currentProgress));
+          const currentProgress = 80 + (19 * secondPhaseProgress); // 80% + 19% progression to reach 99%
+          setProgress(Math.min(99, currentProgress));
+          animationFrame = requestAnimationFrame(updateProgress);
         } else {
           // Wait at 99% for actual completion
           setProgressLabel('Attesa completamento...');
           setProgress(99);
           resolve();
         }
-      }, 50); // Update every 50ms for smooth animation
+      };
+      
+      animationFrame = requestAnimationFrame(updateProgress);
+      
+      // Cleanup function to cancel animation frame
+      return () => {
+        if (animationFrame) {
+          cancelAnimationFrame(animationFrame);
+        }
+      };
     });
   };
 
@@ -218,9 +229,9 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm text-gray-600">
             <span>{progressLabel || (isImproving ? 'Preparazione...' : 'Preparazione...')}</span>
-            <span>{progress}%</span>
+            <span>{Math.round(progress)}%</span>
           </div>
-          <Progress value={progress} className="w-full h-2 transition-all duration-75" />
+          <Progress value={progress} className="w-full h-2" />
         </div>
       )}
       

@@ -26,10 +26,13 @@ const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
       >
         <div
           className={cn(
-            "h-full w-full flex-1 bg-primary transition-all",
+            "h-full w-full flex-1 bg-primary transition-all duration-300 ease-linear",
             indicatorClassName
           )}
-          style={{ width: `${(value || 0) / max * 100}%` }}
+          style={{ 
+            width: `${(value || 0) / max * 100}%`,
+            transform: 'translateZ(0)' // Force hardware acceleration for smoother animation
+          }}
         />
       </div>
     )
