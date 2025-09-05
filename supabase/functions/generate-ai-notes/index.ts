@@ -335,7 +335,8 @@ INPUT (dati da fondere)
     } catch (parseError) {
       console.error('❌ Failed to parse AI response as JSON:', parseError);
       console.log('🔄 Raw AI response was:', rawResponse);
-      // Fallback: treat as plain text with default confidence
+      console.log('📝 Using full raw response as AI notes since JSON parsing failed');
+      // Use the full raw response as AI notes when JSON parsing fails
       aiResult = {
         response: rawResponse || 'Errore nella generazione delle note AI',
         confidence: 30
