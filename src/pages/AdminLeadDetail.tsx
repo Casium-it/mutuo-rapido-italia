@@ -195,9 +195,14 @@ export default function AdminLeadDetail() {
       const blob = await response.blob();
       const blobUrl = window.URL.createObjectURL(blob);
       
+      // Create filename with name and surname
+      const firstName = submission.first_name || 'lead';
+      const lastName = submission.last_name || submission.id.slice(0, 8);
+      const filename = `${firstName}_${lastName}.pdf`;
+      
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = `lead_${submission.id}.pdf`;
+      link.download = filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
