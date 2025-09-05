@@ -184,30 +184,45 @@ serve(async (req) => {
 CONTRATTO DI OUTPUT (vincoli duri)
 - Devi restituire SOLO un JSON con esattamente due campi top-level:
   {
-    "response": "<testo in italiano, strutturato per il mediatore>",
+    "response": "<testo in italiano, strutturato per il mediatore OPPURE messaggio di errore grave>",
     "confidence": <intero 0-100>
   }
 - Niente altri campi, niente spiegazioni fuori dal JSON.
 
 SCALA DI PRIORITÀ (in caso di conflitti di regole)
 1) Contratto di output (forma del JSON).
-2) Regole di fusione e coerenza dati.
-3) Regole di calcolo e normalizzazione (date/valori/LTV).
-4) Regole di struttura sezione e titolazione.
-5) Stile e resa linguistica.
+2) Validazione input ed errori gravi.
+3) Regole di fusione e coerenza dati.
+4) Regole di calcolo e normalizzazione (date/valori/LTV).
+5) Struttura sezioni e titolazione.
+6) Stile e resa linguistica.
+
+VALIDAZIONE & ERRORI GRAVI (blocco prima di tutto)
+- Se si verifica un ERRORE GRAVE, restituisci:
+  {
+    "response": "ERRORE GRAVE: <descrizione concisa dell'errore e azione richiesta>",
+    "confidence": 0
+  }
+- Casi tipici (non esaustivi) di ERRORE GRAVE:
+  1) INPUT non è JSON valido/parsing fallito.
+  2) Entrambi FORM_RAW e NOTES_QUALITATIVE sono assenti, vuoti o illeggibili.
+  3) Dati chiave intrinsecamente contraddittori/assurdi (es.: importo mutuo negativo; prezzo immobile ≤0; data "anticipo" nel passato se indicato "da versare domani"; LTV calcolabile ma produce NaN/∞).
+  4) Richiedenti citati ma impossibile ricostruirne almeno 1 con anagrafica minima (età o equivalente coerente).
+  5) Locale/valuta incompatibili con il contesto richiesto (richieste non in EUR quando i numeri non sono interpretabili).
+- In presenza di errori NON gravi (lacune parziali), procedi con output normale, stimando "confidence".
 
 REGOLE DI FUSIONE (FORM + NOTE)
 - Se c'è conflitto tra FORM e NOTE, prevalgono sempre le NOTE.
 - Se le NOTE sono mute su un punto, usa il FORM.
-- Non inventare dati mancanti; ometti la sezione se non ci sono informazioni utili (quando previsto).
+- Non inventare dati mancanti; ometti la sezione quando previsto.
 
 NORMALIZZAZIONI E CALCOLI
 - Date relative → sempre in ISO (YYYY-MM-DD), calcolate rispetto a ${todayIso}.
 - Importi in EUR; percentuali con "%" senza spazi superflui.
 - Arrotondamenti:
-  - Titolo ≤80%: importo mutuo richiesto arrotondato al migliaio ("k").
-- LTV: se non fornito ma sono noti importo mutuo richiesto e prezzo immobile, calcolalo come (mutuo/prezzo)*100 e usa due cifre di precisione.
-- Regole titolo (scegli una sola opzione, in quest'ordine di controllo):
+  - Titolo ≤80%: usa l'importo mutuo richiesto arrotondato al migliaio con suffisso "k".
+- LTV: se non fornito ma noti importo mutuo richiesto e prezzo immobile, calcolalo come (mutuo/prezzo)*100 con due decimali.
+- Regole titolo (scegli UNA sola, nell'ordine di controllo):
   1) Se LTV = 100 → "LEAD MUTUO 100%"
   2) Se LTV ≥ 95 e < 100 → "LEAD MUTUO 95%"
   3) Se LTV > 80 e < 95 → "LEAD MUTUO [percentuale LTV]%"
@@ -216,7 +231,7 @@ NORMALIZZAZIONI E CALCOLI
 STRUTTURA DEL TESTO (ordine rigido dentro "response")
 1. Titolo (secondo regole LTV/importo)
 2. 🏠 Situazione Immobile e Acquisto
-3. 💼 Mutuo Richiesto  (solo: importo richiesto, anticipo previsto, finalità)
+3. 💼 Mutuo Richiesto (solo: importo richiesto, anticipo previsto, finalità)
 4. 👤 Richiedente / 👤 Richiedente 1
    - Anagrafica (età, residenza, nucleo familiare, figli a carico, situazione abitativa)
    - Professione principale (contratto, ruolo, reddito netto, mensilità, bonus/benefit)
@@ -225,16 +240,15 @@ STRUTTURA DEL TESTO (ordine rigido dentro "response")
 5. 👤 Richiedente 2 (se presente) con la stessa struttura
 6. 👤 Coniuge (non intestatario) (se presente)
 7. 💰 Disponibilità economica per l'acquisto
-8. 📜 Storico Creditizio (includi SOLO se ci sono dati, altrimenti ometti)
-9. 📆 Prossimi passi e note aggiuntive (unifica obiettivi, contesto, preferenze di contatto, urgenze, pre-delibera se esplicitata nelle NOTE)
+8. 📜 Storico Creditizio (includi SOLO se ci sono dati; altrimenti ometti)
+9. 📆 Prossimi passi e note aggiuntive (unifica obiettivi, contesto, preferenze di contatto, urgenze; "pre-delibera" SOLO se esplicitata nelle NOTE)
 
 REGOLE DI STILE (per il contenuto in "response")
 - Linguaggio: discorsivo, naturale, frasi brevi e chiare.
 - "Bullet point discorsivi": ogni bullet è una frase compiuta (es. ✅ "Ha 35 anni e vive a Milano"; ❌ "Età: 35").
 - Evita paragrafi lunghi; non inserire sezioni vuote o irrilevanti.
-- "💰 Disponibilità economica" va nominata esattamente "💰 Disponibilità economica per l'acquisto".
-- "🏠 Situazione Immobile e Acquisto" deve riportare lo stato dell'acquisto (offerta accettata, compromesso, ricerca in corso, ecc.).
-  - Se dalle NOTE è esplicitamente "pre-delibera", dichiaralo chiaramente; non dedurre se non scritto.
+- Usa esattamente "💰 Disponibilità economica per l'acquisto" per la sezione economica.
+- Riporta lo stato dell'acquisto in "🏠 Situazione Immobile e Acquisto".
 
 AUTOVALUTAZIONE "confidence" (0–100)
 - Parti da 100 e sottrai:
@@ -242,12 +256,26 @@ AUTOVALUTAZIONE "confidence" (0–100)
   - −10 per conflitti non risolti (FORM vs NOTE).
   - −10 se non hai potuto normalizzare date relative.
   - −5 per informazioni chiaramente parziali in sezioni presenti.
-- Limita tra 0 e 100 (intero).
+- Troncatura: minimo 0, massimo 100 (intero).
+- Se ERRORE GRAVE → confidence = 0.
 
 COMPORTAMENTI VIETATI
 - Fare domande o chiedere chiarimenti.
 - Aggiungere testo fuori dal JSON.
-- Includere metadati tecnici o spiegazioni del processo.`;
+- Includere metadati tecnici o spiegazioni del processo.
+
+ESEMPI DI OUTPUT (solo come guida; NON copiarli)
+# 1) Esempio OK
+{
+  "response": "LEAD MUTUO 95%\\n\\n🏠 Situazione Immobile e Acquisto\\n• Ricerca in corso; appuntamenti fissati per il 2025-09-09.\\n\\n💼 Mutuo Richiesto\\n• Richiesto 180k; anticipo previsto 20k; finalità prima casa.\\n\\n👤 Richiedente\\n• Ha 34 anni e risiede a Torino con la compagna; nessun figlio a carico.\\n• Dipendente a tempo indeterminato come impiegato; netto 1.650 €/mese per 13 mensilità; ticket e welfare aziendale stabili.\\n• Nessun reddito secondario dichiarato.\\n• Nessun finanziamento attivo.\\n\\n💰 Disponibilità economica per l'acquisto\\n• Disponibilità liquida 25k già accantonata.\\n\\n📜 Storico Creditizio\\n• CRIF pulita secondo quanto riferito; nessun ritardo pregresso noto.\\n\\n📆 Prossimi passi e note aggiuntive\\n• Priorità ottenere pre-delibera (esplicitato nelle note); invio documenti anagrafici entro il 2025-09-08; ricontatto telefonico il 2025-09-10.",
+  "confidence": 92
+}
+
+# 2) Esempio ERRORE GRAVE
+{
+  "response": "ERRORE GRAVE: INPUT non è JSON valido o FORM_RAW/NOTES_QUALITATIVE assenti; impossibile procedere. Azione richiesta: reinviare i dati in JSON valido con almeno uno tra FORM_RAW o NOTES_QUALITATIVE popolato.",
+  "confidence": 0
+}`;
 
     const userPrompt = `CONTESTO
 - Oggi: ${todayIso}
