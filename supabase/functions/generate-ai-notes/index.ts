@@ -208,7 +208,7 @@ VALIDAZIONE & ERRORI GRAVI (blocco prima di tutto)
 - Casi tipici (non esaustivi) di ERRORE GRAVE:
   1) INPUT non è JSON valido/parsing fallito.
   2) Entrambi FORM_RAW e NOTES_QUALITATIVE sono assenti, vuoti o illeggibili.
-  3) Dati chiave intrinsecamente contraddittori/assurdi (es.: importo mutuo negativo; prezzo immobile ≤0; LTV calcolabile ma NaN/∞; date impossibili).
+  3) Dati chiave intrinsecamente contraddittori/assurdi (es.: importo mutuo negativo; prezzo immobile ≤0; LTV fuori scala dopo normalizzazione; date impossibili).
   4) Richiedenti citati ma impossibile ricostruirne almeno 1 con anagrafica minima (età o equivalente coerente).
   5) Locale/valuta incompatibili con il contesto richiesto (numeri non interpretabili in EUR).
 - In presenza di errori NON gravi (lacune parziali), procedi con output normale, stimando "confidence".
@@ -221,14 +221,20 @@ REGOLE DI FUSIONE (FORM + NOTE)
 NORMALIZZAZIONI E CALCOLI
 - Date relative → sempre in ISO (YYYY-MM-DD), calcolate rispetto a ${todayIso}.
 - Importi in EUR; percentuali con "%" senza spazi superflui.
+- **LTV come percentuale (0–100)**:
+  - Se LTV è tra 0 e 1 (es. 0.95), moltiplica per 100.
+  - Se LTV è tra 1 e 100, usa il valore così com'è.
+  - Se LTV risultante è <0 o >100 → ERRORE GRAVE.
+  - Applica SEMPRE le regole titolo su questa scala 0–100 (due decimali max).
 - Arrotondamenti:
-  - Titolo ≤80%: usa l'importo mutuo richiesto arrotondato al migliaio con suffisso "k".
-- LTV: se non fornito ma noti importo mutuo richiesto e prezzo immobile, calcolalo come (mutuo/prezzo)*100 con due decimali.
-- Regole titolo (scegli UNA sola, nell'ordine di controllo):
-  1) Se LTV = 100 → "LEAD MUTUO 100%"
-  2) Se LTV ≥ 95 e < 100 → "LEAD MUTUO 95%"
-  3) Se LTV > 80 e < 95 → "LEAD MUTUO [percentuale LTV]%"
-  4) Se LTV ≤ 80 → "LEAD MUTUO [importo mutuo richiesto]k"
+  - Titolo quando LTV ≤80%: usa l'importo mutuo richiesto arrotondato al migliaio con suffisso "k".
+- Se LTV non è fornito ma sono noti importo mutuo richiesto e prezzo immobile, calcolalo: (mutuo/prezzo)*100 con due decimali.
+
+REGOLE TITOLO (scegli UNA sola, nell'ordine di controllo)
+1) Se LTV = 100 → "LEAD MUTUO 100%"
+2) Se LTV ≥ 95 e < 100 → "LEAD MUTUO 95%"
+3) Se LTV > 80 e < 95 → "LEAD MUTUO [percentuale LTV]%"
+4) Se LTV ≤ 80 → "LEAD MUTUO [importo mutuo richiesto]k"
 
 STRUTTURA DEL TESTO (ordine rigido dentro "response")
 1. Titolo (secondo regole LTV/importo)
@@ -240,11 +246,11 @@ STRUTTURA DEL TESTO (ordine rigido dentro "response")
      > Professione principale  (contratto, ruolo, reddito netto, mensilità, bonus/benefit)
      > Redditi secondari  (fonte, importo, stabilità)
      > Finanziamenti  (intestatario, tipo, rata, residuo, scadenza; se nessuno: "Nessun finanziamento attivo")
-     > Note particolari  (solo se necessario, per evidenziare eccezioni/chiarimenti)
+     > Note particolari  **(solo se strettamente necessario; vedi regole sotto)**
 5. 👤 Coniuge (non intestatario) (se presente) — usa le stesse sotto-sezioni quando utili
 6. 💰 Disponibilità economica per l'acquisto
 7. 📜 Storico Creditizio (includi SOLO se ci sono dati; altrimenti ometti)
-8. 📆 Prossimi passi e note aggiuntive (unifica obiettivi, contesto, preferenze di contatto, urgenze; "pre-delibera" SOLO se esplicitata nelle NOTE)
+8. 📆 Prossimi passi e note aggiuntive  **(vedi regole sotto)**
 
 REGOLE DI STILE (per il contenuto in "response")
 - Linguaggio: discorsivo, naturale, frasi brevi e chiare.
@@ -253,12 +259,26 @@ REGOLE DI STILE (per il contenuto in "response")
 - Usa esattamente "💰 Disponibilità economica per l'acquisto" per la sezione economica.
 - Riporta lo stato dell'acquisto in "🏠 Situazione Immobile e Acquisto".
 
+📌 REGOLA ZERO (nessuna invenzione) — per **"> Note particolari"** e **"📆 Prossimi passi e note aggiuntive"**
+- **Origine consentita dei contenuti**:
+  1) Elementi **esplicitamente presenti** in NOTES_QUALITATIVE (preferiti).
+  2) Elementi **esplicitamente presenti** in FORM_RAW se assenti nelle NOTE.
+  3) **Fatti derivati deterministici** (es.: conversioni data relative→ISO, LTV calcolato, somme/sottrazioni) o **incongruenze oggettive** tra dati.
+- **Vietato**:
+  - Suggerimenti, raccomandazioni o ipotesi non citate (es.: "fare pre-delibera", "parlare con un esperto") se non **esplicitamente richiesti nelle NOTE** o nel FORM.
+  - Aggiunte "di buon senso" non presenti nelle fonti.
+- **Come scrivere**:
+  - Se un punto è **inferito** (es. incongruenza tra "prima casa" e proprietà esistente), scrivi: "**Da verificare**: …".
+  - In assenza di elementi utili per la sezione, **omettela** (niente placeholder).
+  - Mantieni solo ciò che è **documentato** o **critico** per la pratica.
+
 AUTOVALUTAZIONE "confidence" (0–100)
 - Parti da 100 e sottrai:
   - −20 per ogni sezione chiave mancante non per scelta (2–3–6–8).
   - −10 per conflitti non risolti (FORM vs NOTE).
   - −10 se non hai potuto normalizzare date relative.
   - −5 per informazioni chiaramente parziali in sezioni presenti.
+  - −15 se contiene frasi non supportate da NOTE/FORM o non derivabili in modo deterministico.
 - Troncatura: minimo 0, massimo 100 (intero).
 - Se ERRORE GRAVE → confidence = 0.
 
@@ -312,6 +332,54 @@ Non avrà liquidità residua dopo l'anticipo.
 📆 Prossimi passi e note aggiuntive
 Potrebbe interessargli una pre-delibera, così da poter andare a cercare casa sapendo quanto si può permettere ed essere più competitivo se fa un'offerta.
 Ha dato disponibilità a essere contattato tutti i giorni dopo le 15:00.
+
+# Esempio 2 (OK)
+LEAD MUTUO 95%
+
+🏠 Situazione Immobile e Acquisto
+Davide ha già individuato una casa nel comune di Chieti, in provincia di Chieti.
+L'immobile ha un prezzo di 150.000 € ed è venduto da un privato tramite agenzia immobiliare.
+La tipologia di acquisto è classica da proprietario.
+Non conosce ancora la classe energetica dell'abitazione.
+Attualmente vive in affitto, pagando 500 € al mese, e non possiede altre case di proprietà.
+
+💼 Mutuo Richiesto
+La richiesta di mutuo è di circa 145.000 € (prezzo 150.000 € meno 5.000 € di anticipo).
+L'anticipo previsto per l'acquisto è di 5.000 €.
+La finalità dichiarata è l'acquisto della prima casa.
+
+👤 Richiedente 1
+> Anagrafica
+Davide ha 53 anni e risiede in provincia di Chieti.
+Il nucleo familiare è composto da 4 persone.
+Vive attualmente in un'abitazione in affitto con canone di 500 € al mese.
+
+> Professione principale
+È dipendente del settore privato con contratto a tempo indeterminato.
+Lavora come impiegato/operaio ed è già fuori dal periodo di prova.
+Percepisce un reddito netto compreso tra 2.500 € e 2.700 € al mese.
+Il contratto prevede 13ª e 14ª mensilità.
+Non riceve bonus o benefit aziendali.
+
+> Redditi secondari
+Non percepisce redditi aggiuntivi oltre allo stipendio principale.
+
+> Finanziamenti
+Attualmente non ha finanziamenti aperti.
+
+💰 Disponibilità economica per l'acquisto
+Ha dichiarato di voler anticipare 5.000 € per l'acquisto.
+Dopo l'anticipo avrà a disposizione 10.000 € di liquidità residua.
+
+📜 Storico Creditizio
+Ha dichiarato di aver avuto un fallimento 6 anni fa.
+
+📆 Prossimi passi e note aggiuntive
+Ha già visionato diverse case, ma vuole prima chiarire la sua effettiva capacità di mutuabilità.
+Ha già parlato con banche e broker, ma desidera un'opinione terza e indipendente.
+Ha espresso la necessità di affidarsi a un professionista che gestisca la pratica per lui, vista la sua poca disponibilità di tempo.
+È disponibile la mattina tra le 10:00 e le 13:00 e il pomeriggio dopo le 17:00/18:00.
+È interessato a parlare con un mediatore esperto in mutui al 95%, anche da remoto, senza necessità di incontro fisico.
 
 ESEMPIO DI OUTPUT ERRORE GRAVE (JSON)
 {

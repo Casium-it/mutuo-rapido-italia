@@ -59,48 +59,44 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
 
   const parsedNotes = parseAINotes(aiNotes);
 
-  // Simulate realistic progress for different models
+  // Simulate realistic progress for different models (simplified)
   const simulateProgress = (isFastModel: boolean) => {
-    const firstPhaseTime = isFastModel ? 25 : 100; // Time to reach 80%
-    const secondPhaseTime = isFastModel ? 25 : 100; // Time from 80% to 99%
+    const totalTime = isFastModel ? 40 : 120; // Total time to reach 99%
     
     return new Promise<{ cancel: () => void }>((resolve) => {
       const startTime = Date.now();
       let animationFrame: number;
       let cancelled = false;
       
-      // Initial upload phase (10%)
+      // Start at 1%
       setProgressLabel('Caricamento dati...');
-      setProgress(10);
+      setProgress(1);
       
       const updateProgress = () => {
         if (cancelled) return;
         
         const elapsedTime = (Date.now() - startTime) / 1000; // Convert to seconds
         
-        if (elapsedTime < 2) {
-          // Upload phase - stay at 10% for first 2 seconds
-          animationFrame = requestAnimationFrame(updateProgress);
-          return;
-        } else if (elapsedTime < firstPhaseTime) {
-          // First phase: 10% to 80% in firstPhaseTime seconds
-          setProgressLabel(isFastModel ? 'Generazione rapida...' : 'Elaborazione approfondita...');
-          const phaseProgress = (elapsedTime - 2) / (firstPhaseTime - 2);
-          const currentProgress = 10 + (70 * phaseProgress); // 10% + 70% progression
-          setProgress(Math.min(80, currentProgress));
-          animationFrame = requestAnimationFrame(updateProgress);
-        } else if (elapsedTime < (firstPhaseTime + secondPhaseTime)) {
-          // Second phase: 80% to 99% in secondPhaseTime seconds
-          setProgressLabel('Finalizzazione...');
-          const secondPhaseProgress = (elapsedTime - firstPhaseTime) / secondPhaseTime;
-          const currentProgress = 80 + (19 * secondPhaseProgress); // 80% + 19% progression to reach 99%
+        if (elapsedTime < totalTime) {
+          // Progress from 1% to 99% over totalTime seconds
+          const progressRatio = elapsedTime / totalTime;
+          const currentProgress = 1 + (98 * progressRatio); // 1% + 98% progression to reach 99%
+          
+          // Update label based on progress
+          if (currentProgress < 30) {
+            setProgressLabel('Caricamento dati...');
+          } else if (currentProgress < 70) {
+            setProgressLabel(isFastModel ? 'Generazione rapida...' : 'Elaborazione approfondita...');
+          } else {
+            setProgressLabel('Finalizzazione...');
+          }
+          
           setProgress(Math.min(99, currentProgress));
           animationFrame = requestAnimationFrame(updateProgress);
         } else {
           // Wait at 99% for actual completion
           setProgressLabel('Attesa completamento...');
           setProgress(99);
-          // Don't resolve here, wait for external completion
           animationFrame = requestAnimationFrame(updateProgress);
         }
       };
