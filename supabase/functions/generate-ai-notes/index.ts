@@ -266,7 +266,12 @@ INPUT (dati da fondere)
 }
 \`\`\``;
 
-    console.log('Calling OpenAI with enhanced prompt...');
+    console.log('🚀 Calling OpenAI with enhanced prompt...');
+    console.log('📝 System prompt preview:', systemPrompt.substring(0, 200) + '...');
+    console.log('👤 User prompt preview:', userPrompt.substring(0, 300) + '...');
+    console.log('📊 LEAD_METADATA:', JSON.stringify(leadMetadata, null, 2));
+    console.log('📋 FORM_RAW keys:', Object.keys(formRaw));
+    console.log('📝 NOTES_QUALITATIVE preview:', notesText.substring(0, 100) + '...');
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -297,7 +302,9 @@ INPUT (dati da fondere)
     const data = await response.json();
     const rawResponse = data.choices[0].message.content;
     
-    console.log('Raw AI response:', rawResponse);
+    console.log('🤖 Raw AI response length:', rawResponse?.length || 0);
+    console.log('🤖 Raw AI response preview:', rawResponse?.substring(0, 200) + '...');
+    console.log('🤖 Raw AI response full:', rawResponse);
 
     // Parse JSON response
     let aiResult;
@@ -337,6 +344,11 @@ INPUT (dati da fondere)
 
     // Format the final notes with confidence score
     const finalNotes = `[${aiResult.confidence}] - ${aiResult.response}`;
+    
+    console.log('✅ Final AI result - Confidence:', aiResult.confidence);
+    console.log('✅ Final AI result - Response length:', aiResult.response?.length || 0);
+    console.log('✅ Final AI result - Response preview:', aiResult.response?.substring(0, 200) + '...');
+    console.log('💾 Final notes to save:', finalNotes.substring(0, 300) + '...');
 
     // Update the submission with AI notes
     const { error: updateError } = await supabase
