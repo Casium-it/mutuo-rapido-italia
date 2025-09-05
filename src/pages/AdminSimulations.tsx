@@ -110,9 +110,11 @@ export default function AdminSimulations() {
         .from('saved_simulations')
         .select(`
           *,
-          form_responses (
-            question_id,
-            response_value
+          form_submissions!saved_simulation_id (
+            form_responses (
+              question_id,
+              response_value
+            )
           )
         `, { count: 'exact' })
         .order('updated_at', { ascending: false });
@@ -151,9 +153,9 @@ export default function AdminSimulations() {
           variant: "destructive"
         });
       } else {
-        const processedData = (data || []).map(item => ({
+        const processedData = (data || []).map((item: any) => ({
           ...item,
-          form_responses: Array.isArray(item.form_responses) ? item.form_responses : []
+          form_responses: item.form_submissions?.[0]?.form_responses || []
         }));
         setSimulations(processedData);
         setTotalCount(count || 0);
