@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { Sparkles, RefreshCw, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -19,6 +20,7 @@ interface ParsedAINotes {
 export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSectionProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isImproving, setIsImproving] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   // Parse AI notes to extract confidence score and text
   const parseAINotes = (notes: string | null): ParsedAINotes => {
@@ -58,17 +60,24 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
 
   const handleGenerate = async () => {
     setIsGenerating(true);
+    setProgress(10);
+    
     try {
+      setProgress(30);
       const { data, error } = await supabase.functions.invoke('generate-ai-notes', {
         body: {
           submissionId,
-          type: 'generate'
+          type: 'generate',
+          model: 'gpt-4o-mini' // Faster model for generation
         }
       });
+
+      setProgress(80);
 
       if (error) throw error;
 
       if (data.success) {
+        setProgress(100);
         await onUpdate('ai_notes', data.aiNotes);
         toast({
           title: "Note AI generate",
@@ -86,23 +95,31 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
       });
     } finally {
       setIsGenerating(false);
+      setProgress(0);
     }
   };
 
   const handleImprove = async () => {
     setIsImproving(true);
+    setProgress(10);
+    
     try {
+      setProgress(30);
       const { data, error } = await supabase.functions.invoke('generate-ai-notes', {
         body: {
           submissionId,
           type: 'improve',
-          existingAiNotes: aiNotes
+          existingAiNotes: aiNotes,
+          model: 'gpt-5-mini-2025-08-07' // Higher quality model for improvement
         }
       });
+
+      setProgress(80);
 
       if (error) throw error;
 
       if (data.success) {
+        setProgress(100);
         await onUpdate('ai_notes', data.aiNotes);
         toast({
           title: "Note AI migliorate",
@@ -120,6 +137,7 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
       });
     } finally {
       setIsImproving(false);
+      setProgress(0);
     }
   };
 
@@ -136,6 +154,16 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
           </Badge>
         )}
       </div>
+      
+      {(isGenerating || isImproving) && progress > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm text-gray-600">
+            <span>{isImproving ? 'Miglioramento in corso...' : 'Generazione in corso...'}</span>
+            <span>{progress}%</span>
+          </div>
+          <Progress value={progress} className="w-full h-2" />
+        </div>
+      )}
       
       <div className={`w-full rounded-md border border-input bg-gray-50 p-3 text-sm relative ${
         parsedNotes.text ? 'min-h-[200px]' : 'h-24'

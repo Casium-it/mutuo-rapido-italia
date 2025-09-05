@@ -66,7 +66,7 @@ serve(async (req) => {
   }
 
   try {
-    const { submissionId, type, existingAiNotes } = await req.json();
+    const { submissionId, type, existingAiNotes, model } = await req.json();
     
     console.log('Generating AI notes for submission:', submissionId, 'Type:', type);
 
@@ -175,6 +175,9 @@ serve(async (req) => {
 
     const notesText = submission.notes || 'Nessuna nota aggiuntiva disponibile';
 
+    // Determine which model to use based on request
+    const selectedModel = model || (type === 'improve' ? 'gpt-5-mini-2025-08-07' : 'gpt-4o-mini');
+    
     // Build the enhanced prompt
     const systemPrompt = `RUOLO
 - Sei un assistente specializzato in pratiche di mutuo.
@@ -205,9 +208,9 @@ VALIDAZIONE & ERRORI GRAVI (blocco prima di tutto)
 - Casi tipici (non esaustivi) di ERRORE GRAVE:
   1) INPUT non è JSON valido/parsing fallito.
   2) Entrambi FORM_RAW e NOTES_QUALITATIVE sono assenti, vuoti o illeggibili.
-  3) Dati chiave intrinsecamente contraddittori/assurdi (es.: importo mutuo negativo; prezzo immobile ≤0; data "anticipo" nel passato se indicato "da versare domani"; LTV calcolabile ma produce NaN/∞).
+  3) Dati chiave intrinsecamente contraddittori/assurdi (es.: importo mutuo negativo; prezzo immobile ≤0; LTV calcolabile ma NaN/∞; date impossibili).
   4) Richiedenti citati ma impossibile ricostruirne almeno 1 con anagrafica minima (età o equivalente coerente).
-  5) Locale/valuta incompatibili con il contesto richiesto (richieste non in EUR quando i numeri non sono interpretabili).
+  5) Locale/valuta incompatibili con il contesto richiesto (numeri non interpretabili in EUR).
 - In presenza di errori NON gravi (lacune parziali), procedi con output normale, stimando "confidence".
 
 REGOLE DI FUSIONE (FORM + NOTE)
@@ -231,16 +234,17 @@ STRUTTURA DEL TESTO (ordine rigido dentro "response")
 1. Titolo (secondo regole LTV/importo)
 2. 🏠 Situazione Immobile e Acquisto
 3. 💼 Mutuo Richiesto (solo: importo richiesto, anticipo previsto, finalità)
-4. 👤 Richiedente / 👤 Richiedente 1
-   - Anagrafica (età, residenza, nucleo familiare, figli a carico, situazione abitativa)
-   - Professione principale (contratto, ruolo, reddito netto, mensilità, bonus/benefit)
-   - Redditi secondari (fonte, importo, stabilità)
-   - Finanziamenti (intestatario, tipo, rata, residuo, scadenza; se nessuno: "Nessun finanziamento attivo")
-5. 👤 Richiedente 2 (se presente) con la stessa struttura
-6. 👤 Coniuge (non intestatario) (se presente)
-7. 💰 Disponibilità economica per l'acquisto
-8. 📜 Storico Creditizio (includi SOLO se ci sono dati; altrimenti ometti)
-9. 📆 Prossimi passi e note aggiuntive (unifica obiettivi, contesto, preferenze di contatto, urgenze; "pre-delibera" SOLO se esplicitata nelle NOTE)
+4. 👤 Richiedente 1 (se presente), poi 👤 Richiedente 2, … fino a N
+   - Usa sottotitoli inline preceduti da "> ":
+     > Anagrafica  (età, residenza, nucleo familiare, figli a carico, situazione abitativa)
+     > Professione principale  (contratto, ruolo, reddito netto, mensilità, bonus/benefit)
+     > Redditi secondari  (fonte, importo, stabilità)
+     > Finanziamenti  (intestatario, tipo, rata, residuo, scadenza; se nessuno: "Nessun finanziamento attivo")
+     > Note particolari  (solo se necessario, per evidenziare eccezioni/chiarimenti)
+5. 👤 Coniuge (non intestatario) (se presente) — usa le stesse sotto-sezioni quando utili
+6. 💰 Disponibilità economica per l'acquisto
+7. 📜 Storico Creditizio (includi SOLO se ci sono dati; altrimenti ometti)
+8. 📆 Prossimi passi e note aggiuntive (unifica obiettivi, contesto, preferenze di contatto, urgenze; "pre-delibera" SOLO se esplicitata nelle NOTE)
 
 REGOLE DI STILE (per il contenuto in "response")
 - Linguaggio: discorsivo, naturale, frasi brevi e chiare.
@@ -251,7 +255,7 @@ REGOLE DI STILE (per il contenuto in "response")
 
 AUTOVALUTAZIONE "confidence" (0–100)
 - Parti da 100 e sottrai:
-  - −20 per ogni sezione chiave mancante non per scelta (2–3–4–7–9).
+  - −20 per ogni sezione chiave mancante non per scelta (2–3–6–8).
   - −10 per conflitti non risolti (FORM vs NOTE).
   - −10 se non hai potuto normalizzare date relative.
   - −5 per informazioni chiaramente parziali in sezioni presenti.
@@ -263,14 +267,53 @@ COMPORTAMENTI VIETATI
 - Aggiungere testo fuori dal JSON.
 - Includere metadati tecnici o spiegazioni del processo.
 
-ESEMPI DI OUTPUT (solo come guida; NON copiarli)
-# 1) Esempio OK
-{
-  "response": "LEAD MUTUO 95%\\n\\n🏠 Situazione Immobile e Acquisto\\n• Ricerca in corso; appuntamenti fissati per il 2025-09-09.\\n\\n💼 Mutuo Richiesto\\n• Richiesto 180k; anticipo previsto 20k; finalità prima casa.\\n\\n👤 Richiedente\\n• Ha 34 anni e risiede a Torino con la compagna; nessun figlio a carico.\\n• Dipendente a tempo indeterminato come impiegato; netto 1.650 €/mese per 13 mensilità; ticket e welfare aziendale stabili.\\n• Nessun reddito secondario dichiarato.\\n• Nessun finanziamento attivo.\\n\\n💰 Disponibilità economica per l'acquisto\\n• Disponibilità liquida 25k già accantonata.\\n\\n📜 Storico Creditizio\\n• CRIF pulita secondo quanto riferito; nessun ritardo pregresso noto.\\n\\n📆 Prossimi passi e note aggiuntive\\n• Priorità ottenere pre-delibera (esplicitato nelle note); invio documenti anagrafici entro il 2025-09-08; ricontatto telefonico il 2025-09-10.",
-  "confidence": 92
-}
+ESEMPI DI OUTPUT (contenuto del campo "response" — solo come guida; NON copiarli)
+# Esempio 1 (OK)
+LEAD MUTUO 95%
 
-# 2) Esempio ERRORE GRAVE
+🏠 Situazione Immobile e Acquisto
+Umberto sta cercando la sua prima casa a Trieste e al momento si sta guardando intorno senza aver ancora individuato un immobile specifico.
+Ha indicato un budget indicativo di 150.000 € per l'acquisto, con tipologia classica da privato.
+Attualmente vive in affitto e sostiene un canone mensile di 700 €.
+Possiede già un altro immobile che non intende vendere per finanziare questa operazione.
+È emersa un'incongruenza da chiarire: pur parlando di acquisto come "prima casa", risulta già proprietario di un immobile.
+
+💼 Mutuo Richiesto
+La richiesta di mutuo è pari a circa 145.000 €.
+L'anticipo disponibile per l'acquisto è di 5.000 €.
+La finalità dichiarata è l'acquisto della prima casa.
+
+👤 Richiedente 1
+> Anagrafica
+Umberto ha 38 anni e risiede in provincia di Trieste.
+Il nucleo familiare è composto da tre persone: lui, la moglie e un figlio.
+Attualmente vive in affitto con un canone mensile di 700 €.
+
+> Professione principale
+Lavora in Fincantieri, nel settore metalmeccanico.
+È assunto con contratto a tempo indeterminato, fuori dal periodo di prova.
+Svolge il ruolo di impiegato/operaio.
+Percepisce un reddito netto di 1.980 € al mese.
+Il contratto prevede la 13ª mensilità.
+Riceve inoltre un bonus annuo di 1.200 €, pattuito e stabile.
+Ha diritto ai buoni pasto come benefit aziendale.
+
+> Redditi secondari
+Percepisce un assegno di mantenimento per i figli pari a 402 € al mese.
+L'entrata è attiva dal 2024 ed è dichiarata come stabile.
+
+> Finanziamenti
+Al momento non ha alcun finanziamento attivo.
+
+💰 Disponibilità economica per l'acquisto
+Umberto dispone di un anticipo di 5.000 €.
+Non avrà liquidità residua dopo l'anticipo.
+
+📆 Prossimi passi e note aggiuntive
+Potrebbe interessargli una pre-delibera, così da poter andare a cercare casa sapendo quanto si può permettere ed essere più competitivo se fa un'offerta.
+Ha dato disponibilità a essere contattato tutti i giorni dopo le 15:00.
+
+ESEMPIO DI OUTPUT ERRORE GRAVE (JSON)
 {
   "response": "ERRORE GRAVE: INPUT non è JSON valido o FORM_RAW/NOTES_QUALITATIVE assenti; impossibile procedere. Azione richiesta: reinviare i dati in JSON valido con almeno uno tra FORM_RAW o NOTES_QUALITATIVE popolato.",
   "confidence": 0
@@ -302,14 +345,15 @@ INPUT (dati da fondere)
     
     // Enhanced logging for debugging
     console.log('📊 Request details:');
-    console.log(`- Model: gpt-5-mini-2025-08-07`);
+    console.log(`- Model: ${selectedModel}`);
+    console.log(`- Type: ${type}`);
     console.log(`- System prompt length: ${systemPrompt.length} chars`);
     console.log(`- User prompt length: ${userPrompt.length} chars`);
     console.log(`- Total prompt length: ${systemPrompt.length + userPrompt.length} chars`);
     console.log(`- Max completion tokens: 10000`);
     
     const requestBody = {
-      model: 'gpt-5-mini-2025-08-07',
+      model: selectedModel,
       messages: [
         {
           role: 'system',
