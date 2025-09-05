@@ -74,10 +74,10 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-5 relative z-10">
             {items.slice(0, 3).map((item, idx) => <article 
                 key={idx} 
-                className={`feature-card ${isMobile ? 'feature-card-mobile' : ''} bg-white border border-gray-100 shadow-lg rounded-[12px] cursor-pointer p-5 md:p-7 min-h-[180px] md:min-h-[200px] h-full
+                className={`feature-card ${isMobile ? 'feature-card-mobile' : ''} bg-white border border-gray-100 shadow-lg rounded-[12px] cursor-pointer p-4 md:p-7 min-h-[160px] md:min-h-[200px] h-full
                   transition-all duration-500 ease-out
                   md:hover:scale-105 md:hover:shadow-2xl md:hover:-translate-y-2 md:hover:border-primary/20
-                  ${isMobile && centerCardIndex === idx ? 'scale-110 shadow-2xl -translate-y-1 border-primary/30' : ''}
+                  ${isMobile && centerCardIndex === idx ? 'scale-105 shadow-2xl -translate-y-1 border-primary/30' : ''}
                   ${shouldAnimate 
                     ? 'opacity-100 translate-y-0 animate-fade-in' 
                     : 'opacity-0 translate-y-8'
