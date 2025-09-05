@@ -286,30 +286,61 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
         parsedNotes.text ? 'min-h-[200px]' : 'h-24'
       }`}>
         {parsedNotes.text ? (
-          <div className="whitespace-pre-wrap">{parsedNotes.text}</div>
+          <div className="relative">
+            {/* Blur existing text when regenerating/improving */}
+            <div className={`whitespace-pre-wrap ${(isGenerating || isImproving) ? 'blur-sm opacity-50' : ''} transition-all duration-300`}>
+              {parsedNotes.text}
+            </div>
+            
+            {/* Progress bar overlay for regenerate/improve */}
+            {(isGenerating || isImproving) && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50/80 backdrop-blur-sm">
+                <div className="w-full max-w-md space-y-3 p-6 bg-white/90 rounded-lg shadow-sm border">
+                  <div className="flex items-center justify-between text-sm text-gray-600">
+                    <span>{progressLabel || (isImproving ? 'Preparazione...' : 'Preparazione...')}</span>
+                    <span>{Math.round(progress)}%</span>
+                  </div>
+                  <Progress value={progress} className="w-full h-2" />
+                </div>
+              </div>
+            )}
+          </div>
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <div className="text-gray-400 italic text-center mb-3 px-4">
-              Clicca su "Genera" per creare note AI basate sui dati del lead e sulle risposte fornite
-            </div>
-            <Button
-              size="sm"
-              onClick={handleGenerate}
-              disabled={isGenerating || isImproving}
-              className="bg-[#245C4F] hover:bg-[#1a453b]"
-            >
-              {isGenerating ? (
-                <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <Sparkles className="h-4 w-4 mr-2" />
-              )}
-              Genera
-            </Button>
+            {!isGenerating ? (
+              <>
+                <div className="text-gray-400 italic text-center mb-3 px-4">
+                  Clicca su "Genera" per creare note AI basate sui dati del lead e sulle risposte fornite
+                </div>
+                <Button
+                  size="sm"
+                  onClick={handleGenerate}
+                  disabled={isGenerating || isImproving}
+                  className="bg-[#245C4F] hover:bg-[#1a453b]"
+                >
+                  {isGenerating ? (
+                    <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Sparkles className="h-4 w-4 mr-2" />
+                  )}
+                  Genera
+                </Button>
+              </>
+            ) : (
+              /* Progress bar for initial generation */
+              <div className="w-full max-w-md space-y-3">
+                <div className="flex items-center justify-between text-sm text-gray-600">
+                  <span>{progressLabel || 'Preparazione...'}</span>
+                  <span>{Math.round(progress)}%</span>
+                </div>
+                <Progress value={progress} className="w-full h-2" />
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {parsedNotes.text && (
+      {parsedNotes.text && !isGenerating && !isImproving && (
         <div className="flex justify-end gap-2">
           <Button
             size="sm"
