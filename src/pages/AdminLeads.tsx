@@ -39,6 +39,7 @@ interface FormSubmission {
   last_name: string | null;
   email: string | null;
   notes: string | null;
+  ai_notes: string | null;
   mediatore: string | null;
   ultimo_contatto: string | null;
   prossimo_contatto: string | null;
@@ -668,7 +669,7 @@ export default function AdminLeads() {
                         <StickyNote className="h-4 w-4 text-gray-500 mt-0.5" />
                         <span className="text-sm text-gray-600">Note:</span>
                       </div>
-                      <ExpandableNotes notes={submission.notes} />
+                      <ExpandableNotes notes={submission.notes} aiNotes={submission.ai_notes} />
                     </div>
                   )}
                   
