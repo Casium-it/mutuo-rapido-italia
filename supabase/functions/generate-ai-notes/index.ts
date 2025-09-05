@@ -109,8 +109,8 @@ serve(async (req) => {
     const formState = submission.saved_simulations.form_state;
     const responses = formState.responses || {};
 
-    // Convert form state responses to structured format with labels
-    const formattedResponses: any[] = [];
+    // Convert form state responses to formatted sentences
+    const formattedSentences: string[] = [];
     
     for (const [questionId, responseData] of Object.entries(responses)) {
       // Find the block containing this question
@@ -141,12 +141,17 @@ serve(async (req) => {
         formattedValue = formatResponseValue(responseData, blockData, questionId);
       }
       
-      formattedResponses.push({
-        question_id: questionId,
-        block_id: blockId,
-        question_text: questionText,
-        response_value: formattedValue
-      });
+      // Replace placeholders in question text with the formatted answer
+      let completeSentence = questionText;
+      if (questionText.includes('{{placeholder')) {
+        // Replace all placeholder patterns with the answer
+        completeSentence = questionText.replace(/\{\{placeholder\d*\}\}/g, formattedValue);
+      } else {
+        // If no placeholder, just combine question and answer
+        completeSentence = `${questionText}: ${formattedValue}`;
+      }
+      
+      formattedSentences.push(completeSentence);
     }
 
     // Get today's date in ISO format
@@ -165,14 +170,8 @@ serve(async (req) => {
       form_title: submission.forms?.title || 'Simulazione Mutuo'
     };
 
-    const formRaw = formattedResponses.reduce((acc, response) => {
-      acc[response.question_id] = {
-        question: response.question_text,
-        answer: response.response_value,
-        block_id: response.block_id
-      };
-      return acc;
-    }, {});
+    // Join all formatted sentences into a single text
+    const formRaw = formattedSentences.join('. ');
 
     const notesText = submission.notes || 'Nessuna nota aggiuntiva disponibile';
 
