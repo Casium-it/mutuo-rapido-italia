@@ -491,9 +491,31 @@ export default function AdminSimulations() {
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">
                       {getSimulationDisplayName(simulation)}
-                      <span className="ml-2 font-bold text-[#245C4F] bg-green-50 px-2 py-1 rounded text-sm">
-                        {simulation.form_slug.toUpperCase()}
-                      </span>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="font-bold text-[#245C4F] bg-green-50 px-2 py-1 rounded text-sm">
+                          {simulation.form_slug.toUpperCase()}
+                        </span>
+                        {(() => {
+                          const gomutoService = simulation.form_responses?.find(
+                            response => response.question_id === 'gomutuo_service'
+                          );
+                          if (gomutoService) {
+                            const value = typeof gomutoService.response_value === 'object' 
+                              ? Object.values(gomutoService.response_value)[0]
+                              : gomutoService.response_value;
+                            const isContattami = value === 'consulenza';
+                            return (
+                              <Badge 
+                                variant={isContattami ? "default" : "secondary"}
+                                className={`text-xs ${isContattami ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
+                              >
+                                {isContattami ? 'Contattatemi' : 'Non Contattatemi'}
+                              </Badge>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </div>
                     </CardTitle>
                     <div className="flex items-center gap-2">
                       <Badge className={`text-lg font-bold ${simulation.percentage === 100 ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
