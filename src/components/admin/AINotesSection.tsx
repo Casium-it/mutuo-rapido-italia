@@ -83,9 +83,39 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center">
         <label className="text-sm font-medium text-gray-600">Note AI</label>
-        <div className="flex gap-2">
+      </div>
+      
+      <div className={`w-full rounded-md border border-input bg-gray-50 p-3 text-sm relative ${
+        aiNotes ? 'min-h-[200px]' : 'h-24'
+      }`}>
+        {aiNotes ? (
+          <div className="whitespace-pre-wrap">{aiNotes}</div>
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <div className="text-gray-400 italic text-center mb-3 px-4">
+              Clicca su "Genera" per creare note AI basate sui dati del lead e sulle risposte fornite
+            </div>
+            <Button
+              size="sm"
+              onClick={handleGenerate}
+              disabled={isGenerating || isImproving}
+              className="bg-[#245C4F] hover:bg-[#1a453b]"
+            >
+              {isGenerating ? (
+                <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Sparkles className="h-4 w-4 mr-2" />
+              )}
+              Genera
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {aiNotes && (
+        <div className="flex justify-end gap-2">
           <Button
             size="sm"
             onClick={handleGenerate}
@@ -97,36 +127,24 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
             ) : (
               <Sparkles className="h-4 w-4 mr-2" />
             )}
-            {aiNotes ? 'Rigenera' : 'Genera'}
+            Rigenera
           </Button>
           
-          {aiNotes && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleImprove}
-              disabled={isGenerating || isImproving}
-            >
-              {isImproving ? (
-                <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <Zap className="h-4 w-4 mr-2" />
-              )}
-              Migliora
-            </Button>
-          )}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleImprove}
+            disabled={isGenerating || isImproving}
+          >
+            {isImproving ? (
+              <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+            ) : (
+              <Zap className="h-4 w-4 mr-2" />
+            )}
+            Migliora
+          </Button>
         </div>
-      </div>
-      
-      <div className="min-h-[200px] w-full rounded-md border border-input bg-gray-50 p-3 text-sm">
-        {aiNotes ? (
-          <div className="whitespace-pre-wrap">{aiNotes}</div>
-        ) : (
-          <div className="text-gray-400 italic">
-            Clicca su "Genera" per creare note AI basate sui dati del lead e sulle risposte fornite
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }
