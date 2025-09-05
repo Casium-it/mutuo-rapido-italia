@@ -8,8 +8,8 @@ import { initializeGA } from './utils/analytics';
 import { PostHogProvider } from 'posthog-js/react';
 
 // PostHog configuration
-const POSTHOG_KEY = 'phc_oLwYHAGTAaV4LaRzO05Jve2Z9YnZmbzmTEUUhZtPub3';
-const POSTHOG_HOST = 'https://us.i.posthog.com';
+const POSTHOG_KEY = 'phc_RZBJUBpkzzkinjHUx98CZwT7Dg4qBorPpPVVAbKE7qQ';
+const POSTHOG_HOST = 'https://eu.i.posthog.com';
 
 const posthogOptions = {
   api_host: POSTHOG_HOST,
