@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Calendar, Phone, FileText, Download } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { getQuestionTextWithStyledResponses } from '@/utils/formUtils';
-import { generateSubmissionPDF, PDFSubmissionData } from '@/utils/pdfUtils';
 import { LeadManagementCard } from '@/components/admin/LeadManagementCard';
 import { LeadStatus } from '@/types/leadStatus';
 import { useFormCache } from '@/hooks/useFormCache';
@@ -166,7 +165,7 @@ export default function AdminLeadDetail() {
   };
 
   const handleDownloadPDF = async () => {
-    if (!submission || !formState) {
+    if (!submission) {
       toast({
         title: "Errore",
         description: "Dati del lead non disponibili",
@@ -177,34 +176,27 @@ export default function AdminLeadDetail() {
 
     setPdfLoading(true);
     try {
-      // Convert form_state responses to the format expected by PDF generator
-      const responses = Object.entries(formState.responses || {}).map(([questionId, responseData]) => ({
-        id: questionId,
-        question_id: questionId,
-        question_text: '',  // We'll need to look this up from blocks if needed
-        block_id: '',
-        response_value: responseData,
-        created_at: new Date().toISOString()
-      }));
+      // Call the edge function to generate PDF
+      const { data, error } = await supabase.functions.invoke('generate-lead-pdf', {
+        body: { submissionId: submission.id }
+      });
 
-      const pdfData: PDFSubmissionData = {
-        id: submission.id,
-        created_at: submission.created_at,
-        form_title: submission.form_title || 'Form sconosciuto',
-        phone_number: submission.phone_number,
-        consulting: submission.consulting,
-        user_identifier: submission.user_identifier,
-        metadata: submission.metadata,
-        first_name: submission.first_name,
-        last_name: submission.last_name,
-        email: submission.email,
-        notes: submission.notes,
-        lead_status: submission.lead_status,
-        mediatore: submission.mediatore,
-        responses: responses
-      };
+      if (error) {
+        console.error('PDF generation error:', error);
+        throw new Error(error.message || 'Errore nella generazione del PDF');
+      }
 
-      await generateSubmissionPDF(pdfData);
+      if (!data.pdfUrl) {
+        throw new Error('URL del PDF non ricevuto');
+      }
+
+      // Download the PDF
+      const link = document.createElement('a');
+      link.href = data.pdfUrl;
+      link.download = `lead_${submission.id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       
       toast({
         title: "PDF generato",
@@ -215,7 +207,7 @@ export default function AdminLeadDetail() {
       console.error('PDF generation error:', error);
       toast({
         title: "Errore",
-        description: "Errore nella generazione del PDF",
+        description: error instanceof Error ? error.message : "Errore nella generazione del PDF",
         variant: "destructive"
       });
     } finally {
