@@ -528,13 +528,13 @@ export default function AdminSimulations() {
                             const value = typeof gomutoService.response_value === 'object' 
                               ? Object.values(gomutoService.response_value)[0]
                               : gomutoService.response_value;
-                            const isContattami = value === 'mi piacerebbe';
+                            const isContattami = value === 'consulenza';
                             return (
                               <Badge 
                                 variant={isContattami ? "default" : "secondary"}
                                 className={`ml-2 text-xs ${isContattami ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
                               >
-                                {isContattami ? 'Contattami' : 'Non contattarmi'}
+                                {isContattami ? 'Contattatemi' : 'Non Contattatemi'}
                               </Badge>
                             );
                           }
