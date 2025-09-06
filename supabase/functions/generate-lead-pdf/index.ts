@@ -86,6 +86,7 @@ function formatDate(dateString: string): string {
 
 /**
  * Add text with automatic line wrapping and return new Y position
+ * Preserves manual line breaks from the original text
  */
 function addWrappedText(
   pdf: jsPDF, 
@@ -97,15 +98,35 @@ function addWrappedText(
   lineHeight: number = LINE_HEIGHT_NORMAL
 ): number {
   pdf.setFontSize(fontSize);
-  const lines = pdf.splitTextToSize(text, maxWidth);
   
-  for (let i = 0; i < lines.length; i++) {
-    if (y > PAGE_HEIGHT - MARGIN - 10) {
-      pdf.addPage();
-      y = MARGIN;
+  // Split by manual line breaks first to preserve intentional formatting
+  const paragraphs = text.split('\n');
+  
+  for (let p = 0; p < paragraphs.length; p++) {
+    const paragraph = paragraphs[p].trim();
+    
+    // Handle empty lines (preserve spacing)
+    if (paragraph === '') {
+      y += lineHeight * 0.5; // Add half line height for empty lines
+      continue;
     }
-    pdf.text(lines[i], x, y);
-    y += lineHeight;
+    
+    // Split paragraph into lines that fit within maxWidth
+    const lines = pdf.splitTextToSize(paragraph, maxWidth);
+    
+    for (let i = 0; i < lines.length; i++) {
+      if (y > PAGE_HEIGHT - MARGIN - 10) {
+        pdf.addPage();
+        y = MARGIN;
+      }
+      pdf.text(lines[i], x, y);
+      y += lineHeight;
+    }
+    
+    // Add extra spacing between paragraphs (except for the last one)
+    if (p < paragraphs.length - 1) {
+      y += lineHeight * 0.3;
+    }
   }
   
   return y;
@@ -130,23 +151,90 @@ function addSectionTitle(
 }
 
 /**
- * Remove emojis and non-ASCII characters that can't be rendered in PDF
+ * Replace emojis with Italian text alternatives for PDF rendering
  */
-function removeEmojis(text: string): string {
-  // Remove emojis and other non-ASCII characters
-  return text.replace(/[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '')
-    // Replace common emoji-like characters with text alternatives
-    .replace(/🏠/g, '[Casa]')
-    .replace(/💼/g, '[Lavoro]')
-    .replace(/👤/g, '[Persona]')
-    .replace(/💰/g, '[Denaro]')
-    .replace(/📜/g, '[Documento]')
-    .replace(/📆/g, '[Data]')
-    .replace(/✅/g, '[OK]')
-    .replace(/❌/g, '[NO]')
-    .replace(/⚠️/g, '[Attenzione]')
-    // Remove any remaining non-printable characters
-    .replace(/[^\x20-\x7E\u00A0-\u024F\u0370-\u03FF]/g, '');
+function replaceEmojisWithText(text: string): string {
+  return text
+    // Common property/home emojis
+    .replace(/🏠/g, '🏠 Casa')
+    .replace(/🏡/g, '🏡 Abitazione')
+    .replace(/🏢/g, '🏢 Ufficio')  
+    .replace(/🏪/g, '🏪 Negozio')
+    .replace(/🏬/g, '🏬 Centro Commerciale')
+    .replace(/🏭/g, '🏭 Fabbrica')
+    .replace(/🏘️/g, '🏘️ Quartiere')
+    
+    // Work/profession emojis
+    .replace(/💼/g, '💼 Lavoro')
+    .replace(/👔/g, '👔 Professionale')
+    .replace(/🧑‍💼/g, '🧑‍💼 Impiegato')
+    .replace(/👨‍💼/g, '👨‍💼 Manager')
+    .replace(/👩‍💼/g, '👩‍💼 Manager')
+    .replace(/🔧/g, '🔧 Tecnico')
+    .replace(/🚛/g, '🚛 Trasporti')
+    .replace(/⚓/g, '⚓ Marino')
+    
+    // People/family emojis
+    .replace(/👤/g, '👤 Persona')
+    .replace(/👥/g, '👥 Persone')
+    .replace(/👪/g, '👪 Famiglia')
+    .replace(/👫/g, '👫 Coppia')
+    .replace(/👨‍👩‍👧‍👦/g, '👨‍👩‍👧‍👦 Famiglia')
+    
+    // Money/finance emojis
+    .replace(/💰/g, '💰 Denaro')
+    .replace(/💵/g, '💵 Euro')
+    .replace(/💳/g, '💳 Carta')
+    .replace(/🏦/g, '🏦 Banca')
+    .replace(/📊/g, '📊 Grafico')
+    .replace(/📈/g, '📈 Crescita')
+    .replace(/📉/g, '📉 Calo')
+    
+    // Documents/admin emojis
+    .replace(/📜/g, '📜 Documento')
+    .replace(/📋/g, '📋 Modulo')
+    .replace(/📄/g, '📄 Pagina')
+    .replace(/📃/g, '📃 Carta')
+    .replace(/📝/g, '📝 Note')
+    .replace(/✍️/g, '✍️ Scrivere')
+    .replace(/📁/g, '📁 Cartella')
+    .replace(/📂/g, '📂 Archivio')
+    
+    // Time/calendar emojis
+    .replace(/📆/g, '📆 Data')
+    .replace(/📅/g, '📅 Calendario')
+    .replace(/🗓️/g, '🗓️ Pianificazione')
+    .replace(/⏰/g, '⏰ Orario')
+    .replace(/⏳/g, '⏳ Attesa')
+    .replace(/⌛/g, '⌛ Tempo')
+    
+    // Status/confirmation emojis
+    .replace(/✅/g, '✅ Confermato')
+    .replace(/❌/g, '❌ Negato')
+    .replace(/⚠️/g, '⚠️ Attenzione')
+    .replace(/🔴/g, '🔴 Rosso')
+    .replace(/🟡/g, '🟡 Giallo')
+    .replace(/🟢/g, '🟢 Verde')
+    .replace(/❗/g, '❗ Importante')
+    .replace(/❓/g, '❓ Domanda')
+    
+    // Communication emojis
+    .replace(/📞/g, '📞 Telefono')
+    .replace(/📱/g, '📱 Cellulare')
+    .replace(/📧/g, '📧 Email')
+    .replace(/💬/g, '💬 Messaggio')
+    .replace(/🗣️/g, '🗣️ Parlare')
+    .replace(/👂/g, '👂 Ascoltare')
+    
+    // General symbols
+    .replace(/🎯/g, '🎯 Obiettivo')
+    .replace(/🔍/g, '🔍 Ricerca')
+    .replace(/🔑/g, '🔑 Chiave')
+    .replace(/🚀/g, '🚀 Lancio')
+    .replace(/💡/g, '💡 Idea')
+    .replace(/⭐/g, '⭐ Stella')
+    .replace(/🎉/g, '🎉 Festa')
+    .replace(/🎊/g, '🎊 Celebrazione');
 }
 
 /**
@@ -159,19 +247,19 @@ function formatResponseValue(value: any): string {
   
   if (typeof value === 'object') {
     if (Array.isArray(value)) {
-      return removeEmojis(value.join(', '));
+      return replaceEmojisWithText(value.join(', '));
     }
     
     // Handle placeholder responses
     const placeholderKeys = Object.keys(value).filter(key => key.startsWith('placeholder'));
     if (placeholderKeys.length > 0) {
-      return removeEmojis(placeholderKeys.map(key => value[key]).filter(v => v).join(', '));
+      return replaceEmojisWithText(placeholderKeys.map(key => value[key]).filter(v => v).join(', '));
     }
     
-    return removeEmojis(JSON.stringify(value));
+    return replaceEmojisWithText(JSON.stringify(value));
   }
   
-  return removeEmojis(String(value));
+  return replaceEmojisWithText(String(value));
 }
 
 /**
@@ -419,9 +507,9 @@ function generateSubmissionPDF(data: PDFSubmissionData): Uint8Array {
   if (notesToDisplay && notesToDisplay.trim()) {
     const noteTitle = (data.ai_notes && data.ai_notes.trim()) ? 'Note AI' : 'Note';
     y = addSectionTitle(pdf, noteTitle, MARGIN, y);
-    // Remove emojis from notes before adding to PDF
-    const cleanNotes = removeEmojis(notesToDisplay);
-    y = addWrappedText(pdf, cleanNotes, MARGIN, y, CONTENT_WIDTH, FONT_SIZE_NORMAL, LINE_HEIGHT_NORMAL);
+    // Replace emojis with text alternatives for PDF rendering
+    const processedNotes = replaceEmojisWithText(notesToDisplay);
+    y = addWrappedText(pdf, processedNotes, MARGIN, y, CONTENT_WIDTH, FONT_SIZE_NORMAL, LINE_HEIGHT_NORMAL);
     y += 10;
   }
   
