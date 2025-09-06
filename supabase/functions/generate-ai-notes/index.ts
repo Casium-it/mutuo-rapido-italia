@@ -206,6 +206,16 @@ serve(async (req) => {
     console.log('  - form_raw preview:', formRaw.substring(0, 200) + '...');
     console.log('  - notes_text:', notesText);
     console.log('  - existing_notes:', existingAiNotes ? 'present' : 'not provided');
+    
+    // Add specific logging for improve operations
+    if (type === 'improve') {
+      console.log('🔄 IMPROVE OPERATION - Variables being passed:');
+      console.log('  - today_iso:', todayIso);
+      console.log('  - lead_metadata:', JSON.stringify(leadMetadata));
+      console.log('  - form_raw full:', formRaw);
+      console.log('  - notes_text full:', notesText);
+      console.log('  - existing_notes full:', existingAiNotes || 'none');
+    }
 
     // Build messages from the prompt template with variable replacement
     const messages = promptData.messages.map((message: any) => {
