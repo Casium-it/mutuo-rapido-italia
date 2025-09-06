@@ -192,28 +192,28 @@ serve(async (req) => {
 
     // Prepare variables for prompt replacement
     const variables = {
-      today_iso: todayIso,
       lead_metadata: JSON.stringify(leadMetadata),
       form_raw: formRaw, // Don't double-stringify - it's already a string
       notes_text: notesText,
+      LEAD_METADATA: JSON.stringify(leadMetadata),
+      FORM_RAW: formRaw,
+      NOTES_QUALITATIVE: notesText,
       existing_notes: existingAiNotes || ''
     };
 
     console.log('📊 Variables prepared:');
-    console.log('  - today_iso:', todayIso);
-    console.log('  - lead_metadata length:', JSON.stringify(leadMetadata).length);
-    console.log('  - form_raw length:', formRaw.length);
-    console.log('  - form_raw preview:', formRaw.substring(0, 200) + '...');
-    console.log('  - notes_text:', notesText);
+    console.log('  - LEAD_METADATA length:', JSON.stringify(leadMetadata).length);
+    console.log('  - FORM_RAW length:', formRaw.length);
+    console.log('  - FORM_RAW preview:', formRaw.substring(0, 200) + '...');
+    console.log('  - NOTES_QUALITATIVE:', notesText);
     console.log('  - existing_notes:', existingAiNotes ? 'present' : 'not provided');
     
     // Add specific logging for improve operations
     if (type === 'improve') {
       console.log('🔄 IMPROVE OPERATION - Variables being passed:');
-      console.log('  - today_iso:', todayIso);
-      console.log('  - lead_metadata:', JSON.stringify(leadMetadata));
-      console.log('  - form_raw full:', formRaw);
-      console.log('  - notes_text full:', notesText);
+      console.log('  - LEAD_METADATA:', JSON.stringify(leadMetadata));
+      console.log('  - FORM_RAW full:', formRaw);
+      console.log('  - NOTES_QUALITATIVE full:', notesText);
       console.log('  - existing_notes full:', existingAiNotes || 'none');
     }
 
