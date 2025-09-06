@@ -194,10 +194,18 @@ serve(async (req) => {
     const variables = {
       today_iso: todayIso,
       lead_metadata: JSON.stringify(leadMetadata),
-      form_raw: JSON.stringify(formRaw),
+      form_raw: formRaw, // Don't double-stringify - it's already a string
       notes_text: notesText,
       existing_notes: existingAiNotes || ''
     };
+
+    console.log('📊 Variables prepared:');
+    console.log('  - today_iso:', todayIso);
+    console.log('  - lead_metadata length:', JSON.stringify(leadMetadata).length);
+    console.log('  - form_raw length:', formRaw.length);
+    console.log('  - form_raw preview:', formRaw.substring(0, 200) + '...');
+    console.log('  - notes_text:', notesText);
+    console.log('  - existing_notes:', existingAiNotes ? 'present' : 'not provided');
 
     // Build messages from the prompt template with variable replacement
     const messages = promptData.messages.map((message: any) => {
