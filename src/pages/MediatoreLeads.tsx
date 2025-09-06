@@ -100,8 +100,12 @@ export default function MediatoreLeads() {
             
             if (possibleKeys.length > 0) {
               const provinciaResponse = responses[possibleKeys[0]];
-              if (provinciaResponse && typeof provinciaResponse === 'object' && 'default' in provinciaResponse) {
-                provincia = provinciaResponse.default;
+              if (provinciaResponse && typeof provinciaResponse === 'object') {
+                // Look for placeholder keys (placeholder1, placeholder2, etc.)
+                const placeholderKeys = Object.keys(provinciaResponse).filter(key => key.startsWith('placeholder'));
+                if (placeholderKeys.length > 0) {
+                  provincia = provinciaResponse[placeholderKeys[0]] as string;
+                }
               } else if (typeof provinciaResponse === 'string') {
                 provincia = provinciaResponse;
               }
