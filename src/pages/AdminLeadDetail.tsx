@@ -27,6 +27,7 @@ interface FormSubmission {
   ai_notes: string | null;
   lead_status: LeadStatus;
   mediatore: string | null;
+  mediatore_assegnato: string | null;
   ultimo_contatto: string | null;
   prossimo_contatto: string | null;
   assigned_to: string | null;

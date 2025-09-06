@@ -13,6 +13,7 @@ import { LeadStatus } from '@/types/leadStatus';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { AINotesSection } from './AINotesSection';
+import { MediatoreSelector } from './MediatorSelector';
 
 interface AdminNotification {
   id: string;
@@ -29,6 +30,7 @@ interface LeadManagementCardProps {
     ai_notes: string | null;
     lead_status: LeadStatus;
     mediatore: string | null;
+    mediatore_assegnato: string | null;
     ultimo_contatto: string | null;
     prossimo_contatto: string | null;
     assigned_to: string | null;
@@ -142,11 +144,9 @@ export function LeadManagementCard({ submission, onUpdate }: LeadManagementCardP
             </div>
 
             <div className="md:col-span-1">
-              <EditableField
-                label="Mediatore"
-                value={submission.mediatore || ''}
-                onSave={(value) => onUpdate('mediatore', value)}
-                placeholder="Inserisci il nome del mediatore"
+              <MediatoreSelector
+                value={submission.mediatore_assegnato}
+                onValueChange={(value) => onUpdate('mediatore_assegnato', value)}
               />
             </div>
           </div>

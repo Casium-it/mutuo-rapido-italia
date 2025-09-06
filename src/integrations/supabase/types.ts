@@ -364,6 +364,7 @@ export type Database = {
           last_name: string | null
           lead_status: Database["public"]["Enums"]["lead_status"] | null
           mediatore: string | null
+          mediatore_assegnato: string | null
           notes: string | null
           phone_number: string | null
           prossimo_contatto: string | null
@@ -386,6 +387,7 @@ export type Database = {
           last_name?: string | null
           lead_status?: Database["public"]["Enums"]["lead_status"] | null
           mediatore?: string | null
+          mediatore_assegnato?: string | null
           notes?: string | null
           phone_number?: string | null
           prossimo_contatto?: string | null
@@ -408,6 +410,7 @@ export type Database = {
           last_name?: string | null
           lead_status?: Database["public"]["Enums"]["lead_status"] | null
           mediatore?: string | null
+          mediatore_assegnato?: string | null
           notes?: string | null
           phone_number?: string | null
           prossimo_contatto?: string | null
@@ -430,6 +433,13 @@ export type Database = {
             columns: ["form_id"]
             isOneToOne: false
             referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_submissions_mediatore_assegnato_fkey"
+            columns: ["mediatore_assegnato"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
