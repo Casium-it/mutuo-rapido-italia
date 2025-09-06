@@ -74,7 +74,7 @@ export default function AdminLeads() {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalCount, setTotalCount] = useState<number>(0);
-  const [uniqueMediaatori, setUniqueMediaatori] = useState<string[]>([]);
+  const [uniqueMediaatori, setUniqueMediaatori] = useState<{id: string, name: string}[]>([]);
   const itemsPerPage = 50;
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -151,7 +151,7 @@ export default function AdminLeads() {
   // Initial load with full page loading
   useEffect(() => {
     fetchSubmissions();
-    fetchUniqueMediaatori();
+    // fetchUniqueMediaatori(); // Temporarily disabled due to UUID conversion
   }, []);
 
   // Restore scroll position after component mounts and DOM is ready
@@ -185,6 +185,10 @@ export default function AdminLeads() {
           admin_notification_settings!assigned_to (
             admin_name
           ),
+          profiles!form_submissions_mediatore_fkey (
+            first_name,
+            last_name
+          ),
           form_responses (
             question_id,
             response_value
@@ -200,13 +204,12 @@ export default function AdminLeads() {
         query = query.not('phone_number', 'is', null);
       }
 
-      if (mediatoreFilter !== 'all') {
-        query = query.eq('mediatore', mediatoreFilter);
-      }
+      // Note: Mediatore filtering temporarily disabled due to UUID conversion
+      // TODO: Implement proper UUID-based mediatore filtering
 
-      // Search functionality
+      // Search functionality - now we need to search by joining with profiles for mediatore names
       if (debouncedSearchQuery) {
-        query = query.or(`first_name.ilike.%${debouncedSearchQuery}%,last_name.ilike.%${debouncedSearchQuery}%,email.ilike.%${debouncedSearchQuery}%,phone_number.ilike.%${debouncedSearchQuery}%,notes.ilike.%${debouncedSearchQuery}%,mediatore.ilike.%${debouncedSearchQuery}%`);
+        query = query.or(`first_name.ilike.%${debouncedSearchQuery}%,last_name.ilike.%${debouncedSearchQuery}%,email.ilike.%${debouncedSearchQuery}%,phone_number.ilike.%${debouncedSearchQuery}%,notes.ilike.%${debouncedSearchQuery}%`);
       }
 
       // Apply pagination and ordering
@@ -268,30 +271,9 @@ export default function AdminLeads() {
   };
 
   const fetchUniqueMediaatori = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('form_submissions')
-        .select('mediatore')
-        .not('mediatore', 'is', null)
-        .order('mediatore');
-
-      if (error) {
-        console.error('Error fetching mediatori:', error);
-        return;
-      }
-
-      const mediatori = Array.from(
-        new Set(
-          data
-            .map(item => item.mediatore)
-            .filter(Boolean)
-        )
-      ).sort();
-      
-      setUniqueMediaatori(mediatori);
-    } catch (error) {
-      console.error('Error fetching mediatori:', error);
-    }
+    // Temporarily disabled due to UUID conversion complexity
+    // TODO: Implement proper mediatore filtering with UUID foreign keys
+    setUniqueMediaatori([]);
   };
 
   const handleDeleteSubmission = async (submissionId: string) => {
@@ -416,20 +398,12 @@ export default function AdminLeads() {
               {/* Mediatore Filter */}
               <div className="flex items-center gap-2">
                 <User className="h-4 w-4 text-gray-500" />
-                <Select value={mediatoreFilter} onValueChange={(value) => {
-                  setMediatoreFilter(value);
-                  saveFiltersToSession(statusFilter, phoneFilter, value, searchQuery);
-                }}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Mediatore" />
+                <Select value="all" disabled>
+                  <SelectTrigger className="w-40 opacity-50">
+                    <SelectValue placeholder="Mediatore (WIP)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tutti</SelectItem>
-                    {uniqueMediaatori.map((mediatore) => (
-                      <SelectItem key={mediatore} value={mediatore}>
-                        {mediatore}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="all">Filtro temporaneamente disabilitato</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -496,7 +470,7 @@ export default function AdminLeads() {
               <Button 
                 onClick={() => {
                   fetchSubmissions();
-                  fetchUniqueMediaatori();
+                  // fetchUniqueMediaatori(); // Temporarily disabled
                 }} 
                 variant="outline" 
                 size="sm"
