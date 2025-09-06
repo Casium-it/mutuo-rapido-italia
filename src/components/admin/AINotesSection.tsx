@@ -23,6 +23,9 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
   const [isImproving, setIsImproving] = useState(false);
   const [progress, setProgress] = useState(0);
   const [progressLabel, setProgressLabel] = useState('');
+  
+  // Track if we're processing existing notes (regen/improve)
+  const isProcessing = isGenerating || isImproving;
 
   // Parse AI notes to extract confidence score and text
   const parseAINotes = (notes: string | null): ParsedAINotes => {
@@ -60,91 +63,58 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
 
   const parsedNotes = parseAINotes(aiNotes);
 
-  // Simulate realistic progress for different models (simplified)
+  // Simplified progress simulation using setInterval
   const simulateProgress = (isFastModel: boolean) => {
-    const totalTime = isFastModel ? 40 : 120; // Total time to reach 99%
+    const totalDuration = isFastModel ? 8000 : 15000; // 8s for fast, 15s for slow
+    const updateInterval = 200; // Update every 200ms
+    const totalSteps = totalDuration / updateInterval;
+    let currentStep = 0;
+    let intervalId: NodeJS.Timeout;
     
     return new Promise<{ cancel: () => void }>((resolve) => {
-      const startTime = Date.now();
-      let animationFrame: number;
-      let cancelled = false;
-      
-      // Start at 1%
+      setProgress(5); // Start at 5%
       setProgressLabel('Caricamento dati...');
-      setProgress(1);
       
-      const updateProgress = () => {
-        if (cancelled) return;
+      intervalId = setInterval(() => {
+        currentStep++;
+        const progressPercent = Math.min(95, 5 + (90 * currentStep / totalSteps)); // 5% to 95%
         
-        const elapsedTime = (Date.now() - startTime) / 1000; // Convert to seconds
-        
-        if (elapsedTime < totalTime) {
-          // Progress from 1% to 99% over totalTime seconds
-          const progressRatio = elapsedTime / totalTime;
-          const currentProgress = 1 + (98 * progressRatio); // 1% + 98% progression to reach 99%
-          
-          // Update label based on progress
-          if (currentProgress < 30) {
-            setProgressLabel('Caricamento dati...');
-          } else if (currentProgress < 70) {
-            setProgressLabel(isFastModel ? 'Generazione rapida...' : 'Elaborazione approfondita...');
-          } else {
-            setProgressLabel('Finalizzazione...');
-          }
-          
-          setProgress(Math.min(99, currentProgress));
-          animationFrame = requestAnimationFrame(updateProgress);
+        // Update label based on progress
+        if (progressPercent < 30) {
+          setProgressLabel('Caricamento dati...');
+        } else if (progressPercent < 70) {
+          setProgressLabel(isFastModel ? 'Generazione rapida...' : 'Elaborazione approfondita...');
         } else {
-          // Wait at 99% for actual completion
-          setProgressLabel('Attesa completamento...');
-          setProgress(99);
-          animationFrame = requestAnimationFrame(updateProgress);
+          setProgressLabel('Finalizzazione...');
         }
-      };
+        
+        setProgress(progressPercent);
+        
+        if (currentStep >= totalSteps) {
+          setProgressLabel('Attesa completamento...');
+          setProgress(95); // Stop at 95%, wait for API completion
+        }
+      }, updateInterval);
       
       const cancel = () => {
-        cancelled = true;
-        if (animationFrame) {
-          cancelAnimationFrame(animationFrame);
+        if (intervalId) {
+          clearInterval(intervalId);
         }
       };
       
-      animationFrame = requestAnimationFrame(updateProgress);
       resolve({ cancel });
     });
   };
 
-  // Sprint to completion animation (2 seconds)
-  const sprintToCompletion = (currentProgress: number) => {
+  // Complete progress to 100%
+  const completeProgress = () => {
     return new Promise<void>((resolve) => {
-      const startTime = Date.now();
-      const startProgress = currentProgress;
-      const targetProgress = 100;
-      const sprintDuration = 2000; // 2 seconds
-      let animationFrame: number;
+      setProgressLabel('Completato!');
+      setProgress(100);
       
-      setProgressLabel('Completamento...');
-      
-      const updateSprint = () => {
-        const elapsedTime = Date.now() - startTime;
-        const sprintRatio = Math.min(elapsedTime / sprintDuration, 1);
-        
-        // Smooth easing function (ease-out)
-        const easedRatio = 1 - Math.pow(1 - sprintRatio, 3);
-        const newProgress = startProgress + ((targetProgress - startProgress) * easedRatio);
-        
-        setProgress(newProgress);
-        
-        if (sprintRatio >= 1) {
-          setProgress(100);
-          setProgressLabel('Completato!');
-          resolve();
-        } else {
-          animationFrame = requestAnimationFrame(updateSprint);
-        }
-      };
-      
-      animationFrame = requestAnimationFrame(updateSprint);
+      setTimeout(() => {
+        resolve();
+      }, 1000); // Show completion for 1 second
     });
   };
 
@@ -175,8 +145,8 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
       if (error) throw error;
 
       if (data.success) {
-        // Sprint to completion in 2 seconds
-        await sprintToCompletion(progress);
+        // Complete progress to 100%
+        await completeProgress();
         await onUpdate('ai_notes', data.aiNotes);
         toast({
           title: "Note AI generate",
@@ -229,8 +199,8 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
       if (error) throw error;
 
       if (data.success) {
-        // Sprint to completion in 2 seconds
-        await sprintToCompletion(progress);
+        // Complete progress to 100%
+        await completeProgress();
         await onUpdate('ai_notes', data.aiNotes);
         toast({
           title: "Note AI migliorate",
@@ -269,7 +239,8 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
         )}
       </div>
       
-      {parsedNotes.text ? (
+      {parsedNotes.text && !isProcessing ? (
+        /* Show notes content when not processing */
         <div className="space-y-4">
           <EditableField
             label=""
@@ -284,24 +255,13 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
             placeholder="Modifica le note AI..."
             multiline
           />
-          
-          {/* Progress bar overlay for regenerate/improve */}
-          {(isGenerating || isImproving) && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50/80 backdrop-blur-sm z-10">
-              <div className="w-full max-w-md space-y-3 p-6 bg-white/90 rounded-lg shadow-sm border">
-                <div className="flex items-center justify-between text-sm text-gray-600">
-                  <span>{progressLabel || (isImproving ? 'Preparazione...' : 'Preparazione...')}</span>
-                  <span>{Math.round(progress)}%</span>
-                </div>
-                <Progress value={progress} className="w-full h-2" />
-              </div>
-            </div>
-          )}
         </div>
       ) : (
-        <div className={`w-full rounded-md border border-input bg-gray-50 p-3 text-sm relative h-24`}>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            {!isGenerating ? (
+        /* Show loading state for initial generation or when processing existing notes */
+        <div className="w-full rounded-md border border-input bg-gray-50 p-3 text-sm relative min-h-24">
+          <div className="flex flex-col items-center justify-center h-full py-4">
+            {!parsedNotes.text && !isProcessing ? (
+              /* Initial empty state */
               <>
                 <div className="text-gray-400 italic text-center mb-3 px-4">
                   Clicca su "Genera" per creare note AI basate sui dati del lead e sulle risposte fornite
@@ -312,16 +272,12 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
                   disabled={isGenerating || isImproving}
                   className="bg-[#245C4F] hover:bg-[#1a453b]"
                 >
-                  {isGenerating ? (
-                    <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <Sparkles className="h-4 w-4 mr-2" />
-                  )}
+                  <Sparkles className="h-4 w-4 mr-2" />
                   Genera
                 </Button>
               </>
             ) : (
-              /* Progress bar for initial generation */
+              /* Progress bar for generation/regeneration/improvement */
               <div className="w-full max-w-md space-y-3">
                 <div className="flex items-center justify-between text-sm text-gray-600">
                   <span>{progressLabel || 'Preparazione...'}</span>
