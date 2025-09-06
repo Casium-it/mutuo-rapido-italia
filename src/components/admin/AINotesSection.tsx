@@ -132,8 +132,7 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
       const { data, error } = await supabase.functions.invoke('generate-ai-notes', {
         body: {
           submissionId,
-          type: 'generate',
-          model: 'gpt-4o-mini' // Faster model for generation
+          type: 'generate'
         }
       });
 
@@ -186,8 +185,7 @@ export function AINotesSection({ submissionId, aiNotes, onUpdate }: AINotesSecti
         body: {
           submissionId,
           type: 'improve',
-          existingAiNotes: aiNotes,
-          model: 'gpt-5-mini-2025-08-07' // Higher quality model for improvement
+          existingAiNotes: aiNotes
         }
       });
 
