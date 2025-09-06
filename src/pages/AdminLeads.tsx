@@ -185,10 +185,6 @@ export default function AdminLeads() {
           admin_notification_settings!assigned_to (
             admin_name
           ),
-          profiles!form_submissions_mediatore_fkey (
-            first_name,
-            last_name
-          ),
           form_responses (
             question_id,
             response_value
@@ -439,9 +435,6 @@ export default function AdminLeads() {
           <div className="flex items-center justify-between gap-4">
             {/* Left side - Filters */}
             <div className="flex items-center gap-4">
-              {/* Mediatore Filter */}
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-gray-500" />
               {/* Mediatore Filter - Re-enabled */}
               <div className="flex items-center gap-2">
                 <User className="h-4 w-4 text-gray-500" />
@@ -461,7 +454,6 @@ export default function AdminLeads() {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
               </div>
 
               {/* Phone Filter (Switch) */}
