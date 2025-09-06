@@ -44,6 +44,13 @@ export default function AdminAIPromptEditor() {
   const queryClient = useQueryClient();
   const isEditing = Boolean(id && id !== 'new');
 
+  // Function to calculate textarea rows based on content
+  const calculateRows = (content: string, minRows: number = 2, maxRows: number = 20) => {
+    const lines = content.split('\n').length;
+    const estimatedLines = Math.max(lines, Math.ceil(content.length / 80)); // Estimate based on line breaks and character count
+    return Math.min(Math.max(estimatedLines, minRows), maxRows);
+  };
+
   const [formData, setFormData] = useState<AIPromptForm>({
     name: '',
     description: '',
@@ -257,7 +264,7 @@ export default function AdminAIPromptEditor() {
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 placeholder="Descrivi a cosa serve questo prompt..."
-                rows={2}
+                rows={calculateRows(formData.description, 2, 6)}
               />
             </div>
             <div className="flex items-center space-x-2">
@@ -315,7 +322,7 @@ export default function AdminAIPromptEditor() {
                   value={message.content}
                   onChange={(e) => updateMessage(index, 'content', e.target.value)}
                   placeholder="Inserisci il contenuto del messaggio..."
-                  rows={4}
+                  rows={calculateRows(message.content, 4, 25)}
                 />
               </div>
             ))}
