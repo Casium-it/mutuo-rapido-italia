@@ -23,25 +23,36 @@ export function MediatoreSelector({ value, onValueChange }: MediatoreSelectorPro
       try {
         console.log('🔄 Fetching mediatori...');
         
-        // Direct query that we know works from the network logs
-        const { data: mediatori, error } = await supabase
-          .from('profiles')
-          .select('id, first_name, last_name')
-          .in('id', [
-            '7f21eb70-8a2c-4b4a-9acd-7ffb8ea7f89c',
-            '03ac07fd-5252-4df5-8e91-1613e6559f8c', 
-            '4d009fd0-16c5-48fe-9180-01ccc5de5fba',
-            '6439c4d4-d2e0-4c97-a581-b49467ce36a9'
-          ]);
+        // Simple query: start from user_roles and join with profiles
+        const { data: userRoles, error } = await supabase
+          .from('user_roles')
+          .select(`
+            user_id,
+            profiles (
+              id,
+              first_name,
+              last_name
+            )
+          `)
+          .eq('role', 'mediatore');
         
-        console.log('👥 Mediatori query result:', { mediatori, error });
+        console.log('👥 Mediatori query result:', { userRoles, error });
         
         if (error) {
           console.error('❌ Error fetching mediatori:', error);
           return;
         }
 
-        if (mediatori) {
+        if (userRoles) {
+          // Transform the data to match our interface
+          const mediatori = userRoles
+            .filter(ur => ur.profiles) // Ensure profiles exist
+            .map(ur => ({
+              id: ur.profiles.id,
+              first_name: ur.profiles.first_name,
+              last_name: ur.profiles.last_name
+            }));
+          
           console.log('✅ Successfully fetched mediatori:', mediatori);
           setMediatori(mediatori);
         }
