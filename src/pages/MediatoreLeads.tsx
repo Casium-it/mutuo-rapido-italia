@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Calendar, User, MapPin } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, Calendar, User, MapPin, Search, Filter } from 'lucide-react';
 import { LeadStatusBadge } from '@/components/admin/LeadStatusBadge';
 import { LeadStatus } from '@/types/leadStatus';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,15 +17,31 @@ interface Lead {
   last_name: string | null;
   lead_status: LeadStatus;
   provincia?: string | null;
-  form_responses?: Array<{
-    question_id: string;
-    response_value: any;
-  }>;
+  saved_simulation?: {
+    form_state: any;
+  };
 }
+
+const statusOptions: { value: LeadStatus | 'all'; label: string }[] = [
+  { value: 'all', label: 'Tutti gli Status' },
+  { value: 'not_contacted', label: 'Non Contattato' },
+  { value: 'non_risponde_x1', label: 'Non Risponde x1' },
+  { value: 'non_risponde_x2', label: 'Non Risponde x2' },
+  { value: 'non_risponde_x3', label: 'Non Risponde x3' },
+  { value: 'non_interessato', label: 'Non Interessato' },
+  { value: 'da_risentire', label: 'Da Risentire' },
+  { value: 'da_assegnare', label: 'Da Assegnare' },
+  { value: 'prenotata_consulenza', label: 'Prenotata Consulenza' },
+  { value: 'pratica_bocciata', label: 'Pratica Bocciata' },
+  { value: 'converted', label: 'Convertito' },
+  { value: 'perso', label: 'Perso' }
+];
 
 export default function MediatoreLeads() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<LeadStatus | 'all'>('all');
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -38,8 +56,7 @@ export default function MediatoreLeads() {
       
       console.log('🔍 Fetching leads for mediatore:', user.id);
       
-      // Fetch only leads assigned to the current mediatore
-      // RLS policy will automatically filter, but we add explicit filter for clarity
+      // Fetch leads assigned to the current mediatore with saved simulation data
       const { data: submissions, error } = await supabase
         .from('form_submissions')
         .select(`
@@ -49,9 +66,9 @@ export default function MediatoreLeads() {
           last_name,
           lead_status,
           mediatore,
-          form_responses!inner(
-            question_id,
-            response_value
+          saved_simulation_id,
+          saved_simulations (
+            form_state
           )
         `)
         .eq('mediatore', user.id) // Only leads assigned to this mediatore
@@ -64,29 +81,44 @@ export default function MediatoreLeads() {
         return;
       }
 
-      // Process leads to extract provincia from responses
+      // Process leads to extract provincia from saved simulation form state
       const processedLeads = submissions?.map(submission => {
-        const provinciaResponse = submission.form_responses?.find(
-          response => response.question_id.includes('provincia') || 
-                     response.question_id.includes('citta') ||
-                     response.question_id.includes('zona')
-        );
-
         let provincia = null;
-        if (provinciaResponse?.response_value) {
-          if (typeof provinciaResponse.response_value === 'object' && 
-              provinciaResponse.response_value !== null && 
-              !Array.isArray(provinciaResponse.response_value) &&
-              'default' in provinciaResponse.response_value) {
-            provincia = provinciaResponse.response_value.default;
-          } else if (typeof provinciaResponse.response_value === 'string') {
-            provincia = provinciaResponse.response_value;
+        
+        if (submission.saved_simulations?.form_state) {
+          try {
+            const formState = submission.saved_simulations.form_state as any;
+            const responses = formState?.responses || {};
+            
+            // Look for provincia in different possible question IDs
+            const possibleKeys = Object.keys(responses).filter(key => 
+              key.includes('provincia') || 
+              key.includes('citta') || 
+              key.includes('zona') ||
+              key.includes('dove_')
+            );
+            
+            if (possibleKeys.length > 0) {
+              const provinciaResponse = responses[possibleKeys[0]];
+              if (provinciaResponse && typeof provinciaResponse === 'object' && 'default' in provinciaResponse) {
+                provincia = provinciaResponse.default;
+              } else if (typeof provinciaResponse === 'string') {
+                provincia = provinciaResponse;
+              }
+            }
+          } catch (e) {
+            console.warn('Error parsing form state for provincia:', e);
           }
         }
 
         return {
-          ...submission,
-          provincia
+          id: submission.id,
+          created_at: submission.created_at,
+          first_name: submission.first_name,
+          last_name: submission.last_name,
+          lead_status: submission.lead_status,
+          provincia,
+          saved_simulation: submission.saved_simulations
         };
       }) || [];
 
@@ -104,6 +136,19 @@ export default function MediatoreLeads() {
       fetchLeads();
     }
   }, [user?.id]);
+
+  // Filtered leads based on search term and status
+  const filteredLeads = useMemo(() => {
+    return leads.filter(lead => {
+      const matchesSearch = searchTerm === '' || 
+        `${lead.first_name || ''} ${lead.last_name || ''}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (lead.provincia && lead.provincia.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      const matchesStatus = statusFilter === 'all' || lead.lead_status === statusFilter;
+      
+      return matchesSearch && matchesStatus;
+    });
+  }, [leads, searchTerm, statusFilter]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('it-IT', {
@@ -158,65 +203,125 @@ export default function MediatoreLeads() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
+            {/* Header with title and count */}
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold text-gray-900">
-                I Miei Lead ({leads.length})
+                I Miei Lead ({filteredLeads.length})
               </h2>
             </div>
 
-            {/* Leads List */}
-            <div className="grid gap-4">
-              {leads.map((lead) => (
-                <Card key={lead.id} className="bg-white border border-[#BEB8AE]">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        {/* Name */}
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                          <User className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                          <span className="font-medium text-gray-900 truncate">
+            {/* Filters */}
+            <Card className="bg-white border border-[#BEB8AE]">
+              <CardContent className="p-6">
+                <div className="flex flex-col md:flex-row gap-4">
+                  {/* Search Bar */}
+                  <div className="flex-1">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        placeholder="Cerca per nome o provincia..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Status Filter */}
+                  <div className="w-full md:w-64">
+                    <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as LeadStatus | 'all')}>
+                      <SelectTrigger>
+                        <div className="flex items-center gap-2">
+                          <Filter className="h-4 w-4" />
+                          <SelectValue />
+                        </div>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {statusOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {filteredLeads.length === 0 ? (
+              <Card className="max-w-md mx-auto text-center">
+                <CardContent className="p-8">
+                  <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Nessun lead trovato</h3>
+                  <p className="text-gray-500">Nessun lead corrisponde ai criteri di ricerca.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              /* Table Layout */
+              <Card className="bg-white border border-[#BEB8AE]">
+                <CardContent className="p-0">
+                  {/* Table Header */}
+                  <div className="grid grid-cols-4 gap-4 p-4 border-b border-[#BEB8AE] bg-gray-50">
+                    <div className="font-medium text-gray-700">Nome</div>
+                    <div className="font-medium text-gray-700">Status</div>
+                    <div className="font-medium text-gray-700">Provincia</div>
+                    <div className="font-medium text-gray-700">Azioni</div>
+                  </div>
+                  
+                  {/* Table Rows */}
+                  <div className="divide-y divide-[#BEB8AE]">
+                    {filteredLeads.map((lead) => (
+                      <div key={lead.id} className="grid grid-cols-4 gap-4 p-4 items-center hover:bg-gray-50">
+                        {/* Name Column */}
+                        <div className="space-y-1">
+                          <div className="font-medium text-gray-900">
                             {lead.first_name && lead.last_name 
                               ? `${lead.first_name} ${lead.last_name}`
                               : lead.first_name || lead.last_name || 'Nome non disponibile'
                             }
-                          </span>
+                          </div>
+                          <div className="text-sm text-gray-500 flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {formatDate(lead.created_at)}
+                          </div>
                         </div>
-
-                        {/* Status */}
-                        <div className="flex-shrink-0">
+                        
+                        {/* Status Column */}
+                        <div>
                           <LeadStatusBadge status={lead.lead_status} />
                         </div>
-
-                        {/* Provincia */}
-                        {lead.provincia && (
-                          <div className="flex items-center gap-1 text-sm text-gray-600 flex-shrink-0">
-                            <MapPin className="h-4 w-4" />
-                            <span>{lead.provincia}</span>
-                          </div>
-                        )}
-
-                        {/* Date */}
-                        <div className="flex items-center gap-1 text-sm text-gray-600 flex-shrink-0">
-                          <Calendar className="h-4 w-4" />
-                          <span>{formatDate(lead.created_at)}</span>
+                        
+                        {/* Provincia Column */}
+                        <div className="text-gray-600">
+                          {lead.provincia ? (
+                            <div className="flex items-center gap-1">
+                              <MapPin className="h-4 w-4" />
+                              <span>{lead.provincia}</span>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 italic">N/A</span>
+                          )}
+                        </div>
+                        
+                        {/* Actions Column */}
+                        <div>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            disabled
+                            className="opacity-50 cursor-not-allowed"
+                          >
+                            Dettagli
+                          </Button>
                         </div>
                       </div>
-
-                      {/* Action Button */}
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        disabled
-                        className="opacity-50 cursor-not-allowed"
-                      >
-                        Dettagli
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
       </main>
