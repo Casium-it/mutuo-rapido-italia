@@ -9,7 +9,7 @@ import { User, LogOut } from 'lucide-react';
 export function LoginButton() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { isAdmin, roleLoading } = useUserRole();
+  const { isAdmin, isMediatore, roleLoading } = useUserRole();
 
   const handleSignOut = async () => {
     await signOut();
@@ -27,6 +27,17 @@ export function LoginButton() {
           >
             <User className="h-4 w-4" />
             Admin
+          </Button>
+        )}
+        {isMediatore && !roleLoading && (
+          <Button
+            onClick={() => navigate('/mediatore')}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <User className="h-4 w-4" />
+            Mediatore
           </Button>
         )}
         <Button

@@ -108,36 +108,6 @@ export default function Admin() {
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Azioni Rapide</h3>
-          <div className="flex flex-wrap gap-3">
-            <Button 
-              onClick={() => navigate('/admin/statistics')}
-              className="bg-[#245C4F] hover:bg-[#1e4f44]"
-            >
-              Visualizza Statistiche
-            </Button>
-            <Button 
-              onClick={() => navigate('/admin/leads')}
-              className="bg-[#245C4F] hover:bg-[#1e4f44]"
-            >
-              Visualizza Tutti i Leads
-            </Button>
-            <Button 
-              onClick={() => navigate('/admin/forms')}
-              variant="outline"
-            >
-              Gestisci Form
-            </Button>
-            <Button 
-              onClick={() => navigate('/admin/simulations')}
-              variant="outline"
-            >
-              Gestisci Simulazioni
-            </Button>
-          </div>
-        </div>
       </main>
     </div>
   );

@@ -32,10 +32,12 @@ export function useUserRole() {
   }, [user, roleChecked]);
 
   const isAdmin = userRole === 'admin';
+  const isMediatore = userRole === 'mediatore';
 
   return {
     userRole,
     isAdmin,
+    isMediatore,
     roleLoading,
     roleChecked
   };

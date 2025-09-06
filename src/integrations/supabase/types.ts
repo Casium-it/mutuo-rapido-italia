@@ -783,7 +783,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "customer" | "broker"
+      app_role: "admin" | "customer" | "broker" | "mediatore"
       completion_behavior_type: "form-completed" | "form-completed-redirect"
       lead_status:
         | "not_contacted"
@@ -928,7 +928,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "customer", "broker"],
+      app_role: ["admin", "customer", "broker", "mediatore"],
       completion_behavior_type: ["form-completed", "form-completed-redirect"],
       lead_status: [
         "not_contacted",

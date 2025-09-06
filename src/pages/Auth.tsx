@@ -14,7 +14,7 @@ export default function Auth() {
   const [loginLoading, setLoginLoading] = useState(false);
 
   const { signIn, user, loading: authLoading } = useAuth();
-  const { isAdmin, roleLoading, roleChecked } = useUserRole();
+  const { isAdmin, isMediatore, roleLoading, roleChecked } = useUserRole();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -25,12 +25,14 @@ export default function Auth() {
       
       if (isAdmin) {
         navigate('/admin', { replace: true });
+      } else if (isMediatore) {
+        navigate('/mediatore', { replace: true });
       } else {
         // Regular users go to requested page or home
         navigate(from || '/', { replace: true });
       }
     }
-  }, [user, authLoading, roleChecked, roleLoading, isAdmin, navigate, location]);
+  }, [user, authLoading, roleChecked, roleLoading, isAdmin, isMediatore, navigate, location]);
 
   // Show loading while logging in or checking role
   const isLoading = loginLoading || (user && (!roleChecked || roleLoading));

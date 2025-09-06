@@ -7,15 +7,16 @@ import { useUserRole } from '@/hooks/useUserRole';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
+  requireMediatore?: boolean;
 }
 
-export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, requireAdmin = false, requireMediatore = false }: ProtectedRouteProps) {
   const { user, loading: authLoading } = useAuth();
-  const { isAdmin, roleLoading, roleChecked } = useUserRole();
+  const { isAdmin, isMediatore, roleLoading, roleChecked } = useUserRole();
   const location = useLocation();
 
   // Show loading while auth or role is loading
-  if (authLoading || (user && requireAdmin && (!roleChecked || roleLoading))) {
+  if (authLoading || (user && (requireAdmin || requireMediatore) && (!roleChecked || roleLoading))) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f7f5f2]">
         <div className="text-center">
@@ -33,6 +34,11 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
 
   // Redirect non-admin users away from admin routes
   if (requireAdmin && roleChecked && !isAdmin) {
+    return <Navigate to="/" replace />;
+  }
+
+  // Redirect non-mediatore users away from mediatore routes
+  if (requireMediatore && roleChecked && !isMediatore) {
     return <Navigate to="/" replace />;
   }
 
