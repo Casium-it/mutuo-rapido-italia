@@ -42,6 +42,8 @@ import AdminLeadDetail from "./pages/AdminLeadDetail";
 import AdminNotifications from "./pages/AdminNotifications";
 import AdminForms from "./pages/AdminForms";
 import AdminStatistics from "./pages/AdminStatistics";
+import AdminAIPrompts from "./pages/AdminAIPrompts";
+import AdminAIPromptEditor from "./pages/AdminAIPromptEditor";
 import AdminQuestionIds from "./pages/AdminQuestionIds";
 
 const queryClient = new QueryClient();
@@ -162,6 +164,21 @@ const AppWithTracking = () => {
       <Route path="/admin/question-ids" element={
         <ProtectedRoute requireAdmin>
           <AdminQuestionIds />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/ai-prompts" element={
+        <ProtectedRoute requireAdmin>
+          <AdminAIPrompts />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/ai-prompts/new" element={
+        <ProtectedRoute requireAdmin>
+          <AdminAIPromptEditor />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/ai-prompts/:id/edit" element={
+        <ProtectedRoute requireAdmin>
+          <AdminAIPromptEditor />
         </ProtectedRoute>
       } />
       <Route path="*" element={<NotFound />} />

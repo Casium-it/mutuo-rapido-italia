@@ -41,6 +41,42 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_prompts: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          messages: Json
+          model: string
+          name: string
+          updated_at: string
+          variables: string[] | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          messages?: Json
+          model?: string
+          name: string
+          updated_at?: string
+          variables?: string[] | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          messages?: Json
+          model?: string
+          name?: string
+          updated_at?: string
+          variables?: string[] | null
+        }
+        Relationships: []
+      }
       blog_article_tags: {
         Row: {
           article_id: string

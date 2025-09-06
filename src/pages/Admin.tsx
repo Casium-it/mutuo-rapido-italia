@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
-import { LogOut, FileText, Database, Users, Bell, TrendingUp, MessageSquare } from 'lucide-react';
+import { LogOut, FileText, Database, Users, Bell, TrendingUp, MessageSquare, Bot } from 'lucide-react';
 
 export default function Admin() {
   const { signOut, user } = useAuth();
@@ -95,6 +95,14 @@ export default function Admin() {
                 <MessageSquare className="h-12 w-12 text-[#245C4F] mx-auto mb-3" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Question IDs</h3>
                 <p className="text-sm text-gray-600">Gestisci le domande utilizzate nei form e visualizza le versioni</p>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/ai-prompts')}>
+              <CardContent className="p-6 text-center">
+                <Bot className="h-12 w-12 text-[#245C4F] mx-auto mb-3" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Gestione AI</h3>
+                <p className="text-sm text-gray-600">Gestisci i prompt AI, modelli e configurazioni</p>
               </CardContent>
             </Card>
           </div>
