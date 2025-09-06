@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Calendar, User, MapPin } from 'lucide-react';
 import { LeadStatusBadge } from '@/components/admin/LeadStatusBadge';
 import { LeadStatus } from '@/types/leadStatus';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Lead {
   id: string;
@@ -24,12 +25,21 @@ export default function MediatoreLeads() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const fetchLeads = async () => {
     try {
       setLoading(true);
       
-      // Fetch all form submissions with responses
+      if (!user?.id) {
+        console.error('No authenticated user found');
+        return;
+      }
+      
+      console.log('🔍 Fetching leads for mediatore:', user.id);
+      
+      // Fetch only leads assigned to the current mediatore
+      // RLS policy will automatically filter, but we add explicit filter for clarity
       const { data: submissions, error } = await supabase
         .from('form_submissions')
         .select(`
@@ -38,12 +48,16 @@ export default function MediatoreLeads() {
           first_name,
           last_name,
           lead_status,
+          mediatore,
           form_responses!inner(
             question_id,
             response_value
           )
         `)
+        .eq('mediatore', user.id) // Only leads assigned to this mediatore
         .order('created_at', { ascending: false });
+
+      console.log('📋 Fetched submissions:', { submissions, error });
 
       if (error) {
         console.error('Error fetching leads:', error);
@@ -76,6 +90,7 @@ export default function MediatoreLeads() {
         };
       }) || [];
 
+      console.log('✅ Processed leads for mediatore:', processedLeads.length);
       setLeads(processedLeads);
     } catch (error) {
       console.error('Error in fetchLeads:', error);
@@ -85,8 +100,10 @@ export default function MediatoreLeads() {
   };
 
   useEffect(() => {
-    fetchLeads();
-  }, []);
+    if (user?.id) {
+      fetchLeads();
+    }
+  }, [user?.id]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('it-IT', {
@@ -123,8 +140,8 @@ export default function MediatoreLeads() {
             </Button>
             <div className="h-6 w-px bg-gray-300" />
             <div>
-              <h1 className="text-2xl font-bold text-[#245C4F]">Gestione Lead</h1>
-              <p className="text-gray-600">I tuoi lead assegnati</p>
+              <h1 className="text-2xl font-bold text-[#245C4F]">I Miei Lead</h1>
+              <p className="text-gray-600">Lead assegnati a te</p>
             </div>
           </div>
         </div>
@@ -136,15 +153,15 @@ export default function MediatoreLeads() {
           <Card className="max-w-md mx-auto text-center">
             <CardContent className="p-8">
               <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Nessun lead trovato</h3>
-              <p className="text-gray-500">Al momento non ci sono lead assegnati.</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Nessun lead assegnato</h3>
+              <p className="text-gray-500">Al momento non hai lead assegnati a te.</p>
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold text-gray-900">
-                Lead ({leads.length})
+                I Miei Lead ({leads.length})
               </h2>
             </div>
 
