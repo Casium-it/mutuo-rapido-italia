@@ -42,16 +42,14 @@ export default function MediatoreDashboard() {
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Gestisci Attività</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
-            <Card className="opacity-50 cursor-not-allowed">
+            <Card 
+              className="cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => navigate('/mediatore/leads')}
+            >
               <CardContent className="p-6 text-center">
-                <Users className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                <h3 className="text-lg font-semibold text-gray-500 mb-2">Gestisci Lead</h3>
-                <p className="text-sm text-gray-400">Visualizza e gestisci i tuoi lead assegnati</p>
-                <div className="mt-3">
-                  <span className="inline-block px-2 py-1 bg-gray-200 text-gray-600 text-xs rounded">
-                    Prossimamente
-                  </span>
-                </div>
+                <Users className="h-12 w-12 text-[#245C4F] mx-auto mb-3" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Gestisci Lead</h3>
+                <p className="text-sm text-gray-600">Visualizza e gestisci i tuoi lead assegnati</p>
               </CardContent>
             </Card>
 
