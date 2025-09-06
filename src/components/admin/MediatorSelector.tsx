@@ -23,38 +23,40 @@ export function MediatoreSelector({ value, onValueChange }: MediatoreSelectorPro
       try {
         console.log('🔄 Fetching mediatori...');
         
-        // Simple query: start from user_roles and join with profiles
-        const { data: userRoles, error } = await supabase
+        // First get all user IDs with mediatore role
+        const { data: userRoles, error: rolesError } = await supabase
           .from('user_roles')
-          .select(`
-            user_id,
-            profiles (
-              id,
-              first_name,
-              last_name
-            )
-          `)
+          .select('user_id')
           .eq('role', 'mediatore');
         
-        console.log('👥 Mediatori query result:', { userRoles, error });
+        if (rolesError) {
+          console.error('❌ Error fetching user roles:', rolesError);
+          return;
+        }
         
-        if (error) {
-          console.error('❌ Error fetching mediatori:', error);
+        if (!userRoles || userRoles.length === 0) {
+          console.log('📭 No mediatori found');
+          setMediatori([]);
           return;
         }
 
-        if (userRoles) {
-          // Transform the data to match our interface
-          const mediatori = userRoles
-            .filter(ur => ur.profiles) // Ensure profiles exist
-            .map(ur => ({
-              id: ur.profiles.id,
-              first_name: ur.profiles.first_name,
-              last_name: ur.profiles.last_name
-            }));
-          
-          console.log('✅ Successfully fetched mediatori:', mediatori);
-          setMediatori(mediatori);
+        // Then get profiles for those user IDs
+        const userIds = userRoles.map(ur => ur.user_id);
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name')
+          .in('id', userIds);
+        
+        console.log('👥 Mediatori query result:', { profiles, profilesError });
+        
+        if (profilesError) {
+          console.error('❌ Error fetching profiles:', profilesError);
+          return;
+        }
+
+        if (profiles) {
+          console.log('✅ Successfully fetched mediatori:', profiles);
+          setMediatori(profiles);
         }
       } catch (error) {
         console.error('💥 Exception fetching mediatori:', error);

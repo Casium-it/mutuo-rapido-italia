@@ -773,14 +773,6 @@ export type Database = {
           phone_masked: string
         }[]
       }
-      get_mediatori_profiles: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          first_name: string
-          id: string
-          last_name: string
-        }[]
-      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
