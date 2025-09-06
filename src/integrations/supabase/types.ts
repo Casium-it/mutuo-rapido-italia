@@ -364,7 +364,6 @@ export type Database = {
           last_name: string | null
           lead_status: Database["public"]["Enums"]["lead_status"] | null
           mediatore: string | null
-          metadata: Json | null
           notes: string | null
           phone_number: string | null
           prossimo_contatto: string | null
@@ -387,7 +386,6 @@ export type Database = {
           last_name?: string | null
           lead_status?: Database["public"]["Enums"]["lead_status"] | null
           mediatore?: string | null
-          metadata?: Json | null
           notes?: string | null
           phone_number?: string | null
           prossimo_contatto?: string | null
@@ -410,7 +408,6 @@ export type Database = {
           last_name?: string | null
           lead_status?: Database["public"]["Enums"]["lead_status"] | null
           mediatore?: string | null
-          metadata?: Json | null
           notes?: string | null
           phone_number?: string | null
           prossimo_contatto?: string | null

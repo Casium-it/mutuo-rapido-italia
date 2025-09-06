@@ -18,7 +18,6 @@ interface PDFSubmissionData {
   phone_number: string | null
   consulting: boolean | null
   user_identifier: string | null
-  metadata: any
   first_name: string | null
   last_name: string | null
   email: string | null

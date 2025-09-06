@@ -20,7 +20,6 @@ interface FormSubmission {
   phone_number: string | null;
   consulting: boolean | null;
   user_identifier: string | null;
-  metadata: any;
   first_name: string | null;
   last_name: string | null;
   email: string | null;
@@ -424,27 +423,6 @@ export default function AdminLeadDetail() {
               </div>
             </div>
             
-            {submission.metadata && (
-              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-medium mb-2">Metadata</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">Blocchi attivi:</span> {submission.metadata.blocks?.length || 0}
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Blocchi completati:</span> {submission.metadata.completedBlocks?.length || 0}
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Blocchi dinamici:</span> {submission.metadata.dynamicBlocks || 0}
-                  </div>
-                  {submission.metadata.slug && (
-                    <div className="col-span-full">
-                      <span className="text-gray-600">Slug:</span> {submission.metadata.slug}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
 

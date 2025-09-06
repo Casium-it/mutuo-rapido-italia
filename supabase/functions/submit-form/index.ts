@@ -164,14 +164,7 @@ serve(async (req) => {
         user_identifier: referralId,
         form_id: formId,
         expires_at: expiresAt.toISOString(),
-        saved_simulation_id: savedSimulationId,
-        metadata: { 
-          blocks: formState.activeBlocks,
-          completedBlocks: formState.completedBlocks,
-          dynamicBlocks: formState.dynamicBlocks?.length || 0,
-          submissionSource: 'edge_function_v2',
-          formVersion: formData.version
-        }
+        saved_simulation_id: savedSimulationId
       })
       .select('id')
       .single();

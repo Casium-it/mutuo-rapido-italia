@@ -34,7 +34,6 @@ interface FormSubmission {
   phone_number: string | null;
   consulting: boolean | null;
   user_identifier: string | null;
-  metadata: any;
   first_name: string | null;
   last_name: string | null;
   email: string | null;
@@ -672,13 +671,7 @@ export default function AdminLeads() {
                       <ExpandableNotes notes={submission.notes} aiNotes={submission.ai_notes} />
                     </div>
                   )}
-                  
-                   {submission.metadata && submission.metadata.slug && (
-                     <div className="text-sm text-gray-600 mb-4">
-                       <p>Slug: {submission.metadata.slug}</p>
-                     </div>
-                   )}
-                  
+                   
                    <div className="flex justify-end items-center gap-2">
                      <Button
                        onClick={() => {
