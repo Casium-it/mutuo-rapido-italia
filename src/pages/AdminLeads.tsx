@@ -151,7 +151,7 @@ export default function AdminLeads() {
   // Initial load with full page loading
   useEffect(() => {
     fetchSubmissions();
-    // fetchUniqueMediaatori(); // Temporarily disabled due to UUID conversion
+    fetchUniqueMediaatori(); // Re-enabled with proper UUID handling
   }, []);
 
   // Restore scroll position after component mounts and DOM is ready
@@ -204,8 +204,10 @@ export default function AdminLeads() {
         query = query.not('phone_number', 'is', null);
       }
 
-      // Note: Mediatore filtering temporarily disabled due to UUID conversion
-      // TODO: Implement proper UUID-based mediatore filtering
+      // Re-enabled mediatore filtering with UUID support
+      if (mediatoreFilter !== 'all') {
+        query = query.eq('mediatore', mediatoreFilter);
+      }
 
       // Search functionality - now we need to search by joining with profiles for mediatore names
       if (debouncedSearchQuery) {
@@ -271,9 +273,51 @@ export default function AdminLeads() {
   };
 
   const fetchUniqueMediaatori = async () => {
-    // Temporarily disabled due to UUID conversion complexity
-    // TODO: Implement proper mediatore filtering with UUID foreign keys
-    setUniqueMediaatori([]);
+    try {
+      console.log('🔄 Fetching unique mediatori for filter...');
+      
+      // First get all user IDs with mediatore role - same approach as MediatorSelector
+      const { data: userRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'mediatore');
+      
+      if (rolesError) {
+        console.error('❌ Error fetching user roles:', rolesError);
+        return;
+      }
+      
+      if (!userRoles || userRoles.length === 0) {
+        console.log('📭 No mediatori found');
+        setUniqueMediaatori([]);
+        return;
+      }
+
+      // Then get profiles for those user IDs
+      const userIds = userRoles.map(ur => ur.user_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', userIds);
+      
+      if (profilesError) {
+        console.error('❌ Error fetching profiles:', profilesError);
+        return;
+      }
+
+      if (profiles) {
+        // Transform to the format we need for the filter
+        const mediatori = profiles.map(profile => ({
+          id: profile.id,
+          name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Mediatore senza nome'
+        }));
+        
+        console.log('✅ Successfully fetched unique mediatori:', mediatori);
+        setUniqueMediaatori(mediatori);
+      }
+    } catch (error) {
+      console.error('💥 Exception fetching unique mediatori:', error);
+    }
   };
 
   const handleDeleteSubmission = async (submissionId: string) => {
@@ -398,14 +442,26 @@ export default function AdminLeads() {
               {/* Mediatore Filter */}
               <div className="flex items-center gap-2">
                 <User className="h-4 w-4 text-gray-500" />
-                <Select value="all" disabled>
-                  <SelectTrigger className="w-40 opacity-50">
-                    <SelectValue placeholder="Mediatore (WIP)" />
+              {/* Mediatore Filter - Re-enabled */}
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-gray-500" />
+                <Select value={mediatoreFilter} onValueChange={(value) => {
+                  setMediatoreFilter(value);
+                  saveFiltersToSession(statusFilter, phoneFilter, value, searchQuery);
+                }}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Mediatore" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Filtro temporaneamente disabilitato</SelectItem>
+                    <SelectItem value="all">Tutti</SelectItem>
+                    {uniqueMediaatori.map((mediatore) => (
+                      <SelectItem key={mediatore.id} value={mediatore.id}>
+                        {mediatore.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
+              </div>
               </div>
 
               {/* Phone Filter (Switch) */}
@@ -470,7 +526,7 @@ export default function AdminLeads() {
               <Button 
                 onClick={() => {
                   fetchSubmissions();
-                  // fetchUniqueMediaatori(); // Temporarily disabled
+                  fetchUniqueMediaatori(); // Re-enabled
                 }} 
                 variant="outline" 
                 size="sm"
