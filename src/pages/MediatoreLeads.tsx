@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Calendar, User, MapPin, Search, Filter } from 'lucide-react';
+import { ArrowLeft, Calendar, User, MapPin, Search, Filter, StickyNote } from 'lucide-react';
 import { LeadStatusBadge } from '@/components/admin/LeadStatusBadge';
+import { LeadActionDialog } from '@/components/mediatore/LeadActionDialog';
 import { LeadStatus } from '@/types/leadStatus';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -20,6 +21,9 @@ interface Lead {
   saved_simulation?: {
     form_state: any;
   };
+  pratica?: {
+    status: string;
+  } | null;
 }
 
 const statusOptions: { value: LeadStatus | 'all'; label: string }[] = [
@@ -56,7 +60,7 @@ export default function MediatoreLeads() {
       
       console.log('🔍 Fetching leads for mediatore:', user.id);
       
-      // Fetch leads assigned to the current mediatore with saved simulation data
+      // Fetch leads assigned to the current mediatore with saved simulation data and pratica status
       const { data: submissions, error } = await supabase
         .from('form_submissions')
         .select(`
@@ -69,6 +73,9 @@ export default function MediatoreLeads() {
           saved_simulation_id,
           saved_simulations (
             form_state
+          ),
+          pratiche (
+            status
           )
         `)
         .eq('mediatore', user.id) // Only leads assigned to this mediatore
@@ -122,7 +129,8 @@ export default function MediatoreLeads() {
           last_name: submission.last_name,
           lead_status: submission.lead_status,
           provincia,
-          saved_simulation: submission.saved_simulations
+          saved_simulation: submission.saved_simulations,
+          pratica: submission.pratiche || null
         };
       }) || [];
 
@@ -294,7 +302,10 @@ export default function MediatoreLeads() {
                         
                         {/* Status Column */}
                         <div>
-                          <LeadStatusBadge status={lead.lead_status} />
+                          <LeadStatusBadge 
+                            status={lead.pratica?.status as any || lead.lead_status} 
+                            isNewLead={!lead.pratica}
+                          />
                         </div>
                         
                         {/* Provincia Column */}
@@ -319,22 +330,21 @@ export default function MediatoreLeads() {
                           >
                             Dettagli
                           </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            disabled
-                            className="opacity-50 cursor-not-allowed"
+                          <LeadActionDialog
+                            submissionId={lead.id}
+                            currentLeadStatus={lead.lead_status}
+                            currentPraticaStatus={lead.pratica?.status as any}
+                            onUpdate={fetchLeads}
                           >
-                            Storico
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            disabled
-                            className="opacity-50 cursor-not-allowed"
-                          >
-                            + Nota
-                          </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="text-[#245C4F] border-[#245C4F] hover:bg-[#245C4F] hover:text-white"
+                            >
+                              <StickyNote className="h-4 w-4 mr-1" />
+                              Gestisci
+                            </Button>
+                          </LeadActionDialog>
                         </div>
                       </div>
                     ))}

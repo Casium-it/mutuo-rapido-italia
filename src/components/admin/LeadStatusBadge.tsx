@@ -3,9 +3,82 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { LeadStatus } from '@/types/leadStatus';
 
+type PraticaStatus = 'lead' | 'consulenza_programmata' | 'consulenza_completata' | 'in_attesa_documenti' | 'documenti_ricevuti' | 
+  'in_attesa_mandato' | 'mandato_firmato' | 'inviata_alla_banca' | 'predelibera_ricevuta' | 'istruttoria_ricevuta' | 
+  'rogito_completato' | 'pratica_rifiutata' | 'pratica_sospesa';
+
 interface LeadStatusBadgeProps {
-  status: LeadStatus;
+  status?: LeadStatus | PraticaStatus | null;
+  isNewLead?: boolean;
 }
+
+const praticaStatusConfig = {
+  lead: {
+    label: 'Lead',
+    variant: 'secondary' as const,
+    className: 'bg-gray-100 text-gray-800'
+  },
+  consulenza_programmata: {
+    label: 'Consulenza Programmata',
+    variant: 'default' as const,
+    className: 'bg-blue-100 text-blue-800'
+  },
+  consulenza_completata: {
+    label: 'Consulenza Completata',
+    variant: 'default' as const,
+    className: 'bg-green-100 text-green-800'
+  },
+  in_attesa_documenti: {
+    label: 'In Attesa Documenti',
+    variant: 'default' as const,
+    className: 'bg-yellow-100 text-yellow-800'
+  },
+  documenti_ricevuti: {
+    label: 'Documenti Ricevuti',
+    variant: 'default' as const,
+    className: 'bg-emerald-100 text-emerald-800'
+  },
+  in_attesa_mandato: {
+    label: 'In Attesa Mandato',
+    variant: 'default' as const,
+    className: 'bg-orange-100 text-orange-800'
+  },
+  mandato_firmato: {
+    label: 'Mandato Firmato',
+    variant: 'default' as const,
+    className: 'bg-purple-100 text-purple-800'
+  },
+  inviata_alla_banca: {
+    label: 'Inviata alla Banca',
+    variant: 'default' as const,
+    className: 'bg-indigo-100 text-indigo-800'
+  },
+  predelibera_ricevuta: {
+    label: 'Predelibera Ricevuta',
+    variant: 'default' as const,
+    className: 'bg-cyan-100 text-cyan-800'
+  },
+  istruttoria_ricevuta: {
+    label: 'Istruttoria Ricevuta',
+    variant: 'default' as const,
+    className: 'bg-teal-100 text-teal-800'
+  },
+  rogito_completato: {
+    label: 'Rogito Completato',
+    variant: 'default' as const,
+    className: 'bg-green-100 text-green-800'
+  },
+  pratica_rifiutata: {
+    label: 'Pratica Rifiutata',
+    variant: 'destructive' as const,
+    className: 'bg-red-100 text-red-800'
+  },
+  pratica_sospesa: {
+    label: 'Pratica Sospesa',
+    variant: 'default' as const,
+    className: 'bg-orange-100 text-orange-800'
+  }
+} as const;
 
 const statusConfig = {
   not_contacted: {
@@ -81,13 +154,33 @@ const statusConfig = {
   }
 } as const;
 
-export function LeadStatusBadge({ status }: LeadStatusBadgeProps) {
+export function LeadStatusBadge({ status, isNewLead }: LeadStatusBadgeProps) {
+  // Show animated "Nuova Lead" badge if isNewLead is true
+  if (isNewLead) {
+    return (
+      <Badge className="bg-[#245C4F] text-white animate-pulse shadow-lg border-2 border-[#245C4F]/20">
+        ✨ Nuova Lead
+      </Badge>
+    );
+  }
+
+  // Check if it's a pratica status first
+  const praticaConfig = praticaStatusConfig[status as keyof typeof praticaStatusConfig];
+  if (praticaConfig) {
+    return (
+      <Badge variant={praticaConfig.variant} className={praticaConfig.className}>
+        {praticaConfig.label}
+      </Badge>
+    );
+  }
+
+  // Fall back to lead status
   const config = statusConfig[status as keyof typeof statusConfig];
   
   if (!config) {
     return (
       <Badge variant="secondary" className="bg-gray-100 text-gray-800">
-        {status}
+        {status || 'N/A'}
       </Badge>
     );
   }
