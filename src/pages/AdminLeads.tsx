@@ -208,9 +208,10 @@ export default function AdminLeads() {
         query = query.not('phone_number', 'is', null);
       }
 
-      // Contactable filter - leads with consulting=true OR have "Contattami" response
+      // Contactable filter - leads with consulting=true OR have "Contattami" response (gomutuo_service = 'consulenza')
       if (contactableFilter) {
-        query = query.or('consulting.eq.true,form_responses.response_value.cs."Contattami"');
+        // Build a more complex OR condition for contactable leads
+        query = query.or(`consulting.eq.true,form_responses.and(question_id.eq.gomutuo_service,response_value.eq.consulenza)`);
       }
 
       // Re-enabled mediatore filtering with UUID support
@@ -624,6 +625,26 @@ export default function AdminLeads() {
                           Consulenza richiesta
                         </Badge>
                       )}
+                      {(() => {
+                        const gomutoService = submission.form_responses?.find(
+                          response => response.question_id === 'gomutuo_service'
+                        );
+                        if (gomutoService) {
+                          const value = typeof gomutoService.response_value === 'object' 
+                            ? Object.values(gomutoService.response_value)[0]
+                            : gomutoService.response_value;
+                          const isContattami = value === 'consulenza';
+                          return (
+                            <Badge 
+                              variant={isContattami ? "default" : "secondary"}
+                              className={`text-xs ${isContattami ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
+                            >
+                              {isContattami ? 'Contattatemi' : 'Non Contattatemi'}
+                            </Badge>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                   </div>
                 </CardHeader>
@@ -638,26 +659,6 @@ export default function AdminLeads() {
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                           <Phone className="h-4 w-4" />
                           {submission.phone_number}
-                          {(() => {
-                            const gomutoService = submission.form_responses?.find(
-                              response => response.question_id === 'gomutuo_service'
-                            );
-                            if (gomutoService) {
-                              const value = typeof gomutoService.response_value === 'object' 
-                                ? Object.values(gomutoService.response_value)[0]
-                                : gomutoService.response_value;
-                              const isContattami = value === 'consulenza';
-                              return (
-                                <Badge 
-                                  variant={isContattami ? "default" : "secondary"}
-                                  className={`ml-2 text-xs ${isContattami ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
-                                >
-                                  {isContattami ? 'Contattatemi' : 'Non Contattatemi'}
-                                </Badge>
-                              );
-                            }
-                            return null;
-                          })()}
                         </div>
                       )}
                       {submission.email && (
