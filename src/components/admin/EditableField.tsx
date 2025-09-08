@@ -159,6 +159,50 @@ export function EditableField({ label, value, rawValue, onSave, placeholder, mul
     );
   }
 
+  // For date picker fields, render the popover directly without edit mode
+  if (isDatePicker) {
+    return (
+      <div className="space-y-1">
+        <label className="text-sm font-medium text-gray-600">{label}</label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-full justify-start text-left font-normal",
+                !value && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {value ? value : <span>{placeholder || "Seleziona data"}</span>}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={value ? new Date(rawValue || value) : undefined}
+              onSelect={async (date) => {
+                if (date) {
+                  setIsSaving(true);
+                  try {
+                    const processedValue = format(date, 'yyyy-MM-dd');
+                    await onSave(processedValue);
+                  } catch (error) {
+                    console.error('Error saving date:', error);
+                  } finally {
+                    setIsSaving(false);
+                  }
+                }
+              }}
+              initialFocus
+              className="p-3 pointer-events-auto"
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-1">
       <label className="text-sm font-medium text-gray-600">{label}</label>
