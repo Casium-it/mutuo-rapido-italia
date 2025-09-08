@@ -63,7 +63,7 @@ const ChiSiamo = () => {
               <p className="text-gray-600 mb-4">
                 Crediamo che ogni persona meriti di realizzare il sogno della casa propria. Per questo lavoriamo ogni giorno per democratizzare l'accesso ai mutui, offrendo consulenza personalizzata e soluzioni innovative.
               </p>
-              <p className="text-gray-600">Con oltre 100 banche nella rete dei nostri partner e una rete di consulenti partner esperti su tutto il territorio nazionale, siamo in grado di trovare la soluzione migliore per ogni situazione, anche quelle più complesse.</p>
+              <p className="text-gray-600">Con oltre 100 banche nelle reti dei nostri partner e una rete di consulenti partner esperti su tutto il territorio nazionale, siamo in grado di trovare la soluzione migliore per ogni situazione, anche quelle più complesse.</p>
             </div>
             <div className="bg-gradient-to-br from-[#245C4F] to-[#1e4f44] rounded-lg h-64 flex items-center justify-center">
               <Heart className="w-16 h-16 text-white" />
