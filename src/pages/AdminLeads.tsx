@@ -170,8 +170,14 @@ export default function AdminLeads() {
     fetchSubmissions().finally(() => setSubmissionsLoading(false));
   }, [currentPage, statusFilter, phoneFilter, mediatoreFilter, debouncedSearchQuery]);
 
-  const fetchSubmissions = async () => {
+  const fetchSubmissions = async (retryWithPage1 = false) => {
     try {
+      // Pre-query validation: if we have a totalCount and currentPage would be invalid, reset to page 1
+      let pageToUse = currentPage;
+      if (totalCount > 0 && retryWithPage1) {
+        pageToUse = 1;
+        setCurrentPage(1);
+      }
       
       // Build the query with safer joins
       let query = supabase
@@ -207,8 +213,8 @@ export default function AdminLeads() {
         query = query.or(`first_name.ilike.%${debouncedSearchQuery}%,last_name.ilike.%${debouncedSearchQuery}%,email.ilike.%${debouncedSearchQuery}%,phone_number.ilike.%${debouncedSearchQuery}%,notes.ilike.%${debouncedSearchQuery}%`);
       }
 
-      // Apply pagination and ordering
-      const from = (currentPage - 1) * itemsPerPage;
+      // Apply pagination and ordering with validation
+      const from = (pageToUse - 1) * itemsPerPage;
       const to = from + itemsPerPage - 1;
       
       query = query
@@ -219,9 +225,16 @@ export default function AdminLeads() {
 
       if (submissionsError) {
         console.error('Error fetching submissions:', submissionsError);
+        
+        // Handle specific pagination error - PGRST103 "Requested range not satisfiable"
+        if (submissionsError.code === 'PGRST103' && !retryWithPage1) {
+          console.log('Range not satisfiable, retrying with page 1...');
+          return fetchSubmissions(true);
+        }
+        
         toast({
           title: "Errore",
-          description: "Errore nel caricamento delle submissions",
+          description: `Errore nel caricamento delle submissions: ${submissionsError.message || 'Errore sconosciuto'}`,
           variant: "destructive"
         });
         return;
@@ -380,6 +393,14 @@ export default function AdminLeads() {
   useEffect(() => {
     setCurrentPage(1);
   }, [statusFilter, phoneFilter, mediatoreFilter, searchQuery]);
+
+  // Sync currentPage with totalPages when totalCount changes
+  useEffect(() => {
+    if (totalCount > 0 && currentPage > totalPages) {
+      console.log(`Current page ${currentPage} exceeds total pages ${totalPages}, resetting to page 1`);
+      setCurrentPage(1);
+    }
+  }, [totalCount, totalPages, currentPage]);
 
   if (loading) {
     return (
@@ -758,16 +779,18 @@ export default function AdminLeads() {
               <div className="mt-8 flex justify-center">
                 <Pagination>
                   <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious 
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (currentPage > 1) setCurrentPage(currentPage - 1);
-                        }}
-                        className={currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                      />
-                    </PaginationItem>
+                     <PaginationItem>
+                       <PaginationPrevious 
+                         href="#"
+                         onClick={(e) => {
+                           e.preventDefault();
+                           if (currentPage > 1 && !submissionsLoading && !loading) {
+                             setCurrentPage(currentPage - 1);
+                           }
+                         }}
+                         className={currentPage === 1 || submissionsLoading || loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                       />
+                     </PaginationItem>
                     
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
                       // Show first page, last page, current page, and pages around current
@@ -777,19 +800,21 @@ export default function AdminLeads() {
                         (page >= currentPage - 1 && page <= currentPage + 1)
                       ) {
                         return (
-                          <PaginationItem key={page}>
-                            <PaginationLink
-                              href="#"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                setCurrentPage(page);
-                              }}
-                              isActive={currentPage === page}
-                              className="cursor-pointer"
-                            >
-                              {page}
-                            </PaginationLink>
-                          </PaginationItem>
+                           <PaginationItem key={page}>
+                             <PaginationLink
+                               href="#"
+                               onClick={(e) => {
+                                 e.preventDefault();
+                                 if (!submissionsLoading && !loading) {
+                                   setCurrentPage(page);
+                                 }
+                               }}
+                               isActive={currentPage === page}
+                               className={submissionsLoading || loading ? "cursor-not-allowed opacity-50" : "cursor-pointer"}
+                             >
+                               {page}
+                             </PaginationLink>
+                           </PaginationItem>
                         );
                       } else if (
                         page === currentPage - 2 ||
@@ -804,16 +829,18 @@ export default function AdminLeads() {
                       return null;
                     })}
                     
-                    <PaginationItem>
-                      <PaginationNext
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-                        }}
-                        className={currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                      />
-                    </PaginationItem>
+                     <PaginationItem>
+                       <PaginationNext
+                         href="#"
+                         onClick={(e) => {
+                           e.preventDefault();
+                           if (currentPage < totalPages && !submissionsLoading && !loading) {
+                             setCurrentPage(currentPage + 1);
+                           }
+                         }}
+                         className={currentPage === totalPages || submissionsLoading || loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                       />
+                     </PaginationItem>
                   </PaginationContent>
                 </Pagination>
               </div>
