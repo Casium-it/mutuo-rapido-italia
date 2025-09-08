@@ -17,9 +17,10 @@ interface EditableFieldProps {
   multiline?: boolean;
   isPercentage?: boolean; // Indicates this field handles percentage values
   isDatePicker?: boolean; // Indicates this field should use a date picker
+  autoEdit?: boolean; // Automatically enter edit mode when clicked
 }
 
-export function EditableField({ label, value, rawValue, onSave, placeholder, multiline = false, isPercentage = false, isDatePicker = false }: EditableFieldProps) {
+export function EditableField({ label, value, rawValue, onSave, placeholder, multiline = false, isPercentage = false, isDatePicker = false, autoEdit = false }: EditableFieldProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(rawValue || value);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
@@ -141,35 +142,44 @@ export function EditableField({ label, value, rawValue, onSave, placeholder, mul
     <div className="space-y-1">
       <label className="text-sm font-medium text-gray-600">{label}</label>
       <div className="flex items-start gap-2 group">
-        <div className="flex-1">
+        <div 
+          className={`flex-1 ${autoEdit ? 'cursor-pointer' : ''}`}
+          onClick={autoEdit ? () => {
+            setEditValue(rawValue || value);
+            setSelectedDate(isDatePicker && (rawValue || value) ? new Date(rawValue || value) : undefined);
+            setIsEditing(true);
+          } : undefined}
+        >
           {value ? (
             multiline ? (
               <div className="whitespace-pre-wrap text-sm bg-gray-50 p-2 rounded-md min-h-[200px]">
                 {value}
               </div>
             ) : (
-              <p className="text-sm bg-gray-50 p-2 rounded-md min-h-[40px] flex items-center">
+              <p className="text-sm bg-gray-50 p-2 rounded-md min-h-[40px] flex items-center hover:bg-gray-100 transition-colors">
                 {isPercentage && rawValue ? `${rawValue}%` : value}
               </p>
             )
           ) : (
-            <p className={`text-sm text-gray-400 bg-gray-50 p-2 rounded-md flex items-center ${multiline ? 'min-h-[200px] items-start' : 'min-h-[40px]'}`}>
+            <p className={`text-sm text-gray-400 bg-gray-50 p-2 rounded-md flex items-center hover:bg-gray-100 transition-colors ${multiline ? 'min-h-[200px] items-start' : 'min-h-[40px]'}`}>
               {placeholder || `Aggiungi ${label.toLowerCase()}`}
             </p>
           )}
         </div>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => {
-            setEditValue(rawValue || value);
-            setSelectedDate(isDatePicker && (rawValue || value) ? new Date(rawValue || value) : undefined);
-            setIsEditing(true);
-          }}
-          className="opacity-0 group-hover:opacity-100 transition-opacity mt-1"
-        >
-          <Edit2 className="h-4 w-4" />
-        </Button>
+        {!autoEdit && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setEditValue(rawValue || value);
+              setSelectedDate(isDatePicker && (rawValue || value) ? new Date(rawValue || value) : undefined);
+              setIsEditing(true);
+            }}
+            className="opacity-0 group-hover:opacity-100 transition-opacity mt-1"
+          >
+            <Edit2 className="h-4 w-4" />
+          </Button>
+        )}
       </div>
     </div>
   );
