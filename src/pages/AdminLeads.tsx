@@ -173,7 +173,7 @@ export default function AdminLeads() {
   const fetchSubmissions = async () => {
     try {
       
-      // Build the query
+      // Build the query with safer joins
       let query = supabase
         .from('form_submissions')
         .select(`
@@ -181,9 +181,6 @@ export default function AdminLeads() {
           forms (
             title,
             slug
-          ),
-          admin_notification_settings!assigned_to (
-            admin_name
           ),
           form_responses (
             question_id,
@@ -234,7 +231,7 @@ export default function AdminLeads() {
       const mappedData = (submissionsData || []).map(submission => ({
         ...submission,
         form_title: submission.forms?.title || 'Form non trovato',
-        assigned_admin_name: submission.admin_notification_settings?.admin_name || null
+        assigned_admin_name: null // Simplified for now to avoid join issues
       }));
       
       setSubmissions(mappedData);
