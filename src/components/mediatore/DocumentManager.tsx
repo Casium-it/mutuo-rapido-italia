@@ -73,7 +73,7 @@ export function DocumentManager({ submissionId }: DocumentManagerProps) {
       }
     } catch (error) {
       console.error('Error fetching pratica ID:', error);
-      toast.error('Errore nel caricamento della pratica');
+      toast.error('Errore nel caricamento della pratica', { duration: 2000 });
       setLoading(false);
     }
   };
@@ -98,7 +98,7 @@ export function DocumentManager({ submissionId }: DocumentManagerProps) {
       setDocuments(data || []);
     } catch (error) {
       console.error('Error fetching documents:', error);
-      toast.error('Errore nel caricamento dei documenti');
+      toast.error('Errore nel caricamento dei documenti', { duration: 2000 });
     } finally {
       setLoading(false);
     }
@@ -109,7 +109,7 @@ export function DocumentManager({ submissionId }: DocumentManagerProps) {
     if (file) {
       // Check file size (max 10MB)
       if (file.size > 10 * 1024 * 1024) {
-        toast.error('Il file è troppo grande. Dimensione massima: 10MB');
+        toast.error('Il file è troppo grande. Dimensione massima: 10MB', { duration: 2000 });
         return;
       }
       setSelectedFile(file);
@@ -148,7 +148,7 @@ export function DocumentManager({ submissionId }: DocumentManagerProps) {
 
       if (dbError) throw dbError;
 
-      toast.success('Documento caricato con successo');
+      toast.success('Documento caricato con successo', { duration: 2000 });
       setSelectedFile(null);
       fetchDocuments();
       
@@ -157,7 +157,7 @@ export function DocumentManager({ submissionId }: DocumentManagerProps) {
       if (fileInput) fileInput.value = '';
     } catch (error) {
       console.error('Error uploading document:', error);
-      toast.error('Errore nel caricamento del documento');
+      toast.error('Errore nel caricamento del documento', { duration: 2000 });
     } finally {
       setUploading(false);
     }
@@ -182,7 +182,7 @@ export function DocumentManager({ submissionId }: DocumentManagerProps) {
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error downloading document:', error);
-      toast.error('Errore nel download del documento');
+      toast.error('Errore nel download del documento', { duration: 2000 });
     }
   };
 
@@ -207,11 +207,11 @@ export function DocumentManager({ submissionId }: DocumentManagerProps) {
 
       if (dbError) throw dbError;
 
-      toast.success('Documento eliminato con successo');
+      toast.success('Documento eliminato con successo', { duration: 2000 });
       fetchDocuments();
     } catch (error) {
       console.error('Error deleting document:', error);
-      toast.error('Errore nell\'eliminazione del documento');
+      toast.error('Errore nell\'eliminazione del documento', { duration: 2000 });
     }
   };
 
