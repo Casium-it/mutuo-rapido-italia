@@ -35,6 +35,7 @@ interface LeadManagementCardProps {
     assigned_to: string | null;
     reminder: boolean;
     reminder_sent?: boolean;
+    compenso_lead: string | null;
   };
   onUpdate: (field: string, value: string | boolean) => Promise<void>;
 }
@@ -147,6 +148,27 @@ export function LeadManagementCard({ submission, onUpdate }: LeadManagementCardP
                 value={submission.mediatore}
                 onValueChange={(value) => onUpdate('mediatore', value)}
               />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+            <div className="md:col-span-1">
+              <Label htmlFor="compenso-lead" className="text-sm font-medium">
+                Compenso Lead
+              </Label>
+              <Select 
+                value={submission.compenso_lead || ''} 
+                onValueChange={(value) => onUpdate('compenso_lead', value || null)}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Seleziona compenso" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Nessuno</SelectItem>
+                  <SelectItem value="50+15%">50+15%</SelectItem>
+                  <SelectItem value="30%">30%</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>

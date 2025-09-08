@@ -31,6 +31,7 @@ interface FormSubmission {
   prossimo_contatto: string | null;
   assigned_to: string | null;
   reminder: boolean;
+  compenso_lead: string | null;
   form_title?: string;
   saved_simulation_id: string | null;
 }

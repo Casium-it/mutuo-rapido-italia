@@ -354,6 +354,7 @@ export type Database = {
         Row: {
           ai_notes: string | null
           assigned_to: string | null
+          compenso_lead: string | null
           consulting: boolean | null
           created_at: string
           email: string | null
@@ -376,6 +377,7 @@ export type Database = {
         Insert: {
           ai_notes?: string | null
           assigned_to?: string | null
+          compenso_lead?: string | null
           consulting?: boolean | null
           created_at?: string
           email?: string | null
@@ -398,6 +400,7 @@ export type Database = {
         Update: {
           ai_notes?: string | null
           assigned_to?: string | null
+          compenso_lead?: string | null
           consulting?: boolean | null
           created_at?: string
           email?: string | null
