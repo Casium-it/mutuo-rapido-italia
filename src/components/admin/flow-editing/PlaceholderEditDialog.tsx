@@ -464,25 +464,27 @@ export const PlaceholderEditDialog: React.FC<PlaceholderEditDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
-        <DialogHeader className="flex-shrink-0">
+      <DialogContent className="max-w-lg h-[80vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0 pb-4">
           <DialogTitle>Modifica Placeholder: {placeholderKey}</DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4 overflow-y-auto flex-1 pr-2">
-          <div className="space-y-2">
-            <Label>Tipo Placeholder</Label>
-            <div className="p-2 bg-gray-100 rounded text-sm font-mono">
-              {placeholder.type}
+        <div className="flex-1 overflow-y-scroll scrollbar-thin scrollbar-track-gray-100 scrollbar-thumb-gray-300 pr-1">
+          <div className="space-y-4 pr-3">
+            <div className="space-y-2">
+              <Label>Tipo Placeholder</Label>
+              <div className="p-2 bg-gray-100 rounded text-sm font-mono">
+                {placeholder.type}
+              </div>
             </div>
-          </div>
 
-          {placeholder.type === 'select' && renderSelectFields()}
-          {placeholder.type === 'input' && renderInputFields()}
-          {placeholder.type === 'MultiBlockManager' && renderMultiBlockManagerFields()}
+            {placeholder.type === 'select' && renderSelectFields()}
+            {placeholder.type === 'input' && renderInputFields()}
+            {placeholder.type === 'MultiBlockManager' && renderMultiBlockManagerFields()}
+          </div>
         </div>
 
-        <DialogFooter className="flex-shrink-0 pt-4 border-t">
+        <DialogFooter className="flex-shrink-0 pt-4 border-t mt-4">
           <Button variant="outline" onClick={onClose}>
             Annulla
           </Button>
