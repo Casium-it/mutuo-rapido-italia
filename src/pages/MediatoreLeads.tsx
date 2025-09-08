@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { ArrowLeft, Calendar, User, MapPin, Search, Filter, StickyNote } from 'lucide-react';
 import { LeadStatusBadge } from '@/components/admin/LeadStatusBadge';
 import { SimpleNoteDialog } from '@/components/mediatore/SimpleNoteDialog';
@@ -56,6 +57,7 @@ export default function MediatoreLeads() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<PraticaStatus | 'all' | 'nuova_lead'>('all');
+  const [leadAperti, setLeadAperti] = useState(true);
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -176,10 +178,19 @@ export default function MediatoreLeads() {
           matchesStatus = lead.pratica?.status === statusFilter;
         }
       }
+
+      // Apply lead aperti filter (filter out lost and rejected leads)
+      let matchesLeadAperti = true;
+      if (leadAperti) {
+        // Filter out "persa" from pratica status and "pratica_rifiutata" 
+        const isNotLostOrRejected = !lead.pratica || 
+          (lead.pratica.status !== 'persa' && lead.pratica.status !== 'pratica_rifiutata');
+        matchesLeadAperti = isNotLostOrRejected;
+      }
       
-      return matchesSearch && matchesStatus;
+      return matchesSearch && matchesStatus && matchesLeadAperti;
     });
-  }, [leads, searchTerm, statusFilter]);
+  }, [leads, searchTerm, statusFilter, leadAperti]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('it-IT', {
@@ -257,6 +268,18 @@ export default function MediatoreLeads() {
                         className="pl-10"
                       />
                     </div>
+                  </div>
+                  
+                  {/* Lead Aperti Toggle */}
+                  <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-[#BEB8AE]">
+                    <Switch
+                      id="lead-aperti"
+                      checked={leadAperti}
+                      onCheckedChange={setLeadAperti}
+                    />
+                    <label htmlFor="lead-aperti" className="text-sm font-medium cursor-pointer">
+                      Lead aperti
+                    </label>
                   </div>
                   
                   {/* Status Filter */}
