@@ -208,11 +208,8 @@ export default function AdminLeads() {
         query = query.not('phone_number', 'is', null);
       }
 
-      // Contactable filter - leads with consulting=true OR have "Contattami" response (gomutuo_service = 'consulenza')
-      if (contactableFilter) {
-        // Build a more complex OR condition for contactable leads
-        query = query.or(`consulting.eq.true,form_responses.and(question_id.eq.gomutuo_service,response_value.eq.consulenza)`);
-      }
+      // Contactable filter - applied client-side due to complex join logic
+      // Server-side filtering removed for this condition
 
       // Re-enabled mediatore filtering with UUID support
       if (mediatoreFilter !== 'all') {
@@ -257,9 +254,30 @@ export default function AdminLeads() {
         form_title: submission.forms?.title || 'Form non trovato',
         assigned_admin_name: null // Simplified for now to avoid join issues
       }));
+
+      // Apply contactable filter client-side due to complex join logic
+      const filteredData = contactableFilter 
+        ? mappedData.filter(submission => {
+            // Check if consulting is true
+            if (submission.consulting) return true;
+            
+            // Check if gomutuo_service response is 'consulenza'
+            const gomutoService = submission.form_responses?.find(
+              response => response.question_id === 'gomutuo_service'
+            );
+            if (gomutoService) {
+              const value = typeof gomutoService.response_value === 'object' 
+                ? Object.values(gomutoService.response_value)[0]
+                : gomutoService.response_value;
+              return value === 'consulenza';
+            }
+            
+            return false;
+          })
+        : mappedData;
       
-      setSubmissions(mappedData);
-      setTotalCount(count || 0);
+      setSubmissions(filteredData);
+      setTotalCount(contactableFilter ? filteredData.length : (count || 0));
 
       // Extract unique forms for any future filter
       const uniqueForms = Array.from(
