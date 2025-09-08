@@ -120,21 +120,55 @@ export default function AdminLeadDetail() {
     if (!submission) return;
 
     try {
+      console.log('🔄 Attempting to update lead:', { field, value, submissionId: submission.id });
+      
+      // Test authentication state before update
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log('👤 Current auth user:', user);
+      
+      if (!user) {
+        toast({
+          title: "Errore di autenticazione",
+          description: "Sessione scaduta. Effettua nuovamente il login.",
+          variant: "destructive"
+        });
+        navigate('/auth');
+        return;
+      }
+
       const { error } = await supabase
         .from('form_submissions')
         .update({ [field]: value })
         .eq('id', submission.id);
 
       if (error) {
-        console.error('Error updating lead:', error);
+        console.error('❌ Database update error:', error);
+        console.error('Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        
+        if (error.code === '42501' || error.message?.includes('permission')) {
+          toast({
+            title: "Errore di autorizzazione",
+            description: "Non hai i permessi per modificare questo lead. Verifica di essere loggato come admin.",
+            variant: "destructive"
+          });
+          return;
+        }
+        
         toast({
           title: "Errore",
-          description: "Errore nell'aggiornamento del lead",
+          description: `Errore nell'aggiornamento del lead: ${error.message}`,
           variant: "destructive"
         });
         return;
       }
 
+      console.log('✅ Lead updated successfully');
+      
       // Update local state
       setSubmission(prev => prev ? { ...prev, [field]: value } : null);
       
@@ -144,7 +178,7 @@ export default function AdminLeadDetail() {
         variant: "default"
       });
     } catch (error) {
-      console.error('Error updating lead:', error);
+      console.error('💥 Unexpected error updating lead:', error);
       toast({
         title: "Errore",
         description: "Errore imprevisto nell'aggiornamento",
