@@ -149,14 +149,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
     console.log('🎯 Question timer started for:', question.question_id);
   }, [question.question_id]); // Only depend on question ID
 
-  // Separate useEffect for loading existing responses and UI state
+  // Load existing responses and initialize UI state
   useEffect(() => {
-    console.log('🔄 FormQuestion useEffect triggered:', {
-      questionId: question.question_id,
-      navigatedFromBack,
-      placeholders: Object.keys(question.placeholders)
-    });
-    
     const existingResponses: { [key: string]: string | string[] } = {};
     const initialVisibleOptions: { [key: string]: boolean } = {};
     const initialValidationErrors: { [key: string]: boolean } = {};
@@ -169,17 +163,9 @@ export function FormQuestion({ question }: FormQuestionProps) {
         existingResponses[key] = existingResponse;
         
         // Auto-show select placeholders that have existing responses
-        const shouldAutoShow = placeholder.type === "select" && Boolean(existingResponse);
+        initialVisibleOptions[key] = placeholder.type === "select";
         
-        console.log(`🎯 Placeholder ${key}:`, {
-          type: placeholder.type,
-          existingResponse,
-          shouldAutoShow
-        });
-        
-        initialVisibleOptions[key] = shouldAutoShow;
-        
-        // Verifica che le risposte esistenti siano ancora valide
+        // Validate existing input responses
         if (placeholder.type === "input") {
           const validationType = (placeholder as any).input_validation as ValidationTypes;
           if (!validateInput(existingResponse as string, validationType)) {
@@ -191,21 +177,15 @@ export function FormQuestion({ question }: FormQuestionProps) {
       }
     });
     
-    console.log('🔧 Setting visibleOptions:', initialVisibleOptions);
-    
     setResponses(existingResponses);
     setVisibleOptions(initialVisibleOptions);
     setValidationErrors(initialValidationErrors);
     setEditingFields({});
     setIsNavigating(false);
-    // Reset dello stato del pulsante "Non lo so" quando cambia la domanda
     setShowNonLoSoButton(false);
-    // Reset delle posizioni del cursore
     setCursorPositions({});
     
-    // Reset the back navigation flag after processing
     if (navigatedFromBack) {
-      console.log('🔄 Resetting navigatedFromBack flag');
       setNavigatedFromBack(false);
     }
   }, [question.question_id, getResponse, question.placeholders, navigatedFromBack, setNavigatedFromBack]);
