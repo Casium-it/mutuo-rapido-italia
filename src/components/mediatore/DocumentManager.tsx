@@ -52,15 +52,20 @@ export function DocumentManager({ submissionId }: DocumentManagerProps) {
 
   const fetchPraticaId = async () => {
     try {
+      console.log('Fetching pratica ID for submission:', submissionId);
       const { data, error } = await supabase
         .from('pratiche')
         .select('id')
         .eq('submission_id', submissionId)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching pratica ID:', error);
+        throw error;
+      }
       
       if (data) {
+        console.log('Found pratica ID:', data.id);
         setPraticaId(data.id);
       } else {
         console.log('No pratica found for this submission');
@@ -68,6 +73,7 @@ export function DocumentManager({ submissionId }: DocumentManagerProps) {
       }
     } catch (error) {
       console.error('Error fetching pratica ID:', error);
+      toast.error('Errore nel caricamento della pratica');
       setLoading(false);
     }
   };
@@ -76,13 +82,19 @@ export function DocumentManager({ submissionId }: DocumentManagerProps) {
     if (!praticaId) return;
     
     try {
+      console.log('Fetching documents for pratica:', praticaId);
       const { data, error } = await supabase
         .from('pratica_documents')
         .select('*')
         .eq('pratica_id', praticaId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching documents:', error);
+        throw error;
+      }
+      
+      console.log('Documents found:', data?.length || 0);
       setDocuments(data || []);
     } catch (error) {
       console.error('Error fetching documents:', error);
