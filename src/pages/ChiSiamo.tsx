@@ -147,16 +147,18 @@ const ChiSiamo = () => {
 
       {/* Footer */}
       <footer className="py-6 px-4 border-t border-[#BEB8AE]">
-        <div className="max-w-5xl mx-auto flex justify-between items-center">
-          <p className="text-sm text-gray-600">© 2025 GoMutuo - Tutti i diritti riservati</p>
-          <div className="flex gap-4 items-center">
-            <button onClick={() => navigate("/privacy")} className="text-sm text-gray-600 hover:text-[#245C4F]">
-              Privacy
-            </button>
-            <a href="#" className="text-sm text-gray-600 hover:text-[#245C4F]">Termini</a>
-            <a href="#" className="text-sm text-gray-600 hover:text-[#245C4F]">Contatti</a>
-            <LoginButton />
+        <div className="max-w-5xl mx-auto">
+          <div className="flex justify-center items-center mb-4">
+            <div className="flex gap-4 items-center">
+              <button onClick={() => navigate("/privacy")} className="text-sm text-gray-600 hover:text-[#245C4F]">
+                Privacy
+              </button>
+              <a href="#" className="text-sm text-gray-600 hover:text-[#245C4F]">Termini</a>
+              <a href="#" className="text-sm text-gray-600 hover:text-[#245C4F]">Contatti</a>
+              <LoginButton />
+            </div>
           </div>
+          <p className="text-sm text-gray-600 text-center">© 2025 GoMutuo - Tutti i diritti riservati</p>
         </div>
       </footer>
     </div>;
