@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Calendar, User, MapPin, Search, Filter, StickyNote } from 'lucide-react';
 import { LeadStatusBadge } from '@/components/admin/LeadStatusBadge';
-import { LeadActionDialog } from '@/components/mediatore/LeadActionDialog';
+import { SimpleNoteDialog } from '@/components/mediatore/SimpleNoteDialog';
 import { LeadStatus } from '@/types/leadStatus';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -330,10 +330,8 @@ export default function MediatoreLeads() {
                           >
                             Dettagli
                           </Button>
-                          <LeadActionDialog
+                          <SimpleNoteDialog
                             submissionId={lead.id}
-                            currentLeadStatus={lead.lead_status}
-                            currentPraticaStatus={lead.pratica?.status as any}
                             onUpdate={fetchLeads}
                           >
                             <Button 
@@ -342,9 +340,9 @@ export default function MediatoreLeads() {
                               className="text-[#245C4F] border-[#245C4F] hover:bg-[#245C4F] hover:text-white"
                             >
                               <StickyNote className="h-4 w-4 mr-1" />
-                              Gestisci
+                              + Nota
                             </Button>
-                          </LeadActionDialog>
+                          </SimpleNoteDialog>
                         </div>
                       </div>
                     ))}
