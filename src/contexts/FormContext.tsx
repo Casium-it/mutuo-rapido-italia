@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback, useRef } from "react";
+import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback, useRef, useState } from "react";
 import { Block, FormState, FormResponse, NavigationHistory, Placeholder, SelectPlaceholder, PendingRemoval, SessionType } from "@/types/form";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { ensureBlockHasPriority } from "@/utils/blockUtils";
@@ -19,6 +19,8 @@ type FormContextType = {
   state: FormState;
   blocks: Block[];
   formSlug?: string;
+  navigatedFromBack: boolean;
+  setNavigatedFromBack: (value: boolean) => void;
   goToQuestion: (block_id: string, question_id: string, replace?: boolean) => void;
   setResponse: (question_id: string, placeholder_key: string, value: string | string[]) => void;
   getResponse: (question_id: string, placeholder_key: string) => string | string[] | undefined;
@@ -356,6 +358,9 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
   const previousQuestionIdRef = useRef<string | null>(null);
   const isNavigatingRef = useRef<boolean | undefined>(false);
   const usedNextBlockNavRef = useRef<boolean>(false);
+  
+  // Back navigation flag state
+  const [navigatedFromBack, setNavigatedFromBack] = useState<boolean>(false);
   
   // Auto-save refs and state
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -1381,6 +1386,8 @@ export const FormProvider: React.FC<{ children: ReactNode; blocks: Block[]; form
           ...state.dynamicBlocks
         ].sort((a, b) => a.priority - b.priority), 
         formSlug,
+        navigatedFromBack,
+        setNavigatedFromBack,
         goToQuestion,
         setResponse,
         getResponse,

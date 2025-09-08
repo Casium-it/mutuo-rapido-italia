@@ -350,6 +350,8 @@ export const useFormExtended = () => {
 
   return {
     ...formContext,
+    navigatedFromBack: formContext.navigatedFromBack,
+    setNavigatedFromBack: formContext.setNavigatedFromBack,
     getPreviousQuestionText,
     getPreviousQuestion,
     getInlineQuestionChain,

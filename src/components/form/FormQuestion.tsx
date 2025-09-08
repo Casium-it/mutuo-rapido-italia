@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useFormExtended } from "@/hooks/useFormExtended";
-import { Question, ValidationTypes } from "@/types/form";
+import { Question, ValidationTypes, Block } from "@/types/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ArrowLeft, Edit } from "lucide-react";
@@ -120,7 +120,9 @@ export function FormQuestion({ question }: FormQuestionProps) {
     state,
     blocks,
     addActiveBlock,
-    goToQuestion 
+    goToQuestion,
+    navigatedFromBack,
+    setNavigatedFromBack
   } = useFormExtended();
   
   const [responses, setResponses] = useState<{ [key: string]: string | string[] }>({});
@@ -154,13 +156,20 @@ export function FormQuestion({ question }: FormQuestionProps) {
     
     Object.keys(question.placeholders).forEach(key => {
       const existingResponse = getResponse(question.question_id, key);
+      const placeholder = question.placeholders[key];
+      
       if (existingResponse) {
         existingResponses[key] = existingResponse;
-        initialVisibleOptions[key] = false;
+        
+        // Check if this is a back navigation and placeholder is select type with existing response
+        const shouldAutoShow = navigatedFromBack && 
+                              placeholder.type === "select" && 
+                              Boolean(existingResponse);
+        
+        initialVisibleOptions[key] = shouldAutoShow;
         
         // Verifica che le risposte esistenti siano ancora valide
-        if (question.placeholders[key].type === "input") {
-          const placeholder = question.placeholders[key];
+        if (placeholder.type === "input") {
           const validationType = (placeholder as any).input_validation as ValidationTypes;
           if (!validateInput(existingResponse as string, validationType)) {
             initialValidationErrors[key] = true;
@@ -180,7 +189,12 @@ export function FormQuestion({ question }: FormQuestionProps) {
     setShowNonLoSoButton(false);
     // Reset delle posizioni del cursore
     setCursorPositions({});
-  }, [question.question_id, getResponse, question.placeholders]);
+    
+    // Reset the back navigation flag after processing
+    if (navigatedFromBack) {
+      setNavigatedFromBack(false);
+    }
+  }, [question.question_id, getResponse, question.placeholders, navigatedFromBack, setNavigatedFromBack]);
 
   // Nuova funzione per verificare se ci sono campi di input mancanti o non validi
   const hasMissingOrInvalidInputs = () => {
@@ -246,6 +260,9 @@ export function FormQuestion({ question }: FormQuestionProps) {
     if (isNavigating) return;
     setIsNavigating(true);
     
+    // Set the back navigation flag BEFORE navigation
+    setNavigatedFromBack(true);
+    
     // Track back navigation
     trackSimulationBackNavigation(state.activeQuestion.block_id, state.activeQuestion.question_id);
     
@@ -255,6 +272,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
     if (answeredQuestionsArray.length === 0) {
       // Se non ci sono domande precedenti, non possiamo andare indietro
       setIsNavigating(false);
+      setNavigatedFromBack(false);
       return;
     }
     
@@ -281,6 +299,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
     if (!blockWithPreviousQuestion) {
       console.error("Blocco della domanda precedente non trovato:", previousQuestionId);
       setIsNavigating(false);
+      setNavigatedFromBack(false);
       return;
     }
     
