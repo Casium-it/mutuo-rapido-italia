@@ -134,8 +134,16 @@ export function ActivityTimeline({ submissionId }: ActivityTimelineProps) {
     const formatValue = (value: any) => {
       if (typeof value === 'object' && value !== null) {
         // Handle note objects
-        if (value.titolo && value.contenuto) {
-          return `"${value.titolo}" - ${value.contenuto}`;
+        if (value.tipo && value.contenuto) {
+          const noteTypeMap: Record<string, string> = {
+            'telefonata': 'Chiamata',
+            'email': 'Email',
+            'incontro': 'Incontro',
+            'documento': 'Documento',
+            'altro': 'Altro'
+          };
+          const typeLabel = noteTypeMap[value.tipo] || value.tipo;
+          return `(${typeLabel}) ${value.contenuto}`;
         }
         // Handle other objects by showing key properties
         if (value.status) return value.status;
