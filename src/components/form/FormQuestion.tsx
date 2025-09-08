@@ -168,15 +168,12 @@ export function FormQuestion({ question }: FormQuestionProps) {
       if (existingResponse) {
         existingResponses[key] = existingResponse;
         
-        // Check if this is a back navigation and placeholder is select type with existing response
-        const shouldAutoShow = navigatedFromBack && 
-                              placeholder.type === "select" && 
-                              Boolean(existingResponse);
+        // Auto-show select placeholders that have existing responses
+        const shouldAutoShow = placeholder.type === "select" && Boolean(existingResponse);
         
         console.log(`🎯 Placeholder ${key}:`, {
           type: placeholder.type,
           existingResponse,
-          navigatedFromBack,
           shouldAutoShow
         });
         
@@ -206,39 +203,12 @@ export function FormQuestion({ question }: FormQuestionProps) {
     // Reset delle posizioni del cursore
     setCursorPositions({});
     
-    // Reset the back navigation flag after processing - delay it to next tick
+    // Reset the back navigation flag after processing
     if (navigatedFromBack) {
       console.log('🔄 Resetting navigatedFromBack flag');
-      setTimeout(() => setNavigatedFromBack(false), 0);
+      setNavigatedFromBack(false);
     }
   }, [question.question_id, getResponse, question.placeholders, navigatedFromBack, setNavigatedFromBack]);
-
-  // Separate useEffect to handle navigatedFromBack changes
-  useEffect(() => {
-    if (navigatedFromBack) {
-      console.log('🎯 navigatedFromBack detected, updating visibleOptions for select placeholders');
-      
-      const updatedVisibleOptions: { [key: string]: boolean } = {};
-      
-      Object.keys(question.placeholders).forEach(key => {
-        const placeholder = question.placeholders[key];
-        const existingResponse = getResponse(question.question_id, key);
-        
-        if (placeholder.type === "select" && existingResponse) {
-          updatedVisibleOptions[key] = true;
-          console.log(`🎯 Showing options for select placeholder: ${key}`);
-        }
-      });
-      
-      // Update visibleOptions if we found any select placeholders to show
-      if (Object.keys(updatedVisibleOptions).length > 0) {
-        setVisibleOptions(prev => ({
-          ...prev,
-          ...updatedVisibleOptions
-        }));
-      }
-    }
-  }, [navigatedFromBack, question.question_id, question.placeholders, getResponse]);
 
   // Nuova funzione per verificare se ci sono campi di input mancanti o non validi
   const hasMissingOrInvalidInputs = () => {
