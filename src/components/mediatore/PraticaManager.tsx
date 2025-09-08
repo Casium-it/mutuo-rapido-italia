@@ -301,6 +301,7 @@ export function PraticaManager({ submissionId }: PraticaManagerProps) {
                 }
               }}
               placeholder="2.50%"
+              isPercentage
             />
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-600">Tipo Tasso</label>

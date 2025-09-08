@@ -11,23 +11,31 @@ interface EditableFieldProps {
   onSave: (value: string) => Promise<void>;
   placeholder?: string;
   multiline?: boolean;
+  isPercentage?: boolean; // Indicates this field handles percentage values
 }
 
-export function EditableField({ label, value, rawValue, onSave, placeholder, multiline = false }: EditableFieldProps) {
+export function EditableField({ label, value, rawValue, onSave, placeholder, multiline = false, isPercentage = false }: EditableFieldProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(rawValue || value);
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
+    let processedValue = editValue;
+    
+    // Handle percentage field: replace comma with dot
+    if (isPercentage) {
+      processedValue = editValue.replace(',', '.');
+    }
+    
     const currentRawValue = rawValue || value;
-    if (editValue === currentRawValue) {
+    if (processedValue === currentRawValue) {
       setIsEditing(false);
       return;
     }
 
     setIsSaving(true);
     try {
-      await onSave(editValue);
+      await onSave(processedValue);
       setIsEditing(false);
     } catch (error) {
       console.error('Error saving field:', error);
@@ -57,7 +65,14 @@ export function EditableField({ label, value, rawValue, onSave, placeholder, mul
           ) : (
             <Input
               value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
+              onChange={(e) => {
+                let newValue = e.target.value;
+                // Handle percentage field: replace comma with dot automatically
+                if (isPercentage) {
+                  newValue = newValue.replace(',', '.');
+                }
+                setEditValue(newValue);
+              }}
               placeholder={placeholder}
               className="flex-1"
             />
@@ -96,7 +111,7 @@ export function EditableField({ label, value, rawValue, onSave, placeholder, mul
               </div>
             ) : (
               <p className="text-sm bg-gray-50 p-2 rounded-md min-h-[40px] flex items-center">
-                {value}
+                {isPercentage && rawValue ? `${rawValue}%` : value}
               </p>
             )
           ) : (
