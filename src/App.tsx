@@ -47,6 +47,7 @@ import AdminAIPromptEditor from "./pages/AdminAIPromptEditor";
 import AdminQuestionIds from "./pages/AdminQuestionIds";
 import MediatoreDashboard from "./pages/MediatoreDashboard";
 import MediatoreLeads from "./pages/MediatoreLeads";
+import MediatoreLeadDetail from "./pages/MediatoreLeadDetail";
 
 const queryClient = new QueryClient();
 
@@ -111,6 +112,11 @@ const AppWithTracking = () => {
       <Route path="/mediatore/leads" element={
         <ProtectedRoute requireMediatore>
           <MediatoreLeads />
+        </ProtectedRoute>
+      } />
+      <Route path="/mediatore/leads/:leadId" element={
+        <ProtectedRoute requireMediatore>
+          <MediatoreLeadDetail />
         </ProtectedRoute>
       } />
       <Route path="/admin/statistics" element={

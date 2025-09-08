@@ -310,14 +310,30 @@ export default function MediatoreLeads() {
                         </div>
                         
                         {/* Actions Column */}
-                        <div>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => navigate(`/mediatore/leads/${lead.id}`)}
+                            className="text-[#245C4F] border-[#245C4F] hover:bg-[#245C4F] hover:text-white"
+                          >
+                            Dettagli
+                          </Button>
                           <Button 
                             variant="outline" 
                             size="sm"
                             disabled
                             className="opacity-50 cursor-not-allowed"
                           >
-                            Dettagli
+                            Storico
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            disabled
+                            className="opacity-50 cursor-not-allowed"
+                          >
+                            + Nota
                           </Button>
                         </div>
                       </div>
