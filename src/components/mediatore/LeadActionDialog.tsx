@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { LeadStatus } from '@/types/leadStatus';
 
-type PraticaStatus = 'lead' | 'consulenza_programmata' | 'consulenza_completata' | 'in_attesa_documenti' | 'documenti_ricevuti' | 
+type PraticaStatus = 'lead' | 'consulenza_programmata' | 'consulenza_saltata' | 'consulenza_completata' | 'in_attesa_documenti' | 'documenti_ricevuti' | 
   'in_attesa_mandato' | 'mandato_firmato' | 'inviata_alla_banca' | 'predelibera_ricevuta' | 'istruttoria_ricevuta' | 
   'rogito_completato' | 'pratica_rifiutata' | 'pratica_sospesa' | 'non_risponde' | 'persa';
 
@@ -25,7 +25,10 @@ interface LeadActionDialogProps {
 const praticaStatusOptions = [
   { value: 'lead', label: 'Lead' },
   { value: 'consulenza_programmata', label: 'Consulenza Programmata' },
+  { value: 'consulenza_saltata', label: 'Consulenza Saltata' },
   { value: 'consulenza_completata', label: 'Consulenza Completata' },
+  { value: 'non_risponde', label: 'Non Risponde' },
+  { value: 'persa', label: 'Persa' },
   { value: 'in_attesa_documenti', label: 'In Attesa Documenti' },
   { value: 'documenti_ricevuti', label: 'Documenti Ricevuti' },
   { value: 'in_attesa_mandato', label: 'In Attesa Mandato' },
@@ -35,9 +38,7 @@ const praticaStatusOptions = [
   { value: 'istruttoria_ricevuta', label: 'Istruttoria Ricevuta' },
   { value: 'rogito_completato', label: 'Rogito Completato' },
   { value: 'pratica_rifiutata', label: 'Pratica Rifiutata' },
-  { value: 'pratica_sospesa', label: 'Pratica Sospesa' },
-  { value: 'non_risponde', label: 'Non Risponde' },
-  { value: 'persa', label: 'Persa' }
+  { value: 'pratica_sospesa', label: 'Pratica Sospesa' }
 ];
 
 const leadStatusOptions = [

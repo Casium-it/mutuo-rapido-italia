@@ -18,7 +18,7 @@ interface Note {
   mediatore_id: string;
   titolo: string;
   contenuto: string;
-  tipo: 'generale' | 'telefonata' | 'incontro' | 'documentazione' | 'banca' | 'cliente' | 'urgente';
+  tipo: 'generale' | 'telefonata' | 'incontro' | 'documentazione' | 'banca' | 'cliente' | 'urgente' | 'sistema';
   is_important: boolean;
   is_private: boolean;
   created_at: string;
