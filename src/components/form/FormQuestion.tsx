@@ -206,10 +206,10 @@ export function FormQuestion({ question }: FormQuestionProps) {
     // Reset delle posizioni del cursore
     setCursorPositions({});
     
-    // Reset the back navigation flag after processing
+    // Reset the back navigation flag after processing - delay it to next tick
     if (navigatedFromBack) {
       console.log('🔄 Resetting navigatedFromBack flag');
-      setNavigatedFromBack(false);
+      setTimeout(() => setNavigatedFromBack(false), 0);
     }
   }, [question.question_id, getResponse, question.placeholders, navigatedFromBack, setNavigatedFromBack]);
 
