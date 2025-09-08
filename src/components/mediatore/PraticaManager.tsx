@@ -266,6 +266,7 @@ export function PraticaManager({ submissionId }: PraticaManagerProps) {
             <EditableField
               label="Importo Richiesto"
               value={formatCurrency(pratica.importo_richiesto)}
+              rawValue={pratica.importo_richiesto?.toString() || ''}
               onSave={async (value) => {
                 const cleanValue = value.replace(/[^\d,.-]/g, '').replace(',', '.').trim();
                 const numValue = cleanValue === '' ? null : parseFloat(cleanValue);
@@ -278,6 +279,7 @@ export function PraticaManager({ submissionId }: PraticaManagerProps) {
             <EditableField
               label="Durata (anni)"
               value={pratica.durata_anni?.toString() || ''}
+              rawValue={pratica.durata_anni?.toString() || ''}
               onSave={async (value) => {
                 const cleanValue = value.trim();
                 const numValue = cleanValue === '' ? null : parseInt(cleanValue);
@@ -290,6 +292,7 @@ export function PraticaManager({ submissionId }: PraticaManagerProps) {
             <EditableField
               label="Tasso Interesse Atteso"
               value={formatPercentage(pratica.tasso_interesse_atteso)}
+              rawValue={pratica.tasso_interesse_atteso ? (pratica.tasso_interesse_atteso * 100).toString() : ''}
               onSave={async (value) => {
                 const cleanValue = value.replace('%', '').replace(',', '.').trim();
                 const numValue = cleanValue === '' ? null : parseFloat(cleanValue);
@@ -318,6 +321,7 @@ export function PraticaManager({ submissionId }: PraticaManagerProps) {
             <EditableField
               label="Anticipo"
               value={formatCurrency(pratica.anticipo)}
+              rawValue={pratica.anticipo?.toString() || ''}
               onSave={async (value) => {
                 const cleanValue = value.replace(/[^\d,.-]/g, '').replace(',', '.').trim();
                 const numValue = cleanValue === '' ? null : parseFloat(cleanValue);
@@ -344,6 +348,7 @@ export function PraticaManager({ submissionId }: PraticaManagerProps) {
             <EditableField
               label="Valore Immobile"
               value={formatCurrency(pratica.valore_immobile)}
+              rawValue={pratica.valore_immobile?.toString() || ''}
               onSave={async (value) => {
                 const cleanValue = value.replace(/[^\d,.-]/g, '').replace(',', '.').trim();
                 const numValue = cleanValue === '' ? null : parseFloat(cleanValue);
@@ -382,6 +387,7 @@ export function PraticaManager({ submissionId }: PraticaManagerProps) {
             <EditableField
               label="Reddito Mensile Netto"
               value={formatCurrency(pratica.reddito_mensile_netto)}
+              rawValue={pratica.reddito_mensile_netto?.toString() || ''}
               onSave={async (value) => {
                 const cleanValue = value.replace(/[^\d,.-]/g, '').replace(',', '.').trim();
                 const numValue = cleanValue === '' ? null : parseFloat(cleanValue);
@@ -394,6 +400,7 @@ export function PraticaManager({ submissionId }: PraticaManagerProps) {
             <EditableField
               label="Spese Mensili"
               value={formatCurrency(pratica.spese_mensili)}
+              rawValue={pratica.spese_mensili?.toString() || ''}
               onSave={async (value) => {
                 const cleanValue = value.replace(/[^\d,.-]/g, '').replace(',', '.').trim();
                 const numValue = cleanValue === '' ? null : parseFloat(cleanValue);
@@ -406,6 +413,7 @@ export function PraticaManager({ submissionId }: PraticaManagerProps) {
             <EditableField
               label="Altri Finanziamenti"
               value={formatCurrency(pratica.altri_finanziamenti)}
+              rawValue={pratica.altri_finanziamenti?.toString() || ''}
               onSave={async (value) => {
                 const cleanValue = value.replace(/[^\d,.-]/g, '').replace(',', '.').trim();
                 const numValue = cleanValue === '' ? null : parseFloat(cleanValue);

@@ -7,18 +7,20 @@ import { Edit2, Check, X } from 'lucide-react';
 interface EditableFieldProps {
   label: string;
   value: string;
+  rawValue?: string; // Raw unformatted value for editing
   onSave: (value: string) => Promise<void>;
   placeholder?: string;
   multiline?: boolean;
 }
 
-export function EditableField({ label, value, onSave, placeholder, multiline = false }: EditableFieldProps) {
+export function EditableField({ label, value, rawValue, onSave, placeholder, multiline = false }: EditableFieldProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState(value);
+  const [editValue, setEditValue] = useState(rawValue || value);
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
-    if (editValue === value) {
+    const currentRawValue = rawValue || value;
+    if (editValue === currentRawValue) {
       setIsEditing(false);
       return;
     }
@@ -35,7 +37,7 @@ export function EditableField({ label, value, onSave, placeholder, multiline = f
   };
 
   const handleCancel = () => {
-    setEditValue(value);
+    setEditValue(rawValue || value);
     setIsEditing(false);
   };
 
@@ -106,7 +108,10 @@ export function EditableField({ label, value, onSave, placeholder, multiline = f
         <Button
           size="sm"
           variant="ghost"
-          onClick={() => setIsEditing(true)}
+          onClick={() => {
+            setEditValue(rawValue || value);
+            setIsEditing(true);
+          }}
           className="opacity-0 group-hover:opacity-100 transition-opacity mt-1"
         >
           <Edit2 className="h-4 w-4" />
