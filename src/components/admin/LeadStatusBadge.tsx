@@ -3,7 +3,7 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { LeadStatus } from '@/types/leadStatus';
 
-type PraticaStatus = 'lead' | 'consulenza_programmata' | 'consulenza_completata' | 'in_attesa_documenti' | 'documenti_ricevuti' | 
+type PraticaStatus = 'lead' | 'da_richiamare' | 'consulenza_programmata' | 'consulenza_saltata' | 'consulenza_completata' | 'in_attesa_documenti' | 'documenti_ricevuti' | 
   'in_attesa_mandato' | 'mandato_firmato' | 'inviata_alla_banca' | 'predelibera_ricevuta' | 'istruttoria_ricevuta' | 
   'rogito_completato' | 'pratica_rifiutata' | 'pratica_sospesa' | 'non_risponde' | 'persa';
 
@@ -17,6 +17,11 @@ const praticaStatusConfig = {
     label: 'Lead',
     variant: 'secondary' as const,
     className: 'bg-gray-100 text-gray-800'
+  },
+  da_richiamare: {
+    label: 'Da Richiamare',
+    variant: 'default' as const,
+    className: 'bg-yellow-100 text-yellow-800'
   },
   consulenza_programmata: {
     label: 'Consulenza Programmata',

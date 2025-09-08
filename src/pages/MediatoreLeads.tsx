@@ -28,7 +28,7 @@ interface Lead {
   } | null;
 }
 
-type PraticaStatus = 'lead' | 'consulenza_programmata' | 'consulenza_saltata' | 'consulenza_completata' | 'in_attesa_documenti' | 'documenti_ricevuti' | 
+type PraticaStatus = 'lead' | 'da_richiamare' | 'consulenza_programmata' | 'consulenza_saltata' | 'consulenza_completata' | 'in_attesa_documenti' | 'documenti_ricevuti' | 
   'in_attesa_mandato' | 'mandato_firmato' | 'inviata_alla_banca' | 'predelibera_ricevuta' | 'istruttoria_ricevuta' | 
   'rogito_completato' | 'pratica_rifiutata' | 'pratica_sospesa' | 'non_risponde' | 'persa';
 
@@ -36,6 +36,7 @@ const statusOptions: { value: PraticaStatus | 'all' | 'nuova_lead'; label: strin
   { value: 'all', label: 'Tutti gli Status' },
   { value: 'nuova_lead', label: '✨ Nuova Lead' },
   { value: 'lead', label: 'Lead' },
+  { value: 'da_richiamare', label: 'Da Richiamare' },
   { value: 'consulenza_programmata', label: 'Consulenza Programmata' },
   { value: 'consulenza_saltata', label: 'Consulenza Saltata' },
   { value: 'consulenza_completata', label: 'Consulenza Completata' },
