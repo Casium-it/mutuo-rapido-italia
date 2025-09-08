@@ -5,7 +5,7 @@ import { LeadStatus } from '@/types/leadStatus';
 
 type PraticaStatus = 'lead' | 'consulenza_programmata' | 'consulenza_completata' | 'in_attesa_documenti' | 'documenti_ricevuti' | 
   'in_attesa_mandato' | 'mandato_firmato' | 'inviata_alla_banca' | 'predelibera_ricevuta' | 'istruttoria_ricevuta' | 
-  'rogito_completato' | 'pratica_rifiutata' | 'pratica_sospesa';
+  'rogito_completato' | 'pratica_rifiutata' | 'pratica_sospesa' | 'non_risponde' | 'persa';
 
 interface LeadStatusBadgeProps {
   status?: LeadStatus | PraticaStatus | null;
@@ -77,6 +77,16 @@ const praticaStatusConfig = {
     label: 'Pratica Sospesa',
     variant: 'default' as const,
     className: 'bg-orange-100 text-orange-800'
+  },
+  non_risponde: {
+    label: 'Non Risponde',
+    variant: 'destructive' as const,
+    className: 'bg-red-100 text-red-800'
+  },
+  persa: {
+    label: 'Persa',
+    variant: 'destructive' as const,
+    className: 'bg-red-100 text-red-800'
   }
 } as const;
 
