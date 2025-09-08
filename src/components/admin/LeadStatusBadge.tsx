@@ -21,7 +21,12 @@ const praticaStatusConfig = {
   consulenza_programmata: {
     label: 'Consulenza Programmata',
     variant: 'default' as const,
-    className: 'bg-blue-100 text-blue-800'
+    className: 'bg-green-100 text-green-800'
+  },
+  consulenza_saltata: {
+    label: 'Consulenza Saltata',
+    variant: 'destructive' as const,
+    className: 'bg-red-100 text-red-800'
   },
   consulenza_completata: {
     label: 'Consulenza Completata',
@@ -36,37 +41,37 @@ const praticaStatusConfig = {
   documenti_ricevuti: {
     label: 'Documenti Ricevuti',
     variant: 'default' as const,
-    className: 'bg-emerald-100 text-emerald-800'
+    className: 'bg-green-100 text-green-800'
   },
   in_attesa_mandato: {
     label: 'In Attesa Mandato',
     variant: 'default' as const,
-    className: 'bg-orange-100 text-orange-800'
+    className: 'bg-yellow-100 text-yellow-800'
   },
   mandato_firmato: {
     label: 'Mandato Firmato',
     variant: 'default' as const,
-    className: 'bg-purple-100 text-purple-800'
+    className: 'bg-green-600 text-white'
   },
   inviata_alla_banca: {
     label: 'Inviata alla Banca',
     variant: 'default' as const,
-    className: 'bg-indigo-100 text-indigo-800'
+    className: 'bg-green-600 text-white'
   },
   predelibera_ricevuta: {
     label: 'Predelibera Ricevuta',
     variant: 'default' as const,
-    className: 'bg-cyan-100 text-cyan-800'
+    className: 'bg-green-600 text-white'
   },
   istruttoria_ricevuta: {
     label: 'Istruttoria Ricevuta',
     variant: 'default' as const,
-    className: 'bg-teal-100 text-teal-800'
+    className: 'bg-green-600 text-white'
   },
   rogito_completato: {
     label: 'Rogito Completato',
     variant: 'default' as const,
-    className: 'bg-green-100 text-green-800'
+    className: 'bg-green-600 text-white'
   },
   pratica_rifiutata: {
     label: 'Pratica Rifiutata',
@@ -75,8 +80,8 @@ const praticaStatusConfig = {
   },
   pratica_sospesa: {
     label: 'Pratica Sospesa',
-    variant: 'default' as const,
-    className: 'bg-orange-100 text-orange-800'
+    variant: 'destructive' as const,
+    className: 'bg-red-100 text-red-800'
   },
   non_risponde: {
     label: 'Non Risponde',
