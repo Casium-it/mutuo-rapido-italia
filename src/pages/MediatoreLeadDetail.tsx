@@ -4,7 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Calendar, Phone, FileText, User, MapPin } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ArrowLeft, Calendar, Phone, FileText, User, MapPin, Euro, Clock, TrendingUp } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { getQuestionTextWithStyledResponses } from '@/utils/formUtils';
 import { LeadStatus } from '@/types/leadStatus';
@@ -13,6 +14,9 @@ import { FormState, Block } from '@/types/form';
 import { sortBlocksByPriority, sortQuestionsByArrayOrder } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { ExpandableNotes } from '@/components/admin/ExpandableNotes';
+import { PraticaManager } from '@/components/mediatore/PraticaManager';
+import { StructuredNotes } from '@/components/mediatore/StructuredNotes';
+import { ActivityTimeline } from '@/components/mediatore/ActivityTimeline';
 
 interface FormSubmission {
   id: string;
@@ -370,75 +374,106 @@ export default function MediatoreLeadDetail() {
 
         {/* Notes Section */}
         {(submission.notes || submission.ai_notes) && (
-          <Card className="mb-6 bg-white border border-[#BEB8AE]">
-            <CardHeader>
-              <CardTitle>Note</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ExpandableNotes 
-                notes={submission.notes || ''} 
-                aiNotes={submission.ai_notes}
-              />
-            </CardContent>
-          </Card>
+          <div className="mb-6">
+            <ExpandableNotes 
+              notes={submission.notes || ''} 
+              aiNotes={submission.ai_notes || ''}
+            />
+          </div>
         )}
 
-        {/* Responses Section */}
-        <div className="space-y-6">
-          <h2 className="text-xl font-semibold text-gray-900">
-            Risposte Fornite ({processedResponses.length} totali)
-          </h2>
-          
-          {Object.keys(responsesByBlock).length === 0 ? (
-            <Card className="bg-white border border-[#BEB8AE]">
-              <CardContent className="flex items-center justify-center py-12">
-                <div className="text-center">
-                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Nessuna risposta trovata</h3>
-                  <p className="text-gray-600">Questo lead non contiene risposte.</p>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            sortBlocksByPriority(responsesByBlock, blocks).map(([blockId, blockResponses]) => {
-              const blockInfo = blocks.find(b => b.block_id === blockId);
-              const sortedResponses = sortQuestionsByArrayOrder(blockResponses, blocks, blockId);
+        {/* Main Content Tabs */}
+        <Tabs defaultValue="pratica" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="pratica" className="flex items-center gap-2">
+              <Euro className="h-4 w-4" />
+              <span className="hidden sm:inline">Pratica</span>
+            </TabsTrigger>
+            <TabsTrigger value="note" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">Note</span>
+            </TabsTrigger>
+            <TabsTrigger value="storico" className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              <span className="hidden sm:inline">Storico</span>
+            </TabsTrigger>
+            <TabsTrigger value="risposte" className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              <span className="hidden sm:inline">Risposte</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="pratica" className="space-y-6">
+            <PraticaManager submissionId={leadId!} />
+          </TabsContent>
+
+          <TabsContent value="note" className="space-y-6">
+            <StructuredNotes submissionId={leadId!} />
+          </TabsContent>
+
+          <TabsContent value="storico" className="space-y-6">
+            <ActivityTimeline submissionId={leadId!} />
+          </TabsContent>
+
+          <TabsContent value="risposte" className="space-y-6">
+            {/* Form Responses by Block */}
+            <div className="space-y-6">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Risposte Fornite ({processedResponses.length} totali)
+              </h2>
               
-              return (
-                <Card key={blockId} className="bg-white border border-[#BEB8AE]">
-                  <CardHeader>
-                    <CardTitle className="text-lg">
-                      {blockInfo?.title || blockId}
-                      <span className="ml-2 text-sm font-normal text-gray-600">
-                        ({sortedResponses.length} risposte)
-                      </span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {sortedResponses.map((response) => {
-                        const questionInfo = questionMap.get(response.question_id);
-                        return (
-                          <div key={response.id} className="border-l-4 border-[#245C4F] pl-4">
-                            <div className="mb-2">
-                              <StyledQuestionText 
-                                questionText={response.question_text}
-                                questionId={response.question_id}
-                                responseValue={response.response_value}
-                                question={questionInfo?.question}
-                              />
-                              <p className="text-xs text-gray-500">ID: {response.question_id}</p>
-                            </div>
-                          </div>
-                        );
-                      })}
+              {Object.keys(responsesByBlock).length === 0 ? (
+                <Card className="bg-white border border-[#BEB8AE]">
+                  <CardContent className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Nessuna risposta trovata</h3>
+                      <p className="text-gray-600">Questo lead non contiene risposte.</p>
                     </div>
                   </CardContent>
                 </Card>
-              );
-            })
-          )}
-        </div>
+              ) : (
+                sortBlocksByPriority(responsesByBlock, blocks).map(([blockId, blockResponses]) => {
+                  const blockInfo = blocks.find(b => b.block_id === blockId);
+                  const sortedResponses = sortQuestionsByArrayOrder(blockResponses, blocks, blockId);
+                  
+                  return (
+                    <Card key={blockId} className="bg-white border border-[#BEB8AE]">
+                      <CardHeader>
+                        <CardTitle className="text-lg">
+                          {blockInfo?.title || blockId}
+                          <span className="ml-2 text-sm font-normal text-gray-600">
+                            ({sortedResponses.length} risposte)
+                          </span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          {sortedResponses.map((response) => {
+                            const questionInfo = questionMap.get(response.question_id);
+                            return (
+                              <div key={response.id} className="border-l-4 border-[#245C4F] pl-4">
+                                <div className="mb-2">
+                                  <StyledQuestionText 
+                                    questionText={response.question_text}
+                                    questionId={response.question_id}
+                                    responseValue={response.response_value}
+                                    question={questionInfo?.question}
+                                  />
+                                  <p className="text-xs text-gray-500">ID: {response.question_id}</p>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );

@@ -525,6 +525,131 @@ export type Database = {
         }
         Relationships: []
       }
+      lead_activity_log: {
+        Row: {
+          activity_type: Database["public"]["Enums"]["activity_type"]
+          created_at: string
+          description: string
+          id: string
+          mediatore_id: string
+          metadata: Json | null
+          new_value: Json | null
+          old_value: Json | null
+          related_note_id: string | null
+          related_pratica_id: string | null
+          submission_id: string
+        }
+        Insert: {
+          activity_type: Database["public"]["Enums"]["activity_type"]
+          created_at?: string
+          description: string
+          id?: string
+          mediatore_id: string
+          metadata?: Json | null
+          new_value?: Json | null
+          old_value?: Json | null
+          related_note_id?: string | null
+          related_pratica_id?: string | null
+          submission_id: string
+        }
+        Update: {
+          activity_type?: Database["public"]["Enums"]["activity_type"]
+          created_at?: string
+          description?: string
+          id?: string
+          mediatore_id?: string
+          metadata?: Json | null
+          new_value?: Json | null
+          old_value?: Json | null
+          related_note_id?: string | null
+          related_pratica_id?: string | null
+          submission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_activity_log_mediatore_id_fkey"
+            columns: ["mediatore_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_activity_log_related_note_id_fkey"
+            columns: ["related_note_id"]
+            isOneToOne: false
+            referencedRelation: "lead_notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_activity_log_related_pratica_id_fkey"
+            columns: ["related_pratica_id"]
+            isOneToOne: false
+            referencedRelation: "pratiche"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_activity_log_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "form_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_notes: {
+        Row: {
+          contenuto: string
+          created_at: string
+          id: string
+          is_important: boolean | null
+          is_private: boolean | null
+          mediatore_id: string
+          submission_id: string
+          tipo: Database["public"]["Enums"]["note_type"] | null
+          titolo: string
+          updated_at: string
+        }
+        Insert: {
+          contenuto: string
+          created_at?: string
+          id?: string
+          is_important?: boolean | null
+          is_private?: boolean | null
+          mediatore_id: string
+          submission_id: string
+          tipo?: Database["public"]["Enums"]["note_type"] | null
+          titolo: string
+          updated_at?: string
+        }
+        Update: {
+          contenuto?: string
+          created_at?: string
+          id?: string
+          is_important?: boolean | null
+          is_private?: boolean | null
+          mediatore_id?: string
+          submission_id?: string
+          tipo?: Database["public"]["Enums"]["note_type"] | null
+          titolo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_notes_mediatore_id_fkey"
+            columns: ["mediatore_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_notes_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "form_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       linked_forms: {
         Row: {
           created_at: string
@@ -563,6 +688,99 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      pratiche: {
+        Row: {
+          altri_finanziamenti: number | null
+          anticipo: number | null
+          banca_preferita: string | null
+          consulente_banca: string | null
+          created_at: string
+          data_prevista_erogazione: string | null
+          data_richiesta: string | null
+          destinazione_uso: string | null
+          durata_anni: number | null
+          id: string
+          importo_richiesto: number | null
+          mediatore_id: string
+          note_interne: string | null
+          priorita: number | null
+          reddito_mensile_netto: number | null
+          spese_mensili: number | null
+          status: Database["public"]["Enums"]["pratica_status"] | null
+          submission_id: string
+          tasso_interesse_atteso: number | null
+          tipo_immobile: string | null
+          tipo_tasso: Database["public"]["Enums"]["interest_type"] | null
+          updated_at: string
+          valore_immobile: number | null
+        }
+        Insert: {
+          altri_finanziamenti?: number | null
+          anticipo?: number | null
+          banca_preferita?: string | null
+          consulente_banca?: string | null
+          created_at?: string
+          data_prevista_erogazione?: string | null
+          data_richiesta?: string | null
+          destinazione_uso?: string | null
+          durata_anni?: number | null
+          id?: string
+          importo_richiesto?: number | null
+          mediatore_id: string
+          note_interne?: string | null
+          priorita?: number | null
+          reddito_mensile_netto?: number | null
+          spese_mensili?: number | null
+          status?: Database["public"]["Enums"]["pratica_status"] | null
+          submission_id: string
+          tasso_interesse_atteso?: number | null
+          tipo_immobile?: string | null
+          tipo_tasso?: Database["public"]["Enums"]["interest_type"] | null
+          updated_at?: string
+          valore_immobile?: number | null
+        }
+        Update: {
+          altri_finanziamenti?: number | null
+          anticipo?: number | null
+          banca_preferita?: string | null
+          consulente_banca?: string | null
+          created_at?: string
+          data_prevista_erogazione?: string | null
+          data_richiesta?: string | null
+          destinazione_uso?: string | null
+          durata_anni?: number | null
+          id?: string
+          importo_richiesto?: number | null
+          mediatore_id?: string
+          note_interne?: string | null
+          priorita?: number | null
+          reddito_mensile_netto?: number | null
+          spese_mensili?: number | null
+          status?: Database["public"]["Enums"]["pratica_status"] | null
+          submission_id?: string
+          tasso_interesse_atteso?: number | null
+          tipo_immobile?: string | null
+          tipo_tasso?: Database["public"]["Enums"]["interest_type"] | null
+          updated_at?: string
+          valore_immobile?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pratiche_mediatore_id_fkey"
+            columns: ["mediatore_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pratiche_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: true
+            referencedRelation: "form_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -764,6 +982,19 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      get_lead_timeline: {
+        Args: { lead_submission_id: string }
+        Returns: {
+          activity_type: Database["public"]["Enums"]["activity_type"]
+          created_at: string
+          description: string
+          id: string
+          mediatore_name: string
+          metadata: Json
+          new_value: Json
+          old_value: Json
+        }[]
+      }
       get_masked_admin_notifications: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -790,8 +1021,21 @@ export type Database = {
       }
     }
     Enums: {
+      activity_type:
+        | "status_change"
+        | "note_added"
+        | "note_updated"
+        | "note_deleted"
+        | "pratica_created"
+        | "pratica_updated"
+        | "field_updated"
+        | "document_added"
+        | "document_removed"
+        | "reminder_set"
+        | "contact_made"
       app_role: "admin" | "customer" | "broker" | "mediatore"
       completion_behavior_type: "form-completed" | "form-completed-redirect"
+      interest_type: "fisso" | "variabile" | "misto"
       lead_status:
         | "not_contacted"
         | "first_contact"
@@ -807,6 +1051,23 @@ export type Database = {
         | "pratica_bocciata"
         | "perso"
         | "da_assegnare"
+      note_type:
+        | "generale"
+        | "telefonata"
+        | "incontro"
+        | "documentazione"
+        | "banca"
+        | "cliente"
+        | "urgente"
+      pratica_status:
+        | "bozza"
+        | "in_lavorazione"
+        | "documenti_richiesti"
+        | "valutazione_banca"
+        | "approvata"
+        | "rifiutata"
+        | "erogata"
+        | "sospesa"
       save_method_type: "auto-save" | "manual-save" | "completed-save"
     }
     CompositeTypes: {
@@ -935,8 +1196,22 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      activity_type: [
+        "status_change",
+        "note_added",
+        "note_updated",
+        "note_deleted",
+        "pratica_created",
+        "pratica_updated",
+        "field_updated",
+        "document_added",
+        "document_removed",
+        "reminder_set",
+        "contact_made",
+      ],
       app_role: ["admin", "customer", "broker", "mediatore"],
       completion_behavior_type: ["form-completed", "form-completed-redirect"],
+      interest_type: ["fisso", "variabile", "misto"],
       lead_status: [
         "not_contacted",
         "first_contact",
@@ -952,6 +1227,25 @@ export const Constants = {
         "pratica_bocciata",
         "perso",
         "da_assegnare",
+      ],
+      note_type: [
+        "generale",
+        "telefonata",
+        "incontro",
+        "documentazione",
+        "banca",
+        "cliente",
+        "urgente",
+      ],
+      pratica_status: [
+        "bozza",
+        "in_lavorazione",
+        "documenti_richiesti",
+        "valutazione_banca",
+        "approvata",
+        "rifiutata",
+        "erogata",
+        "sospesa",
       ],
       save_method_type: ["auto-save", "manual-save", "completed-save"],
     },
