@@ -464,12 +464,12 @@ export const PlaceholderEditDialog: React.FC<PlaceholderEditDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
+      <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Modifica Placeholder: {placeholderKey}</DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-y-auto flex-1 pr-2">
           <div className="space-y-2">
             <Label>Tipo Placeholder</Label>
             <div className="p-2 bg-gray-100 rounded text-sm font-mono">
@@ -482,7 +482,7 @@ export const PlaceholderEditDialog: React.FC<PlaceholderEditDialogProps> = ({
           {placeholder.type === 'MultiBlockManager' && renderMultiBlockManagerFields()}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0 pt-4 border-t">
           <Button variant="outline" onClick={onClose}>
             Annulla
           </Button>
