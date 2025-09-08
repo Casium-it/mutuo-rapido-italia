@@ -9,6 +9,7 @@ import { useTimeTracking } from "@/hooks/useTimeTracking";
 import { LoginButton } from "@/components/LoginButton";
 import ThreeFeatureCards from "@/components/ThreeFeatureCards";
 import SimulatorCarousel from "@/components/SimulatorCarousel";
+import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
 import featureCard1 from "@/assets/gomutuo-feature-1.svg";
 import featureCard2 from "@/assets/gomutuo-feature-2.svg";
 import featureCard3 from "@/assets/gomutuo-feature-3.svg";
@@ -18,6 +19,12 @@ const HomePage = () => {
   const [currentNotification, setCurrentNotification] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Intersection observer for feature section animation
+  const [featureSectionRef, isFeatureSectionInView] = useIntersectionObserver({
+    threshold: 0.1,
+    rootMargin: '0px 0px -5% 0px'
+  });
 
   // Initialize time tracking for home page - stable reference
   const {
@@ -289,7 +296,12 @@ const HomePage = () => {
       </main>
 
       {/* Sezione Vantaggi a larghezza piena con sfondo bianco */}
-      <section className="w-full bg-white py-8 md:py-10">
+      <section 
+        ref={featureSectionRef}
+        className={`w-full bg-white py-8 md:py-10 transition-all duration-800 ease-out ${
+          isFeatureSectionInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+        }`}
+      >
         <ThreeFeatureCards items={[{
         title: "Il miglior Mutuo",
         description: "Confrontiamo e parliamo con più di 100 banche senza che tu debba andare in filiale",

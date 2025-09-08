@@ -39,10 +39,10 @@ const SimulatorCarousel: React.FC = () => {
   const SLIDE_DURATION = 6000; // 6 secondi per slide
   const PROGRESS_INTERVAL = 50; // Aggiorna il progresso ogni 50ms
 
-  // Fade-in animation quando la sezione diventa visibile al 50%
+  // Fade-in animation quando la sezione diventa visibile immediatamente
   const [carouselRef, isCarouselInView] = useIntersectionObserver({
-    threshold: 0.5, // 50% della sezione deve essere visibile
-    rootMargin: '0px'
+    threshold: 0.1, // Solo 10% della sezione deve essere visibile
+    rootMargin: '0px 0px -5% 0px'
   });
 
   // Preload delle immagini del carousel per evitare ritardi di caricamento

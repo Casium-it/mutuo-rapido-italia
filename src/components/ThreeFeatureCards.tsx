@@ -20,21 +20,17 @@ const ThreeFeatureCards: React.FC<ThreeFeatureCardsProps> = ({
 }) => {
   const isMobile = useIsMobile();
   const [sectionRef, isInView] = useIntersectionObserver({
-    threshold: 0.2,
-    rootMargin: '0px 0px -10% 0px'
+    threshold: 0.1,
+    rootMargin: '0px 0px -5% 0px'
   });
 
-  // Delay aggiuntivo di 1 secondo dopo che la sezione è visibile
+  // No delay - animate immediately when in view
   const [shouldAnimate, setShouldAnimate] = React.useState(false);
   const [centerCardIndex, setCenterCardIndex] = React.useState<number | null>(null);
   
   React.useEffect(() => {
     if (isInView) {
-      const timer = setTimeout(() => {
-        setShouldAnimate(true);
-      }, 1000); // 1 secondo di delay
-      
-      return () => clearTimeout(timer);
+      setShouldAnimate(true);
     }
   }, [isInView]);
 
