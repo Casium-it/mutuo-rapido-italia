@@ -213,6 +213,33 @@ export function FormQuestion({ question }: FormQuestionProps) {
     }
   }, [question.question_id, getResponse, question.placeholders, navigatedFromBack, setNavigatedFromBack]);
 
+  // Separate useEffect to handle navigatedFromBack changes
+  useEffect(() => {
+    if (navigatedFromBack) {
+      console.log('🎯 navigatedFromBack detected, updating visibleOptions for select placeholders');
+      
+      const updatedVisibleOptions: { [key: string]: boolean } = {};
+      
+      Object.keys(question.placeholders).forEach(key => {
+        const placeholder = question.placeholders[key];
+        const existingResponse = getResponse(question.question_id, key);
+        
+        if (placeholder.type === "select" && existingResponse) {
+          updatedVisibleOptions[key] = true;
+          console.log(`🎯 Showing options for select placeholder: ${key}`);
+        }
+      });
+      
+      // Update visibleOptions if we found any select placeholders to show
+      if (Object.keys(updatedVisibleOptions).length > 0) {
+        setVisibleOptions(prev => ({
+          ...prev,
+          ...updatedVisibleOptions
+        }));
+      }
+    }
+  }, [navigatedFromBack, question.question_id, question.placeholders, getResponse]);
+
   // Nuova funzione per verificare se ci sono campi di input mancanti o non validi
   const hasMissingOrInvalidInputs = () => {
     const inputPlaceholders = Object.keys(question.placeholders).filter(
