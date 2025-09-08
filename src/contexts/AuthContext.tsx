@@ -62,7 +62,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.log('Logout error (clearing local session anyway):', error);
+    }
+    // Force clear local session state regardless of server response
+    setSession(null);
+    setUser(null);
   };
 
   const value: AuthContextType = {
