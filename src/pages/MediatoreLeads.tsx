@@ -26,26 +26,33 @@ interface Lead {
   } | null;
 }
 
-const statusOptions: { value: LeadStatus | 'all'; label: string }[] = [
+type PraticaStatus = 'lead' | 'consulenza_programmata' | 'consulenza_completata' | 'in_attesa_documenti' | 'documenti_ricevuti' | 
+  'in_attesa_mandato' | 'mandato_firmato' | 'inviata_alla_banca' | 'predelibera_ricevuta' | 'istruttoria_ricevuta' | 
+  'rogito_completato' | 'pratica_rifiutata' | 'pratica_sospesa';
+
+const statusOptions: { value: PraticaStatus | 'all' | 'nuova_lead'; label: string }[] = [
   { value: 'all', label: 'Tutti gli Status' },
-  { value: 'not_contacted', label: 'Non Contattato' },
-  { value: 'non_risponde_x1', label: 'Non Risponde x1' },
-  { value: 'non_risponde_x2', label: 'Non Risponde x2' },
-  { value: 'non_risponde_x3', label: 'Non Risponde x3' },
-  { value: 'non_interessato', label: 'Non Interessato' },
-  { value: 'da_risentire', label: 'Da Risentire' },
-  { value: 'da_assegnare', label: 'Da Assegnare' },
-  { value: 'prenotata_consulenza', label: 'Prenotata Consulenza' },
-  { value: 'pratica_bocciata', label: 'Pratica Bocciata' },
-  { value: 'converted', label: 'Convertito' },
-  { value: 'perso', label: 'Perso' }
+  { value: 'nuova_lead', label: '✨ Nuova Lead' },
+  { value: 'lead', label: 'Lead' },
+  { value: 'consulenza_programmata', label: 'Consulenza Programmata' },
+  { value: 'consulenza_completata', label: 'Consulenza Completata' },
+  { value: 'in_attesa_documenti', label: 'In Attesa Documenti' },
+  { value: 'documenti_ricevuti', label: 'Documenti Ricevuti' },
+  { value: 'in_attesa_mandato', label: 'In Attesa Mandato' },
+  { value: 'mandato_firmato', label: 'Mandato Firmato' },
+  { value: 'inviata_alla_banca', label: 'Inviata alla Banca' },
+  { value: 'predelibera_ricevuta', label: 'Predelibera Ricevuta' },
+  { value: 'istruttoria_ricevuta', label: 'Istruttoria Ricevuta' },
+  { value: 'rogito_completato', label: 'Rogito Completato' },
+  { value: 'pratica_rifiutata', label: 'Pratica Rifiutata' },
+  { value: 'pratica_sospesa', label: 'Pratica Sospesa' }
 ];
 
 export default function MediatoreLeads() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<LeadStatus | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<PraticaStatus | 'all' | 'nuova_lead'>('all');
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -156,7 +163,16 @@ export default function MediatoreLeads() {
         `${lead.first_name || ''} ${lead.last_name || ''}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (lead.provincia && lead.provincia.toLowerCase().includes(searchTerm.toLowerCase()));
       
-      const matchesStatus = statusFilter === 'all' || lead.lead_status === statusFilter;
+      let matchesStatus = true;
+      if (statusFilter !== 'all') {
+        if (statusFilter === 'nuova_lead') {
+          // Filter for leads without pratica
+          matchesStatus = !lead.pratica;
+        } else {
+          // Filter by pratica status
+          matchesStatus = lead.pratica?.status === statusFilter;
+        }
+      }
       
       return matchesSearch && matchesStatus;
     });
@@ -242,7 +258,7 @@ export default function MediatoreLeads() {
                   
                   {/* Status Filter */}
                   <div className="w-full md:w-64">
-                    <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as LeadStatus | 'all')}>
+                    <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as PraticaStatus | 'all' | 'nuova_lead')}>
                       <SelectTrigger>
                         <div className="flex items-center gap-2">
                           <Filter className="h-4 w-4" />
