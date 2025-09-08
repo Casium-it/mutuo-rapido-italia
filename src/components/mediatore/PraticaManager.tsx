@@ -219,7 +219,7 @@ export function PraticaManager({ submissionId }: PraticaManagerProps) {
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-600">Status Pratica</label>
               <Select
-                value={pratica.status}
+                value={pratica.status || 'lead'}
                 onValueChange={(value) => updateField('status', value)}
               >
                 <SelectTrigger>
