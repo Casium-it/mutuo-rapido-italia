@@ -355,8 +355,7 @@ export default function MediatoreLeads() {
                               size="sm"
                               className="text-[#245C4F] border-[#245C4F] hover:bg-[#245C4F] hover:text-white"
                             >
-                              <StickyNote className="h-4 w-4 mr-1" />
-                              + Nota
+                              Nota Rapida
                             </Button>
                           </SimpleNoteDialog>
                         </div>
