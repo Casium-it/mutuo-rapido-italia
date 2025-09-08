@@ -157,14 +157,14 @@ export function LeadManagementCard({ submission, onUpdate }: LeadManagementCardP
                 Compenso Lead
               </Label>
               <Select 
-                value={submission.compenso_lead || ''} 
-                onValueChange={(value) => onUpdate('compenso_lead', value || null)}
+                value={submission.compenso_lead || 'none'} 
+                onValueChange={(value) => onUpdate('compenso_lead', value === 'none' ? null : value)}
               >
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Seleziona compenso" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nessuno</SelectItem>
+                  <SelectItem value="none">Nessuno</SelectItem>
                   <SelectItem value="50+15%">50+15%</SelectItem>
                   <SelectItem value="30%">30%</SelectItem>
                 </SelectContent>
