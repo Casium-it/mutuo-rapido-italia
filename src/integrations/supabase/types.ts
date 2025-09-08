@@ -1060,14 +1060,19 @@ export type Database = {
         | "cliente"
         | "urgente"
       pratica_status:
-        | "bozza"
-        | "in_lavorazione"
-        | "documenti_richiesti"
-        | "valutazione_banca"
-        | "approvata"
-        | "rifiutata"
-        | "erogata"
-        | "sospesa"
+        | "lead"
+        | "consulenza_programmata"
+        | "consulenza_completata"
+        | "in_attesa_documenti"
+        | "documenti_ricevuti"
+        | "in_attesa_mandato"
+        | "mandato_firmato"
+        | "inviata_alla_banca"
+        | "predelibera_ricevuta"
+        | "istruttoria_ricevuta"
+        | "rogito_completato"
+        | "pratica_rifiutata"
+        | "pratica_sospesa"
       save_method_type: "auto-save" | "manual-save" | "completed-save"
     }
     CompositeTypes: {
@@ -1238,14 +1243,19 @@ export const Constants = {
         "urgente",
       ],
       pratica_status: [
-        "bozza",
-        "in_lavorazione",
-        "documenti_richiesti",
-        "valutazione_banca",
-        "approvata",
-        "rifiutata",
-        "erogata",
-        "sospesa",
+        "lead",
+        "consulenza_programmata",
+        "consulenza_completata",
+        "in_attesa_documenti",
+        "documenti_ricevuti",
+        "in_attesa_mandato",
+        "mandato_firmato",
+        "inviata_alla_banca",
+        "predelibera_ricevuta",
+        "istruttoria_ricevuta",
+        "rogito_completato",
+        "pratica_rifiutata",
+        "pratica_sospesa",
       ],
       save_method_type: ["auto-save", "manual-save", "completed-save"],
     },

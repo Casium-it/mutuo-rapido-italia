@@ -38,14 +38,19 @@ interface PraticaManagerProps {
 }
 
 const statusOptions = [
-  { value: 'bozza', label: 'Bozza', color: 'bg-gray-100 text-gray-700' },
-  { value: 'in_lavorazione', label: 'In Lavorazione', color: 'bg-blue-100 text-blue-700' },
-  { value: 'documenti_richiesti', label: 'Documenti Richiesti', color: 'bg-yellow-100 text-yellow-700' },
-  { value: 'valutazione_banca', label: 'Valutazione Banca', color: 'bg-purple-100 text-purple-700' },
-  { value: 'approvata', label: 'Approvata', color: 'bg-green-100 text-green-700' },
-  { value: 'rifiutata', label: 'Rifiutata', color: 'bg-red-100 text-red-700' },
-  { value: 'erogata', label: 'Erogata', color: 'bg-emerald-100 text-emerald-700' },
-  { value: 'sospesa', label: 'Sospesa', color: 'bg-orange-100 text-orange-700' }
+  { value: 'lead', label: 'Lead', color: 'bg-gray-100 text-gray-700' },
+  { value: 'consulenza_programmata', label: 'Consulenza Programmata', color: 'bg-blue-100 text-blue-700' },
+  { value: 'consulenza_completata', label: 'Consulenza Completata', color: 'bg-green-100 text-green-700' },
+  { value: 'in_attesa_documenti', label: 'In Attesa di Documenti', color: 'bg-yellow-100 text-yellow-700' },
+  { value: 'documenti_ricevuti', label: 'Documenti Ricevuti', color: 'bg-emerald-100 text-emerald-700' },
+  { value: 'in_attesa_mandato', label: 'In Attesa di Mandato', color: 'bg-orange-100 text-orange-700' },
+  { value: 'mandato_firmato', label: 'Mandato Firmato', color: 'bg-purple-100 text-purple-700' },
+  { value: 'inviata_alla_banca', label: 'Inviata alla Banca', color: 'bg-indigo-100 text-indigo-700' },
+  { value: 'predelibera_ricevuta', label: 'Predelibera Ricevuta', color: 'bg-cyan-100 text-cyan-700' },
+  { value: 'istruttoria_ricevuta', label: 'Istruttoria Ricevuta', color: 'bg-teal-100 text-teal-700' },
+  { value: 'rogito_completato', label: 'Rogito Completato', color: 'bg-green-100 text-green-700' },
+  { value: 'pratica_rifiutata', label: 'Pratica Rifiutata', color: 'bg-red-100 text-red-700' },
+  { value: 'pratica_sospesa', label: 'Pratica Sospesa', color: 'bg-orange-100 text-orange-700' }
 ];
 
 const priorityOptions = [
@@ -150,7 +155,7 @@ export function PraticaManager({ submissionId }: PraticaManagerProps) {
         .insert({
           submission_id: submissionId,
           mediatore_id: user.user.id,
-          status: 'bozza',
+          status: 'lead',
           priorita: 2
         })
         .select()
