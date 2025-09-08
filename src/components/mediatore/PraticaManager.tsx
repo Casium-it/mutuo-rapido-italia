@@ -267,8 +267,9 @@ export function PraticaManager({ submissionId }: PraticaManagerProps) {
               label="Importo Richiesto"
               value={formatCurrency(pratica.importo_richiesto)}
               onSave={async (value) => {
-                const numValue = parseFloat(value.replace(/[^\d,.-]/g, '').replace(',', '.'));
-                if (!isNaN(numValue)) {
+                const cleanValue = value.replace(/[^\d,.-]/g, '').replace(',', '.').trim();
+                const numValue = cleanValue === '' ? null : parseFloat(cleanValue);
+                if (cleanValue === '' || !isNaN(numValue)) {
                   await updateField('importo_richiesto', numValue);
                 }
               }}
@@ -278,8 +279,9 @@ export function PraticaManager({ submissionId }: PraticaManagerProps) {
               label="Durata (anni)"
               value={pratica.durata_anni?.toString() || ''}
               onSave={async (value) => {
-                const numValue = parseInt(value);
-                if (!isNaN(numValue)) {
+                const cleanValue = value.trim();
+                const numValue = cleanValue === '' ? null : parseInt(cleanValue);
+                if (cleanValue === '' || !isNaN(numValue)) {
                   await updateField('durata_anni', numValue);
                 }
               }}
@@ -289,9 +291,10 @@ export function PraticaManager({ submissionId }: PraticaManagerProps) {
               label="Tasso Interesse Atteso"
               value={formatPercentage(pratica.tasso_interesse_atteso)}
               onSave={async (value) => {
-                const numValue = parseFloat(value.replace('%', '').replace(',', '.'));
-                if (!isNaN(numValue)) {
-                  await updateField('tasso_interesse_atteso', numValue / 100);
+                const cleanValue = value.replace('%', '').replace(',', '.').trim();
+                const numValue = cleanValue === '' ? null : parseFloat(cleanValue);
+                if (cleanValue === '' || !isNaN(numValue)) {
+                  await updateField('tasso_interesse_atteso', numValue ? numValue / 100 : null);
                 }
               }}
               placeholder="2.50%"
@@ -316,8 +319,9 @@ export function PraticaManager({ submissionId }: PraticaManagerProps) {
               label="Anticipo"
               value={formatCurrency(pratica.anticipo)}
               onSave={async (value) => {
-                const numValue = parseFloat(value.replace(/[^\d,.-]/g, '').replace(',', '.'));
-                if (!isNaN(numValue)) {
+                const cleanValue = value.replace(/[^\d,.-]/g, '').replace(',', '.').trim();
+                const numValue = cleanValue === '' ? null : parseFloat(cleanValue);
+                if (cleanValue === '' || !isNaN(numValue)) {
                   await updateField('anticipo', numValue);
                 }
               }}
@@ -341,8 +345,9 @@ export function PraticaManager({ submissionId }: PraticaManagerProps) {
               label="Valore Immobile"
               value={formatCurrency(pratica.valore_immobile)}
               onSave={async (value) => {
-                const numValue = parseFloat(value.replace(/[^\d,.-]/g, '').replace(',', '.'));
-                if (!isNaN(numValue)) {
+                const cleanValue = value.replace(/[^\d,.-]/g, '').replace(',', '.').trim();
+                const numValue = cleanValue === '' ? null : parseFloat(cleanValue);
+                if (cleanValue === '' || !isNaN(numValue)) {
                   await updateField('valore_immobile', numValue);
                 }
               }}
@@ -378,8 +383,9 @@ export function PraticaManager({ submissionId }: PraticaManagerProps) {
               label="Reddito Mensile Netto"
               value={formatCurrency(pratica.reddito_mensile_netto)}
               onSave={async (value) => {
-                const numValue = parseFloat(value.replace(/[^\d,.-]/g, '').replace(',', '.'));
-                if (!isNaN(numValue)) {
+                const cleanValue = value.replace(/[^\d,.-]/g, '').replace(',', '.').trim();
+                const numValue = cleanValue === '' ? null : parseFloat(cleanValue);
+                if (cleanValue === '' || !isNaN(numValue)) {
                   await updateField('reddito_mensile_netto', numValue);
                 }
               }}
@@ -389,8 +395,9 @@ export function PraticaManager({ submissionId }: PraticaManagerProps) {
               label="Spese Mensili"
               value={formatCurrency(pratica.spese_mensili)}
               onSave={async (value) => {
-                const numValue = parseFloat(value.replace(/[^\d,.-]/g, '').replace(',', '.'));
-                if (!isNaN(numValue)) {
+                const cleanValue = value.replace(/[^\d,.-]/g, '').replace(',', '.').trim();
+                const numValue = cleanValue === '' ? null : parseFloat(cleanValue);
+                if (cleanValue === '' || !isNaN(numValue)) {
                   await updateField('spese_mensili', numValue);
                 }
               }}
@@ -400,8 +407,9 @@ export function PraticaManager({ submissionId }: PraticaManagerProps) {
               label="Altri Finanziamenti"
               value={formatCurrency(pratica.altri_finanziamenti)}
               onSave={async (value) => {
-                const numValue = parseFloat(value.replace(/[^\d,.-]/g, '').replace(',', '.'));
-                if (!isNaN(numValue)) {
+                const cleanValue = value.replace(/[^\d,.-]/g, '').replace(',', '.').trim();
+                const numValue = cleanValue === '' ? null : parseFloat(cleanValue);
+                if (cleanValue === '' || !isNaN(numValue)) {
                   await updateField('altri_finanziamenti', numValue);
                 }
               }}
