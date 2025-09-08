@@ -42,8 +42,6 @@ const statusOptions = [
   { value: 'consulenza_programmata', label: 'Consulenza Programmata', color: 'bg-blue-100 text-blue-700' },
   { value: 'consulenza_saltata', label: 'Consulenza Saltata', color: 'bg-red-100 text-red-700' },
   { value: 'consulenza_completata', label: 'Consulenza Completata', color: 'bg-green-100 text-green-700' },
-  { value: 'non_risponde', label: 'Non Risponde', color: 'bg-yellow-100 text-yellow-700' },
-  { value: 'persa', label: 'Persa', color: 'bg-red-100 text-red-700' },
   { value: 'in_attesa_documenti', label: 'In Attesa di Documenti', color: 'bg-yellow-100 text-yellow-700' },
   { value: 'documenti_ricevuti', label: 'Documenti Ricevuti', color: 'bg-emerald-100 text-emerald-700' },
   { value: 'in_attesa_mandato', label: 'In Attesa di Mandato', color: 'bg-orange-100 text-orange-700' },
@@ -53,7 +51,9 @@ const statusOptions = [
   { value: 'istruttoria_ricevuta', label: 'Istruttoria Ricevuta', color: 'bg-teal-100 text-teal-700' },
   { value: 'rogito_completato', label: 'Rogito Completato', color: 'bg-green-100 text-green-700' },
   { value: 'pratica_rifiutata', label: 'Pratica Rifiutata', color: 'bg-red-100 text-red-700' },
-  { value: 'pratica_sospesa', label: 'Pratica Sospesa', color: 'bg-orange-100 text-orange-700' }
+  { value: 'pratica_sospesa', label: 'Pratica Sospesa', color: 'bg-orange-100 text-orange-700' },
+  { value: 'non_risponde', label: 'Non Risponde', color: 'bg-yellow-100 text-yellow-700' },
+  { value: 'persa', label: 'Persa', color: 'bg-red-100 text-red-700' }
 ];
 
 const priorityOptions = [

@@ -27,8 +27,6 @@ const praticaStatusOptions = [
   { value: 'consulenza_programmata', label: 'Consulenza Programmata' },
   { value: 'consulenza_saltata', label: 'Consulenza Saltata' },
   { value: 'consulenza_completata', label: 'Consulenza Completata' },
-  { value: 'non_risponde', label: 'Non Risponde' },
-  { value: 'persa', label: 'Persa' },
   { value: 'in_attesa_documenti', label: 'In Attesa Documenti' },
   { value: 'documenti_ricevuti', label: 'Documenti Ricevuti' },
   { value: 'in_attesa_mandato', label: 'In Attesa Mandato' },
@@ -38,7 +36,9 @@ const praticaStatusOptions = [
   { value: 'istruttoria_ricevuta', label: 'Istruttoria Ricevuta' },
   { value: 'rogito_completato', label: 'Rogito Completato' },
   { value: 'pratica_rifiutata', label: 'Pratica Rifiutata' },
-  { value: 'pratica_sospesa', label: 'Pratica Sospesa' }
+  { value: 'pratica_sospesa', label: 'Pratica Sospesa' },
+  { value: 'non_risponde', label: 'Non Risponde' },
+  { value: 'persa', label: 'Persa' }
 ];
 
 const leadStatusOptions = [
