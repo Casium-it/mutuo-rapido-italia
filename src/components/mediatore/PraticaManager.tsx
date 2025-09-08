@@ -457,7 +457,6 @@ export function PraticaManager({ submissionId }: PraticaManagerProps) {
               onSave={async (value) => await updateField('data_richiesta', value)}
               placeholder="Seleziona data richiesta"
               isDatePicker
-              autoEdit
             />
             <EditableField
               label="Data Prevista Erogazione"
@@ -466,7 +465,6 @@ export function PraticaManager({ submissionId }: PraticaManagerProps) {
               onSave={async (value) => await updateField('data_prevista_erogazione', value)}
               placeholder="Seleziona data prevista erogazione"
               isDatePicker
-              autoEdit
             />
           </div>
         </CardContent>
