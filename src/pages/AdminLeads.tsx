@@ -258,10 +258,10 @@ export default function AdminLeads() {
       // Apply contactable filter client-side due to complex join logic
       const filteredData = contactableFilter 
         ? mappedData.filter(submission => {
-            // Check if consulting is true
+            // Check if consulting is true - if yes, always include
             if (submission.consulting === true) return true;
             
-            // Check if gomutuo_service response is 'consulenza'
+            // If consulting is not true, check if gomutuo_service response is 'consulenza'
             const gomutoService = submission.form_responses?.find(
               response => response.question_id === 'gomutuo_service'
             );
@@ -278,6 +278,7 @@ export default function AdminLeads() {
               return value === 'consulenza';
             }
             
+            // If neither consulting=true nor gomutuo_service='consulenza', exclude
             return false;
           })
         : mappedData;
