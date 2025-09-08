@@ -17,6 +17,7 @@ import { ExpandableNotes } from '@/components/admin/ExpandableNotes';
 import { PraticaManager } from '@/components/mediatore/PraticaManager';
 import { StructuredNotes } from '@/components/mediatore/StructuredNotes';
 import { ActivityTimeline } from '@/components/mediatore/ActivityTimeline';
+import { DocumentManager } from '@/components/mediatore/DocumentManager';
 
 interface FormSubmission {
   id: string;
@@ -384,7 +385,7 @@ export default function MediatoreLeadDetail() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="pratica" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="pratica" className="flex items-center gap-2">
               <Euro className="h-4 w-4" />
               <span className="hidden sm:inline">Pratica</span>
@@ -392,6 +393,10 @@ export default function MediatoreLeadDetail() {
             <TabsTrigger value="note" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
               <span className="hidden sm:inline">Note</span>
+            </TabsTrigger>
+            <TabsTrigger value="documenti" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">Documenti</span>
             </TabsTrigger>
             <TabsTrigger value="storico" className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
@@ -409,6 +414,10 @@ export default function MediatoreLeadDetail() {
 
           <TabsContent value="note" className="space-y-6">
             <StructuredNotes submissionId={leadId!} />
+          </TabsContent>
+
+          <TabsContent value="documenti" className="space-y-6">
+            <DocumentManager submissionId={leadId!} />
           </TabsContent>
 
           <TabsContent value="storico" className="space-y-6">

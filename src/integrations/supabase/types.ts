@@ -689,6 +689,57 @@ export type Database = {
         }
         Relationships: []
       }
+      pratica_documents: {
+        Row: {
+          content_type: string | null
+          created_at: string
+          file_path: string
+          file_size: number | null
+          filename: string
+          id: string
+          pratica_id: string
+          updated_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          content_type?: string | null
+          created_at?: string
+          file_path: string
+          file_size?: number | null
+          filename: string
+          id?: string
+          pratica_id: string
+          updated_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          content_type?: string | null
+          created_at?: string
+          file_path?: string
+          file_size?: number | null
+          filename?: string
+          id?: string
+          pratica_id?: string
+          updated_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_pratica_documents_pratica"
+            columns: ["pratica_id"]
+            isOneToOne: false
+            referencedRelation: "pratiche"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_pratica_documents_user"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pratiche: {
         Row: {
           altri_finanziamenti: number | null
