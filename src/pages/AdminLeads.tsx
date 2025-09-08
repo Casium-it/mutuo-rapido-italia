@@ -258,8 +258,20 @@ export default function AdminLeads() {
       // Apply contactable filter client-side due to complex join logic
       const filteredData = contactableFilter 
         ? mappedData.filter(submission => {
+            // Debug logging to investigate the issue
+            console.log('🔍 Filtering submission:', {
+              id: submission.id.slice(0, 8),
+              first_name: submission.first_name,
+              consulting: submission.consulting,
+              consulting_type: typeof submission.consulting,
+              hasGomutoService: !!submission.form_responses?.find(r => r.question_id === 'gomutuo_service')
+            });
+            
             // Check if consulting is true - if yes, always include
-            if (submission.consulting === true) return true;
+            if (submission.consulting === true) {
+              console.log('✅ Including due to consulting=true:', submission.first_name);
+              return true;
+            }
             
             // If consulting is not true, check if gomutuo_service response is 'consulenza'
             const gomutoService = submission.form_responses?.find(
@@ -275,13 +287,23 @@ export default function AdminLeads() {
                 value = String(responseValue);
               }
               
-              return value === 'consulenza';
+              if (value === 'consulenza') {
+                console.log('✅ Including due to gomutuo_service=consulenza:', submission.first_name);
+                return true;
+              }
             }
             
             // If neither consulting=true nor gomutuo_service='consulenza', exclude
+            console.log('❌ Excluding submission:', submission.first_name, 'consulting:', submission.consulting, 'gomutuo_service not consulenza');
             return false;
           })
         : mappedData;
+      
+      console.log('📊 Filter results:', {
+        original_count: mappedData.length,
+        filtered_count: filteredData.length,
+        contactable_filter_active: contactableFilter
+      });
       
       setSubmissions(filteredData);
       setTotalCount(contactableFilter ? filteredData.length : (count || 0));
