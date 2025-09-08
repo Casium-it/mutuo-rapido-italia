@@ -1110,6 +1110,7 @@ export type Database = {
         | "banca"
         | "cliente"
         | "urgente"
+        | "sistema"
       pratica_status:
         | "lead"
         | "consulenza_programmata"
@@ -1294,6 +1295,7 @@ export const Constants = {
         "banca",
         "cliente",
         "urgente",
+        "sistema",
       ],
       pratica_status: [
         "lead",
