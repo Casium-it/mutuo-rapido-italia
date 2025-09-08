@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { Eye, ArrowLeft, Phone, Calendar, FileText, Mail, User, StickyNote, Trash2, Filter, RotateCcw, Search } from 'lucide-react';
+import { Eye, ArrowLeft, Phone, Calendar, FileText, Mail, User, StickyNote, Trash2, Filter, RotateCcw, Search, Headphones } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -69,6 +69,7 @@ export default function AdminLeads() {
   const [forms, setForms] = useState<FormInfo[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [phoneFilter, setPhoneFilter] = useState<boolean>(true); // Default on
+  const [contactableFilter, setContactableFilter] = useState<boolean>(true); // Default on
   const [mediatoreFilter, setMediatoreFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
@@ -80,10 +81,11 @@ export default function AdminLeads() {
   const navigate = useNavigate();
 
   // Session Storage helpers
-  const saveFiltersToSession = (status: string, phone: boolean, mediatore: string, search: string) => {
+  const saveFiltersToSession = (status: string, phone: boolean, contactable: boolean, mediatore: string, search: string) => {
     try {
       sessionStorage.setItem('adminLeads_statusFilter', status);
       sessionStorage.setItem('adminLeads_phoneFilter', phone.toString());
+      sessionStorage.setItem('adminLeads_contactableFilter', contactable.toString());
       sessionStorage.setItem('adminLeads_mediatoreFilter', mediatore);
       sessionStorage.setItem('adminLeads_searchQuery', search);
     } catch (error) {
@@ -95,17 +97,19 @@ export default function AdminLeads() {
     try {
       const savedStatus = sessionStorage.getItem('adminLeads_statusFilter') || 'all';
       const savedPhone = sessionStorage.getItem('adminLeads_phoneFilter') === 'false' ? false : true;
+      const savedContactable = sessionStorage.getItem('adminLeads_contactableFilter') === 'false' ? false : true;
       const savedMediator = sessionStorage.getItem('adminLeads_mediatoreFilter') || 'all';
       const savedSearch = sessionStorage.getItem('adminLeads_searchQuery') || '';
       return { 
         status: savedStatus, 
         phone: savedPhone,
+        contactable: savedContactable,
         mediatore: savedMediator,
         search: savedSearch
       };
     } catch (error) {
       console.warn('Could not load filters from session storage:', error);
-      return { status: 'all', phone: true, mediatore: 'all', search: '' };
+      return { status: 'all', phone: true, contactable: true, mediatore: 'all', search: '' };
     }
   };
 
@@ -131,9 +135,10 @@ export default function AdminLeads() {
 
   // Initialize filters from session storage
   useEffect(() => {
-    const { status, phone, mediatore, search } = loadFiltersFromSession();
+    const { status, phone, contactable, mediatore, search } = loadFiltersFromSession();
     setStatusFilter(status);
     setPhoneFilter(phone);
+    setContactableFilter(contactable);
     setMediatoreFilter(mediatore);
     setSearchQuery(search);
     setDebouncedSearchQuery(search);
@@ -168,7 +173,7 @@ export default function AdminLeads() {
     
     setSubmissionsLoading(true);
     fetchSubmissions().finally(() => setSubmissionsLoading(false));
-  }, [currentPage, statusFilter, phoneFilter, mediatoreFilter, debouncedSearchQuery]);
+  }, [currentPage, statusFilter, phoneFilter, contactableFilter, mediatoreFilter, debouncedSearchQuery]);
 
   const fetchSubmissions = async (retryWithPage1 = false) => {
     try {
@@ -201,6 +206,11 @@ export default function AdminLeads() {
 
       if (phoneFilter) {
         query = query.not('phone_number', 'is', null);
+      }
+
+      // Contactable filter - leads with consulting=true OR have "Contattami" response
+      if (contactableFilter) {
+        query = query.or('consulting.eq.true,form_responses.response_value.cs."Contattami"');
       }
 
       // Re-enabled mediatore filtering with UUID support
@@ -392,7 +402,7 @@ export default function AdminLeads() {
   // Reset page when filters change  
   useEffect(() => {
     setCurrentPage(1);
-  }, [statusFilter, phoneFilter, mediatoreFilter, searchQuery]);
+  }, [statusFilter, phoneFilter, contactableFilter, mediatoreFilter, searchQuery]);
 
   // Sync currentPage with totalPages when totalCount changes
   useEffect(() => {
@@ -458,7 +468,7 @@ export default function AdminLeads() {
                 <User className="h-4 w-4 text-gray-500" />
                 <Select value={mediatoreFilter} onValueChange={(value) => {
                   setMediatoreFilter(value);
-                  saveFiltersToSession(statusFilter, phoneFilter, value, searchQuery);
+                  saveFiltersToSession(statusFilter, phoneFilter, contactableFilter, value, searchQuery);
                 }}>
                   <SelectTrigger className="w-40">
                     <SelectValue placeholder="Mediatore" />
@@ -474,6 +484,18 @@ export default function AdminLeads() {
                 </Select>
               </div>
 
+              {/* Contactable Filter (Switch) */}
+              <div className="flex items-center gap-2 border-l pl-4">
+                <Headphones className="h-4 w-4 text-gray-500" />
+                <Switch
+                  checked={contactableFilter}
+                  onCheckedChange={(checked) => {
+                    setContactableFilter(checked);
+                    saveFiltersToSession(statusFilter, phoneFilter, checked, mediatoreFilter, searchQuery);
+                  }}
+                />
+              </div>
+
               {/* Phone Filter (Switch) */}
               <div className="flex items-center gap-2 border-l pl-4">
                 <Phone className="h-4 w-4 text-gray-500" />
@@ -481,7 +503,7 @@ export default function AdminLeads() {
                   checked={phoneFilter}
                   onCheckedChange={(checked) => {
                     setPhoneFilter(checked);
-                    saveFiltersToSession(statusFilter, checked, mediatoreFilter, searchQuery);
+                    saveFiltersToSession(statusFilter, checked, contactableFilter, mediatoreFilter, searchQuery);
                   }}
                 />
               </div>
@@ -491,7 +513,7 @@ export default function AdminLeads() {
                 <Filter className="h-4 w-4 text-gray-500" />
                 <Select value={statusFilter} onValueChange={(value) => {
                   setStatusFilter(value);
-                  saveFiltersToSession(value, phoneFilter, mediatoreFilter, searchQuery);
+                  saveFiltersToSession(value, phoneFilter, contactableFilter, mediatoreFilter, searchQuery);
                 }}>
                   <SelectTrigger className="w-44">
                     <SelectValue placeholder="Status" />
@@ -527,7 +549,7 @@ export default function AdminLeads() {
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
-                    saveFiltersToSession(statusFilter, phoneFilter, mediatoreFilter, e.target.value);
+                    saveFiltersToSession(statusFilter, phoneFilter, contactableFilter, mediatoreFilter, e.target.value);
                   }}
                   className="pl-10 w-64"
                 />
