@@ -2,7 +2,11 @@
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Edit2, Check, X } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Edit2, Check, X, CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface EditableFieldProps {
   label: string;
@@ -12,15 +16,24 @@ interface EditableFieldProps {
   placeholder?: string;
   multiline?: boolean;
   isPercentage?: boolean; // Indicates this field handles percentage values
+  isDatePicker?: boolean; // Indicates this field should use a date picker
 }
 
-export function EditableField({ label, value, rawValue, onSave, placeholder, multiline = false, isPercentage = false }: EditableFieldProps) {
+export function EditableField({ label, value, rawValue, onSave, placeholder, multiline = false, isPercentage = false, isDatePicker = false }: EditableFieldProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(rawValue || value);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(
+    isDatePicker && (rawValue || value) ? new Date(rawValue || value) : undefined
+  );
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
     let processedValue = editValue;
+    
+    // Handle date picker: use selected date
+    if (isDatePicker && selectedDate) {
+      processedValue = format(selectedDate, 'yyyy-MM-dd');
+    }
     
     // Handle percentage field: replace comma with dot
     if (isPercentage) {
@@ -46,6 +59,7 @@ export function EditableField({ label, value, rawValue, onSave, placeholder, mul
 
   const handleCancel = () => {
     setEditValue(rawValue || value);
+    setSelectedDate(isDatePicker && (rawValue || value) ? new Date(rawValue || value) : undefined);
     setIsEditing(false);
   };
 
@@ -62,6 +76,30 @@ export function EditableField({ label, value, rawValue, onSave, placeholder, mul
               className="flex-1 min-h-[200px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               rows={8}
             />
+          ) : isDatePicker ? (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "flex-1 justify-start text-left font-normal",
+                    !selectedDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {selectedDate ? format(selectedDate, "dd/MM/yyyy") : <span>{placeholder || "Seleziona data"}</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={setSelectedDate}
+                  initialFocus
+                  className="p-3 pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
           ) : (
             <Input
               value={editValue}
@@ -125,6 +163,7 @@ export function EditableField({ label, value, rawValue, onSave, placeholder, mul
           variant="ghost"
           onClick={() => {
             setEditValue(rawValue || value);
+            setSelectedDate(isDatePicker && (rawValue || value) ? new Date(rawValue || value) : undefined);
             setIsEditing(true);
           }}
           className="opacity-0 group-hover:opacity-100 transition-opacity mt-1"

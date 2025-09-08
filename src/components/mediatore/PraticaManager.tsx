@@ -452,15 +452,19 @@ export function PraticaManager({ submissionId }: PraticaManagerProps) {
             />
             <EditableField
               label="Data Richiesta"
-              value={pratica.data_richiesta || ''}
+              value={pratica.data_richiesta ? new Date(pratica.data_richiesta).toLocaleDateString('it-IT') : ''}
+              rawValue={pratica.data_richiesta || ''}
               onSave={async (value) => await updateField('data_richiesta', value)}
-              placeholder="YYYY-MM-DD"
+              placeholder="Seleziona data richiesta"
+              isDatePicker
             />
             <EditableField
               label="Data Prevista Erogazione"
-              value={pratica.data_prevista_erogazione || ''}
+              value={pratica.data_prevista_erogazione ? new Date(pratica.data_prevista_erogazione).toLocaleDateString('it-IT') : ''}
+              rawValue={pratica.data_prevista_erogazione || ''}
               onSave={async (value) => await updateField('data_prevista_erogazione', value)}
-              placeholder="YYYY-MM-DD"
+              placeholder="Seleziona data prevista erogazione"
+              isDatePicker
             />
           </div>
         </CardContent>
