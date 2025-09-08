@@ -138,6 +138,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
   const [showNonLoSoButton, setShowNonLoSoButton] = useState(false);
   // Nuovo stato per tenere traccia delle posizioni del cursore
   const [cursorPositions, setCursorPositions] = useState<{ [key: string]: number | null }>({});
+  // Stato per tracciare se siamo ancora nella stessa domanda
+  const [currentQuestionId, setCurrentQuestionId] = useState<string>('');
   // Use ref for question start time to prevent resets on re-renders
   const questionStartTimeRef = useRef<number>(Date.now());
   const params = useParams();
@@ -151,6 +153,9 @@ export function FormQuestion({ question }: FormQuestionProps) {
 
   // Load existing responses and initialize UI state
   useEffect(() => {
+    // Check if this is actually a new question
+    const isNewQuestion = currentQuestionId !== question.question_id;
+    
     const existingResponses: { [key: string]: string | string[] } = {};
     const initialVisibleOptions: { [key: string]: boolean } = {};
     const initialValidationErrors: { [key: string]: boolean } = {};
@@ -162,8 +167,14 @@ export function FormQuestion({ question }: FormQuestionProps) {
       if (existingResponse) {
         existingResponses[key] = existingResponse;
         
-        // Always show select options for placeholders with existing responses
-        initialVisibleOptions[key] = placeholder.type === "select" && Boolean(existingResponse);
+        // Only reset visibility for new questions, preserve current state for same question
+        if (isNewQuestion) {
+          // Always show select options for placeholders with existing responses
+          initialVisibleOptions[key] = placeholder.type === "select" && Boolean(existingResponse);
+        } else {
+          // Keep current visibility state if still on same question
+          initialVisibleOptions[key] = visibleOptions[key] ?? false;
+        }
         
         // Validate existing input responses
         if (placeholder.type === "input") {
@@ -173,12 +184,24 @@ export function FormQuestion({ question }: FormQuestionProps) {
           }
         }
       } else {
-        initialVisibleOptions[key] = true;
+        // For new questions without responses, show options for select placeholders
+        if (isNewQuestion) {
+          initialVisibleOptions[key] = placeholder.type === "select";
+        } else {
+          // Keep current visibility state
+          initialVisibleOptions[key] = visibleOptions[key] ?? false;
+        }
       }
     });
     
     setResponses(existingResponses);
-    setVisibleOptions(initialVisibleOptions);
+    
+    // Only update visibleOptions if this is a new question
+    if (isNewQuestion) {
+      setVisibleOptions(initialVisibleOptions);
+      setCurrentQuestionId(question.question_id);
+    }
+    
     setValidationErrors(initialValidationErrors);
     setEditingFields({});
     setIsNavigating(false);
@@ -188,7 +211,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
     if (navigatedFromBack) {
       setNavigatedFromBack(false);
     }
-  }, [question.question_id, getResponse, question.placeholders, navigatedFromBack, setNavigatedFromBack]);
+  }, [question.question_id, getResponse, question.placeholders, navigatedFromBack, setNavigatedFromBack, currentQuestionId, visibleOptions]);
 
   // Nuova funzione per verificare se ci sono campi di input mancanti o non validi
   const hasMissingOrInvalidInputs = () => {
