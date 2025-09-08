@@ -64,6 +64,52 @@ export function EditableField({ label, value, rawValue, onSave, placeholder, mul
   };
 
   if (isEditing) {
+    // For date picker, show popover directly without save/cancel buttons
+    if (isDatePicker) {
+      return (
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-600">{label}</label>
+          <Popover open={isEditing} onOpenChange={(open) => !open && setIsEditing(false)}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "flex-1 justify-start text-left font-normal",
+                  !selectedDate && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {selectedDate ? format(selectedDate, "dd/MM/yyyy") : <span>{placeholder || "Seleziona data"}</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={async (date) => {
+                  setSelectedDate(date);
+                  if (date) {
+                    setIsSaving(true);
+                    try {
+                      const processedValue = format(date, 'yyyy-MM-dd');
+                      await onSave(processedValue);
+                      setIsEditing(false);
+                    } catch (error) {
+                      console.error('Error saving date:', error);
+                    } finally {
+                      setIsSaving(false);
+                    }
+                  }
+                }}
+                initialFocus
+                className="p-3 pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-2">
         <label className="text-sm font-medium text-gray-600">{label}</label>
@@ -76,30 +122,6 @@ export function EditableField({ label, value, rawValue, onSave, placeholder, mul
               className="flex-1 min-h-[200px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               rows={8}
             />
-          ) : isDatePicker ? (
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "flex-1 justify-start text-left font-normal",
-                    !selectedDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {selectedDate ? format(selectedDate, "dd/MM/yyyy") : <span>{placeholder || "Seleziona data"}</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={setSelectedDate}
-                  initialFocus
-                  className="p-3 pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
           ) : (
             <Input
               value={editValue}
