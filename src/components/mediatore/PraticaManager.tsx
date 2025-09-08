@@ -140,11 +140,50 @@ export function PraticaManager({ submissionId }: PraticaManagerProps) {
     );
   }
 
+  const createPratica = async () => {
+    try {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) return;
+
+      const { data, error } = await supabase
+        .from('pratiche')
+        .insert({
+          submission_id: submissionId,
+          mediatore_id: user.user.id,
+          status: 'bozza',
+          priorita: 2
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setPratica(data);
+      toast({
+        title: "Pratica creata",
+        description: "Nuova pratica creata con successo.",
+      });
+    } catch (error) {
+      console.error('Error creating pratica:', error);
+      toast({
+        variant: "destructive",
+        title: "Errore",
+        description: "Errore durante la creazione della pratica.",
+      });
+    }
+  };
+
   if (!pratica) {
     return (
       <Card>
-        <CardContent className="p-6">
-          <p className="text-gray-500 text-center">Nessuna pratica trovata per questo lead.</p>
+        <CardContent className="p-6 text-center space-y-4">
+          <p className="text-gray-500">Nessuna pratica trovata per questo lead.</p>
+          <button
+            onClick={createPratica}
+            className="bg-[#245C4F] hover:bg-[#1e4f44] text-white px-6 py-2 rounded-lg transition-colors"
+          >
+            Crea Nuova Pratica
+          </button>
         </CardContent>
       </Card>
     );
