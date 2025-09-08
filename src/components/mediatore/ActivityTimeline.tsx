@@ -131,16 +131,34 @@ export function ActivityTimeline({ submissionId }: ActivityTimelineProps) {
   const renderValueChange = (activity: Activity) => {
     if (!activity.old_value && !activity.new_value) return null;
 
+    const formatValue = (value: any) => {
+      if (typeof value === 'object' && value !== null) {
+        // Handle note objects
+        if (value.titolo && value.contenuto) {
+          return `"${value.titolo}" - ${value.contenuto}`;
+        }
+        // Handle other objects by showing key properties
+        if (value.status) return value.status;
+        if (value.name) return value.name;
+        // Fallback to simple string representation
+        return Object.entries(value)
+          .slice(0, 2) // Only show first 2 properties
+          .map(([key, val]) => `${key}: ${val}`)
+          .join(', ');
+      }
+      return String(value);
+    };
+
     return (
       <div className="mt-2 text-xs text-gray-500 bg-gray-50 rounded p-2">
         {activity.old_value && (
           <div>
-            <span className="font-medium">Da:</span> {JSON.stringify(activity.old_value).replace(/"/g, '')}
+            <span className="font-medium">Da:</span> {formatValue(activity.old_value)}
           </div>
         )}
         {activity.new_value && (
           <div>
-            <span className="font-medium">A:</span> {JSON.stringify(activity.new_value).replace(/"/g, '')}
+            <span className="font-medium">A:</span> {formatValue(activity.new_value)}
           </div>
         )}
       </div>
