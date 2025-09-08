@@ -259,16 +259,22 @@ export default function AdminLeads() {
       const filteredData = contactableFilter 
         ? mappedData.filter(submission => {
             // Check if consulting is true
-            if (submission.consulting) return true;
+            if (submission.consulting === true) return true;
             
             // Check if gomutuo_service response is 'consulenza'
             const gomutoService = submission.form_responses?.find(
               response => response.question_id === 'gomutuo_service'
             );
-            if (gomutoService) {
-              const value = typeof gomutoService.response_value === 'object' 
-                ? Object.values(gomutoService.response_value)[0]
-                : gomutoService.response_value;
+            if (gomutoService && gomutoService.response_value) {
+              const responseValue = gomutoService.response_value;
+              let value: string;
+              
+              if (typeof responseValue === 'object' && responseValue !== null && !Array.isArray(responseValue)) {
+                value = (responseValue as any).placeholder1 || '';
+              } else {
+                value = String(responseValue);
+              }
+              
               return value === 'consulenza';
             }
             
