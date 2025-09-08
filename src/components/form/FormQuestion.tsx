@@ -9,6 +9,7 @@ import { cn, formatNumberWithThousandSeparator, capitalizeWords } from "@/lib/ut
 import { SelectPlaceholderBox } from "./SelectPlaceholderBox";
 import { Separator } from "@/components/ui/separator";
 import { getQuestionTextWithClickableResponses } from "@/utils/formUtils";
+import { findBlockByQuestionId } from "@/utils/blockUtils";
 import { validateInput } from "@/utils/validationUtils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { MultiBlockManager } from "./MultiBlockManager";
@@ -150,6 +151,12 @@ export function FormQuestion({ question }: FormQuestionProps) {
 
   // Separate useEffect for loading existing responses and UI state
   useEffect(() => {
+    console.log('🔄 FormQuestion useEffect triggered:', {
+      questionId: question.question_id,
+      navigatedFromBack,
+      placeholders: Object.keys(question.placeholders)
+    });
+    
     const existingResponses: { [key: string]: string | string[] } = {};
     const initialVisibleOptions: { [key: string]: boolean } = {};
     const initialValidationErrors: { [key: string]: boolean } = {};
@@ -166,6 +173,13 @@ export function FormQuestion({ question }: FormQuestionProps) {
                               placeholder.type === "select" && 
                               Boolean(existingResponse);
         
+        console.log(`🎯 Placeholder ${key}:`, {
+          type: placeholder.type,
+          existingResponse,
+          navigatedFromBack,
+          shouldAutoShow
+        });
+        
         initialVisibleOptions[key] = shouldAutoShow;
         
         // Verifica che le risposte esistenti siano ancora valide
@@ -180,6 +194,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
       }
     });
     
+    console.log('🔧 Setting visibleOptions:', initialVisibleOptions);
+    
     setResponses(existingResponses);
     setVisibleOptions(initialVisibleOptions);
     setValidationErrors(initialValidationErrors);
@@ -192,6 +208,7 @@ export function FormQuestion({ question }: FormQuestionProps) {
     
     // Reset the back navigation flag after processing
     if (navigatedFromBack) {
+      console.log('🔄 Resetting navigatedFromBack flag');
       setNavigatedFromBack(false);
     }
   }, [question.question_id, getResponse, question.placeholders, navigatedFromBack, setNavigatedFromBack]);
@@ -260,8 +277,11 @@ export function FormQuestion({ question }: FormQuestionProps) {
     if (isNavigating) return;
     setIsNavigating(true);
     
+    console.log('⬅️ Back navigation triggered');
+    
     // Set the back navigation flag BEFORE navigation
     setNavigatedFromBack(true);
+    console.log('🚩 Set navigatedFromBack to true');
     
     // Track back navigation
     trackSimulationBackNavigation(state.activeQuestion.block_id, state.activeQuestion.question_id);
@@ -292,6 +312,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
     
     // Ottieni l'ID della domanda precedente
     const previousQuestionId = answeredQuestionsArray[targetQuestionIndex];
+    
+    console.log('⬅️ Navigating to previous question:', previousQuestionId);
     
     // Trova il blocco che contiene questa domanda
     const blockWithPreviousQuestion = findBlockByQuestionId(blocks, previousQuestionId);
@@ -1132,9 +1154,4 @@ export function FormQuestion({ question }: FormQuestionProps) {
       )}
     </div>
   );
-}
-
-// Funzione per trovare un blocco di domande per una domanda specifica
-const findBlockByQuestionId = (blocks: any[], questionId: string): any => {
-  return blocks.find(block => block.questions.some(q => q.question_id === questionId));
 }
