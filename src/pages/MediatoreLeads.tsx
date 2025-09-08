@@ -19,6 +19,7 @@ interface Lead {
   last_name: string | null;
   lead_status: LeadStatus;
   provincia?: string | null;
+  compenso_lead?: string | null;
   saved_simulation?: {
     form_state: any;
   };
@@ -82,6 +83,7 @@ export default function MediatoreLeads() {
           last_name,
           lead_status,
           mediatore,
+          compenso_lead,
           saved_simulation_id,
           saved_simulations (
             form_state
@@ -141,6 +143,7 @@ export default function MediatoreLeads() {
           last_name: submission.last_name,
           lead_status: submission.lead_status,
           provincia,
+          compenso_lead: submission.compenso_lead,
           saved_simulation: submission.saved_simulations,
           pratica: submission.pratiche || null
         };
@@ -317,17 +320,18 @@ export default function MediatoreLeads() {
               <Card className="bg-white border border-[#BEB8AE]">
                 <CardContent className="p-0">
                   {/* Table Header */}
-                  <div className="grid grid-cols-4 gap-4 p-4 border-b border-[#BEB8AE] bg-gray-50">
+                  <div className="grid grid-cols-5 gap-4 p-4 border-b border-[#BEB8AE] bg-gray-50">
                     <div className="font-medium text-gray-700">Nome</div>
                     <div className="font-medium text-gray-700">Status</div>
                     <div className="font-medium text-gray-700">Provincia</div>
+                    <div className="font-medium text-gray-700">Compenso</div>
                     <div className="font-medium text-gray-700">Azioni</div>
                   </div>
                   
                   {/* Table Rows */}
                   <div className="divide-y divide-[#BEB8AE]">
                     {filteredLeads.map((lead) => (
-                      <div key={lead.id} className="grid grid-cols-4 gap-4 p-4 items-center hover:bg-gray-50">
+                      <div key={lead.id} className="grid grid-cols-5 gap-4 p-4 items-center hover:bg-gray-50">
                         {/* Name Column */}
                         <div className="space-y-1">
                           <div className="font-medium text-gray-900">
@@ -357,6 +361,15 @@ export default function MediatoreLeads() {
                               <MapPin className="h-4 w-4" />
                               <span>{lead.provincia}</span>
                             </div>
+                          ) : (
+                            <span className="text-gray-400 italic">N/A</span>
+                          )}
+                        </div>
+                        
+                        {/* Compenso Column */}
+                        <div className="text-gray-600">
+                          {lead.compenso_lead ? (
+                            <span className="text-sm font-medium">{lead.compenso_lead}</span>
                           ) : (
                             <span className="text-gray-400 italic">N/A</span>
                           )}
