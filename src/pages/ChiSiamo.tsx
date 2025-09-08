@@ -121,12 +121,12 @@ const ChiSiamo = () => {
               <div className="text-sm opacity-90">Banche dei Partner</div>
             </div>
             <div>
-              <div className="text-3xl font-bold mb-2">90+</div>
+              <div className="text-3xl font-bold mb-2">50+</div>
               <div className="text-sm opacity-90">Consulenti Partner</div>
             </div>
             <div>
               <div className="text-3xl font-bold mb-2">5000+</div>
-              <div className="text-sm opacity-90">Mutui Erogati dalla Rete</div>
+              <div className="text-sm opacity-90">Mutui Erogati dalle reti Partner</div>
             </div>
             <div>
               <div className="text-3xl font-bold mb-2">4.9/5</div>
