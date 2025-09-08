@@ -162,8 +162,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
       if (existingResponse) {
         existingResponses[key] = existingResponse;
         
-        // Auto-show select placeholders that have existing responses
-        initialVisibleOptions[key] = placeholder.type === "select";
+        // Show options for select placeholders only if no existing response
+        initialVisibleOptions[key] = placeholder.type === "select" && !Boolean(existingResponse);
         
         // Validate existing input responses
         if (placeholder.type === "input") {
