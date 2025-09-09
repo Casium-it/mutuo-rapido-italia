@@ -201,17 +201,19 @@ export default function AdminMediatoriLogs() {
       if (typeLogFilter !== 'all') {
         const typeMap = {
           'note': ['note_added', 'note_updated', 'note_deleted'] as const,
-          'edit': ['field_updated'] as const,
+          'edit': ['field_updated', 'pratica_created'] as const,
           'status': ['document_added', 'document_removed'] as const
         };
         
-        if (typeMap[typeLogFilter as keyof typeof typeMap]) {
-          query = query.in('activity_type', typeMap[typeLogFilter as keyof typeof typeMap]);
+        const activityTypes = typeMap[typeLogFilter as keyof typeof typeMap];
+        if (activityTypes) {
+          query = query.in('activity_type', activityTypes);
         }
       }
 
+      // Search only in description field (activity_type is enum, can't use ilike)
       if (debouncedSearchTerm) {
-        query = query.or(`description.ilike.%${debouncedSearchTerm}%,activity_type.ilike.%${debouncedSearchTerm}%`);
+        query = query.ilike('description', `%${debouncedSearchTerm}%`);
       }
 
       const { data, error, count } = await query
