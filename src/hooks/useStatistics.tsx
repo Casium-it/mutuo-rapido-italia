@@ -116,75 +116,74 @@ export function useStatistics(period: PeriodData) {
 
       const { currentPeriod, previousPeriod } = calculatePeriodDates(period);
 
-      // Fetch current period data
+      // Fetch forms first for form breakdown
+      const { data: forms } = await supabase
+        .from('forms')
+        .select('id, slug, title');
+
+      const formsMap = new Map(forms?.map(f => [f.id, { slug: f.slug, title: f.title }]) || []);
+
+      // Fetch current period totals using COUNT
       const [currentSimulations, currentSubmissions, currentSubmissionsWithContact] = await Promise.all([
-        // Simulazioni salvate
+        // Simulazioni salvate - count total
         supabase
           .from('saved_simulations')
-          .select('form_slug, created_at')
+          .select('*', { count: 'exact', head: true })
           .gte('created_at', currentPeriod.start.toISOString())
           .lte('created_at', currentPeriod.end.toISOString()),
         
-        // Submissions totali
+        // Submissions totali - count total
         supabase
           .from('form_submissions')
-          .select('form_id, created_at')
+          .select('*', { count: 'exact', head: true })
           .gte('created_at', currentPeriod.start.toISOString())
           .lte('created_at', currentPeriod.end.toISOString()),
         
-        // Submissions con contatto (con phone_number)
+        // Submissions con contatto - count total
         supabase
           .from('form_submissions')
-          .select('form_id, created_at')
+          .select('*', { count: 'exact', head: true })
           .gte('created_at', currentPeriod.start.toISOString())
           .lte('created_at', currentPeriod.end.toISOString())
           .not('phone_number', 'is', null)
           .neq('phone_number', '')
       ]);
 
-      // Fetch previous period data
+      // Fetch previous period totals using COUNT
       const [prevSimulations, prevSubmissions, prevSubmissionsWithContact] = await Promise.all([
         supabase
           .from('saved_simulations')
-          .select('form_slug, created_at')
+          .select('*', { count: 'exact', head: true })
           .gte('created_at', previousPeriod.start.toISOString())
           .lte('created_at', previousPeriod.end.toISOString()),
         
         supabase
           .from('form_submissions')
-          .select('form_id, created_at')
+          .select('*', { count: 'exact', head: true })
           .gte('created_at', previousPeriod.start.toISOString())
           .lte('created_at', previousPeriod.end.toISOString()),
         
         supabase
           .from('form_submissions')
-          .select('form_id, created_at')
+          .select('*', { count: 'exact', head: true })
           .gte('created_at', previousPeriod.start.toISOString())
           .lte('created_at', previousPeriod.end.toISOString())
           .not('phone_number', 'is', null)
           .neq('phone_number', '')
       ]);
 
-      // Fetch forms for mapping
-      const { data: forms } = await supabase
-        .from('forms')
-        .select('id, slug, title');
-
       if (currentSimulations.error) throw currentSimulations.error;
       if (currentSubmissions.error) throw currentSubmissions.error;
       if (currentSubmissionsWithContact.error) throw currentSubmissionsWithContact.error;
 
-      const formsMap = new Map(forms?.map(f => [f.id, { slug: f.slug, title: f.title }]) || []);
-      const slugToIdMap = new Map(forms?.map(f => [f.slug, f.id]) || []);
+      // Calculate totals from counts
+      const currentSimulationsCount = currentSimulations.count || 0;
+      const currentSubmissionsCount = currentSubmissions.count || 0;
+      const currentSubmissionsWithContactCount = currentSubmissionsWithContact.count || 0;
 
-      // Calculate totals
-      const currentSimulationsCount = currentSimulations.data?.length || 0;
-      const currentSubmissionsCount = currentSubmissions.data?.length || 0;
-      const currentSubmissionsWithContactCount = currentSubmissionsWithContact.data?.length || 0;
-
-      const prevSimulationsCount = prevSimulations.data?.length || 0;
-      const prevSubmissionsCount = prevSubmissions.data?.length || 0;
-      const prevSubmissionsWithContactCount = prevSubmissionsWithContact.data?.length || 0;
+      const prevSimulationsCount = prevSimulations.count || 0;
+      const prevSubmissionsCount = prevSubmissions.count || 0;
+      const prevSubmissionsWithContactCount = prevSubmissionsWithContact.count || 0;
 
       // Helper function to calculate metrics
       const calculateMetric = (current: number, previous: number, totalSimulations?: number): StatisticMetric => {
@@ -201,35 +200,90 @@ export function useStatistics(period: PeriodData) {
         };
       };
 
-      // Calculate form breakdown
+      // Calculate form breakdown using count queries for each form
       const formBreakdown: FormStatistics[] = [];
-      const processedForms = new Set<string>();
+      
+      if (forms && forms.length > 0) {
+        // Fetch counts for each form in parallel
+        const formCountPromises = forms.map(async (form) => {
+          const [
+            currentSimsCount,
+            currentSubsCount, 
+            currentSubsWithContactCount,
+            prevSimsCount,
+            prevSubsCount,
+            prevSubsWithContactCount
+          ] = await Promise.all([
+            // Current period counts for this form
+            supabase
+              .from('saved_simulations')
+              .select('*', { count: 'exact', head: true })
+              .eq('form_slug', form.slug)
+              .gte('created_at', currentPeriod.start.toISOString())
+              .lte('created_at', currentPeriod.end.toISOString()),
+            
+            supabase
+              .from('form_submissions')
+              .select('*', { count: 'exact', head: true })
+              .eq('form_id', form.id)
+              .gte('created_at', currentPeriod.start.toISOString())
+              .lte('created_at', currentPeriod.end.toISOString()),
+            
+            supabase
+              .from('form_submissions')
+              .select('*', { count: 'exact', head: true })
+              .eq('form_id', form.id)
+              .gte('created_at', currentPeriod.start.toISOString())
+              .lte('created_at', currentPeriod.end.toISOString())
+              .not('phone_number', 'is', null)
+              .neq('phone_number', ''),
+            
+            // Previous period counts for this form
+            supabase
+              .from('saved_simulations')
+              .select('*', { count: 'exact', head: true })
+              .eq('form_slug', form.slug)
+              .gte('created_at', previousPeriod.start.toISOString())
+              .lte('created_at', previousPeriod.end.toISOString()),
+            
+            supabase
+              .from('form_submissions')
+              .select('*', { count: 'exact', head: true })
+              .eq('form_id', form.id)
+              .gte('created_at', previousPeriod.start.toISOString())
+              .lte('created_at', previousPeriod.end.toISOString()),
+            
+            supabase
+              .from('form_submissions')
+              .select('*', { count: 'exact', head: true })
+              .eq('form_id', form.id)
+              .gte('created_at', previousPeriod.start.toISOString())
+              .lte('created_at', previousPeriod.end.toISOString())
+              .not('phone_number', 'is', null)
+              .neq('phone_number', '')
+          ]);
 
-      // Process simulations by form
-      currentSimulations.data?.forEach(sim => {
-        if (!processedForms.has(sim.form_slug)) {
-          processedForms.add(sim.form_slug);
+          const formCurrentSims = currentSimsCount.count || 0;
+          const formCurrentSubs = currentSubsCount.count || 0;
+          const formCurrentSubsWithContact = currentSubsWithContactCount.count || 0;
           
-          const formId = slugToIdMap.get(sim.form_slug);
-          const formInfo = formsMap.get(formId || '');
-          
-          const formCurrentSims = currentSimulations.data?.filter(s => s.form_slug === sim.form_slug).length || 0;
-          const formCurrentSubs = currentSubmissions.data?.filter(s => formsMap.get(s.form_id || '')?.slug === sim.form_slug).length || 0;
-          const formCurrentSubsWithContact = currentSubmissionsWithContact.data?.filter(s => formsMap.get(s.form_id || '')?.slug === sim.form_slug).length || 0;
-          
-          const formPrevSims = prevSimulations.data?.filter(s => s.form_slug === sim.form_slug).length || 0;
-          const formPrevSubs = prevSubmissions.data?.filter(s => formsMap.get(s.form_id || '')?.slug === sim.form_slug).length || 0;
-          const formPrevSubsWithContact = prevSubmissionsWithContact.data?.filter(s => formsMap.get(s.form_id || '')?.slug === sim.form_slug).length || 0;
+          const formPrevSims = prevSimsCount.count || 0;
+          const formPrevSubs = prevSubsCount.count || 0;
+          const formPrevSubsWithContact = prevSubsWithContactCount.count || 0;
 
-          formBreakdown.push({
-            formSlug: sim.form_slug,
-            formTitle: formInfo?.title || sim.form_slug,
+          return {
+            formSlug: form.slug,
+            formTitle: form.title || form.slug,
             simulations: calculateMetric(formCurrentSims, formPrevSims),
             submissions: calculateMetric(formCurrentSubs, formPrevSubs, formCurrentSims),
             submissionsWithContact: calculateMetric(formCurrentSubsWithContact, formPrevSubsWithContact, formCurrentSims)
-          });
-        }
-      });
+          };
+        });
+
+        // Wait for all form counts to complete
+        const formStats = await Promise.all(formCountPromises);
+        formBreakdown.push(...formStats.filter(stat => stat.simulations.current > 0 || stat.simulations.previous > 0));
+      }
 
       setData({
         totals: {
