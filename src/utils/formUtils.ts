@@ -22,12 +22,40 @@ export const getPreviousQuestion = (
 };
 
 /**
- * Gets a chain of all connected inline questions, starting from the first non-inline question
- * and including all inline questions up to (but not including) the specified question
+ * Gets the last answered question in the same block, excluding the current question
+ * @param blocks All form blocks
+ * @param blockId Current block ID
+ * @param currentQuestionId Current question ID to exclude
+ * @param answeredQuestions Set of answered question IDs
+ * @returns The last answered question in the block or undefined if none exists
+ */
+export const getLastAnsweredQuestionInBlock = (
+  blocks: Block[],
+  blockId: string,
+  currentQuestionId: string,
+  answeredQuestions: Set<string>
+): Question | undefined => {
+  const currentBlock = blocks.find(block => block.block_id === blockId);
+  if (!currentBlock) return undefined;
+
+  // Find all answered questions in this block, excluding the current one
+  const answeredQuestionsInBlock = currentBlock.questions.filter(q => 
+    q.question_id !== currentQuestionId && answeredQuestions.has(q.question_id)
+  );
+
+  // Return the last one (most recently answered based on order in the block)
+  return answeredQuestionsInBlock.length > 0 ? 
+    answeredQuestionsInBlock[answeredQuestionsInBlock.length - 1] : 
+    undefined;
+};
+
+/**
+ * Gets a chain of all connected inline questions, using actual navigation path
  * 
  * @param blocks All form blocks
  * @param blockId Current block ID
  * @param questionId Current question ID
+ * @param answeredQuestions Set of answered question IDs (for navigation-aware logic)
  * @param includeCurrent Whether to include the current question in the chain
  * @returns Array of questions in the chain, ordered from first to last
  */
@@ -35,6 +63,7 @@ export const getChainOfInlineQuestions = (
   blocks: Block[],
   blockId: string,
   questionId: string,
+  answeredQuestions?: Set<string>,
   includeCurrent: boolean = false
 ): Question[] => {
   const currentBlock = blocks.find(block => block.block_id === blockId);
@@ -50,6 +79,28 @@ export const getChainOfInlineQuestions = (
     return includeCurrent ? [currentQuestion] : [];
   }
 
+  // If answeredQuestions is provided, use navigation-aware logic
+  if (answeredQuestions) {
+    const lastAnsweredQuestion = getLastAnsweredQuestionInBlock(
+      blocks, 
+      blockId, 
+      questionId, 
+      answeredQuestions
+    );
+    
+    if (lastAnsweredQuestion) {
+      const chain: Question[] = [lastAnsweredQuestion];
+      
+      // Add the current question if requested
+      if (includeCurrent) {
+        chain.push(currentQuestion);
+      }
+      
+      return chain;
+    }
+  }
+
+  // Fallback to array-based logic if no answeredQuestions or no answered questions found
   // Trova l'indice della prima domanda non inline nella catena
   let startIndex = questionIndex - 1;
   while (startIndex > 0 && currentBlock.questions[startIndex].inline) {

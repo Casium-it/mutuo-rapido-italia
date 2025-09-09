@@ -2,7 +2,8 @@ import { useForm as useOriginalForm } from "@/contexts/FormContext";
 import { 
   getPreviousQuestion as getPreviousQuestionUtil, 
   getQuestionTextWithResponses,
-  getChainOfInlineQuestions
+  getChainOfInlineQuestions,
+  getLastAnsweredQuestionInBlock
 } from "@/utils/formUtils";
 import { Question, Block, Placeholder, InputPlaceholder } from "@/types/form";
 import { formatCurrency, formatNumberWithThousandSeparator, capitalizeWords } from "@/lib/utils";
@@ -42,15 +43,20 @@ export const useFormExtended = () => {
   };
 
   /**
-   * Gets all previous inline questions in a chain, starting from the first non-inline question
+   * Gets all previous inline questions in a chain, using actual navigation path
    * up to the current question (not including it)
    * @param blockId Current block ID
    * @param questionId Current question ID
    * @returns Array of questions in the chain, ordered from first to last
    */
   const getInlineQuestionChain = (blockId: string, questionId: string): Question[] => {
-    // Utilizza direttamente la funziona migliorata da formUtils
-    return getChainOfInlineQuestions(formContext.blocks, blockId, questionId);
+    // Use navigation-aware logic with answeredQuestions
+    return getChainOfInlineQuestions(
+      formContext.blocks, 
+      blockId, 
+      questionId, 
+      formContext.state.answeredQuestions
+    );
   };
   
   /**
