@@ -502,16 +502,18 @@ export default function AdminLeads() {
                 </Button>
               </div>
 
-              {/* Phone Filter (Switch) */}
-              <div className="flex items-center gap-2 border-l pl-4">
-                <Phone className="h-4 w-4 text-gray-500" />
-                <Switch
-                  checked={phoneFilter}
-                  onCheckedChange={(checked) => {
-                    setPhoneFilter(checked);
-                    saveFiltersToSession(statusFilter, checked, openSubmissionsFilter, mediatoreFilter, searchQuery);
-                  }}
-                />
+              {/* Phone Filter (Icon + Toggle) */}
+              <div className="flex items-center gap-3 border-l pl-4">
+                <div className="flex items-center gap-2">
+                  <Phone className={`h-4 w-4 ${phoneFilter ? 'text-[#245C4F]' : 'text-gray-400'}`} />
+                  <Switch
+                    checked={phoneFilter}
+                    onCheckedChange={(checked) => {
+                      setPhoneFilter(checked);
+                      saveFiltersToSession(statusFilter, checked, openSubmissionsFilter, mediatoreFilter, searchQuery);
+                    }}
+                  />
+                </div>
               </div>
 
               {/* Status Filter */}
