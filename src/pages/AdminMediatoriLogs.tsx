@@ -495,9 +495,9 @@ export default function AdminMediatoriLogs() {
                                 
                                 {log.activity_type === 'field_updated' && log.new_value && (
                                   <p className="text-sm text-gray-600 mb-1">
-                                    {log.description.replace('modificato', `modificato a *${
+                                    {log.description.replace('modificato', '')}modificato a <span className="font-semibold">{
                                       typeof log.new_value === 'object' ? JSON.stringify(log.new_value) : String(log.new_value)
-                                    }*`)}
+                                    }</span>
                                     {log.old_value && (
                                       <span className="text-gray-400">
                                         {' '}(prima era {typeof log.old_value === 'object' ? JSON.stringify(log.old_value) : String(log.old_value)})
