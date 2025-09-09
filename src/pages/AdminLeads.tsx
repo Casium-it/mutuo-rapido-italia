@@ -230,8 +230,8 @@ export default function AdminLeads() {
 
       // Apply server-side open submissions filter BEFORE pagination
       if (openSubmissionsFilter) {
-        // Exclude closed/rejected statuses: non_interessato, pratica_bocciata, rejected, non_risponde_x3, consulenza_prenotata
-        query = query.not('lead_status', 'in', '(non_interessato,pratica_bocciata,rejected,non_risponde_x3,consulenza_prenotata)');
+        // Exclude closed/rejected statuses: non_interessato, pratica_bocciata, rejected, non_risponde_x3, prenotata_consulenza
+        query = query.not('lead_status', 'in', '(non_interessato,pratica_bocciata,rejected,non_risponde_x3,prenotata_consulenza)');
       }
 
       // Re-enabled mediatore filtering with UUID support
