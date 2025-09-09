@@ -489,12 +489,12 @@ export default function AdminMediatoriLogs() {
                                 </p>
                               
                               {/* Show old/new values if available */}
-                                {(log.old_value || log.new_value) && (
+                                {(log.old_value || log.new_value) && !log.activity_type.includes('document') && (
                                   <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
                                     {log.old_value && !log.activity_type.includes('document') && (
                                       <div className="mb-1">
                                         <span className="font-medium">Valore precedente:</span>{' '}
-                                        <span className="text-red-600">
+                                        <span className="text-gray-500">
                                           {typeof log.old_value === 'object' 
                                             ? JSON.stringify(log.old_value, null, 2) 
                                             : String(log.old_value)}
