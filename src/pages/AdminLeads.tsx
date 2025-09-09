@@ -67,6 +67,7 @@ export default function AdminLeads() {
   const [submissionsLoading, setSubmissionsLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [forms, setForms] = useState<FormInfo[]>([]);
+  const [filtersLoaded, setFiltersLoaded] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [phoneFilter, setPhoneFilter] = useState<boolean>(true); // Default on
   const [openSubmissionsFilter, setOpenSubmissionsFilter] = useState<boolean>(true); // Default on
@@ -133,16 +134,29 @@ export default function AdminLeads() {
     }
   };
 
-  // Initialize filters from session storage
+  // Initialize filters from session storage FIRST (synchronously)
   useEffect(() => {
+    console.log('🔄 Loading filters from session storage...');
     const { status, phone, openSubmissions, mediatore, search } = loadFiltersFromSession();
+    console.log('📋 Loaded filters:', { status, phone, openSubmissions, mediatore, search });
+    
     setStatusFilter(status);
     setPhoneFilter(phone);
     setOpenSubmissionsFilter(openSubmissions);
     setMediatoreFilter(mediatore);
     setSearchQuery(search);
     setDebouncedSearchQuery(search);
+    setFiltersLoaded(true);
   }, []);
+
+  // Initial data load - wait for filters to be loaded
+  useEffect(() => {
+    if (!filtersLoaded) return;
+    
+    console.log('🚀 Initial data load with loaded filters');
+    fetchSubmissions();
+    fetchUniqueMediaatori();
+  }, [filtersLoaded]);
 
   // Debounce search query
   useEffect(() => {
@@ -153,27 +167,33 @@ export default function AdminLeads() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Initial load with full page loading
-  useEffect(() => {
-    fetchSubmissions();
-    fetchUniqueMediaatori(); // Re-enabled with proper UUID handling
-  }, []);
-
-  // Restore scroll position after component mounts and DOM is ready
+  // Restore scroll position after initial data is loaded with correct filters
   useLayoutEffect(() => {
-    const timer = setTimeout(() => {
-      restoreScrollPosition();
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
+    if (!loading && filtersLoaded) {
+      const timer = setTimeout(() => {
+        console.log('📍 Restoring scroll position after data load');
+        restoreScrollPosition();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, filtersLoaded]);
 
-  // Subsequent loads with submissions loading only
+  // Filter-dependent data loads (removed loading condition that was causing race condition)
   useEffect(() => {
-    if (loading) return; // Skip if initial loading
+    if (!filtersLoaded) return; // Only skip if filters aren't loaded yet
+    
+    console.log('🔄 Filter change detected, fetching data...', {
+      currentPage,
+      statusFilter,
+      phoneFilter,
+      openSubmissionsFilter,
+      mediatoreFilter,
+      debouncedSearchQuery
+    });
     
     setSubmissionsLoading(true);
     fetchSubmissions().finally(() => setSubmissionsLoading(false));
-  }, [currentPage, statusFilter, phoneFilter, openSubmissionsFilter, mediatoreFilter, debouncedSearchQuery]);
+  }, [currentPage, statusFilter, phoneFilter, openSubmissionsFilter, mediatoreFilter, debouncedSearchQuery, filtersLoaded]);
 
   const fetchSubmissions = async (retryWithPage1 = false) => {
     try {
@@ -286,7 +306,11 @@ export default function AdminLeads() {
         variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      // Only set loading to false if this is the initial load
+      if (loading) {
+        console.log('✅ Initial data load complete');
+        setLoading(false);
+      }
     }
   };
 
