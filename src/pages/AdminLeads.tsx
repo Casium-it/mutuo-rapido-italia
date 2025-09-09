@@ -208,8 +208,24 @@ export default function AdminLeads() {
         query = query.not('phone_number', 'is', null);
       }
 
-      // Contactable filter - applied client-side due to complex join logic
-      // Server-side filtering removed for this condition
+      // Apply server-side contactable filter BEFORE pagination
+      if (contactableFilter) {
+        // Create a subquery for submissions with gomutuo_service = 'consulenza'
+        const { data: consulenzaSubmissions } = await supabase
+          .from('form_responses')
+          .select('submission_id')
+          .eq('question_id', 'gomutuo_service')
+          .or('response_value->>placeholder1.eq.consulenza,response_value.eq."consulenza"');
+        
+        const consulenzaIds = consulenzaSubmissions?.map(r => r.submission_id) || [];
+        
+        // Apply the contactable filter: consulting = true OR id in consulenzaIds
+        if (consulenzaIds.length > 0) {
+          query = query.or(`consulting.eq.true,id.in.(${consulenzaIds.join(',')})`);
+        } else {
+          query = query.eq('consulting', true);
+        }
+      }
 
       // Re-enabled mediatore filtering with UUID support
       if (mediatoreFilter !== 'all') {
@@ -255,58 +271,9 @@ export default function AdminLeads() {
         assigned_admin_name: null // Simplified for now to avoid join issues
       }));
 
-      // Apply contactable filter client-side due to complex join logic
-      const filteredData = contactableFilter 
-        ? mappedData.filter(submission => {
-            // Debug logging to investigate the issue
-            console.log('🔍 Filtering submission:', {
-              id: submission.id.slice(0, 8),
-              first_name: submission.first_name,
-              consulting: submission.consulting,
-              consulting_type: typeof submission.consulting,
-              hasGomutoService: !!submission.form_responses?.find(r => r.question_id === 'gomutuo_service')
-            });
-            
-            // Check if consulting is true - if yes, always include
-            if (submission.consulting === true) {
-              console.log('✅ Including due to consulting=true:', submission.first_name);
-              return true;
-            }
-            
-            // If consulting is not true, check if gomutuo_service response is 'consulenza'
-            const gomutoService = submission.form_responses?.find(
-              response => response.question_id === 'gomutuo_service'
-            );
-            if (gomutoService && gomutoService.response_value) {
-              const responseValue = gomutoService.response_value;
-              let value: string;
-              
-              if (typeof responseValue === 'object' && responseValue !== null && !Array.isArray(responseValue)) {
-                value = (responseValue as any).placeholder1 || '';
-              } else {
-                value = String(responseValue);
-              }
-              
-              if (value === 'consulenza') {
-                console.log('✅ Including due to gomutuo_service=consulenza:', submission.first_name);
-                return true;
-              }
-            }
-            
-            // If neither consulting=true nor gomutuo_service='consulenza', exclude
-            console.log('❌ Excluding submission:', submission.first_name, 'consulting:', submission.consulting, 'gomutuo_service not consulenza');
-            return false;
-          })
-        : mappedData;
-      
-      console.log('📊 Filter results:', {
-        original_count: mappedData.length,
-        filtered_count: filteredData.length,
-        contactable_filter_active: contactableFilter
-      });
-      
-      setSubmissions(filteredData);
-      setTotalCount(contactableFilter ? filteredData.length : (count || 0));
+      // No more client-side contactable filtering - it's now handled server-side
+      setSubmissions(mappedData);
+      setTotalCount(count || 0);
 
       // Extract unique forms for any future filter
       const uniqueForms = Array.from(
