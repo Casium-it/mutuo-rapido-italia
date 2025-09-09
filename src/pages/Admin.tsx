@@ -90,6 +90,14 @@ export default function Admin() {
               </CardContent>
             </Card>
 
+            <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/log-mediatori')}>
+              <CardContent className="p-6 text-center">
+                <MessageSquare className="h-12 w-12 text-[#245C4F] mx-auto mb-3" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Log Mediatori</h3>
+                <p className="text-sm text-gray-600">Visualizza tutti i log delle attività dei mediatori</p>
+              </CardContent>
+            </Card>
+
             <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/question-ids')}>
               <CardContent className="p-6 text-center">
                 <MessageSquare className="h-12 w-12 text-[#245C4F] mx-auto mb-3" />

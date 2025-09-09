@@ -45,6 +45,7 @@ import AdminStatistics from "./pages/AdminStatistics";
 import AdminAIPrompts from "./pages/AdminAIPrompts";
 import AdminAIPromptEditor from "./pages/AdminAIPromptEditor";
 import AdminQuestionIds from "./pages/AdminQuestionIds";
+import AdminMediatoriLogs from "./pages/AdminMediatoriLogs";
 import MediatoreDashboard from "./pages/MediatoreDashboard";
 import MediatoreLeads from "./pages/MediatoreLeads";
 import MediatoreLeadDetail from "./pages/MediatoreLeadDetail";
@@ -197,6 +198,11 @@ const AppWithTracking = () => {
       <Route path="/admin/ai-prompts/:id/edit" element={
         <ProtectedRoute requireAdmin>
           <AdminAIPromptEditor />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/log-mediatori" element={
+        <ProtectedRoute requireAdmin>
+          <AdminMediatoriLogs />
         </ProtectedRoute>
       } />
       <Route path="*" element={<NotFound />} />
