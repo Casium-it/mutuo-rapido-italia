@@ -361,6 +361,7 @@ export type Database = {
           expires_at: string
           first_name: string | null
           form_id: string | null
+          gomutuo_service: string | null
           id: string
           last_name: string | null
           lead_status: Database["public"]["Enums"]["lead_status"] | null
@@ -384,6 +385,7 @@ export type Database = {
           expires_at: string
           first_name?: string | null
           form_id?: string | null
+          gomutuo_service?: string | null
           id?: string
           last_name?: string | null
           lead_status?: Database["public"]["Enums"]["lead_status"] | null
@@ -407,6 +409,7 @@ export type Database = {
           expires_at?: string
           first_name?: string | null
           form_id?: string | null
+          gomutuo_service?: string | null
           id?: string
           last_name?: string | null
           lead_status?: Database["public"]["Enums"]["lead_status"] | null

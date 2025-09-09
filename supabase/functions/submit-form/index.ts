@@ -183,6 +183,33 @@ serve(async (req) => {
 
     console.log('✅ Submission created with ID:', submission.id);
 
+    // Extract and store gomutuo_service response value
+    let gomutoServiceValue = null;
+    const gomutoServiceResponse = formState.responses['gomutuo_service'];
+    if (gomutoServiceResponse) {
+      // The response could be in different placeholder keys, check common ones
+      gomutoServiceValue = gomutoServiceResponse['default'] || 
+                          gomutoServiceResponse['placeholder1'] || 
+                          Object.values(gomutoServiceResponse)[0]; // fallback to first value
+    }
+
+    // Update submission with gomutuo_service value if found
+    if (gomutoServiceValue) {
+      console.log('💾 Updating submission with gomutuo_service:', gomutoServiceValue);
+      const { error: updateError } = await supabase
+        .from('form_submissions')
+        .update({ gomutuo_service: gomutoServiceValue })
+        .eq('id', submission.id);
+        
+      if (updateError) {
+        console.error('⚠️ Error updating gomutuo_service:', updateError);
+      } else {
+        console.log('✅ Successfully updated gomutuo_service to:', gomutoServiceValue);
+      }
+    } else {
+      console.log('ℹ️ No gomutuo_service response found in submission');
+    }
+
     // Prepare responses data with enhanced validation
     const responsesData = [];
     const allAvailableBlocks = [...blocks, ...(formState.dynamicBlocks || [])];
