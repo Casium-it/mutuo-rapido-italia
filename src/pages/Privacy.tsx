@@ -35,9 +35,9 @@ const Privacy = () => {
                 Il Titolare del trattamento dei dati personali è:
               </p>
               <div className="bg-[#F8F4EF] p-4 rounded-lg mt-3">
-                <p className="font-medium">FILIPPO GIACOMETTI</p>
-                <p>Viale dei Mille 142, Firenze, 50131, Italia</p>
-                <p>P.IVA: 07438860483</p>
+                <p className="font-medium"></p>
+                <p></p>
+                <p></p>
                 <p>Email: info@gomutuo.it</p>
               </div>
             </section>
