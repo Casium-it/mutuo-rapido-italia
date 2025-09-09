@@ -240,9 +240,12 @@ export default function AdminLeads() {
         query = query.eq('mediatore', mediatoreFilter);
       }
 
-      // Filter to only show submissions with consultation interest
-      // Include submissions where gomutuo_service='consulenza' OR consulting=true
-      query = query.or('gomutuo_service.eq.consulenza,consulting.eq.true');
+      // Apply consultation filter only when open submissions filter is ON
+      if (openSubmissionsFilter) {
+        // Filter to only show submissions with consultation interest
+        // Include submissions where gomutuo_service='consulenza' OR consulting=true
+        query = query.or('gomutuo_service.eq.consulenza,consulting.eq.true');
+      }
 
       // Search functionality - now we need to search by joining with profiles for mediatore names
       if (debouncedSearchQuery) {
