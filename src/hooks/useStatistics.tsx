@@ -36,6 +36,7 @@ export interface StatisticsData {
     simulations: StatisticMetric;
     submissions: StatisticMetric;
     submissionsWithContact: StatisticMetric;
+    consulting: StatisticMetric;
   };
   formBreakdown: FormStatistics[];
   loading: boolean;
@@ -47,7 +48,8 @@ export function useStatistics(period: PeriodData) {
     totals: {
       simulations: { current: 0, previous: 0, change: 0, changePercent: 0 },
       submissions: { current: 0, previous: 0, change: 0, changePercent: 0 },
-      submissionsWithContact: { current: 0, previous: 0, change: 0, changePercent: 0 }
+      submissionsWithContact: { current: 0, previous: 0, change: 0, changePercent: 0 },
+      consulting: { current: 0, previous: 0, change: 0, changePercent: 0 }
     },
     formBreakdown: [],
     loading: true,
@@ -124,7 +126,7 @@ export function useStatistics(period: PeriodData) {
       const formsMap = new Map(forms?.map(f => [f.id, { slug: f.slug, title: f.title }]) || []);
 
       // Fetch current period totals using COUNT
-      const [currentSimulations, currentSubmissions, currentSubmissionsWithContact] = await Promise.all([
+      const [currentSimulations, currentSubmissions, currentSubmissionsWithContact, currentConsulting] = await Promise.all([
         // Simulazioni salvate - count total
         supabase
           .from('saved_simulations')
@@ -146,11 +148,19 @@ export function useStatistics(period: PeriodData) {
           .gte('created_at', currentPeriod.start.toISOString())
           .lte('created_at', currentPeriod.end.toISOString())
           .not('phone_number', 'is', null)
-          .neq('phone_number', '')
+          .neq('phone_number', ''),
+
+        // Submissions with consulting - count total
+        supabase
+          .from('form_submissions')
+          .select('*', { count: 'exact', head: true })
+          .gte('created_at', currentPeriod.start.toISOString())
+          .lte('created_at', currentPeriod.end.toISOString())
+          .or('consulting.eq.true,gomutuo_service.eq.consulenza')
       ]);
 
       // Fetch previous period totals using COUNT
-      const [prevSimulations, prevSubmissions, prevSubmissionsWithContact] = await Promise.all([
+      const [prevSimulations, prevSubmissions, prevSubmissionsWithContact, prevConsulting] = await Promise.all([
         supabase
           .from('saved_simulations')
           .select('*', { count: 'exact', head: true })
@@ -169,21 +179,31 @@ export function useStatistics(period: PeriodData) {
           .gte('created_at', previousPeriod.start.toISOString())
           .lte('created_at', previousPeriod.end.toISOString())
           .not('phone_number', 'is', null)
-          .neq('phone_number', '')
+          .neq('phone_number', ''),
+
+        supabase
+          .from('form_submissions')
+          .select('*', { count: 'exact', head: true })
+          .gte('created_at', previousPeriod.start.toISOString())
+          .lte('created_at', previousPeriod.end.toISOString())
+          .or('consulting.eq.true,gomutuo_service.eq.consulenza')
       ]);
 
       if (currentSimulations.error) throw currentSimulations.error;
       if (currentSubmissions.error) throw currentSubmissions.error;
       if (currentSubmissionsWithContact.error) throw currentSubmissionsWithContact.error;
+      if (currentConsulting.error) throw currentConsulting.error;
 
       // Calculate totals from counts
       const currentSimulationsCount = currentSimulations.count || 0;
       const currentSubmissionsCount = currentSubmissions.count || 0;
       const currentSubmissionsWithContactCount = currentSubmissionsWithContact.count || 0;
+      const currentConsultingCount = currentConsulting.count || 0;
 
       const prevSimulationsCount = prevSimulations.count || 0;
       const prevSubmissionsCount = prevSubmissions.count || 0;
       const prevSubmissionsWithContactCount = prevSubmissionsWithContact.count || 0;
+      const prevConsultingCount = prevConsulting.count || 0;
 
       // Helper function to calculate metrics
       const calculateMetric = (current: number, previous: number, totalSimulations?: number): StatisticMetric => {
@@ -289,7 +309,8 @@ export function useStatistics(period: PeriodData) {
         totals: {
           simulations: calculateMetric(currentSimulationsCount, prevSimulationsCount),
           submissions: calculateMetric(currentSubmissionsCount, prevSubmissionsCount, currentSimulationsCount),
-          submissionsWithContact: calculateMetric(currentSubmissionsWithContactCount, prevSubmissionsWithContactCount, currentSimulationsCount)
+          submissionsWithContact: calculateMetric(currentSubmissionsWithContactCount, prevSubmissionsWithContactCount, currentSimulationsCount),
+          consulting: calculateMetric(currentConsultingCount, prevConsultingCount, currentSimulationsCount)
         },
         formBreakdown,
         loading: false,

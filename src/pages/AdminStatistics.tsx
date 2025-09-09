@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, BarChart3, Users, FileText, Phone } from 'lucide-react';
+import { ArrowLeft, BarChart3, Users, FileText, Phone, MessageCircle } from 'lucide-react';
 import { useStatistics, PeriodData } from '@/hooks/useStatistics';
 import { PeriodSelector } from '@/components/admin/statistics/PeriodSelector';
 import { StatisticCard } from '@/components/admin/statistics/StatisticCard';
@@ -63,7 +63,7 @@ export default function AdminStatistics() {
         {/* Total Statistics Cards */}
         <div>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Statistiche Generali</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatisticCard
               title="Simulazioni Salvate"
               metric={totals.simulations}
@@ -84,6 +84,13 @@ export default function AdminStatistics() {
               showConversion={true}
               loading={loading}
             />
+            <StatisticCard
+              title="Consulenza Richiesta"
+              metric={totals.consulting}
+              icon={<MessageCircle className="h-6 w-6" />}
+              showConversion={true}
+              loading={loading}
+            />
           </div>
         </div>
 
@@ -100,6 +107,7 @@ export default function AdminStatistics() {
             <li><strong>Simulazioni:</strong> Numero totale di simulazioni salvate nel periodo</li>
             <li><strong>Submissions:</strong> Numero di form completati e inviati</li>
             <li><strong>Submissions con Contatto:</strong> Submissions che includono un numero di telefono</li>
+            <li><strong>Consulenza Richiesta:</strong> Submissions dove è stata richiesta consulenza (consulting=true o gomutuo_service="consulenza")</li>
             <li><strong>Tasso di conversione:</strong> Percentuale calcolata sul totale delle simulazioni</li>
           </ul>
         </div>
