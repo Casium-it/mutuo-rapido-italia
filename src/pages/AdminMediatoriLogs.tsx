@@ -20,6 +20,7 @@ interface ActivityLog {
   new_value: any;
   metadata: any;
   mediatore_name: string;
+  lead_name: string;
   created_at: string;
 }
 
@@ -190,6 +191,11 @@ export default function AdminMediatoriLogs() {
             first_name,
             last_name,
             email
+          ),
+          form_submissions!lead_activity_log_submission_id_fkey (
+            first_name,
+            last_name,
+            email
           )
         `, { count: 'exact' });
 
@@ -229,7 +235,10 @@ export default function AdminMediatoriLogs() {
         ...log,
         mediatore_name: log.profiles 
           ? `${log.profiles.first_name || ''} ${log.profiles.last_name || ''}`.trim() || log.profiles.email || 'Utente Sconosciuto'
-          : 'Utente Sconosciuto'
+          : 'Utente Sconosciuto',
+        lead_name: log.form_submissions
+          ? `${log.form_submissions.first_name || ''} ${log.form_submissions.last_name || ''}`.trim() || log.form_submissions.email || 'Lead Sconosciuto'
+          : 'Lead Sconosciuto'
       })) || [];
 
       setLogs(formattedLogs);
@@ -445,57 +454,67 @@ export default function AdminMediatoriLogs() {
                 ) : (
                   <div className="space-y-4 p-6">
                     {logs.map((log) => (
-                      <div
-                        key={log.id}
-                        className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start gap-3 flex-1">
-                            <div className="p-2 bg-gray-100 rounded-full">
-                              {getActivityIcon(log.activity_type)}
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <Badge variant={getActivityBadgeVariant(log.activity_type) as any}>
-                                  {formatActivityType(log.activity_type)}
-                                </Badge>
-                                <div className="flex items-center gap-1 text-sm text-gray-500">
-                                  <User className="h-3 w-3" />
-                                  {log.mediatore_name}
-                                </div>
-                                <div className="flex items-center gap-1 text-sm text-gray-500">
-                                  <Calendar className="h-3 w-3" />
-                                  {format(new Date(log.created_at), 'dd MMM yyyy, HH:mm', { locale: it })}
-                                </div>
+                        <div
+                          key={log.id}
+                          className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start gap-3 flex-1">
+                              <div className="p-2 bg-gray-100 rounded-full">
+                                {getActivityIcon(log.activity_type)}
                               </div>
-                              <p className="text-gray-900 font-medium mb-1">{log.description}</p>
-                              <p className="text-xs text-gray-500">ID Lead: {log.submission_id}</p>
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant={getActivityBadgeVariant(log.activity_type) as any}>
+                                      {formatActivityType(log.activity_type)}
+                                    </Badge>
+                                  </div>
+                                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                                    <div className="flex items-center gap-1">
+                                      <User className="h-3 w-3" />
+                                      {log.mediatore_name}
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <Calendar className="h-3 w-3" />
+                                      {format(new Date(log.created_at), 'dd MMM yyyy, HH:mm', { locale: it })}
+                                    </div>
+                                  </div>
+                                </div>
+                                <p className="text-gray-900 font-medium mb-1">
+                                  {log.activity_type.includes('note') && log.new_value?.titolo 
+                                    ? log.new_value.titolo 
+                                    : log.description}
+                                </p>
+                                <p className="text-xs text-gray-500">Lead: {log.lead_name}</p>
                               
                               {/* Show old/new values if available */}
-                              {(log.old_value || log.new_value) && (
-                                <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
-                                  {log.old_value && (
-                                    <div className="mb-1">
-                                      <span className="font-medium">Valore precedente:</span>{' '}
-                                      <span className="text-red-600">
-                                        {typeof log.old_value === 'object' 
-                                          ? JSON.stringify(log.old_value, null, 2) 
-                                          : String(log.old_value)}
-                                      </span>
-                                    </div>
-                                  )}
-                                  {log.new_value && (
-                                    <div>
-                                      <span className="font-medium">Nuovo valore:</span>{' '}
-                                      <span className="text-green-600">
-                                        {typeof log.new_value === 'object' 
-                                          ? JSON.stringify(log.new_value, null, 2) 
-                                          : String(log.new_value)}
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
+                                {(log.old_value || log.new_value) && (
+                                  <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
+                                    {log.old_value && (
+                                      <div className="mb-1">
+                                        <span className="font-medium">Valore precedente:</span>{' '}
+                                        <span className="text-red-600">
+                                          {typeof log.old_value === 'object' 
+                                            ? JSON.stringify(log.old_value, null, 2) 
+                                            : String(log.old_value)}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {log.new_value && (
+                                      <div>
+                                        <span className="font-medium">Nuovo valore:</span>{' '}
+                                        <span className="text-green-600">
+                                          {log.activity_type.includes('note') && log.new_value?.contenuto
+                                            ? log.new_value.contenuto
+                                            : typeof log.new_value === 'object' 
+                                              ? JSON.stringify(log.new_value, null, 2) 
+                                              : String(log.new_value)}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                             </div>
                           </div>
                         </div>
