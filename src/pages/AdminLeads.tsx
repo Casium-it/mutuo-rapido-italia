@@ -69,7 +69,7 @@ export default function AdminLeads() {
   const [forms, setForms] = useState<FormInfo[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [phoneFilter, setPhoneFilter] = useState<boolean>(true); // Default on
-  const [contactableFilter, setContactableFilter] = useState<boolean>(true); // Default on
+  const [openSubmissionsFilter, setOpenSubmissionsFilter] = useState<boolean>(true); // Default on
   const [mediatoreFilter, setMediatoreFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
@@ -81,11 +81,11 @@ export default function AdminLeads() {
   const navigate = useNavigate();
 
   // Session Storage helpers
-  const saveFiltersToSession = (status: string, phone: boolean, contactable: boolean, mediatore: string, search: string) => {
+  const saveFiltersToSession = (status: string, phone: boolean, openSubmissions: boolean, mediatore: string, search: string) => {
     try {
       sessionStorage.setItem('adminLeads_statusFilter', status);
       sessionStorage.setItem('adminLeads_phoneFilter', phone.toString());
-      sessionStorage.setItem('adminLeads_contactableFilter', contactable.toString());
+      sessionStorage.setItem('adminLeads_openSubmissionsFilter', openSubmissions.toString());
       sessionStorage.setItem('adminLeads_mediatoreFilter', mediatore);
       sessionStorage.setItem('adminLeads_searchQuery', search);
     } catch (error) {
@@ -97,19 +97,19 @@ export default function AdminLeads() {
     try {
       const savedStatus = sessionStorage.getItem('adminLeads_statusFilter') || 'all';
       const savedPhone = sessionStorage.getItem('adminLeads_phoneFilter') === 'false' ? false : true;
-      const savedContactable = sessionStorage.getItem('adminLeads_contactableFilter') === 'false' ? false : true;
+      const savedOpenSubmissions = sessionStorage.getItem('adminLeads_openSubmissionsFilter') === 'false' ? false : true;
       const savedMediator = sessionStorage.getItem('adminLeads_mediatoreFilter') || 'all';
       const savedSearch = sessionStorage.getItem('adminLeads_searchQuery') || '';
       return { 
         status: savedStatus, 
         phone: savedPhone,
-        contactable: savedContactable,
+        openSubmissions: savedOpenSubmissions,
         mediatore: savedMediator,
         search: savedSearch
       };
     } catch (error) {
       console.warn('Could not load filters from session storage:', error);
-      return { status: 'all', phone: true, contactable: true, mediatore: 'all', search: '' };
+      return { status: 'all', phone: true, openSubmissions: true, mediatore: 'all', search: '' };
     }
   };
 
@@ -135,10 +135,10 @@ export default function AdminLeads() {
 
   // Initialize filters from session storage
   useEffect(() => {
-    const { status, phone, contactable, mediatore, search } = loadFiltersFromSession();
+    const { status, phone, openSubmissions, mediatore, search } = loadFiltersFromSession();
     setStatusFilter(status);
     setPhoneFilter(phone);
-    setContactableFilter(contactable);
+    setOpenSubmissionsFilter(openSubmissions);
     setMediatoreFilter(mediatore);
     setSearchQuery(search);
     setDebouncedSearchQuery(search);
@@ -173,7 +173,7 @@ export default function AdminLeads() {
     
     setSubmissionsLoading(true);
     fetchSubmissions().finally(() => setSubmissionsLoading(false));
-  }, [currentPage, statusFilter, phoneFilter, contactableFilter, mediatoreFilter, debouncedSearchQuery]);
+  }, [currentPage, statusFilter, phoneFilter, openSubmissionsFilter, mediatoreFilter, debouncedSearchQuery]);
 
   const fetchSubmissions = async (retryWithPage1 = false) => {
     try {
@@ -208,35 +208,10 @@ export default function AdminLeads() {
         query = query.not('phone_number', 'is', null);
       }
 
-      // Apply server-side contactable filter BEFORE pagination
-      if (contactableFilter) {
-        try {
-          // Create a subquery for submissions with gomutuo_service = 'consulenza'
-          const { data: consulenzaSubmissions, error: consulenzaError } = await supabase
-            .from('form_responses')
-            .select('submission_id')
-            .eq('question_id', 'gomutuo_service')
-            .or('response_value->>placeholder1.eq.consulenza,response_value.eq.consulenza');
-          
-          if (consulenzaError) {
-            console.error('Error fetching consulenza submissions:', consulenzaError);
-          }
-          
-          const consulenzaIds = consulenzaSubmissions?.map(r => r.submission_id) || [];
-          
-          console.log('🔍 Consulenza submissions found:', consulenzaIds.length);
-          
-          // Apply the contactable filter: consulting = true OR id in consulenzaIds
-          if (consulenzaIds.length > 0) {
-            query = query.or(`consulting.eq.true,id.in.(${consulenzaIds.join(',')})`);
-          } else {
-            query = query.eq('consulting', true);
-          }
-        } catch (error) {
-          console.error('Error in contactable filter:', error);
-          // Fallback to just consulting = true if subquery fails
-          query = query.eq('consulting', true);
-        }
+      // Apply server-side open submissions filter BEFORE pagination
+      if (openSubmissionsFilter) {
+        // Exclude closed/rejected statuses: non_interessato, pratica_bocciata, rejected, non_risponde_x3
+        query = query.not('lead_status', 'in', '(non_interessato,pratica_bocciata,rejected,non_risponde_x3)');
       }
 
       // Re-enabled mediatore filtering with UUID support
@@ -429,7 +404,7 @@ export default function AdminLeads() {
   // Reset page when filters change  
   useEffect(() => {
     setCurrentPage(1);
-  }, [statusFilter, phoneFilter, contactableFilter, mediatoreFilter, searchQuery]);
+  }, [statusFilter, phoneFilter, openSubmissionsFilter, mediatoreFilter, searchQuery]);
 
   // Sync currentPage with totalPages when totalCount changes
   useEffect(() => {
@@ -495,7 +470,7 @@ export default function AdminLeads() {
                 <User className="h-4 w-4 text-gray-500" />
                 <Select value={mediatoreFilter} onValueChange={(value) => {
                   setMediatoreFilter(value);
-                  saveFiltersToSession(statusFilter, phoneFilter, contactableFilter, value, searchQuery);
+                  saveFiltersToSession(statusFilter, phoneFilter, openSubmissionsFilter, value, searchQuery);
                 }}>
                   <SelectTrigger className="w-40">
                     <SelectValue placeholder="Mediatore" />
@@ -511,16 +486,20 @@ export default function AdminLeads() {
                 </Select>
               </div>
 
-              {/* Contactable Filter (Switch) */}
+              {/* Open Submissions Filter (Icon only) */}
               <div className="flex items-center gap-2 border-l pl-4">
-                <Headphones className="h-4 w-4 text-gray-500" />
-                <Switch
-                  checked={contactableFilter}
-                  onCheckedChange={(checked) => {
-                    setContactableFilter(checked);
-                    saveFiltersToSession(statusFilter, phoneFilter, checked, mediatoreFilter, searchQuery);
+                <Button 
+                  variant={openSubmissionsFilter ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setOpenSubmissionsFilter(!openSubmissionsFilter);
+                    saveFiltersToSession(statusFilter, phoneFilter, !openSubmissionsFilter, mediatoreFilter, searchQuery);
                   }}
-                />
+                  className="px-3 py-2"
+                  title={openSubmissionsFilter ? "Mostra tutte le submissions" : "Nascondi submissions chiuse"}
+                >
+                  <FileText className="h-4 w-4" />
+                </Button>
               </div>
 
               {/* Phone Filter (Switch) */}
@@ -530,7 +509,7 @@ export default function AdminLeads() {
                   checked={phoneFilter}
                   onCheckedChange={(checked) => {
                     setPhoneFilter(checked);
-                    saveFiltersToSession(statusFilter, checked, contactableFilter, mediatoreFilter, searchQuery);
+                    saveFiltersToSession(statusFilter, checked, openSubmissionsFilter, mediatoreFilter, searchQuery);
                   }}
                 />
               </div>
@@ -540,7 +519,7 @@ export default function AdminLeads() {
                 <Filter className="h-4 w-4 text-gray-500" />
                 <Select value={statusFilter} onValueChange={(value) => {
                   setStatusFilter(value);
-                  saveFiltersToSession(value, phoneFilter, contactableFilter, mediatoreFilter, searchQuery);
+                  saveFiltersToSession(value, phoneFilter, openSubmissionsFilter, mediatoreFilter, searchQuery);
                 }}>
                   <SelectTrigger className="w-44">
                     <SelectValue placeholder="Status" />
@@ -576,7 +555,7 @@ export default function AdminLeads() {
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
-                    saveFiltersToSession(statusFilter, phoneFilter, contactableFilter, mediatoreFilter, e.target.value);
+                    saveFiltersToSession(statusFilter, phoneFilter, openSubmissionsFilter, mediatoreFilter, e.target.value);
                   }}
                   className="pl-10 w-64"
                 />
