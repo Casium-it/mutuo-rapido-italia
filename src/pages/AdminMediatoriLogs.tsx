@@ -469,6 +469,7 @@ export default function AdminMediatoriLogs() {
                                     <Badge variant={getActivityBadgeVariant(log.activity_type) as any}>
                                       {formatActivityType(log.activity_type)}
                                     </Badge>
+                                    <p className="text-xs text-gray-500">Lead: {log.lead_name}</p>
                                   </div>
                                   <div className="flex items-center gap-4 text-sm text-gray-500">
                                     <div className="flex items-center gap-1">
@@ -486,12 +487,11 @@ export default function AdminMediatoriLogs() {
                                     ? log.new_value.titolo 
                                     : log.description}
                                 </p>
-                                <p className="text-xs text-gray-500">Lead: {log.lead_name}</p>
                               
                               {/* Show old/new values if available */}
                                 {(log.old_value || log.new_value) && (
                                   <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
-                                    {log.old_value && (
+                                    {log.old_value && !log.activity_type.includes('document') && (
                                       <div className="mb-1">
                                         <span className="font-medium">Valore precedente:</span>{' '}
                                         <span className="text-red-600">
