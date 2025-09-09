@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,7 +32,10 @@ export default function AdminMediatoriLogs() {
   const navigate = useNavigate();
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [filtersLoaded, setFiltersLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [mediatoreFilter, setMediatoreFilter] = useState('all');
   const [typeLogFilter, setTypeLogFilter] = useState('all');
   const [uniqueMediaatori, setUniqueMediaatori] = useState<Mediatore[]>([]);
@@ -41,10 +44,109 @@ export default function AdminMediatoriLogs() {
   const itemsPerPage = 50;
   const totalPages = Math.ceil(totalCount / itemsPerPage);
 
+  // Session Storage helpers
+  const saveFiltersToSession = (mediatore: string, typeLog: string, search: string) => {
+    try {
+      sessionStorage.setItem('adminLogs_mediatoreFilter', mediatore);
+      sessionStorage.setItem('adminLogs_typeLogFilter', typeLog);
+      sessionStorage.setItem('adminLogs_searchTerm', search);
+    } catch (error) {
+      console.warn('Could not save filters to session storage:', error);
+    }
+  };
+
+  const loadFiltersFromSession = () => {
+    try {
+      const savedMediator = sessionStorage.getItem('adminLogs_mediatoreFilter') || 'all';
+      const savedTypeLog = sessionStorage.getItem('adminLogs_typeLogFilter') || 'all';
+      const savedSearch = sessionStorage.getItem('adminLogs_searchTerm') || '';
+      return { 
+        mediatore: savedMediator, 
+        typeLog: savedTypeLog,
+        search: savedSearch
+      };
+    } catch (error) {
+      console.warn('Could not load filters from session storage:', error);
+      return { mediatore: 'all', typeLog: 'all', search: '' };
+    }
+  };
+
+  const saveScrollPosition = () => {
+    try {
+      sessionStorage.setItem('adminLogs_scrollPosition', window.pageYOffset.toString());
+    } catch (error) {
+      console.warn('Could not save scroll position:', error);
+    }
+  };
+
+  const restoreScrollPosition = () => {
+    try {
+      const savedPosition = sessionStorage.getItem('adminLogs_scrollPosition');
+      if (savedPosition) {
+        window.scrollTo(0, parseInt(savedPosition));
+        sessionStorage.removeItem('adminLogs_scrollPosition');
+      }
+    } catch (error) {
+      console.warn('Could not restore scroll position:', error);
+    }
+  };
+
+  // Initialize filters from session storage FIRST (synchronously)
   useEffect(() => {
+    console.log('🔄 Loading filters from session storage...');
+    const { mediatore, typeLog, search } = loadFiltersFromSession();
+    console.log('📋 Loaded filters:', { mediatore, typeLog, search });
+    
+    setMediatoreFilter(mediatore);
+    setTypeLogFilter(typeLog);
+    setSearchTerm(search);
+    setDebouncedSearchTerm(search);
+    setFiltersLoaded(true);
+  }, []);
+
+  // Initial data load - wait for filters to be loaded
+  useEffect(() => {
+    if (!filtersLoaded) return;
+    
+    console.log('🚀 Initial data load with loaded filters');
     fetchUniqueMediaatori();
     fetchLogs();
-  }, [currentPage, mediatoreFilter, typeLogFilter, searchTerm]);
+  }, [filtersLoaded]);
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Restore scroll position after initial data is loaded
+  useLayoutEffect(() => {
+    if (!loading && filtersLoaded) {
+      const timer = setTimeout(() => {
+        console.log('📍 Restoring scroll position after data load');
+        restoreScrollPosition();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, filtersLoaded]);
+
+  // Filter-dependent data loads
+  useEffect(() => {
+    if (!filtersLoaded) return;
+    
+    console.log('🔄 Filter change detected, fetching data...', {
+      currentPage,
+      mediatoreFilter,
+      typeLogFilter,
+      debouncedSearchTerm
+    });
+    
+    setLogsLoading(true);
+    fetchLogs().finally(() => setLogsLoading(false));
+  }, [currentPage, mediatoreFilter, typeLogFilter, debouncedSearchTerm, filtersLoaded]);
 
   const fetchUniqueMediaatori = async () => {
     try {
@@ -71,7 +173,6 @@ export default function AdminMediatoriLogs() {
 
   const fetchLogs = async () => {
     try {
-      setLoading(true);
       
       let query = supabase
         .from('lead_activity_log')
@@ -109,8 +210,8 @@ export default function AdminMediatoriLogs() {
         }
       }
 
-      if (searchTerm) {
-        query = query.or(`description.ilike.%${searchTerm}%,activity_type.ilike.%${searchTerm}%`);
+      if (debouncedSearchTerm) {
+        query = query.or(`description.ilike.%${debouncedSearchTerm}%,activity_type.ilike.%${debouncedSearchTerm}%`);
       }
 
       const { data, error, count } = await query
@@ -134,7 +235,11 @@ export default function AdminMediatoriLogs() {
     } catch (error) {
       console.error('Error fetching logs:', error);
     } finally {
-      setLoading(false);
+      // Only set loading to false if this is the initial load
+      if (loading) {
+        console.log('✅ Initial data load complete');
+        setLoading(false);
+      }
     }
   };
 
@@ -186,8 +291,16 @@ export default function AdminMediatoriLogs() {
   };
 
   const handlePageChange = (page: number) => {
+    saveScrollPosition();
     setCurrentPage(page);
   };
+
+  // Save filters when they change
+  useEffect(() => {
+    if (filtersLoaded) {
+      saveFiltersToSession(mediatoreFilter, typeLogFilter, searchTerm);
+    }
+  }, [mediatoreFilter, typeLogFilter, searchTerm, filtersLoaded]);
 
   if (loading && currentPage === 1) {
     return (
@@ -288,7 +401,10 @@ export default function AdminMediatoriLogs() {
               </div>
               
               <Button 
-                onClick={fetchLogs}
+                onClick={() => {
+                  setLogsLoading(true);
+                  fetchLogs().finally(() => setLogsLoading(false));
+                }}
                 variant="outline" 
                 size="sm"
                 className="px-3 py-2"
@@ -320,7 +436,7 @@ export default function AdminMediatoriLogs() {
             {/* Logs List */}
             <Card>
               <CardContent className="p-0">
-                {loading ? (
+                {logsLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#245C4F]"></div>
                   </div>
