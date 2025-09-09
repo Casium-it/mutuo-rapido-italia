@@ -210,19 +210,31 @@ export default function AdminLeads() {
 
       // Apply server-side contactable filter BEFORE pagination
       if (contactableFilter) {
-        // Create a subquery for submissions with gomutuo_service = 'consulenza'
-        const { data: consulenzaSubmissions } = await supabase
-          .from('form_responses')
-          .select('submission_id')
-          .eq('question_id', 'gomutuo_service')
-          .or('response_value->>placeholder1.eq.consulenza,response_value.eq."consulenza"');
-        
-        const consulenzaIds = consulenzaSubmissions?.map(r => r.submission_id) || [];
-        
-        // Apply the contactable filter: consulting = true OR id in consulenzaIds
-        if (consulenzaIds.length > 0) {
-          query = query.or(`consulting.eq.true,id.in.(${consulenzaIds.join(',')})`);
-        } else {
+        try {
+          // Create a subquery for submissions with gomutuo_service = 'consulenza'
+          const { data: consulenzaSubmissions, error: consulenzaError } = await supabase
+            .from('form_responses')
+            .select('submission_id')
+            .eq('question_id', 'gomutuo_service')
+            .or('response_value->>placeholder1.eq.consulenza,response_value.eq.consulenza');
+          
+          if (consulenzaError) {
+            console.error('Error fetching consulenza submissions:', consulenzaError);
+          }
+          
+          const consulenzaIds = consulenzaSubmissions?.map(r => r.submission_id) || [];
+          
+          console.log('🔍 Consulenza submissions found:', consulenzaIds.length);
+          
+          // Apply the contactable filter: consulting = true OR id in consulenzaIds
+          if (consulenzaIds.length > 0) {
+            query = query.or(`consulting.eq.true,id.in.(${consulenzaIds.join(',')})`);
+          } else {
+            query = query.eq('consulting', true);
+          }
+        } catch (error) {
+          console.error('Error in contactable filter:', error);
+          // Fallback to just consulting = true if subquery fails
           query = query.eq('consulting', true);
         }
       }
