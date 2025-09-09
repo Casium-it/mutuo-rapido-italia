@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Search, Calendar, User, FileText, Activity } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, Search, Calendar, User, FileText, Activity, RotateCcw, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -22,21 +23,57 @@ interface ActivityLog {
   created_at: string;
 }
 
+interface Mediatore {
+  id: string;
+  name: string;
+}
+
 export default function AdminMediatoriLogs() {
   const navigate = useNavigate();
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [mediatoreFilter, setMediatoreFilter] = useState('all');
+  const [typeLogFilter, setTypeLogFilter] = useState('all');
+  const [uniqueMediaatori, setUniqueMediaatori] = useState<Mediatore[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const itemsPerPage = 50;
+  const totalPages = Math.ceil(totalCount / itemsPerPage);
 
   useEffect(() => {
+    fetchUniqueMediaatori();
     fetchLogs();
-  }, []);
+  }, [currentPage, mediatoreFilter, typeLogFilter, searchTerm]);
+
+  const fetchUniqueMediaatori = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, email')
+        .order('first_name', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching mediatori:', error);
+        return;
+      }
+
+      const formattedMediaatori = data?.map(profile => ({
+        id: profile.id,
+        name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.email || 'Utente Sconosciuto'
+      })) || [];
+
+      setUniqueMediaatori(formattedMediaatori);
+    } catch (error) {
+      console.error('Error fetching mediatori:', error);
+    }
+  };
 
   const fetchLogs = async () => {
     try {
       setLoading(true);
       
-      const { data, error } = await supabase
+      let query = supabase
         .from('lead_activity_log')
         .select(`
           id,
@@ -53,9 +90,32 @@ export default function AdminMediatoriLogs() {
             last_name,
             email
           )
-        `)
+        `, { count: 'exact' });
+
+      // Apply filters
+      if (mediatoreFilter !== 'all') {
+        query = query.eq('mediatore_id', mediatoreFilter);
+      }
+
+      if (typeLogFilter !== 'all') {
+        const typeMap = {
+          'note': ['note_added', 'note_updated', 'note_deleted'] as const,
+          'edit': ['field_updated'] as const,
+          'status': ['document_added', 'document_removed'] as const
+        };
+        
+        if (typeMap[typeLogFilter as keyof typeof typeMap]) {
+          query = query.in('activity_type', typeMap[typeLogFilter as keyof typeof typeMap]);
+        }
+      }
+
+      if (searchTerm) {
+        query = query.or(`description.ilike.%${searchTerm}%,activity_type.ilike.%${searchTerm}%`);
+      }
+
+      const { data, error, count } = await query
         .order('created_at', { ascending: false })
-        .limit(200);
+        .range((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage - 1);
 
       if (error) {
         console.error('Error fetching activity logs:', error);
@@ -70,18 +130,13 @@ export default function AdminMediatoriLogs() {
       })) || [];
 
       setLogs(formattedLogs);
+      setTotalCount(count || 0);
     } catch (error) {
       console.error('Error fetching logs:', error);
     } finally {
       setLoading(false);
     }
   };
-
-  const filteredLogs = logs.filter(log =>
-    log.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.mediatore_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.activity_type.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   const getActivityIcon = (activityType: string) => {
     switch (activityType) {
@@ -130,7 +185,11 @@ export default function AdminMediatoriLogs() {
     return types[activityType] || activityType;
   };
 
-  if (loading) {
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  if (loading && currentPage === 1) {
     return (
       <div className="min-h-screen bg-[#f7f5f2] flex items-center justify-center">
         <div className="text-center">
@@ -165,113 +224,229 @@ export default function AdminMediatoriLogs() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Search and Filters */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Search className="h-5 w-5" />
-              Filtri
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-4">
-              <div className="flex-1">
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">Log Attività</h2>
+              <p className="text-gray-600">
+                Totale: {totalCount} log
+                {totalPages > 1 && ` - Pagina ${currentPage} di ${totalPages}`}
+              </p>
+            </div>
+          </div>
+
+          {/* Filters - Same design as AdminLeads */}
+          <div className="flex items-center justify-between gap-4">
+            {/* Left side - Filters */}
+            <div className="flex items-center gap-4">
+              {/* Mediatore Filter */}
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-gray-500" />
+                <Select value={mediatoreFilter} onValueChange={setMediatoreFilter}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Mediatore" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    <SelectItem value="all">Tutti</SelectItem>
+                    {uniqueMediaatori.map((mediatore) => (
+                      <SelectItem key={mediatore.id} value={mediatore.id}>
+                        {mediatore.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Type Log Filter */}
+              <div className="flex items-center gap-2 border-l pl-4">
+                <Filter className="h-4 w-4 text-gray-500" />
+                <Select value={typeLogFilter} onValueChange={setTypeLogFilter}>
+                  <SelectTrigger className="w-44">
+                    <SelectValue placeholder="Tipo Log" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    <SelectItem value="all">Tutti i tipi</SelectItem>
+                    <SelectItem value="note">Note</SelectItem>
+                    <SelectItem value="edit">Modifiche</SelectItem>
+                    <SelectItem value="status">Documenti</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Right side - Search and Update */}
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <Input
-                  placeholder="Cerca per descrizione, mediatore o tipo attività..."
+                  type="text"
+                  placeholder="Cerca..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full"
+                  className="pl-10 w-64"
                 />
               </div>
-              <Button onClick={fetchLogs} variant="outline">
-                Aggiorna
+              
+              <Button 
+                onClick={fetchLogs}
+                variant="outline" 
+                size="sm"
+                className="px-3 py-2"
+              >
+                <RotateCcw className="h-4 w-4" />
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        {/* Logs List */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Log Attività ({filteredLogs.length})</span>
-              <Badge variant="outline">{logs.length} totali</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {filteredLogs.length === 0 ? (
-              <div className="text-center py-8">
+        {totalCount === 0 ? (
+          <Card>
+            <CardContent className="flex items-center justify-center py-12">
+              <div className="text-center">
                 <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
                   Nessun log trovato
                 </h3>
                 <p className="text-gray-600">
-                  {searchTerm ? 'Prova a modificare i criteri di ricerca.' : 'Non ci sono ancora log di attività.'}
+                  {searchTerm || mediatoreFilter !== 'all' || typeLogFilter !== 'all'
+                    ? 'Prova a modificare i criteri di ricerca.'
+                    : 'Non ci sono ancora log di attività.'}
                 </p>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {filteredLogs.map((log) => (
-                  <div
-                    key={log.id}
-                    className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3 flex-1">
-                        <div className="p-2 bg-gray-100 rounded-full">
-                          {getActivityIcon(log.activity_type)}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge variant={getActivityBadgeVariant(log.activity_type) as any}>
-                              {formatActivityType(log.activity_type)}
-                            </Badge>
-                            <div className="flex items-center gap-1 text-sm text-gray-500">
-                              <User className="h-3 w-3" />
-                              {log.mediatore_name}
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            {/* Logs List */}
+            <Card>
+              <CardContent className="p-0">
+                {loading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#245C4F]"></div>
+                  </div>
+                ) : (
+                  <div className="space-y-4 p-6">
+                    {logs.map((log) => (
+                      <div
+                        key={log.id}
+                        className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-3 flex-1">
+                            <div className="p-2 bg-gray-100 rounded-full">
+                              {getActivityIcon(log.activity_type)}
                             </div>
-                            <div className="flex items-center gap-1 text-sm text-gray-500">
-                              <Calendar className="h-3 w-3" />
-                              {format(new Date(log.created_at), 'dd MMM yyyy, HH:mm', { locale: it })}
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Badge variant={getActivityBadgeVariant(log.activity_type) as any}>
+                                  {formatActivityType(log.activity_type)}
+                                </Badge>
+                                <div className="flex items-center gap-1 text-sm text-gray-500">
+                                  <User className="h-3 w-3" />
+                                  {log.mediatore_name}
+                                </div>
+                                <div className="flex items-center gap-1 text-sm text-gray-500">
+                                  <Calendar className="h-3 w-3" />
+                                  {format(new Date(log.created_at), 'dd MMM yyyy, HH:mm', { locale: it })}
+                                </div>
+                              </div>
+                              <p className="text-gray-900 font-medium mb-1">{log.description}</p>
+                              <p className="text-xs text-gray-500">ID Lead: {log.submission_id}</p>
+                              
+                              {/* Show old/new values if available */}
+                              {(log.old_value || log.new_value) && (
+                                <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
+                                  {log.old_value && (
+                                    <div className="mb-1">
+                                      <span className="font-medium">Valore precedente:</span>{' '}
+                                      <span className="text-red-600">
+                                        {typeof log.old_value === 'object' 
+                                          ? JSON.stringify(log.old_value, null, 2) 
+                                          : String(log.old_value)}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {log.new_value && (
+                                    <div>
+                                      <span className="font-medium">Nuovo valore:</span>{' '}
+                                      <span className="text-green-600">
+                                        {typeof log.new_value === 'object' 
+                                          ? JSON.stringify(log.new_value, null, 2) 
+                                          : String(log.new_value)}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           </div>
-                          <p className="text-gray-900 font-medium mb-1">{log.description}</p>
-                          <p className="text-xs text-gray-500">ID Lead: {log.submission_id}</p>
-                          
-                          {/* Show old/new values if available */}
-                          {(log.old_value || log.new_value) && (
-                            <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
-                              {log.old_value && (
-                                <div className="mb-1">
-                                  <span className="font-medium">Valore precedente:</span>{' '}
-                                  <span className="text-red-600">
-                                    {typeof log.old_value === 'object' 
-                                      ? JSON.stringify(log.old_value, null, 2) 
-                                      : String(log.old_value)}
-                                  </span>
-                                </div>
-                              )}
-                              {log.new_value && (
-                                <div>
-                                  <span className="font-medium">Nuovo valore:</span>{' '}
-                                  <span className="text-green-600">
-                                    {typeof log.new_value === 'object' 
-                                      ? JSON.stringify(log.new_value, null, 2) 
-                                      : String(log.new_value)}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          )}
                         </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
-                ))}
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-6">
+                <p className="text-sm text-gray-700">
+                  Mostrando {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, totalCount)} di {totalCount} log
+                </p>
+                
+                <div className="flex items-center space-x-2">
+                  <Button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Precedente
+                  </Button>
+                  
+                  <div className="flex items-center space-x-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNumber;
+                      if (totalPages <= 5) {
+                        pageNumber = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNumber = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNumber = totalPages - 4 + i;
+                      } else {
+                        pageNumber = currentPage - 2 + i;
+                      }
+                      
+                      return (
+                        <Button
+                          key={pageNumber}
+                          onClick={() => handlePageChange(pageNumber)}
+                          variant={currentPage === pageNumber ? "default" : "outline"}
+                          size="sm"
+                          className="w-8 h-8 p-0"
+                        >
+                          {pageNumber}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  
+                  <Button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Successivo
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </>
+        )}
       </main>
     </div>
   );
