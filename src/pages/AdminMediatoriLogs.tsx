@@ -487,33 +487,23 @@ export default function AdminMediatoriLogs() {
                                     ? log.new_value.titolo 
                                     : log.description}
                                 </p>
-                              
-                              {/* Show old/new values if available */}
-                                {(log.old_value || log.new_value) && !log.activity_type.includes('document') && (
-                                  <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
-                                    {log.old_value && !log.activity_type.includes('document') && (
-                                      <div className="mb-1">
-                                        <span className="font-medium">Valore precedente:</span>{' '}
-                                        <span className="text-gray-500">
-                                          {typeof log.old_value === 'object' 
-                                            ? JSON.stringify(log.old_value, null, 2) 
-                                            : String(log.old_value)}
-                                        </span>
-                                      </div>
+                                
+                                {/* Inline content based on activity type */}
+                                {log.activity_type.includes('note') && log.new_value?.contenuto && (
+                                  <p className="text-sm text-gray-600 mb-1">{log.new_value.contenuto}</p>
+                                )}
+                                
+                                {log.activity_type === 'field_updated' && log.new_value && (
+                                  <p className="text-sm text-gray-600 mb-1">
+                                    {log.description.replace('modificato', `modificato a *${
+                                      typeof log.new_value === 'object' ? JSON.stringify(log.new_value) : String(log.new_value)
+                                    }*`)}
+                                    {log.old_value && (
+                                      <span className="text-gray-400">
+                                        {' '}(prima era {typeof log.old_value === 'object' ? JSON.stringify(log.old_value) : String(log.old_value)})
+                                      </span>
                                     )}
-                                    {log.new_value && (
-                                      <div>
-                                        <span className="font-medium">Nuovo valore:</span>{' '}
-                                        <span className="text-green-600">
-                                          {log.activity_type.includes('note') && log.new_value?.contenuto
-                                            ? log.new_value.contenuto
-                                            : typeof log.new_value === 'object' 
-                                              ? JSON.stringify(log.new_value, null, 2) 
-                                              : String(log.new_value)}
-                                        </span>
-                                      </div>
-                                    )}
-                                  </div>
+                                  </p>
                                 )}
                             </div>
                           </div>
