@@ -29,6 +29,7 @@ interface FormSubmission {
   first_name: string | null;
   last_name: string | null;
   email: string | null;
+  gomutuo_service: string | null;
   notes: string | null;
   ai_notes: string | null;
   lead_status: LeadStatus;

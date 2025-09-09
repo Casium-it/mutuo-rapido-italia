@@ -37,6 +37,7 @@ interface FormSubmission {
   first_name: string | null;
   last_name: string | null;
   email: string | null;
+  gomutuo_service: string | null;
   notes: string | null;
   ai_notes: string | null;
   mediatore: string | null;
@@ -654,26 +655,14 @@ export default function AdminLeads() {
                           Consulenza richiesta
                         </Badge>
                       )}
-                      {(() => {
-                        const gomutoService = submission.form_responses?.find(
-                          response => response.question_id === 'gomutuo_service'
-                        );
-                        if (gomutoService) {
-                          const value = typeof gomutoService.response_value === 'object' 
-                            ? Object.values(gomutoService.response_value)[0]
-                            : gomutoService.response_value;
-                          const isContattami = value === 'consulenza';
-                          return (
-                            <Badge 
-                              variant={isContattami ? "default" : "secondary"}
-                              className={`text-xs ${isContattami ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
-                            >
-                              {isContattami ? 'Contattatemi' : 'Non Contattatemi'}
-                            </Badge>
-                          );
-                        }
-                        return null;
-                      })()}
+                      {submission.gomutuo_service && (
+                        <Badge 
+                          variant={submission.gomutuo_service === 'consulenza' ? "default" : "secondary"}
+                          className={`text-xs ${submission.gomutuo_service === 'consulenza' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
+                        >
+                          {submission.gomutuo_service === 'consulenza' ? 'Contattatemi' : 'Non Contattatemi'}
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 </CardHeader>
