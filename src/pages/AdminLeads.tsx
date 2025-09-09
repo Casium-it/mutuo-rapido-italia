@@ -230,8 +230,8 @@ export default function AdminLeads() {
 
       // Apply server-side open submissions filter BEFORE pagination
       if (openSubmissionsFilter) {
-        // Exclude closed/rejected statuses: non_interessato, pratica_bocciata, rejected, non_risponde_x3
-        query = query.not('lead_status', 'in', '(non_interessato,pratica_bocciata,rejected,non_risponde_x3)');
+        // Exclude closed/rejected statuses: non_interessato, pratica_bocciata, rejected, non_risponde_x3, consulenza_prenotata
+        query = query.not('lead_status', 'in', '(non_interessato,pratica_bocciata,rejected,non_risponde_x3,consulenza_prenotata)');
       }
 
       // Re-enabled mediatore filtering with UUID support
@@ -513,7 +513,7 @@ export default function AdminLeads() {
               {/* Open Submissions Filter (Icon + Toggle) */}
               <div className="flex items-center gap-3 border-l pl-4">
                 <div className="flex items-center gap-2">
-                  <FileText className={`h-4 w-4 ${openSubmissionsFilter ? 'text-[#245C4F]' : 'text-gray-400'}`} />
+                  <Headphones className={`h-4 w-4 ${openSubmissionsFilter ? 'text-[#245C4F]' : 'text-gray-400'}`} />
                   <Switch
                     checked={openSubmissionsFilter}
                     onCheckedChange={(checked) => {
