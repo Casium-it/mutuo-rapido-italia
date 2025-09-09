@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, BarChart3, Users, FileText, Phone, MessageCircle } from 'lucide-react';
 import { useStatistics, PeriodData } from '@/hooks/useStatistics';
 import { PeriodSelector } from '@/components/admin/statistics/PeriodSelector';
-import { StatisticCard } from '@/components/admin/statistics/StatisticCard';
+import { StatisticCard, ConsultingStatisticCard } from '@/components/admin/statistics/StatisticCard';
 import { FormBreakdownTable } from '@/components/admin/statistics/FormBreakdownTable';
 
 export default function AdminStatistics() {
@@ -84,9 +84,10 @@ export default function AdminStatistics() {
               showConversion={true}
               loading={loading}
             />
-            <StatisticCard
+            <ConsultingStatisticCard
               title="Consulenza Richiesta"
-              metric={totals.consulting}
+              consultingAll={totals.consultingAll}
+              consultingWithContact={totals.consultingWithContact}
               icon={<MessageCircle className="h-6 w-6" />}
               showConversion={true}
               loading={loading}

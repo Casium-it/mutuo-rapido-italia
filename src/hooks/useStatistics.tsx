@@ -29,6 +29,8 @@ export interface FormStatistics {
   simulations: StatisticMetric;
   submissions: StatisticMetric;
   submissionsWithContact: StatisticMetric;
+  consultingAll: StatisticMetric;
+  consultingWithContact: StatisticMetric;
 }
 
 export interface StatisticsData {
@@ -36,7 +38,8 @@ export interface StatisticsData {
     simulations: StatisticMetric;
     submissions: StatisticMetric;
     submissionsWithContact: StatisticMetric;
-    consulting: StatisticMetric;
+    consultingAll: StatisticMetric;
+    consultingWithContact: StatisticMetric;
   };
   formBreakdown: FormStatistics[];
   loading: boolean;
@@ -49,7 +52,8 @@ export function useStatistics(period: PeriodData) {
       simulations: { current: 0, previous: 0, change: 0, changePercent: 0 },
       submissions: { current: 0, previous: 0, change: 0, changePercent: 0 },
       submissionsWithContact: { current: 0, previous: 0, change: 0, changePercent: 0 },
-      consulting: { current: 0, previous: 0, change: 0, changePercent: 0 }
+      consultingAll: { current: 0, previous: 0, change: 0, changePercent: 0 },
+      consultingWithContact: { current: 0, previous: 0, change: 0, changePercent: 0 }
     },
     formBreakdown: [],
     loading: true,
@@ -126,7 +130,7 @@ export function useStatistics(period: PeriodData) {
       const formsMap = new Map(forms?.map(f => [f.id, { slug: f.slug, title: f.title }]) || []);
 
       // Fetch current period totals using COUNT
-      const [currentSimulations, currentSubmissions, currentSubmissionsWithContact, currentConsulting] = await Promise.all([
+      const [currentSimulations, currentSubmissions, currentSubmissionsWithContact, currentConsultingAll, currentConsultingWithContact] = await Promise.all([
         // Simulazioni salvate - count total
         supabase
           .from('saved_simulations')
@@ -150,17 +154,27 @@ export function useStatistics(period: PeriodData) {
           .not('phone_number', 'is', null)
           .neq('phone_number', ''),
 
-        // Submissions with consulting - count total
+        // Submissions with consulting (ALL) - count total
         supabase
           .from('form_submissions')
           .select('*', { count: 'exact', head: true })
           .gte('created_at', currentPeriod.start.toISOString())
           .lte('created_at', currentPeriod.end.toISOString())
+          .or('consulting.eq.true,gomutuo_service.eq.consulenza'),
+
+        // Submissions with consulting (with phone) - count total
+        supabase
+          .from('form_submissions')
+          .select('*', { count: 'exact', head: true })
+          .gte('created_at', currentPeriod.start.toISOString())
+          .lte('created_at', currentPeriod.end.toISOString())
+          .not('phone_number', 'is', null)
+          .neq('phone_number', '')
           .or('consulting.eq.true,gomutuo_service.eq.consulenza')
       ]);
 
       // Fetch previous period totals using COUNT
-      const [prevSimulations, prevSubmissions, prevSubmissionsWithContact, prevConsulting] = await Promise.all([
+      const [prevSimulations, prevSubmissions, prevSubmissionsWithContact, prevConsultingAll, prevConsultingWithContact] = await Promise.all([
         supabase
           .from('saved_simulations')
           .select('*', { count: 'exact', head: true })
@@ -186,24 +200,36 @@ export function useStatistics(period: PeriodData) {
           .select('*', { count: 'exact', head: true })
           .gte('created_at', previousPeriod.start.toISOString())
           .lte('created_at', previousPeriod.end.toISOString())
+          .or('consulting.eq.true,gomutuo_service.eq.consulenza'),
+
+        supabase
+          .from('form_submissions')
+          .select('*', { count: 'exact', head: true })
+          .gte('created_at', previousPeriod.start.toISOString())
+          .lte('created_at', previousPeriod.end.toISOString())
+          .not('phone_number', 'is', null)
+          .neq('phone_number', '')
           .or('consulting.eq.true,gomutuo_service.eq.consulenza')
       ]);
 
       if (currentSimulations.error) throw currentSimulations.error;
       if (currentSubmissions.error) throw currentSubmissions.error;
       if (currentSubmissionsWithContact.error) throw currentSubmissionsWithContact.error;
-      if (currentConsulting.error) throw currentConsulting.error;
+      if (currentConsultingAll.error) throw currentConsultingAll.error;
+      if (currentConsultingWithContact.error) throw currentConsultingWithContact.error;
 
       // Calculate totals from counts
       const currentSimulationsCount = currentSimulations.count || 0;
       const currentSubmissionsCount = currentSubmissions.count || 0;
       const currentSubmissionsWithContactCount = currentSubmissionsWithContact.count || 0;
-      const currentConsultingCount = currentConsulting.count || 0;
+      const currentConsultingAllCount = currentConsultingAll.count || 0;
+      const currentConsultingWithContactCount = currentConsultingWithContact.count || 0;
 
       const prevSimulationsCount = prevSimulations.count || 0;
       const prevSubmissionsCount = prevSubmissions.count || 0;
       const prevSubmissionsWithContactCount = prevSubmissionsWithContact.count || 0;
-      const prevConsultingCount = prevConsulting.count || 0;
+      const prevConsultingAllCount = prevConsultingAll.count || 0;
+      const prevConsultingWithContactCount = prevConsultingWithContact.count || 0;
 
       // Helper function to calculate metrics
       const calculateMetric = (current: number, previous: number, totalSimulations?: number): StatisticMetric => {
@@ -230,9 +256,13 @@ export function useStatistics(period: PeriodData) {
             currentSimsCount,
             currentSubsCount, 
             currentSubsWithContactCount,
+            currentConsultingAllCount,
+            currentConsultingWithContactCount,
             prevSimsCount,
             prevSubsCount,
-            prevSubsWithContactCount
+            prevSubsWithContactCount,
+            prevConsultingAllCount,
+            prevConsultingWithContactCount
           ] = await Promise.all([
             // Current period counts for this form
             supabase
@@ -257,6 +287,24 @@ export function useStatistics(period: PeriodData) {
               .lte('created_at', currentPeriod.end.toISOString())
               .not('phone_number', 'is', null)
               .neq('phone_number', ''),
+
+            supabase
+              .from('form_submissions')
+              .select('*', { count: 'exact', head: true })
+              .eq('form_id', form.id)
+              .gte('created_at', currentPeriod.start.toISOString())
+              .lte('created_at', currentPeriod.end.toISOString())
+              .or('consulting.eq.true,gomutuo_service.eq.consulenza'),
+
+            supabase
+              .from('form_submissions')
+              .select('*', { count: 'exact', head: true })
+              .eq('form_id', form.id)
+              .gte('created_at', currentPeriod.start.toISOString())
+              .lte('created_at', currentPeriod.end.toISOString())
+              .not('phone_number', 'is', null)
+              .neq('phone_number', '')
+              .or('consulting.eq.true,gomutuo_service.eq.consulenza'),
             
             // Previous period counts for this form
             supabase
@@ -280,23 +328,47 @@ export function useStatistics(period: PeriodData) {
               .gte('created_at', previousPeriod.start.toISOString())
               .lte('created_at', previousPeriod.end.toISOString())
               .not('phone_number', 'is', null)
+              .neq('phone_number', ''),
+
+            supabase
+              .from('form_submissions')
+              .select('*', { count: 'exact', head: true })
+              .eq('form_id', form.id)
+              .gte('created_at', previousPeriod.start.toISOString())
+              .lte('created_at', previousPeriod.end.toISOString())
+              .or('consulting.eq.true,gomutuo_service.eq.consulenza'),
+
+            supabase
+              .from('form_submissions')
+              .select('*', { count: 'exact', head: true })
+              .eq('form_id', form.id)
+              .gte('created_at', previousPeriod.start.toISOString())
+              .lte('created_at', previousPeriod.end.toISOString())
+              .not('phone_number', 'is', null)
               .neq('phone_number', '')
+              .or('consulting.eq.true,gomutuo_service.eq.consulenza')
           ]);
 
           const formCurrentSims = currentSimsCount.count || 0;
           const formCurrentSubs = currentSubsCount.count || 0;
           const formCurrentSubsWithContact = currentSubsWithContactCount.count || 0;
+          const formCurrentConsultingAll = currentConsultingAllCount.count || 0;
+          const formCurrentConsultingWithContact = currentConsultingWithContactCount.count || 0;
           
           const formPrevSims = prevSimsCount.count || 0;
           const formPrevSubs = prevSubsCount.count || 0;
           const formPrevSubsWithContact = prevSubsWithContactCount.count || 0;
+          const formPrevConsultingAll = prevConsultingAllCount.count || 0;
+          const formPrevConsultingWithContact = prevConsultingWithContactCount.count || 0;
 
           return {
             formSlug: form.slug,
             formTitle: form.title || form.slug,
             simulations: calculateMetric(formCurrentSims, formPrevSims),
             submissions: calculateMetric(formCurrentSubs, formPrevSubs, formCurrentSims),
-            submissionsWithContact: calculateMetric(formCurrentSubsWithContact, formPrevSubsWithContact, formCurrentSims)
+            submissionsWithContact: calculateMetric(formCurrentSubsWithContact, formPrevSubsWithContact, formCurrentSims),
+            consultingAll: calculateMetric(formCurrentConsultingAll, formPrevConsultingAll, formCurrentSims),
+            consultingWithContact: calculateMetric(formCurrentConsultingWithContact, formPrevConsultingWithContact, formCurrentSims)
           };
         });
 
@@ -310,7 +382,8 @@ export function useStatistics(period: PeriodData) {
           simulations: calculateMetric(currentSimulationsCount, prevSimulationsCount),
           submissions: calculateMetric(currentSubmissionsCount, prevSubmissionsCount, currentSimulationsCount),
           submissionsWithContact: calculateMetric(currentSubmissionsWithContactCount, prevSubmissionsWithContactCount, currentSimulationsCount),
-          consulting: calculateMetric(currentConsultingCount, prevConsultingCount, currentSimulationsCount)
+          consultingAll: calculateMetric(currentConsultingAllCount, prevConsultingAllCount, currentSimulationsCount),
+          consultingWithContact: calculateMetric(currentConsultingWithContactCount, prevConsultingWithContactCount, currentSimulationsCount)
         },
         formBreakdown,
         loading: false,
