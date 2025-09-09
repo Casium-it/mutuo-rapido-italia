@@ -13,17 +13,6 @@ export default function AdminStatistics() {
   const [period, setPeriod] = useState<PeriodData>({ type: 'lifetime' });
   const { totals, formBreakdown, loading, error, refetch } = useStatistics(period);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f7f5f2]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#245C4F] mx-auto"></div>
-          <p className="mt-2 text-gray-600">Caricamento statistiche...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-[#f7f5f2]">
       {/* Header */}
@@ -79,18 +68,21 @@ export default function AdminStatistics() {
               title="Simulazioni Salvate"
               metric={totals.simulations}
               icon={<BarChart3 className="h-6 w-6" />}
+              loading={loading}
             />
             <StatisticCard
               title="Submissions Totali"
               metric={totals.submissions}
               icon={<FileText className="h-6 w-6" />}
               showConversion={true}
+              loading={loading}
             />
             <StatisticCard
               title="Submissions con Contatto"
               metric={totals.submissionsWithContact}
               icon={<Phone className="h-6 w-6" />}
               showConversion={true}
+              loading={loading}
             />
           </div>
         </div>
@@ -98,7 +90,7 @@ export default function AdminStatistics() {
         {/* Form Breakdown */}
         <div>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Analisi per Form</h2>
-          <FormBreakdownTable formStats={formBreakdown} />
+          <FormBreakdownTable formStats={formBreakdown} loading={loading} />
         </div>
 
         {/* Summary Info */}

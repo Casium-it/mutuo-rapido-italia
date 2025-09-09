@@ -2,12 +2,14 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { TrendingUp, TrendingDown, Minus, BarChart3 } from 'lucide-react';
 import { FormStatistics } from '@/hooks/useStatistics';
 import { StatisticsGraphDialog } from './StatisticsGraphDialog';
 
 interface FormBreakdownTableProps {
   formStats: FormStatistics[];
+  loading?: boolean;
 }
 
 interface GraphDialogState {
@@ -17,7 +19,7 @@ interface GraphDialogState {
   formTitle: string;
 }
 
-export function FormBreakdownTable({ formStats }: FormBreakdownTableProps) {
+export function FormBreakdownTable({ formStats, loading = false }: FormBreakdownTableProps) {
   const [graphDialog, setGraphDialog] = useState<GraphDialogState>({
     open: false,
     metricType: 'simulations',
@@ -67,6 +69,55 @@ export function FormBreakdownTable({ formStats }: FormBreakdownTableProps) {
                      graphDialog.metricType === 'submissions' ? 'Submissions' : 'Submissions con Contatto';
     return `Grafico ${metricName} - ${graphDialog.formTitle}`;
   };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Breakdown per Form</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-3 px-2 font-medium text-gray-700">Form</th>
+                  <th className="text-center py-3 px-2 font-medium text-gray-700">Simulazioni</th>
+                  <th className="text-center py-3 px-2 font-medium text-gray-700">Submissions</th>
+                  <th className="text-center py-3 px-2 font-medium text-gray-700">Con Contatto</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[1, 2, 3].map((i) => (
+                  <tr key={i} className="border-b border-gray-100">
+                    <td className="py-4 px-2">
+                      <div>
+                        <Skeleton className="h-4 w-32 mb-1" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                    </td>
+                    {[1, 2, 3].map((j) => (
+                      <td key={j} className="py-6 px-2 text-center">
+                        <div className="space-y-2">
+                          <Skeleton className="h-6 w-12 mx-auto" />
+                          <Skeleton className="h-3 w-20 mx-auto" />
+                          <div className="w-8 h-px bg-gray-300 mx-auto my-1"></div>
+                          <Skeleton className="h-3 w-16 mx-auto" />
+                          <div className="flex justify-center mt-2">
+                            <Skeleton className="h-7 w-7" />
+                          </div>
+                        </div>
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (formStats.length === 0) {
     return (
