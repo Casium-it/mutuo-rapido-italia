@@ -486,20 +486,18 @@ export default function AdminLeads() {
                 </Select>
               </div>
 
-              {/* Open Submissions Filter (Icon only) */}
-              <div className="flex items-center gap-2 border-l pl-4">
-                <Button 
-                  variant={openSubmissionsFilter ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setOpenSubmissionsFilter(!openSubmissionsFilter);
-                    saveFiltersToSession(statusFilter, phoneFilter, !openSubmissionsFilter, mediatoreFilter, searchQuery);
-                  }}
-                  className="px-3 py-2"
-                  title={openSubmissionsFilter ? "Mostra tutte le submissions" : "Nascondi submissions chiuse"}
-                >
-                  <FileText className="h-4 w-4" />
-                </Button>
+              {/* Open Submissions Filter (Icon + Toggle) */}
+              <div className="flex items-center gap-3 border-l pl-4">
+                <div className="flex items-center gap-2">
+                  <FileText className={`h-4 w-4 ${openSubmissionsFilter ? 'text-[#245C4F]' : 'text-gray-400'}`} />
+                  <Switch
+                    checked={openSubmissionsFilter}
+                    onCheckedChange={(checked) => {
+                      setOpenSubmissionsFilter(checked);
+                      saveFiltersToSession(statusFilter, phoneFilter, checked, mediatoreFilter, searchQuery);
+                    }}
+                  />
+                </div>
               </div>
 
               {/* Phone Filter (Icon + Toggle) */}
