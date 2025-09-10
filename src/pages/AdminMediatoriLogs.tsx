@@ -9,6 +9,7 @@ import { ArrowLeft, Search, Calendar, User, FileText, Activity, RotateCcw, Filte
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ActivityLog {
   id: string;
@@ -31,6 +32,7 @@ interface Mediatore {
 
 export default function AdminMediatoriLogs() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [logsLoading, setLogsLoading] = useState(false);
@@ -328,50 +330,55 @@ export default function AdminMediatoriLogs() {
     <div className="min-h-screen bg-[#f7f5f2]">
       {/* Header */}
       <header className="bg-white border-b border-[#BEB8AE] px-4 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              onClick={() => navigate('/admin')}
-              variant="ghost"
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Torna all'Admin
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-[#245C4F]">Log Mediatori</h1>
-              <p className="text-gray-600">Visualizza tutti i log delle attività dei mediatori</p>
+        <div className="max-w-7xl mx-auto">
+          <div className={`${isMobile ? 'flex flex-col gap-3' : 'flex items-center justify-between'}`}>
+            <div className={`${isMobile ? 'flex flex-col gap-2' : 'flex items-center gap-4'}`}>
+              <Button
+                onClick={() => navigate('/admin')}
+                variant="ghost"
+                className={`flex items-center gap-2 ${isMobile ? 'self-start' : ''}`}
+              >
+                <ArrowLeft className="h-4 w-4" />
+                {!isMobile && 'Torna all\'Admin'}
+              </Button>
+              <div>
+                <h1 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-[#245C4F]`}>Log Mediatori</h1>
+                {!isMobile && <p className="text-gray-600">Visualizza tutti i log delle attività dei mediatori</p>}
+              </div>
             </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-4 py-6 md:py-8">
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className={`${isMobile ? 'mb-3' : 'flex items-center justify-between mb-4'}`}>
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">Log Attività</h2>
-              <p className="text-gray-600">
+              <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold text-gray-900`}>Log Attività</h2>
+              <p className={`text-gray-600 ${isMobile ? 'text-sm' : ''}`}>
                 Totale: {totalCount} log
                 {totalPages > 1 && ` - Pagina ${currentPage} di ${totalPages}`}
               </p>
             </div>
           </div>
 
-          {/* Filters - Same design as AdminLeads */}
-          <div className="flex items-center justify-between gap-4">
-            {/* Left side - Filters */}
-            <div className="flex items-center gap-4">
+          {/* Filters - Mobile responsive */}
+          <div className={`${isMobile ? 'space-y-4' : 'flex items-center justify-between gap-4'}`}>
+            {/* Filters Row 1 (mobile) / Left side (desktop) */}
+            <div className={`${isMobile ? 'flex flex-col space-y-3' : 'flex items-center gap-4'}`}>
               {/* Mediatore Filter */}
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-gray-500" />
+              <div className={`flex items-center gap-2 ${isMobile ? 'w-full' : ''}`}>
+                {!isMobile && <User className="h-4 w-4 text-gray-500" />}
                 <Select value={mediatoreFilter} onValueChange={setMediatoreFilter}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Mediatore" />
+                  <SelectTrigger className={isMobile ? 'w-full' : 'w-40'}>
+                    <div className="flex items-center gap-2">
+                      {isMobile && <User className="h-4 w-4 text-gray-500" />}
+                      <SelectValue placeholder="Mediatore" />
+                    </div>
                   </SelectTrigger>
                   <SelectContent className="bg-white z-50">
-                    <SelectItem value="all">Tutti</SelectItem>
+                    <SelectItem value="all">Tutti i mediatori</SelectItem>
                     {uniqueMediaatori.map((mediatore) => (
                       <SelectItem key={mediatore.id} value={mediatore.id}>
                         {mediatore.name}
@@ -382,11 +389,14 @@ export default function AdminMediatoriLogs() {
               </div>
 
               {/* Type Log Filter */}
-              <div className="flex items-center gap-2 border-l pl-4">
-                <Filter className="h-4 w-4 text-gray-500" />
+              <div className={`flex items-center gap-2 ${isMobile ? 'w-full' : 'border-l pl-4'}`}>
+                {!isMobile && <Filter className="h-4 w-4 text-gray-500" />}
                 <Select value={typeLogFilter} onValueChange={setTypeLogFilter}>
-                  <SelectTrigger className="w-44">
-                    <SelectValue placeholder="Tipo Log" />
+                  <SelectTrigger className={isMobile ? 'w-full' : 'w-44'}>
+                    <div className="flex items-center gap-2">
+                      {isMobile && <Filter className="h-4 w-4 text-gray-500" />}
+                      <SelectValue placeholder="Tipo Log" />
+                    </div>
                   </SelectTrigger>
                   <SelectContent className="bg-white z-50">
                     <SelectItem value="all">Tutti i tipi</SelectItem>
@@ -398,16 +408,16 @@ export default function AdminMediatoriLogs() {
               </div>
             </div>
 
-            {/* Right side - Search and Update */}
-            <div className="flex items-center gap-3">
-              <div className="relative">
+            {/* Search and Update - Row 2 (mobile) / Right side (desktop) */}
+            <div className={`flex items-center gap-3 ${isMobile ? 'w-full' : ''}`}>
+              <div className={`relative ${isMobile ? 'flex-1' : ''}`}>
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <Input
                   type="text"
                   placeholder="Cerca..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64"
+                  className={`pl-10 ${isMobile ? 'w-full' : 'w-64'}`}
                 />
               </div>
               
@@ -418,7 +428,7 @@ export default function AdminMediatoriLogs() {
                 }}
                 variant="outline" 
                 size="sm"
-                className="px-3 py-2"
+                className="px-3 py-2 shrink-0"
               >
                 <RotateCcw className="h-4 w-4" />
               </Button>
@@ -452,26 +462,42 @@ export default function AdminMediatoriLogs() {
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#245C4F]"></div>
                   </div>
                 ) : (
-                  <div className="space-y-4 p-6">
+                  <div className={`space-y-4 ${isMobile ? 'p-3' : 'p-6'}`}>
                     {logs.map((log) => (
                         <div
                           key={log.id}
-                          className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                          className="border rounded-lg p-3 md:p-4 hover:bg-gray-50 transition-colors"
                         >
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-start gap-3 flex-1">
-                              <div className="p-2 bg-gray-100 rounded-full">
+                          <div className={`${isMobile ? 'flex flex-col space-y-3' : 'flex items-start justify-between'}`}>
+                            <div className={`flex ${isMobile ? 'items-start' : 'items-start'} gap-3 flex-1`}>
+                              <div className="p-2 bg-gray-100 rounded-full shrink-0">
                                 {getActivityIcon(log.activity_type)}
                               </div>
-                              <div className="flex-1">
-                                <div className="flex items-center justify-between mb-2">
-                                  <div className="flex items-center gap-2">
-                                    <Badge variant={getActivityBadgeVariant(log.activity_type) as any}>
+                              <div className="flex-1 min-w-0">
+                                <div className={`${isMobile ? 'space-y-2' : 'flex items-center justify-between'} mb-2`}>
+                                  <div className={`flex ${isMobile ? 'flex-col space-y-1' : 'items-center gap-2'}`}>
+                                    <Badge variant={getActivityBadgeVariant(log.activity_type) as any} className="w-fit">
                                       {formatActivityType(log.activity_type)}
                                     </Badge>
-                                    <p className="text-xs text-gray-500">Lead: {log.lead_name}</p>
+                                    <p className={`${isMobile ? 'text-xs' : 'text-xs'} text-gray-500`}>Lead: {log.lead_name}</p>
                                   </div>
-                                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                                  {!isMobile && (
+                                    <div className="flex items-center gap-4 text-sm text-gray-500 shrink-0">
+                                      <div className="flex items-center gap-1">
+                                        <User className="h-3 w-3" />
+                                        {log.mediatore_name}
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        <Calendar className="h-3 w-3" />
+                                        {format(new Date(log.created_at), 'dd MMM yyyy, HH:mm', { locale: it })}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                {/* Mobile metadata */}
+                                {isMobile && (
+                                  <div className="flex flex-col gap-1 text-xs text-gray-500 mb-2">
                                     <div className="flex items-center gap-1">
                                       <User className="h-3 w-3" />
                                       {log.mediatore_name}
@@ -481,8 +507,9 @@ export default function AdminMediatoriLogs() {
                                       {format(new Date(log.created_at), 'dd MMM yyyy, HH:mm', { locale: it })}
                                     </div>
                                   </div>
-                                </div>
-                                <p className="text-gray-900 font-medium mb-1">
+                                )}
+                                
+                                <p className={`text-gray-900 font-medium mb-1 ${isMobile ? 'text-sm' : ''}`}>
                                   {log.activity_type.includes('note') && log.new_value?.titolo 
                                     ? log.new_value.titolo 
                                     : log.description}
@@ -490,11 +517,11 @@ export default function AdminMediatoriLogs() {
                                 
                                 {/* Inline content based on activity type */}
                                 {log.activity_type.includes('note') && log.new_value?.contenuto && (
-                                  <p className="text-sm text-gray-600 mb-1">{log.new_value.contenuto}</p>
+                                  <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-600 mb-1`}>{log.new_value.contenuto}</p>
                                 )}
                                 
                                 {log.activity_type === 'field_updated' && log.new_value && (
-                                  <p className="text-sm text-gray-600 mb-1">
+                                  <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-600 mb-1`}>
                                     {log.description.replace('modificato', '')}modificato a <span className="font-semibold">{
                                       typeof log.new_value === 'object' ? JSON.stringify(log.new_value) : String(log.new_value)
                                     }</span>
@@ -517,59 +544,79 @@ export default function AdminMediatoriLogs() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-6">
-                <p className="text-sm text-gray-700">
-                  Mostrando {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, totalCount)} di {totalCount} log
-                </p>
+              <div className={`${isMobile ? 'flex flex-col space-y-3' : 'flex items-center justify-between'} mt-6`}>
+                {!isMobile && (
+                  <p className="text-sm text-gray-700">
+                    Mostrando {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, totalCount)} di {totalCount} log
+                  </p>
+                )}
                 
-                <div className="flex items-center space-x-2">
+                <div className={`flex items-center ${isMobile ? 'justify-center' : ''} ${isMobile ? 'space-x-1' : 'space-x-2'}`}>
                   <Button
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
                     variant="outline"
                     size="sm"
+                    className={isMobile ? 'px-2' : ''}
                   >
                     <ChevronLeft className="h-4 w-4" />
-                    Precedente
+                    {!isMobile && 'Precedente'}
                   </Button>
                   
-                  <div className="flex items-center space-x-1">
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNumber;
-                      if (totalPages <= 5) {
-                        pageNumber = i + 1;
-                      } else if (currentPage <= 3) {
-                        pageNumber = i + 1;
-                      } else if (currentPage >= totalPages - 2) {
-                        pageNumber = totalPages - 4 + i;
-                      } else {
-                        pageNumber = currentPage - 2 + i;
-                      }
-                      
-                      return (
-                        <Button
-                          key={pageNumber}
-                          onClick={() => handlePageChange(pageNumber)}
-                          variant={currentPage === pageNumber ? "default" : "outline"}
-                          size="sm"
-                          className="w-8 h-8 p-0"
-                        >
-                          {pageNumber}
-                        </Button>
-                      );
-                    })}
-                  </div>
+                  {!isMobile && (
+                    <div className="flex items-center space-x-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNumber;
+                        if (totalPages <= 5) {
+                          pageNumber = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNumber = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNumber = totalPages - 4 + i;
+                        } else {
+                          pageNumber = currentPage - 2 + i;
+                        }
+                        
+                        return (
+                          <Button
+                            key={pageNumber}
+                            onClick={() => handlePageChange(pageNumber)}
+                            variant={currentPage === pageNumber ? "default" : "outline"}
+                            size="sm"
+                            className="w-8 h-8 p-0"
+                          >
+                            {pageNumber}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  
+                  {/* Mobile: Show current page info */}
+                  {isMobile && (
+                    <div className="flex items-center px-3 py-1 bg-gray-100 rounded text-sm">
+                      {currentPage} / {totalPages}
+                    </div>
+                  )}
                   
                   <Button
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
                     variant="outline"
                     size="sm"
+                    className={isMobile ? 'px-2' : ''}
                   >
-                    Successivo
+                    {!isMobile && 'Successivo'}
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
+                
+                {/* Mobile: Show result count at bottom */}
+                {isMobile && (
+                  <p className="text-xs text-gray-700 text-center">
+                    Mostrando {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, totalCount)} di {totalCount} log
+                  </p>
+                )}
               </div>
             )}
           </>
