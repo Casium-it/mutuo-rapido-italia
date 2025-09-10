@@ -46,7 +46,6 @@ import AdminAIPrompts from "./pages/AdminAIPrompts";
 import AdminAIPromptEditor from "./pages/AdminAIPromptEditor";
 import AdminQuestionIds from "./pages/AdminQuestionIds";
 import AdminMediatoriLogs from "./pages/AdminMediatoriLogs";
-
 import MediatoreDashboard from "./pages/MediatoreDashboard";
 import MediatoreLeads from "./pages/MediatoreLeads";
 import MediatoreLeadDetail from "./pages/MediatoreLeadDetail";
