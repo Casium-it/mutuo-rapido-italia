@@ -1014,6 +1014,178 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_contacts: {
+        Row: {
+          avatar_url: string | null
+          business_info: Json | null
+          created_at: string
+          display_name: string | null
+          id: string
+          is_business: boolean | null
+          last_seen_at: string | null
+          notes: string | null
+          phone_number: string
+          profile_name: string | null
+          tags: string[] | null
+          updated_at: string
+          webhook_event_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          business_info?: Json | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          is_business?: boolean | null
+          last_seen_at?: string | null
+          notes?: string | null
+          phone_number: string
+          profile_name?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          webhook_event_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          business_info?: Json | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          is_business?: boolean | null
+          last_seen_at?: string | null
+          notes?: string | null
+          phone_number?: string
+          profile_name?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          webhook_event_id?: string | null
+        }
+        Relationships: []
+      }
+      whatsapp_conversations: {
+        Row: {
+          assigned_to: string | null
+          contact_id: string | null
+          created_at: string
+          id: string
+          last_message_at: string | null
+          last_message_id: string | null
+          phone_number: string
+          status: string | null
+          unread_count: number | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          contact_id?: string | null
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          last_message_id?: string | null
+          phone_number: string
+          status?: string | null
+          unread_count?: number | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          contact_id?: string | null
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          last_message_id?: string | null
+          phone_number?: string
+          status?: string | null
+          unread_count?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_last_message"
+            columns: ["last_message_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_conversations_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_conversations_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_messages: {
+        Row: {
+          content: Json | null
+          created_at: string
+          currency: string | null
+          direction: string
+          error_code: string | null
+          error_message: string | null
+          from_phone: string
+          id: string
+          media_type: string | null
+          media_url: string | null
+          message_type: string | null
+          status: string | null
+          to_phone: string
+          total_price: number | null
+          updated_at: string
+          wamid: string | null
+          webhook_event_id: string | null
+          ycloud_message_id: string
+        }
+        Insert: {
+          content?: Json | null
+          created_at?: string
+          currency?: string | null
+          direction: string
+          error_code?: string | null
+          error_message?: string | null
+          from_phone: string
+          id?: string
+          media_type?: string | null
+          media_url?: string | null
+          message_type?: string | null
+          status?: string | null
+          to_phone: string
+          total_price?: number | null
+          updated_at?: string
+          wamid?: string | null
+          webhook_event_id?: string | null
+          ycloud_message_id: string
+        }
+        Update: {
+          content?: Json | null
+          created_at?: string
+          currency?: string | null
+          direction?: string
+          error_code?: string | null
+          error_message?: string | null
+          from_phone?: string
+          id?: string
+          media_type?: string | null
+          media_url?: string | null
+          message_type?: string | null
+          status?: string | null
+          to_phone?: string
+          total_price?: number | null
+          updated_at?: string
+          wamid?: string | null
+          webhook_event_id?: string | null
+          ycloud_message_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

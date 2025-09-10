@@ -16,6 +16,9 @@ verify_jwt = false
 [functions.send-ycloud-message]
 verify_jwt = false
 
+[functions.ycloud-webhook]
+verify_jwt = false
+
 [functions.generate-lead-pdf]
 verify_jwt = false
 
