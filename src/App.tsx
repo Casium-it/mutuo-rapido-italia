@@ -46,6 +46,7 @@ import AdminAIPrompts from "./pages/AdminAIPrompts";
 import AdminAIPromptEditor from "./pages/AdminAIPromptEditor";
 import AdminQuestionIds from "./pages/AdminQuestionIds";
 import AdminMediatoriLogs from "./pages/AdminMediatoriLogs";
+import AdminWhatsAppChats from "./pages/AdminWhatsAppChats";
 import MediatoreDashboard from "./pages/MediatoreDashboard";
 import MediatoreLeads from "./pages/MediatoreLeads";
 import MediatoreLeadDetail from "./pages/MediatoreLeadDetail";
@@ -203,6 +204,11 @@ const AppWithTracking = () => {
       <Route path="/admin/log-mediatori" element={
         <ProtectedRoute requireAdmin>
           <AdminMediatoriLogs />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/whatsapp-chats" element={
+        <ProtectedRoute requireAdmin>
+          <AdminWhatsAppChats />
         </ProtectedRoute>
       } />
       <Route path="*" element={<NotFound />} />

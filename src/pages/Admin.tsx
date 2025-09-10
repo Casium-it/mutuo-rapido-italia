@@ -108,12 +108,20 @@ export default function Admin() {
               </CardContent>
             </Card>
 
-            {/* Third Line: Question ids */}
+            {/* Third Line: Question ids, WhatsApp Chats */}
             <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/question-ids')}>
               <CardContent className="p-6 text-center">
                 <MessageSquare className="h-12 w-12 text-[#245C4F] mx-auto mb-3" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Question IDs</h3>
                 <p className="text-sm text-gray-600">Gestisci le domande utilizzate nei form e visualizza le versioni</p>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/whatsapp-chats')}>
+              <CardContent className="p-6 text-center">
+                <MessageSquare className="h-12 w-12 text-[#245C4F] mx-auto mb-3" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">WhatsApp Chats</h3>
+                <p className="text-sm text-gray-600">Visualizza e gestisci le conversazioni WhatsApp</p>
               </CardContent>
             </Card>
           </div>
