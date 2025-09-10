@@ -219,9 +219,9 @@ export default function AdminMediatoriLogs() {
         }
       }
 
-      // Search in description, lead names, and mediatore names
+      // Apply search filter - start simple with description only
       if (debouncedSearchTerm) {
-        query = query.or(`description.ilike.%${debouncedSearchTerm}%,form_submissions.first_name.ilike.%${debouncedSearchTerm}%,form_submissions.last_name.ilike.%${debouncedSearchTerm}%,form_submissions.email.ilike.%${debouncedSearchTerm}%,profiles.first_name.ilike.%${debouncedSearchTerm}%,profiles.last_name.ilike.%${debouncedSearchTerm}%,profiles.email.ilike.%${debouncedSearchTerm}%`);
+        query = query.ilike('description', `%${debouncedSearchTerm}%`);
       }
 
       const { data, error, count } = await query
@@ -243,7 +243,18 @@ export default function AdminMediatoriLogs() {
           : 'Lead Sconosciuto'
       })) || [];
 
-      setLogs(formattedLogs);
+      // Additional frontend filtering for names when searching
+      let finalLogs = formattedLogs;
+      if (debouncedSearchTerm) {
+        const searchTermLower = debouncedSearchTerm.toLowerCase();
+        finalLogs = formattedLogs.filter(log => 
+          log.description?.toLowerCase().includes(searchTermLower) ||
+          log.mediatore_name?.toLowerCase().includes(searchTermLower) ||
+          log.lead_name?.toLowerCase().includes(searchTermLower)
+        );
+      }
+
+      setLogs(finalLogs);
       setTotalCount(count || 0);
     } catch (error) {
       console.error('Error fetching logs:', error);
