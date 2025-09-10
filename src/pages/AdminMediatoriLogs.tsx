@@ -219,9 +219,9 @@ export default function AdminMediatoriLogs() {
         }
       }
 
-      // Search only in description field (activity_type is enum, can't use ilike)
+      // Search in description, lead names, and mediatore names
       if (debouncedSearchTerm) {
-        query = query.ilike('description', `%${debouncedSearchTerm}%`);
+        query = query.or(`description.ilike.%${debouncedSearchTerm}%,form_submissions.first_name.ilike.%${debouncedSearchTerm}%,form_submissions.last_name.ilike.%${debouncedSearchTerm}%,form_submissions.email.ilike.%${debouncedSearchTerm}%,profiles.first_name.ilike.%${debouncedSearchTerm}%,profiles.last_name.ilike.%${debouncedSearchTerm}%,profiles.email.ilike.%${debouncedSearchTerm}%`);
       }
 
       const { data, error, count } = await query
@@ -414,7 +414,7 @@ export default function AdminMediatoriLogs() {
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <Input
                   type="text"
-                  placeholder="Cerca..."
+                  placeholder="Cerca per descrizione, lead o mediatore..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className={`pl-10 ${isMobile ? 'w-full' : 'w-64'}`}
