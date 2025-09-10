@@ -15,6 +15,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { LeadStatusBadge } from '@/components/admin/LeadStatusBadge';
 import { ExpandableNotes } from '@/components/admin/ExpandableNotes';
 import { LeadStatus } from '@/types/leadStatus';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -81,6 +82,7 @@ export default function AdminLeads() {
   const itemsPerPage = 50;
   const { user } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   // Session Storage helpers
   const saveFiltersToSession = (status: string, phone: boolean, openSubmissions: boolean, mediatore: string, search: string) => {
@@ -461,54 +463,59 @@ export default function AdminLeads() {
     <div className="min-h-screen bg-[#f7f5f2]">
       {/* Header */}
       <header className="bg-white border-b border-[#BEB8AE] px-4 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              onClick={() => navigate('/admin')}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Torna al Dashboard
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-[#245C4F]">Gestione Leads</h1>
-              <p className="text-gray-600">Visualizza e gestisci le submissions dei form</p>
+        <div className="max-w-7xl mx-auto">
+          <div className={`${isMobile ? 'flex flex-col gap-3' : 'flex items-center justify-between'}`}>
+            <div className={`${isMobile ? 'flex flex-col gap-2' : 'flex items-center gap-4'}`}>
+              <Button
+                onClick={() => navigate('/admin')}
+                variant="outline"
+                size="sm"
+                className={`flex items-center gap-2 ${isMobile ? 'self-start' : ''}`}
+              >
+                <ArrowLeft className="h-4 w-4" />
+                {!isMobile && 'Torna al Dashboard'}
+              </Button>
+              <div>
+                <h1 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-[#245C4F]`}>Gestione Leads</h1>
+                {!isMobile && <p className="text-gray-600">Visualizza e gestisci le submissions dei form</p>}
+              </div>
             </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-4 py-6 md:py-8">
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className={`${isMobile ? 'mb-3' : 'flex items-center justify-between mb-4'}`}>
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">Form Submissions</h2>
-              <p className="text-gray-600">
+              <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold text-gray-900`}>Form Submissions</h2>
+              <p className={`text-gray-600 ${isMobile ? 'text-sm' : ''}`}>
                 Totale: {totalCount} submissions 
                 {totalPages > 1 && ` - Pagina ${currentPage} di ${totalPages}`}
               </p>
             </div>
           </div>
 
-          {/* Filters */}
-          <div className="flex items-center justify-between gap-4">
-            {/* Left side - Filters */}
-            <div className="flex items-center gap-4">
-              {/* Mediatore Filter - Re-enabled */}
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-gray-500" />
+          {/* Filters - Mobile responsive */}
+          <div className={`${isMobile ? 'space-y-4' : 'flex items-center justify-between gap-4'}`}>
+            {/* Filters Row 1 (mobile) / Left side (desktop) */}
+            <div className={`${isMobile ? 'flex flex-col space-y-3' : 'flex items-center gap-4'}`}>
+              {/* Mediatore Filter */}
+              <div className={`flex items-center gap-2 ${isMobile ? 'w-full' : ''}`}>
+                {!isMobile && <User className="h-4 w-4 text-gray-500" />}
                 <Select value={mediatoreFilter} onValueChange={(value) => {
                   setMediatoreFilter(value);
                   saveFiltersToSession(statusFilter, phoneFilter, openSubmissionsFilter, value, searchQuery);
                 }}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Mediatore" />
+                  <SelectTrigger className={isMobile ? 'w-full' : 'w-40'}>
+                    <div className="flex items-center gap-2">
+                      {isMobile && <User className="h-4 w-4 text-gray-500" />}
+                      <SelectValue placeholder="Mediatore" />
+                    </div>
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tutti</SelectItem>
+                  <SelectContent className="bg-white z-50">
+                    <SelectItem value="all">Tutti i mediatori</SelectItem>
                     {uniqueMediaatori.map((mediatore) => (
                       <SelectItem key={mediatore.id} value={mediatore.id}>
                         {mediatore.name}
@@ -518,10 +525,14 @@ export default function AdminLeads() {
                 </Select>
               </div>
 
-              {/* Open Submissions Filter (Icon + Toggle) */}
-              <div className="flex items-center gap-3 border-l pl-4">
-                <div className="flex items-center gap-2">
-                  <Headphones className={`h-4 w-4 ${openSubmissionsFilter ? 'text-[#245C4F]' : 'text-gray-400'}`} />
+              {/* Toggle Filters Row */}
+              <div className={`${isMobile ? 'flex flex-col space-y-3' : 'flex items-center gap-4'}`}>
+                {/* Open Submissions Filter */}
+                <div className={`flex items-center gap-3 ${isMobile ? 'justify-between' : 'border-l pl-4'}`}>
+                  <div className="flex items-center gap-2">
+                    <Headphones className={`h-4 w-4 ${openSubmissionsFilter ? 'text-[#245C4F]' : 'text-gray-400'}`} />
+                    <span className="text-sm">Lead aperti</span>
+                  </div>
                   <Switch
                     checked={openSubmissionsFilter}
                     onCheckedChange={(checked) => {
@@ -530,12 +541,13 @@ export default function AdminLeads() {
                     }}
                   />
                 </div>
-              </div>
 
-              {/* Phone Filter (Icon + Toggle) */}
-              <div className="flex items-center gap-3 border-l pl-4">
-                <div className="flex items-center gap-2">
-                  <Phone className={`h-4 w-4 ${phoneFilter ? 'text-[#245C4F]' : 'text-gray-400'}`} />
+                {/* Phone Filter */}
+                <div className={`flex items-center gap-3 ${isMobile ? 'justify-between' : 'border-l pl-4'}`}>
+                  <div className="flex items-center gap-2">
+                    <Phone className={`h-4 w-4 ${phoneFilter ? 'text-[#245C4F]' : 'text-gray-400'}`} />
+                    <span className="text-sm">Solo con telefono</span>
+                  </div>
                   <Switch
                     checked={phoneFilter}
                     onCheckedChange={(checked) => {
@@ -547,16 +559,19 @@ export default function AdminLeads() {
               </div>
 
               {/* Status Filter */}
-              <div className="flex items-center gap-2 border-l pl-4">
-                <Filter className="h-4 w-4 text-gray-500" />
+              <div className={`flex items-center gap-2 ${isMobile ? 'w-full' : 'border-l pl-4'}`}>
+                {!isMobile && <Filter className="h-4 w-4 text-gray-500" />}
                 <Select value={statusFilter} onValueChange={(value) => {
                   setStatusFilter(value);
                   saveFiltersToSession(value, phoneFilter, openSubmissionsFilter, mediatoreFilter, searchQuery);
                 }}>
-                  <SelectTrigger className="w-44">
-                    <SelectValue placeholder="Status" />
+                  <SelectTrigger className={isMobile ? 'w-full' : 'w-44'}>
+                    <div className="flex items-center gap-2">
+                      {isMobile && <Filter className="h-4 w-4 text-gray-500" />}
+                      <SelectValue placeholder="Status" />
+                    </div>
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white z-50">
                     <SelectItem value="all">Tutti gli status</SelectItem>
                     <SelectItem value="not_contacted">Non Contattato</SelectItem>
                     <SelectItem value="non_risponde_x1">Non Risponde x1</SelectItem>
@@ -577,30 +592,30 @@ export default function AdminLeads() {
               </div>
             </div>
 
-            {/* Right side - Search and Update */}
-            <div className="flex items-center gap-3">
-              <div className="relative">
+            {/* Search and Update - Row 2 (mobile) / Right side (desktop) */}
+            <div className={`flex items-center gap-3 ${isMobile ? 'w-full' : ''}`}>
+              <div className={`relative ${isMobile ? 'flex-1' : ''}`}>
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <Input
                   type="text"
-                  placeholder="Cerca..."
+                  placeholder="Cerca per nome, email, telefono..."
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
                     saveFiltersToSession(statusFilter, phoneFilter, openSubmissionsFilter, mediatoreFilter, e.target.value);
                   }}
-                  className="pl-10 w-64"
+                  className={`pl-10 ${isMobile ? 'w-full' : 'w-64'}`}
                 />
               </div>
               
               <Button 
                 onClick={() => {
                   fetchSubmissions();
-                  fetchUniqueMediaatori(); // Re-enabled
+                  fetchUniqueMediaatori();
                 }} 
                 variant="outline" 
                 size="sm"
-                className="px-3 py-2"
+                className="px-3 py-2 shrink-0"
               >
                 <RotateCcw className="h-4 w-4" />
               </Button>
@@ -640,9 +655,9 @@ export default function AdminLeads() {
               <div className="grid gap-4">
               {submissions.map((submission) => (
               <Card key={submission.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">
+                <CardHeader className={`${isMobile ? 'pb-2' : 'pb-3'}`}>
+                  <div className={`${isMobile ? 'flex flex-col gap-2' : 'flex items-center justify-between'}`}>
+                    <CardTitle className={`${isMobile ? 'text-base' : 'text-lg'}`}>
                       {(submission.first_name || submission.last_name) ? (
                         <span className="font-bold text-[#245C4F]">
                           {submission.first_name} {submission.last_name}
@@ -653,12 +668,12 @@ export default function AdminLeads() {
                         </span>
                       )}
                     </CardTitle>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary">
+                    <div className={`flex ${isMobile ? 'flex-wrap' : 'items-center'} gap-2`}>
+                      <Badge variant="secondary" className={isMobile ? 'text-xs' : ''}>
                         {submission.form_title}
                       </Badge>
                       {submission.consulting && (
-                        <Badge className="bg-green-100 text-green-800">
+                        <Badge className={`bg-green-100 text-green-800 ${isMobile ? 'text-xs' : ''}`}>
                           Consulenza richiesta
                         </Badge>
                       )}
@@ -673,49 +688,60 @@ export default function AdminLeads() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                <CardContent className={isMobile ? 'pt-0' : ''}>
+                  <div className={`${isMobile ? 'mb-3' : 'flex justify-between items-start mb-4'}`}>
+                    <div className={`grid ${isMobile ? 'grid-cols-1 gap-2' : 'grid-cols-1 md:grid-cols-2 gap-4'}`}>
+                      <div className={`flex items-center gap-2 ${isMobile ? 'text-xs' : 'text-sm'} text-gray-600`}>
                         <Calendar className="h-4 w-4" />
                         {formatDate(submission.created_at)}
                       </div>
                       {submission.phone_number && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <div className={`flex items-center gap-2 ${isMobile ? 'text-xs' : 'text-sm'} text-gray-600`}>
                           <Phone className="h-4 w-4" />
                           {submission.phone_number}
                         </div>
                       )}
                       {submission.email && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <div className={`flex items-center gap-2 ${isMobile ? 'text-xs' : 'text-sm'} text-gray-600`}>
                           <Mail className="h-4 w-4" />
                           {submission.email}
                         </div>
                       )}
                       {submission.user_identifier && (
-                        <div className="text-sm text-gray-600">
+                        <div className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-600`}>
                           ID Utente: {submission.user_identifier}
                         </div>
                       )}
                     </div>
-                    <div className="text-xs text-gray-500 opacity-50">
-                      Submission #{submission.id.slice(0, 8)}
-                    </div>
+                    {!isMobile && (
+                      <div className="text-xs text-gray-500 opacity-50">
+                        Submission #{submission.id.slice(0, 8)}
+                      </div>
+                    )}
                   </div>
 
+                  {/* Mobile submission ID */}
+                  {isMobile && (
+                    <div className="text-xs text-gray-500 opacity-50 mb-3">
+                      Submission #{submission.id.slice(0, 8)}
+                    </div>
+                  )}
+
                   {/* Lead Status */}
-                  <div className="mb-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <User className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm text-gray-600">Status Lead:</span>
-                      <LeadStatusBadge status={submission.lead_status} />
+                  <div className={isMobile ? 'mb-3' : 'mb-4'}>
+                    <div className={`flex ${isMobile ? 'flex-col gap-1' : 'items-center gap-2'} mb-2`}>
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-gray-500" />
+                        <span className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-600`}>Status Lead:</span>
+                        <LeadStatusBadge status={submission.lead_status} />
+                      </div>
                       {submission.mediatore && (
-                        <span className="text-sm text-gray-600">
+                        <span className={`${isMobile ? 'text-xs ml-6' : 'text-sm'} text-gray-600`}>
                           → {submission.mediatore}
                         </span>
                       )}
                     </div>
-                    <div className="text-sm text-gray-600">
+                    <div className={`${isMobile ? 'text-xs ml-6' : 'text-sm'} text-gray-600`}>
                       <span>Assegnata a: </span>
                       <span className="font-medium">
                         {submission.assigned_admin_name || 'nessuno'}
@@ -723,7 +749,7 @@ export default function AdminLeads() {
                     </div>
                     
                     {/* Contact Dates */}
-                    <div className="space-y-1 mt-2 text-sm text-gray-600">
+                    <div className={`space-y-1 mt-2 ${isMobile ? 'text-xs ml-6' : 'text-sm'} text-gray-600`}>
                       <div className="flex items-center gap-1">
                         <span>Ultimo contatto:</span>
                         <span className="font-medium">
@@ -751,22 +777,23 @@ export default function AdminLeads() {
 
                   {/* Notes */}
                   {submission.notes && (
-                    <div className="mb-4">
-                      <div className="flex items-start gap-2 mb-2">
+                    <div className={isMobile ? 'mb-3' : 'mb-4'}>
+                      <div className={`flex items-start gap-2 mb-2`}>
                         <StickyNote className="h-4 w-4 text-gray-500 mt-0.5" />
-                        <span className="text-sm text-gray-600">Note:</span>
+                        <span className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-600`}>Note:</span>
                       </div>
                       <ExpandableNotes notes={submission.notes} aiNotes={submission.ai_notes} />
                     </div>
                   )}
                    
-                   <div className="flex justify-end items-center gap-2">
+                   <div className={`flex ${isMobile ? 'flex-col gap-2' : 'justify-end items-center gap-2'}`}>
                      <Button
                        onClick={() => {
                          saveScrollPosition();
                          navigate(`/admin/leads/${submission.id}`);
                        }}
-                       className="bg-[#245C4F] hover:bg-[#1e4f44] flex items-center gap-2"
+                       className={`bg-[#245C4F] hover:bg-[#1e4f44] flex items-center gap-2 ${isMobile ? 'w-full justify-center' : ''}`}
+                       size={isMobile ? 'sm' : 'default'}
                      >
                        <Eye className="h-4 w-4" />
                        Visualizza Dettagli
@@ -777,7 +804,7 @@ export default function AdminLeads() {
                          <Button
                            variant="outline"
                            size="sm"
-                           className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 flex items-center gap-2"
+                           className={`border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 flex items-center gap-2 ${isMobile ? 'w-full justify-center' : ''}`}
                            disabled={deletingId === submission.id}
                          >
                            {deletingId === submission.id ? (
