@@ -1121,6 +1121,13 @@ export type Database = {
             referencedRelation: "whatsapp_contacts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "whatsapp_conversations_last_message_id_fkey"
+            columns: ["last_message_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_messages"
+            referencedColumns: ["id"]
+          },
         ]
       }
       whatsapp_messages: {

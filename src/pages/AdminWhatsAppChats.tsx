@@ -28,7 +28,7 @@ export default function AdminWhatsAppChats() {
             display_name,
             profile_name
           ),
-          last_message:whatsapp_messages!whatsapp_conversations_last_message_id_fkey(
+          last_message:whatsapp_messages(
             id,
             content,
             message_type,
