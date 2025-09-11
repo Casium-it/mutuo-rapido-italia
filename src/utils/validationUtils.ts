@@ -39,6 +39,10 @@ export const validateInput = (value: string, type: ValidationTypes): boolean => 
     case "free_text":
       // For free text, simply check if it's not empty
       return value.trim().length > 0;
+    case "phone":
+      // Italian mobile phone validation: 10 digits starting with 3
+      const cleanPhone = value.replace(/\D/g, "");
+      return /^3[0-9]{9}$/.test(cleanPhone);
     default:
       // By default, consider valid if not empty
       return value.trim().length > 0;
