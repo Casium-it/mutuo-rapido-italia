@@ -624,37 +624,17 @@ export default function AdminLeads() {
                   setProssimoContattoSort(value);
                   saveFiltersToSession(statusFilter, phoneFilter, openSubmissionsFilter, mediatoreFilter, searchQuery, value);
                 }}>
-                  <SelectTrigger className={isMobile ? 'w-full' : 'w-48'}>
+                  <SelectTrigger className={isMobile ? 'w-full' : 'w-44'}>
                     <div className="flex items-center gap-2">
                       {isMobile && <Calendar className="h-4 w-4 text-gray-500" />}
-                      <SelectValue placeholder="Ordina contatti" />
+                      <SelectValue placeholder="Contatti" />
                     </div>
                   </SelectTrigger>
-                  <SelectContent className="bg-white z-50">
-                    <SelectItem value="none">
-                      <div className="flex flex-col">
-                        <span>Nessun ordinamento</span>
-                        <span className="text-xs text-gray-500">Per data creazione</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="futuro">
-                      <div className="flex flex-col">
-                        <span>📅 Contatti futuri</span>
-                        <span className="text-xs text-gray-500">Da oggi in poi (vicini prima)</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="passato">
-                      <div className="flex flex-col">
-                        <span>📅 Contatti passati</span>
-                        <span className="text-xs text-gray-500">Precedenti ad oggi (recenti prima)</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="tutti">
-                      <div className="flex flex-col">
-                        <span>📅 Tutti i contatti</span>
-                        <span className="text-xs text-gray-500">Dal più vecchio al più nuovo</span>
-                      </div>
-                    </SelectItem>
+                  <SelectContent className="bg-white z-50 border shadow-lg">
+                    <SelectItem value="none">Nessun ordinamento</SelectItem>
+                    <SelectItem value="futuro">📅 Contatti futuri</SelectItem>
+                    <SelectItem value="passato">📅 Contatti passati</SelectItem>
+                    <SelectItem value="tutti">📅 Tutti i contatti</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
