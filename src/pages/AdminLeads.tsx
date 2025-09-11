@@ -76,6 +76,7 @@ export default function AdminLeads() {
   const [mediatoreFilter, setMediatoreFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
+  const [prossimoContattoSort, setProssimoContattoSort] = useState<string>('none');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [uniqueMediaatori, setUniqueMediaatori] = useState<{id: string, name: string}[]>([]);
@@ -85,13 +86,14 @@ export default function AdminLeads() {
   const isMobile = useIsMobile();
 
   // Session Storage helpers
-  const saveFiltersToSession = (status: string, phone: boolean, openSubmissions: boolean, mediatore: string, search: string) => {
+  const saveFiltersToSession = (status: string, phone: boolean, openSubmissions: boolean, mediatore: string, search: string, prossimoContatto: string) => {
     try {
       sessionStorage.setItem('adminLeads_statusFilter', status);
       sessionStorage.setItem('adminLeads_phoneFilter', phone.toString());
       sessionStorage.setItem('adminLeads_openSubmissionsFilter', openSubmissions.toString());
       sessionStorage.setItem('adminLeads_mediatoreFilter', mediatore);
       sessionStorage.setItem('adminLeads_searchQuery', search);
+      sessionStorage.setItem('adminLeads_prossimoContattoSort', prossimoContatto);
     } catch (error) {
       console.warn('Could not save filters to session storage:', error);
     }
@@ -104,16 +106,18 @@ export default function AdminLeads() {
       const savedOpenSubmissions = sessionStorage.getItem('adminLeads_openSubmissionsFilter') === 'false' ? false : true;
       const savedMediator = sessionStorage.getItem('adminLeads_mediatoreFilter') || 'all';
       const savedSearch = sessionStorage.getItem('adminLeads_searchQuery') || '';
+      const savedProssimoContatto = sessionStorage.getItem('adminLeads_prossimoContattoSort') || 'none';
       return { 
         status: savedStatus, 
         phone: savedPhone,
         openSubmissions: savedOpenSubmissions,
         mediatore: savedMediator,
-        search: savedSearch
+        search: savedSearch,
+        prossimoContatto: savedProssimoContatto
       };
     } catch (error) {
       console.warn('Could not load filters from session storage:', error);
-      return { status: 'all', phone: true, openSubmissions: true, mediatore: 'all', search: '' };
+      return { status: 'all', phone: true, openSubmissions: true, mediatore: 'all', search: '', prossimoContatto: 'none' };
     }
   };
 
@@ -140,8 +144,8 @@ export default function AdminLeads() {
   // Initialize filters from session storage FIRST (synchronously)
   useEffect(() => {
     console.log('🔄 Loading filters from session storage...');
-    const { status, phone, openSubmissions, mediatore, search } = loadFiltersFromSession();
-    console.log('📋 Loaded filters:', { status, phone, openSubmissions, mediatore, search });
+    const { status, phone, openSubmissions, mediatore, search, prossimoContatto } = loadFiltersFromSession();
+    console.log('📋 Loaded filters:', { status, phone, openSubmissions, mediatore, search, prossimoContatto });
     
     setStatusFilter(status);
     setPhoneFilter(phone);
@@ -149,6 +153,7 @@ export default function AdminLeads() {
     setMediatoreFilter(mediatore);
     setSearchQuery(search);
     setDebouncedSearchQuery(search);
+    setProssimoContattoSort(prossimoContatto);
     setFiltersLoaded(true);
   }, []);
 
@@ -191,12 +196,13 @@ export default function AdminLeads() {
       phoneFilter,
       openSubmissionsFilter,
       mediatoreFilter,
-      debouncedSearchQuery
+      debouncedSearchQuery,
+      prossimoContattoSort
     });
     
     setSubmissionsLoading(true);
     fetchSubmissions().finally(() => setSubmissionsLoading(false));
-  }, [currentPage, statusFilter, phoneFilter, openSubmissionsFilter, mediatoreFilter, debouncedSearchQuery, filtersLoaded]);
+  }, [currentPage, statusFilter, phoneFilter, openSubmissionsFilter, mediatoreFilter, debouncedSearchQuery, prossimoContattoSort, filtersLoaded]);
 
   const fetchSubmissions = async (retryWithPage1 = false) => {
     try {
@@ -254,13 +260,33 @@ export default function AdminLeads() {
         query = query.or(`first_name.ilike.%${debouncedSearchQuery}%,last_name.ilike.%${debouncedSearchQuery}%,email.ilike.%${debouncedSearchQuery}%,phone_number.ilike.%${debouncedSearchQuery}%,notes.ilike.%${debouncedSearchQuery}%`);
       }
 
-      // Apply pagination and ordering with validation
+      // Apply ordering based on prossimo contatto sort
+      if (prossimoContattoSort === 'futuro') {
+        // Future contacts only - order by prossimo_contatto ASC (closest first)
+        query = query
+          .gte('prossimo_contatto', new Date().toISOString().split('T')[0])
+          .not('prossimo_contatto', 'is', null)
+          .order('prossimo_contatto', { ascending: true });
+      } else if (prossimoContattoSort === 'passato') {
+        // Past contacts only - order by prossimo_contatto DESC (most recent first)
+        query = query
+          .lt('prossimo_contatto', new Date().toISOString().split('T')[0])
+          .not('prossimo_contatto', 'is', null)
+          .order('prossimo_contatto', { ascending: false });
+      } else if (prossimoContattoSort === 'tutti') {
+        // All contacts with prossimo_contatto - order by ASC (oldest first)
+        query = query
+          .not('prossimo_contatto', 'is', null)
+          .order('prossimo_contatto', { ascending: true });
+      } else {
+        // Default ordering by created_at
+        query = query.order('created_at', { ascending: false });
+      }
+
+      // Apply pagination after ordering
       const from = (pageToUse - 1) * itemsPerPage;
       const to = from + itemsPerPage - 1;
-      
-      query = query
-        .order('created_at', { ascending: false })
-        .range(from, to);
+      query = query.range(from, to);
 
       const { data: submissionsData, error: submissionsError, count } = await query;
 
@@ -438,7 +464,7 @@ export default function AdminLeads() {
   // Reset page when filters change  
   useEffect(() => {
     setCurrentPage(1);
-  }, [statusFilter, phoneFilter, openSubmissionsFilter, mediatoreFilter, searchQuery]);
+  }, [statusFilter, phoneFilter, openSubmissionsFilter, mediatoreFilter, searchQuery, prossimoContattoSort]);
 
   // Sync currentPage with totalPages when totalCount changes
   useEffect(() => {
@@ -506,7 +532,7 @@ export default function AdminLeads() {
                 {!isMobile && <User className="h-4 w-4 text-gray-500" />}
                 <Select value={mediatoreFilter} onValueChange={(value) => {
                   setMediatoreFilter(value);
-                  saveFiltersToSession(statusFilter, phoneFilter, openSubmissionsFilter, value, searchQuery);
+                  saveFiltersToSession(statusFilter, phoneFilter, openSubmissionsFilter, value, searchQuery, prossimoContattoSort);
                 }}>
                   <SelectTrigger className={isMobile ? 'w-full' : 'w-40'}>
                     <div className="flex items-center gap-2">
@@ -537,7 +563,7 @@ export default function AdminLeads() {
                     checked={openSubmissionsFilter}
                     onCheckedChange={(checked) => {
                       setOpenSubmissionsFilter(checked);
-                      saveFiltersToSession(statusFilter, phoneFilter, checked, mediatoreFilter, searchQuery);
+                      saveFiltersToSession(statusFilter, phoneFilter, checked, mediatoreFilter, searchQuery, prossimoContattoSort);
                     }}
                   />
                 </div>
@@ -552,7 +578,7 @@ export default function AdminLeads() {
                     checked={phoneFilter}
                     onCheckedChange={(checked) => {
                       setPhoneFilter(checked);
-                      saveFiltersToSession(statusFilter, checked, openSubmissionsFilter, mediatoreFilter, searchQuery);
+                      saveFiltersToSession(statusFilter, checked, openSubmissionsFilter, mediatoreFilter, searchQuery, prossimoContattoSort);
                     }}
                   />
                 </div>
@@ -563,7 +589,7 @@ export default function AdminLeads() {
                 {!isMobile && <Filter className="h-4 w-4 text-gray-500" />}
                 <Select value={statusFilter} onValueChange={(value) => {
                   setStatusFilter(value);
-                  saveFiltersToSession(value, phoneFilter, openSubmissionsFilter, mediatoreFilter, searchQuery);
+                  saveFiltersToSession(value, phoneFilter, openSubmissionsFilter, mediatoreFilter, searchQuery, prossimoContattoSort);
                 }}>
                   <SelectTrigger className={isMobile ? 'w-full' : 'w-44'}>
                     <div className="flex items-center gap-2">
@@ -590,6 +616,48 @@ export default function AdminLeads() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Prossimo Contatto Sort Filter */}
+              <div className={`flex items-center gap-2 ${isMobile ? 'w-full' : 'border-l pl-4'}`}>
+                {!isMobile && <Calendar className="h-4 w-4 text-gray-500" />}
+                <Select value={prossimoContattoSort} onValueChange={(value) => {
+                  setProssimoContattoSort(value);
+                  saveFiltersToSession(statusFilter, phoneFilter, openSubmissionsFilter, mediatoreFilter, searchQuery, value);
+                }}>
+                  <SelectTrigger className={isMobile ? 'w-full' : 'w-48'}>
+                    <div className="flex items-center gap-2">
+                      {isMobile && <Calendar className="h-4 w-4 text-gray-500" />}
+                      <SelectValue placeholder="Ordina contatti" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    <SelectItem value="none">
+                      <div className="flex flex-col">
+                        <span>Nessun ordinamento</span>
+                        <span className="text-xs text-gray-500">Per data creazione</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="futuro">
+                      <div className="flex flex-col">
+                        <span>📅 Contatti futuri</span>
+                        <span className="text-xs text-gray-500">Da oggi in poi (vicini prima)</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="passato">
+                      <div className="flex flex-col">
+                        <span>📅 Contatti passati</span>
+                        <span className="text-xs text-gray-500">Precedenti ad oggi (recenti prima)</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="tutti">
+                      <div className="flex flex-col">
+                        <span>📅 Tutti i contatti</span>
+                        <span className="text-xs text-gray-500">Dal più vecchio al più nuovo</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {/* Search and Update - Row 2 (mobile) / Right side (desktop) */}
@@ -602,7 +670,7 @@ export default function AdminLeads() {
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
-                    saveFiltersToSession(statusFilter, phoneFilter, openSubmissionsFilter, mediatoreFilter, e.target.value);
+                    saveFiltersToSession(statusFilter, phoneFilter, openSubmissionsFilter, mediatoreFilter, e.target.value, prossimoContattoSort);
                   }}
                   className={`pl-10 ${isMobile ? 'w-full' : 'w-64'}`}
                 />
