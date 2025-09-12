@@ -857,6 +857,8 @@ export function FormQuestion({ question }: FormQuestionProps) {
               return "w-[100px]"; // Keep euro width at 100px
             } else if (validationType === "month") {
               return "w-[120px]"; // Set month width to 100px (half the previous size)
+            } else if (validationType === "phone") {
+              return "w-[140px]"; // Phone numbers need wider input for 10 digits
             } else if (placeholder.input_type === "number") {
               return "w-[70px]";
             } else if (placeholder.input_type === "text" && placeholder.placeholder_label?.toLowerCase().includes("cap")) {

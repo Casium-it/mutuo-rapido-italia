@@ -383,6 +383,7 @@ export const PlaceholderEditDialog: React.FC<PlaceholderEditDialogProps> = ({
             <SelectItem value="city">Città</SelectItem>
             <SelectItem value="cap">CAP</SelectItem>
             <SelectItem value="free_text">Testo Libero</SelectItem>
+            <SelectItem value="phone">Telefono</SelectItem>
           </SelectContent>
         </Select>
       </div>
