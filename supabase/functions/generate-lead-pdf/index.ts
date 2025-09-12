@@ -150,103 +150,6 @@ function addSectionTitle(
   return y + LINE_HEIGHT_SECTION;
 }
 
-/**
- * Replace emojis with Italian text alternatives for PDF rendering
- */
-function replaceEmojisWithText(text: string): string {
-  return text
-    // Common property/home emojis
-    .replace(/🏠/g, '🏠 Casa')
-    .replace(/🏡/g, '🏡 Abitazione')
-    .replace(/🏢/g, '🏢 Ufficio')  
-    .replace(/🏪/g, '🏪 Negozio')
-    .replace(/🏬/g, '🏬 Centro Commerciale')
-    .replace(/🏭/g, '🏭 Fabbrica')
-    .replace(/🏘️/g, '🏘️ Quartiere')
-    
-    // Work/profession emojis
-    .replace(/💼/g, '💼 Lavoro')
-    .replace(/👔/g, '👔 Professionale')
-    .replace(/🧑‍💼/g, '🧑‍💼 Impiegato')
-    .replace(/👨‍💼/g, '👨‍💼 Manager')
-    .replace(/👩‍💼/g, '👩‍💼 Manager')
-    .replace(/🔧/g, '🔧 Tecnico')
-    .replace(/🚛/g, '🚛 Trasporti')
-    .replace(/⚓/g, '⚓ Marino')
-    
-    // People/family emojis
-    .replace(/👤/g, '👤 Persona')
-    .replace(/👥/g, '👥 Persone')
-    .replace(/👪/g, '👪 Famiglia')
-    .replace(/👫/g, '👫 Coppia')
-    .replace(/👨‍👩‍👧‍👦/g, '👨‍👩‍👧‍👦 Famiglia')
-    
-    // Money/finance emojis
-    .replace(/💰/g, '💰 Denaro')
-    .replace(/💵/g, '💵 Euro')
-    .replace(/💳/g, '💳 Carta')
-    .replace(/🏦/g, '🏦 Banca')
-    .replace(/📊/g, '📊 Grafico')
-    .replace(/📈/g, '📈 Crescita')
-    .replace(/📉/g, '📉 Calo')
-    
-    // Documents/admin emojis
-    .replace(/📜/g, '📜 Documento')
-    .replace(/📋/g, '📋 Modulo')
-    .replace(/📄/g, '📄 Pagina')
-    .replace(/📃/g, '📃 Carta')
-    .replace(/📝/g, '📝 Note')
-    .replace(/✍️/g, '✍️ Scrivere')
-    .replace(/📁/g, '📁 Cartella')
-    .replace(/📂/g, '📂 Archivio')
-    
-    // Time/calendar emojis
-    .replace(/📆/g, '📆 Data')
-    .replace(/📅/g, '📅 Calendario')
-    .replace(/🗓️/g, '🗓️ Pianificazione')
-    .replace(/⏰/g, '⏰ Orario')
-    .replace(/⏳/g, '⏳ Attesa')
-    .replace(/⌛/g, '⌛ Tempo')
-    
-    // Status/confirmation emojis
-    .replace(/✅/g, '✅ Confermato')
-    .replace(/❌/g, '❌ Negato')
-    .replace(/⚠️/g, '⚠️ Attenzione')
-    .replace(/🔴/g, '🔴 Rosso')
-    .replace(/🟡/g, '🟡 Giallo')
-    .replace(/🟢/g, '🟢 Verde')
-    .replace(/❗/g, '❗ Importante')
-    .replace(/❓/g, '❓ Domanda')
-    
-    // Communication emojis
-    .replace(/📞/g, '📞 Telefono')
-    .replace(/📱/g, '📱 Cellulare')
-    .replace(/📧/g, '📧 Email')
-    .replace(/💬/g, '💬 Messaggio')
-    .replace(/🗣️/g, '🗣️ Parlare')
-    .replace(/👂/g, '👂 Ascoltare')
-    
-    // General symbols
-    .replace(/🎯/g, '🎯 Obiettivo')
-    .replace(/🔍/g, '🔍 Ricerca')
-    .replace(/🔑/g, '🔑 Chiave')
-    .replace(/🚀/g, '🚀 Lancio')
-    .replace(/💡/g, '💡 Idea')
-    .replace(/⭐/g, '⭐ Stella')
-    .replace(/🎉/g, '🎉 Festa')
-    .replace(/🎊/g, '🎊 Celebrazione');
-}
-
-/**
- * Clean titles by removing emojis from the start of lines but preserving them in content
- */
-function cleanNoteTitles(text: string): string {
-  return text
-    // Remove emoji from start of lines (titles) but keep the space
-    .replace(/^(🏠|💼|👤|💰|📆|🎯|📊|📝|💳|🏦|📞|📱|📧|✅|❌|⚠️)\s+/gm, '')
-    // Keep emoji in middle of content unchanged
-    .replace(/([.!?]\s+)(🏠|💼|👤|💰|📆|🎯|📊|📝|💳|🏦|📞|📱|📧|✅|❌|⚠️)\s+/g, '$1$2 ');
-}
 
 /**
  * Format response value for display
@@ -258,19 +161,19 @@ function formatResponseValue(value: any): string {
   
   if (typeof value === 'object') {
     if (Array.isArray(value)) {
-      return replaceEmojisWithText(value.join(', '));
+      return value.join(', ');
     }
     
     // Handle placeholder responses
     const placeholderKeys = Object.keys(value).filter(key => key.startsWith('placeholder'));
     if (placeholderKeys.length > 0) {
-      return replaceEmojisWithText(placeholderKeys.map(key => value[key]).filter(v => v).join(', '));
+      return placeholderKeys.map(key => value[key]).filter(v => v).join(', ');
     }
     
-    return replaceEmojisWithText(JSON.stringify(value));
+    return JSON.stringify(value);
   }
   
-  return replaceEmojisWithText(String(value));
+  return String(value);
 }
 
 /**
@@ -535,10 +438,7 @@ function generateSubmissionPDF(data: PDFSubmissionData, anonymize: boolean = fal
   if (notesToDisplay && notesToDisplay.trim()) {
     const noteTitle = (displayData.ai_notes && displayData.ai_notes.trim()) ? 'Note Lead' : 'Note';
     y = addSectionTitle(pdf, noteTitle, MARGIN, y);
-    // Clean emoji titles and replace emojis with text alternatives for PDF rendering
-    const cleanedNotes = cleanNoteTitles(notesToDisplay);
-    const processedNotes = replaceEmojisWithText(cleanedNotes);
-    y = addWrappedText(pdf, processedNotes, MARGIN, y, CONTENT_WIDTH, FONT_SIZE_NORMAL, LINE_HEIGHT_NORMAL);
+    y = addWrappedText(pdf, notesToDisplay, MARGIN, y, CONTENT_WIDTH, FONT_SIZE_NORMAL, LINE_HEIGHT_NORMAL);
     y += 10;
   }
   
