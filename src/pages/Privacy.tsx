@@ -2,6 +2,7 @@ import React from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { LoginButton } from "@/components/LoginButton";
 const Privacy = () => {
   const navigate = useNavigate();
   return <div className="min-h-screen flex flex-col bg-[#f7f5f2]">
@@ -205,26 +206,19 @@ const Privacy = () => {
       </main>
 
       {/* Footer */}
-      <footer className="container mx-auto py-6 px-4 border-t border-[#BEB8AE]">
-        <div className="flex justify-between items-center mb-4">
-          <p className="text-sm text-gray-600">© 2025 GoMutuo.it - Tutti i diritti riservati</p>
-          <div className="flex gap-4">
-            <button onClick={() => navigate("/privacy")} className="text-sm text-gray-600 hover:text-[#245C4F]">
-              Privacy
-            </button>
-            <a href="#" className="text-sm text-gray-600 hover:text-[#245C4F]">Termini</a>
-            <a href="#" className="text-sm text-gray-600 hover:text-[#245C4F]">Contatti</a>
+      <footer className="py-6 px-4 border-t border-[#BEB8AE] relative z-10">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex justify-center items-center mb-4">
+            <div className="flex gap-4 items-center">
+              <button onClick={() => navigate("/privacy")} className="text-sm text-gray-600 hover:text-[#245C4F]">
+                Privacy
+              </button>
+              <a href="#" className="text-sm text-gray-600 hover:text-[#245C4F]">Termini</a>
+              <a href="#" className="text-sm text-gray-600 hover:text-[#245C4F]">Contatti</a>
+              <LoginButton />
+            </div>
           </div>
-        </div>
-        
-        {/* Registration Information */}
-        <div className="border-t border-[#BEB8AE] pt-4">
-          <p className="text-xs text-gray-500 mb-2">Registrato come:</p>
-          <div className="text-xs text-gray-500 space-y-1">
-            <p className="font-medium">FILIPPO GIACOMETTI</p>
-            <p>Viale dei Mille 142, Firenze, 50131, Italia</p>
-            <p>P.IVA: 07438860483</p>
-          </div>
+          <p className="text-sm text-gray-600 text-center">© 2025 GoMutuo - Tutti i diritti riservati</p>
         </div>
       </footer>
     </div>;
