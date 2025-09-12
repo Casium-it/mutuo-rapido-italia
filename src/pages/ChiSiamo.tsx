@@ -1,13 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { LoginButton } from "@/components/LoginButton";
-import { Users, Award, MapPin, Heart } from "lucide-react";
+import { Users, Award, MapPin, Heart, Menu, X } from "lucide-react";
 const ChiSiamo = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   return <div className="min-h-screen flex flex-col bg-[#f7f5f2]">
       {/* Header fisso */}
       <header className="fixed top-0 left-0 right-0 bg-[#f7f5f2]/95 backdrop-blur-sm z-50 py-6 px-4 md:px-6 flex items-center justify-between shadow-sm">
@@ -32,13 +33,101 @@ const ChiSiamo = () => {
             </Button>
           </div>}
         
-        {/* CTA Button */}
-        <div className="flex items-center">
-          <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-[12px] px-6 shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all" onClick={() => navigate('/simulazioni')}>
-            Simula Ora
-          </Button>
+        {/* Right side buttons */}
+        <div className="flex items-center gap-2">
+          {isMobile ? (
+            <Button 
+              variant="ghost" 
+              size="icon"
+              className="text-gray-700 hover:bg-transparent"
+              onClick={() => setMobileMenuOpen(true)}
+            >
+              <Menu className="h-6 w-6" />
+            </Button>
+          ) : (
+            <Button className="bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-[12px] px-6 shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all" onClick={() => navigate('/simulazioni')}>
+              Simula Ora
+            </Button>
+          )}
         </div>
       </header>
+
+      {/* Mobile Menu Overlay */}
+      {isMobile && mobileMenuOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setMobileMenuOpen(false)}>
+          <div className="fixed top-0 right-0 h-full w-80 bg-[#f7f5f2] shadow-lg transform transition-transform duration-300">
+            <div className="flex flex-col h-full">
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-[#BEB8AE]">
+                <Logo />
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <X className="h-6 w-6" />
+                </Button>
+              </div>
+              
+              {/* Navigation Items */}
+              <div className="flex flex-col p-6 space-y-4">
+                <Button 
+                  variant="ghost" 
+                  className="text-gray-700 hover:bg-[#245C4F]/10 hover:text-[#245C4F] justify-start text-lg py-6"
+                  onClick={() => {
+                    navigate('/simulazioni');
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  Simulazione
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  className="text-gray-700 hover:bg-[#245C4F]/10 hover:text-[#245C4F] justify-start text-lg py-6"
+                  onClick={() => {
+                    navigate('/blog');
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  Blog
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  className="text-[#245C4F] hover:bg-[#245C4F]/10 hover:text-[#245C4F] justify-start text-lg py-6 font-medium"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  Chi Siamo
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  className="text-gray-700 hover:bg-[#245C4F]/10 hover:text-[#245C4F] justify-start text-lg py-6"
+                  onClick={() => {
+                    window.open('https://wa.me/393518681491', '_blank');
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  Contatti
+                </Button>
+              </div>
+              
+              {/* CTA Button */}
+              <div className="mt-auto p-6">
+                <Button 
+                  className="w-full bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-[12px] py-4 text-lg shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all"
+                  onClick={() => {
+                    navigate('/simulazioni');
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  Simula Ora
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Spacer per compensare l'header fisso */}
       <div className="h-24"></div>

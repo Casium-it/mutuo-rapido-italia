@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { LoginButton } from "@/components/LoginButton";
-import { FileText, Calendar, Search, BookOpen, Tag, Clock, Eye } from "lucide-react";
+import { FileText, Calendar, Search, BookOpen, Tag, Clock, Eye, Menu, X } from "lucide-react";
 import BlogArticleSchema from "@/components/BlogPostSchema";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -40,6 +40,7 @@ const Blog = () => {
   const [recentArticles, setRecentArticles] = useState<BlogArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [allArticles, setAllArticles] = useState<BlogArticle[]>([]);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     fetchArticles();
@@ -182,16 +183,104 @@ const Blog = () => {
           </div>
         )}
         
-        {/* CTA Button */}
-        <div className="flex items-center">
-          <Button 
-            className="bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-[12px] px-6 shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all" 
-            onClick={() => navigate('/simulazioni')}
-          >
-            Simula Ora
-          </Button>
+        {/* Right side buttons */}
+        <div className="flex items-center gap-2">
+          {isMobile ? (
+            <Button 
+              variant="ghost" 
+              size="icon"
+              className="text-gray-700 hover:bg-transparent"
+              onClick={() => setMobileMenuOpen(true)}
+            >
+              <Menu className="h-6 w-6" />
+            </Button>
+          ) : (
+            <Button 
+              className="bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-[12px] px-6 shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all" 
+              onClick={() => navigate('/simulazioni')}
+            >
+              Simula Ora
+            </Button>
+          )}
         </div>
       </header>
+
+      {/* Mobile Menu Overlay */}
+      {isMobile && mobileMenuOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setMobileMenuOpen(false)}>
+          <div className="fixed top-0 right-0 h-full w-80 bg-[#f7f5f2] shadow-lg transform transition-transform duration-300">
+            <div className="flex flex-col h-full">
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-[#BEB8AE]">
+                <Logo />
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <X className="h-6 w-6" />
+                </Button>
+              </div>
+              
+              {/* Navigation Items */}
+              <div className="flex flex-col p-6 space-y-4">
+                <Button 
+                  variant="ghost" 
+                  className="text-gray-700 hover:bg-[#245C4F]/10 hover:text-[#245C4F] justify-start text-lg py-6"
+                  onClick={() => {
+                    navigate('/simulazioni');
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  Simulazione
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  className="text-[#245C4F] hover:bg-[#245C4F]/10 hover:text-[#245C4F] justify-start text-lg py-6 font-medium"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  Blog
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  className="text-gray-700 hover:bg-[#245C4F]/10 hover:text-[#245C4F] justify-start text-lg py-6"
+                  onClick={() => {
+                    navigate('/chi-siamo');
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  Chi Siamo
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  className="text-gray-700 hover:bg-[#245C4F]/10 hover:text-[#245C4F] justify-start text-lg py-6"
+                  onClick={() => {
+                    window.open('https://wa.me/393518681491', '_blank');
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  Contatti
+                </Button>
+              </div>
+              
+              {/* CTA Button */}
+              <div className="mt-auto p-6">
+                <Button 
+                  className="w-full bg-[#245C4F] hover:bg-[#1e4f44] text-white rounded-[12px] py-4 text-lg shadow-[0_3px_0_0_#1a3f37] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#1a3f37] transition-all"
+                  onClick={() => {
+                    navigate('/simulazioni');
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  Simula Ora
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="pt-24 pb-16 flex-grow bg-[#f7f5f2]">
