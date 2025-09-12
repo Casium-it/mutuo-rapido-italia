@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Calendar, Phone, FileText, Download } from 'lucide-react';
+import { ArrowLeft, Calendar, Phone, FileText, Download, Shield } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { getQuestionTextWithStyledResponses } from '@/utils/formUtils';
 import { LeadManagementCard } from '@/components/admin/LeadManagementCard';
@@ -45,6 +45,7 @@ export default function AdminLeadDetail() {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [loading, setLoading] = useState(true);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [anonymousPdfLoading, setAnonymousPdfLoading] = useState(false);
   const { getFormBySlug } = useFormCache();
 
   useEffect(() => {
@@ -262,6 +263,64 @@ export default function AdminLeadDetail() {
     }
   };
 
+  const handleDownloadAnonymousPDF = async () => {
+    if (!submission) {
+      toast({
+        title: "Errore",
+        description: "Dati del lead non disponibili",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setAnonymousPdfLoading(true);
+    try {
+      // Call the edge function to generate anonymous PDF
+      const { data, error } = await supabase.functions.invoke('generate-lead-pdf', {
+        body: { submissionId: submission.id, anonymize: true }
+      });
+
+      if (error) {
+        console.error('Anonymous PDF generation error:', error);
+        throw new Error(error.message || 'Errore nella generazione del PDF anonimo');
+      }
+
+      if (!data.pdfUrl) {
+        throw new Error('URL del PDF anonimo non ricevuto');
+      }
+
+      // Download the PDF as blob to force download
+      const response = await fetch(data.pdfUrl);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = 'lead_anonimo.pdf';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up the blob URL
+      window.URL.revokeObjectURL(blobUrl);
+      
+      toast({
+        title: "PDF anonimo generato",
+        description: "Il PDF anonimo è stato scaricato con successo",
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('Anonymous PDF generation error:', error);
+      toast({
+        title: "Errore",
+        description: error instanceof Error ? error.message : "Errore nella generazione del PDF anonimo",
+        variant: "destructive"
+      });
+    } finally {
+      setAnonymousPdfLoading(false);
+    }
+  };
+
   const StyledQuestionText = ({ questionText, questionId, responseValue, question }: {
     questionText: string;
     questionId: string;
@@ -451,10 +510,20 @@ export default function AdminLeadDetail() {
                   variant="outline"
                   size="sm"
                   className="flex items-center gap-2 text-[#245C4F] border-[#245C4F] hover:bg-[#245C4F] hover:text-white"
-                  disabled={pdfLoading}
+                  disabled={pdfLoading || anonymousPdfLoading}
                 >
-                  <Download className="h-4 w-4" />
+                  <FileText className="h-4 w-4" />
                   {pdfLoading ? 'Generando PDF...' : 'Scarica PDF'}
+                </Button>
+                <Button
+                  onClick={handleDownloadAnonymousPDF}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2 text-gray-600 border-gray-400 hover:bg-gray-100"
+                  disabled={pdfLoading || anonymousPdfLoading}
+                >
+                  <Shield className="h-4 w-4" />
+                  {anonymousPdfLoading ? 'Generando...' : 'PDF Anonimo'}
                 </Button>
               </div>
             </div>

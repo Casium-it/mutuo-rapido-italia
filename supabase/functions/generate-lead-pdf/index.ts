@@ -9,6 +9,7 @@ const supabase = createClient(
 
 interface PDFGenerationRequest {
   submissionId: string
+  anonymize?: boolean
 }
 
 interface PDFSubmissionData {
@@ -237,6 +238,17 @@ function replaceEmojisWithText(text: string): string {
 }
 
 /**
+ * Clean titles by removing emojis from the start of lines but preserving them in content
+ */
+function cleanNoteTitles(text: string): string {
+  return text
+    // Remove emoji from start of lines (titles) but keep the space
+    .replace(/^(🏠|💼|👤|💰|📆|🎯|📊|📝|💳|🏦|📞|📱|📧|✅|❌|⚠️)\s+/gm, '')
+    // Keep emoji in middle of content unchanged
+    .replace(/([.!?]\s+)(🏠|💼|👤|💰|📆|🎯|📊|📝|💳|🏦|📞|📱|📧|✅|❌|⚠️)\s+/g, '$1$2 ');
+}
+
+/**
  * Format response value for display
  */
 function formatResponseValue(value: any): string {
@@ -459,16 +471,33 @@ function addQuestionWithInlineResponse(
 /**
  * Generate PDF using jsPDF
  */
-function generateSubmissionPDF(data: PDFSubmissionData): Uint8Array {
+function generateSubmissionPDF(data: PDFSubmissionData, anonymize: boolean = false): Uint8Array {
   const pdf = new jsPDF('p', 'mm', 'a4');
   let y = MARGIN;
+  
+  // Apply anonymization if requested
+  let displayData = { ...data };
+  if (anonymize) {
+    displayData.first_name = "Lead";
+    displayData.last_name = "Anonimo";
+    displayData.phone_number = "000-000-0000";
+    displayData.email = "anonimo@example.com";
+    
+    // Clean notes from personal references
+    if (displayData.ai_notes) {
+      displayData.ai_notes = displayData.ai_notes
+        .replace(/[A-Z][a-z]+\s+[A-Z][a-z]+/g, 'Lead Anonimo') // Replace potential names
+        .replace(/[0-9]{10}/g, 'NUMERO-ANONIMO') // Replace phone numbers
+        .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, 'email@anonimo.it'); // Replace emails
+    }
+  }
   
   // Header
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(FONT_SIZE_TITLE);
   pdf.setTextColor(36, 92, 79); // #245C4F
   
-  const fullName = [data.first_name, data.last_name].filter(Boolean).join(' ');
+  const fullName = [displayData.first_name, displayData.last_name].filter(Boolean).join(' ');
   const title = fullName ? `GoMutuo - ${fullName}` : 'GoMutuo - Dettagli Lead';
   
   y = addWrappedText(pdf, title, MARGIN, y, CONTENT_WIDTH, FONT_SIZE_TITLE, LINE_HEIGHT_TITLE);
@@ -477,7 +506,7 @@ function generateSubmissionPDF(data: PDFSubmissionData): Uint8Array {
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(FONT_SIZE_NORMAL);
   pdf.setTextColor(100, 100, 100); // Gray
-  y = addWrappedText(pdf, `ID: ${data.id}`, MARGIN, y, CONTENT_WIDTH, FONT_SIZE_NORMAL, LINE_HEIGHT_NORMAL);
+  y = addWrappedText(pdf, `ID: ${displayData.id}`, MARGIN, y, CONTENT_WIDTH, FONT_SIZE_NORMAL, LINE_HEIGHT_NORMAL);
   y += 5;
   
   // Lead Information Section
@@ -486,13 +515,13 @@ function generateSubmissionPDF(data: PDFSubmissionData): Uint8Array {
   
   const leadInfo = [
     `Nome: ${fullName || 'Non specificato'}`,
-    `Email: ${data.email || 'Non specificata'}`,
-    `Telefono: ${data.phone_number || 'Non specificato'}`,
-    `Status: ${getLeadStatusLabel(data.lead_status)}`,
-    `Tipo Form: ${data.form_title}`,
-    `Data Invio: ${formatDate(data.created_at)}`,
-    `Consulenza: ${data.consulting ? 'Richiesta' : 'Non richiesta'}`,
-    `Mediatore: ${data.mediatore || 'Non specificato'}`
+    `Email: ${displayData.email || 'Non specificata'}`,
+    `Telefono: ${displayData.phone_number || 'Non specificato'}`,
+    `Status: ${getLeadStatusLabel(displayData.lead_status)}`,
+    `Tipo Form: ${displayData.form_title}`,
+    `Data Invio: ${formatDate(displayData.created_at)}`,
+    `Consulenza: ${displayData.consulting ? 'Richiesta' : 'Non richiesta'}`,
+    `Mediatore: ${displayData.mediatore || 'Non specificato'}`
   ];
   
   leadInfo.forEach(info => {
@@ -502,35 +531,36 @@ function generateSubmissionPDF(data: PDFSubmissionData): Uint8Array {
   y += 10;
   
   // Notes Section - Prioritize AI notes over regular notes
-  const notesToDisplay = (data.ai_notes && data.ai_notes.trim()) ? data.ai_notes : data.notes;
+  const notesToDisplay = (displayData.ai_notes && displayData.ai_notes.trim()) ? displayData.ai_notes : displayData.notes;
   if (notesToDisplay && notesToDisplay.trim()) {
-    const noteTitle = (data.ai_notes && data.ai_notes.trim()) ? 'Note AI' : 'Note';
+    const noteTitle = (displayData.ai_notes && displayData.ai_notes.trim()) ? 'Note Lead' : 'Note';
     y = addSectionTitle(pdf, noteTitle, MARGIN, y);
-    // Replace emojis with text alternatives for PDF rendering
-    const processedNotes = replaceEmojisWithText(notesToDisplay);
+    // Clean emoji titles and replace emojis with text alternatives for PDF rendering
+    const cleanedNotes = cleanNoteTitles(notesToDisplay);
+    const processedNotes = replaceEmojisWithText(cleanedNotes);
     y = addWrappedText(pdf, processedNotes, MARGIN, y, CONTENT_WIDTH, FONT_SIZE_NORMAL, LINE_HEIGHT_NORMAL);
     y += 10;
   }
   
   // Responses Section
-  if (data.responses.length > 0) {
+  if (displayData.responses.length > 0) {
     // Start new page for responses if needed
     if (y > PAGE_HEIGHT - MARGIN - 50) {
       pdf.addPage();
       y = MARGIN;
     }
     
-    y = addSectionTitle(pdf, `Risposte (${data.responses.length} totali)`, MARGIN, y);
+    y = addSectionTitle(pdf, `Risposte (${displayData.responses.length} totali)`, MARGIN, y);
     y += 5;
     
     // Group responses by block
-    const responsesByBlock = data.responses.reduce((acc, response) => {
+    const responsesByBlock = displayData.responses.reduce((acc, response) => {
       if (!acc[response.block_id]) {
         acc[response.block_id] = [];
       }
       acc[response.block_id].push(response);
       return acc;
-    }, {} as Record<string, typeof data.responses>);
+    }, {} as Record<string, typeof displayData.responses>);
     
     // Process each block
     Object.entries(responsesByBlock).forEach(([blockId, blockResponses]) => {
@@ -554,7 +584,7 @@ function generateSubmissionPDF(data: PDFSubmissionData): Uint8Array {
           response.question_id,
           MARGIN,
           y,
-          data.formBlocks || []
+          displayData.formBlocks || []
         );
         y += 2;
       });
@@ -578,7 +608,7 @@ Deno.serve(async (req) => {
   console.log(`[${requestId}] === PDF Generation Started ===`)
 
   try {
-    const { submissionId }: PDFGenerationRequest = await req.json()
+    const { submissionId, anonymize = false }: PDFGenerationRequest = await req.json()
     
     if (!submissionId) {
       console.error(`[${requestId}] Missing submissionId`)
@@ -717,7 +747,7 @@ Deno.serve(async (req) => {
     console.log(`[${requestId}] 📝 Phase 3: Generating PDF content...`)
     const contentStartTime = Date.now()
     
-    const pdfBuffer = generateSubmissionPDF(pdfData)
+    const pdfBuffer = generateSubmissionPDF(pdfData, anonymize)
 
     const contentEndTime = Date.now()
     console.log(`[${requestId}] 📝 PDF content generated (${contentEndTime - contentStartTime}ms):`, {
@@ -730,11 +760,13 @@ Deno.serve(async (req) => {
 
     // 5. Generate filename and path
     console.log(`[${requestId}] 📁 Phase 4: Generating filename and storage path...`)
-    const firstName = pdfData.first_name || 'nome'
-    const lastName = pdfData.last_name || 'cognome'
-    const phoneNumber = pdfData.phone_number?.replace(/[^\d]/g, '') || 'telefono'
+    const firstName = anonymize ? 'lead' : (pdfData.first_name || 'nome')
+    const lastName = anonymize ? 'anonimo' : (pdfData.last_name || 'cognome')
+    const phoneNumber = anonymize ? 'anonimo' : (pdfData.phone_number?.replace(/[^\d]/g, '') || 'telefono')
     const timestamp = Date.now()
-    const filename = `${firstName}_${lastName}_${phoneNumber}_${timestamp}.pdf`
+    const filename = anonymize ? 
+      `lead_anonimo_${timestamp}.pdf` : 
+      `${firstName}_${lastName}_${phoneNumber}_${timestamp}.pdf`
     const datePath = new Date().toISOString().split('T')[0]
     const filePath = `${datePath}/${filename}`
 
